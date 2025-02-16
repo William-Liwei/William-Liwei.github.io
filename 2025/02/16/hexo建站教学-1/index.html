@@ -19,7 +19,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://lwow.xyz/2025/02/14/%E8%87%AA%E6%88%91%E4%BB%8B%E7%BB%8D/%E7%AB%99%E6%95%99%E5%AD%A6-1/hexo-logo.jpg">
 <meta property="article:published_time" content="2025-02-16T06:13:43.000Z">
-<meta property="article:modified_time" content="2025-02-16T06:20:27.954Z">
+<meta property="article:modified_time" content="2025-02-16T06:35:03.792Z">
 <meta property="article:author" content="黎玮">
 <meta property="article:tag" content="建站">
 <meta property="article:tag" content="教学">
@@ -236,7 +236,7 @@
       <!-- 百度字体平台:http://fontstore.baidu.com/static/editor/index.html -->
       <i class="icon-statistics"></i>
       <span class="post-meta-item-text"> 字数统计:</span>
-      <span class="post-count">947字</span>
+      <span class="post-count">920字</span>
     </span>
   </span>
 
@@ -286,33 +286,26 @@
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install</span><br></pre></td></tr></table></figure>
 
 <h3 id="4-配置-Hexo"><a href="#4-配置-Hexo" class="headerlink" title="4. 配置 Hexo"></a>4. 配置 Hexo</h3><p>Hexo 的配置文件位于项目根目录下的 <code>_config.yml</code> 文件中。我们需要对其进行一些基本配置，例如站点名称、作者、描述等：</p>
-<p>yaml复制</p>
 <figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">title:</span> <span class="string">My</span> <span class="string">Blog</span></span><br><span class="line"><span class="attr">subtitle:</span> <span class="string">A</span> <span class="string">Personal</span> <span class="string">Blog</span> <span class="string">Powered</span> <span class="string">by</span> <span class="string">Hexo</span></span><br><span class="line"><span class="attr">description:</span> <span class="string">This</span> <span class="string">is</span> <span class="string">my</span> <span class="string">personal</span> <span class="string">blog</span> <span class="string">where</span> <span class="string">I</span> <span class="string">share</span> <span class="string">my</span> <span class="string">thoughts</span> <span class="string">and</span> <span class="string">experiences.</span></span><br><span class="line"><span class="attr">author:</span> <span class="string">Your</span> <span class="string">Name</span></span><br><span class="line"><span class="attr">language:</span> <span class="string">en</span></span><br><span class="line"><span class="attr">timezone:</span> <span class="string">Asia/Shanghai</span></span><br></pre></td></tr></table></figure>
 
 <h3 id="5-选择主题"><a href="#5-选择主题" class="headerlink" title="5. 选择主题"></a>5. 选择主题</h3><p>Hexo 支持多种主题，你可以根据自己的喜好选择。这里我们以官方推荐的 <a target="_blank" rel="noopener" href="https://theme-next.js.org/">NexT</a> 主题为例：</p>
 <ol>
 <li><p>安装主题：</p>
-<p>bash复制</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/theme-next/hexo-theme-next.git themes/next</span><br></pre></td></tr></table></figure>
 </li>
 <li><p>在 <code>_config.yml</code> 中设置主题：</p>
-<p>yaml复制</p>
 <figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">theme:</span> <span class="string">next</span></span><br></pre></td></tr></table></figure>
 </li>
 <li><p>安装主题依赖：</p>
-<p>bash复制</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> themes/next</span><br><span class="line">npm install</span><br><span class="line"><span class="built_in">cd</span> ../..</span><br></pre></td></tr></table></figure></li>
 </ol>
 <h3 id="6-创建内容"><a href="#6-创建内容" class="headerlink" title="6. 创建内容"></a>6. 创建内容</h3><p>Hexo 使用 Markdown 编写内容。你可以通过以下命令创建一篇新文章：</p>
-<p>bash复制</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo new post <span class="string">&quot;My First Post&quot;</span></span><br></pre></td></tr></table></figure>
 
 <p>这将在 <code>source/_posts</code> 目录下生成一篇名为 <code>my-first-post.md</code> 的文章。编辑该文件，添加你的内容：</p>
-<p>markdown复制</p>
 <figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">---</span><br><span class="line">title: My First Post</span><br><span class="line">date: 2025-02-16 23:16:13</span><br><span class="line"><span class="section">tags: [Hexo, Blog]</span></span><br><span class="line"><span class="section">---</span></span><br><span class="line"></span><br><span class="line"><span class="section"># Welcome to My Blog</span></span><br><span class="line"></span><br><span class="line">This is my first post using Hexo. I&#x27;m excited to start sharing my thoughts and experiences here.</span><br></pre></td></tr></table></figure>
 
 <h3 id="7-本地预览"><a href="#7-本地预览" class="headerlink" title="7. 本地预览"></a>7. 本地预览</h3><p>在推送代码到 GitHub 之前，可以使用 Hexo 的服务器功能进行本地预览：</p>
-<p>bash复制</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo server</span><br></pre></td></tr></table></figure>
 
 <p>打开浏览器，访问 <code>http://localhost:4000</code>，即可看到你的博客。</p>
@@ -320,11 +313,9 @@
 <li><p><strong>创建 GitHub 仓库</strong>：登录你的 GitHub 账号，创建一个新的仓库，例如 <code>yourusername.github.io</code>。</p>
 </li>
 <li><p><strong>配置部署</strong>：在 <code>_config.yml</code> 中添加部署配置：</p>
-<p>yaml复制</p>
 <figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">deploy:</span></span><br><span class="line">  <span class="attr">type:</span> <span class="string">git</span></span><br><span class="line">  <span class="attr">repo:</span> <span class="string">https://github.com/yourusername/yourusername.github.io.git</span></span><br><span class="line">  <span class="attr">branch:</span> <span class="string">main</span></span><br></pre></td></tr></table></figure>
 </li>
 <li><p><strong>生成静态文件并部署</strong>：</p>
-<p>bash复制</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">hexo clean</span><br><span class="line">hexo generate</span><br><span class="line">hexo deploy</span><br></pre></td></tr></table></figure>
 
 <p>如果一切顺利，Hexo 会将生成的静态文件推送到你的 GitHub 仓库。</p>
