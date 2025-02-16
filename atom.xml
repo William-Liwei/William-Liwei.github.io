@@ -3,11 +3,11 @@
   <title>William-Liwei&#39;s blog</title>
   
   <subtitle>We are all in the gutter, but some of us are looking at the stars.</subtitle>
-  <link href="https://william-liwei.github.io/atom.xml" rel="self"/>
+  <link href="https://lwow.xyz/atom.xml" rel="self"/>
   
-  <link href="https://william-liwei.github.io/"/>
+  <link href="https://lwow.xyz/"/>
   <updated>2025-02-15T07:38:36.523Z</updated>
-  <id>https://william-liwei.github.io/</id>
+  <id>https://lwow.xyz/</id>
   
   <author>
     <name>黎玮</name>
@@ -18,8 +18,8 @@
   
   <entry>
     <title>学术海报</title>
-    <link href="https://william-liwei.github.io/2025/02/14/%E5%AD%A6%E6%9C%AF%E6%B5%B7%E6%8A%A5/"/>
-    <id>https://william-liwei.github.io/2025/02/14/%E5%AD%A6%E6%9C%AF%E6%B5%B7%E6%8A%A5/</id>
+    <link href="https://lwow.xyz/2025/02/14/%E5%AD%A6%E6%9C%AF%E6%B5%B7%E6%8A%A5/"/>
+    <id>https://lwow.xyz/2025/02/14/%E5%AD%A6%E6%9C%AF%E6%B5%B7%E6%8A%A5/</id>
     <published>2025-02-14T15:16:13.000Z</published>
     <updated>2025-02-15T07:38:36.523Z</updated>
     
@@ -36,14 +36,14 @@
     
     
     
-    <category term="学术" scheme="https://william-liwei.github.io/tags/%E5%AD%A6%E6%9C%AF/"/>
+    <category term="学术" scheme="https://lwow.xyz/tags/%E5%AD%A6%E6%9C%AF/"/>
     
   </entry>
   
   <entry>
     <title>自我介绍</title>
-    <link href="https://william-liwei.github.io/2025/02/14/%E8%87%AA%E6%88%91%E4%BB%8B%E7%BB%8D/"/>
-    <id>https://william-liwei.github.io/2025/02/14/%E8%87%AA%E6%88%91%E4%BB%8B%E7%BB%8D/</id>
+    <link href="https://lwow.xyz/2025/02/14/%E8%87%AA%E6%88%91%E4%BB%8B%E7%BB%8D/"/>
+    <id>https://lwow.xyz/2025/02/14/%E8%87%AA%E6%88%91%E4%BB%8B%E7%BB%8D/</id>
     <published>2025-02-14T04:29:20.000Z</published>
     <updated>2025-02-15T07:39:57.948Z</updated>
     
@@ -60,7 +60,7 @@
     
     
     
-    <category term="自我介绍" scheme="https://william-liwei.github.io/tags/%E8%87%AA%E6%88%91%E4%BB%8B%E7%BB%8D/"/>
+    <category term="自我介绍" scheme="https://lwow.xyz/tags/%E8%87%AA%E6%88%91%E4%BB%8B%E7%BB%8D/"/>
     
   </entry>
   
