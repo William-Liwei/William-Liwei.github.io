@@ -548,30 +548,31 @@
 
 
 
-
+  <div id="giteement-ctn"></div>
   
-  <div id="gitment-ctn"></div>
-  
-    <!-- 中文 -->
-    <link rel="stylesheet" href="/lib/gitment.css">
-    <script src="/lib/gitment.js"></script>
+    <link rel="stylesheet" href="/lib/default.css">
+    <script src="/lib/giteement.browser.js"></script>
   
   <script>
-    <!-- id: "hexo建站教学(1)" -->
-    var gitment = new Gitment({
-      id: "20250216141343",
-      owner: 'William-Liwei',
-      repo: 'William-Liwei.github.io',
-      oauth: {
-        client_id: 'Ov23liFcq9uO4xYSx1BG',
-        client_secret: 'f6af8ca86e0d6dde83ed256bcdb26788b0074012',
-      },
-    })
-    gitment.render('gitment-ctn')
+  <!-- id: "hexo建站教学(1)" -->
+  var giteement = new Giteement({
+    id: '20250216141343',
+    owner: 'liwei2025',
+    repo: 'gitpage',
+    backcall_uri: 'https://lwow.xyz/',
+    oauth_uri: 'https://cors-anywhere.herokuapp.com/https://gitee.com/oauth/token',
+    oauth: {
+      client_id: '81508ae5eb44125a500d9e7a42a926989e400a53dfac501633e4f9597b9b7b18',
+      client_secret: '107e20fb9001a453ad0b44785acdd2d2c69ffd54e4c427c161ebba8c2fad71cc'
+    },
+  })
+  giteement.render('giteement-ctn')
   </script>
 
 
-  
+
+
+
 
 
 
