@@ -6,24 +6,24 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="https://lwow.xyz">
-  <title>hexo建站教学(2) | William-Liwei&#39;s blog</title>
+  <title>如何开发基于 Streamlit 和 SQLite 的数据库管理工具 | William-Liwei&#39;s blog</title>
   <meta name="generator" content="hexo-theme-yilia-plus">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   
-  <meta name="description" content="从一开始：更改Hexo网站域名本篇博客将详细介绍如何通过 Vercel 设置自定义域名，实现个性化且高效的网站托管。本文将逐步介绍  如何使用 Vercel 以及如何在 GitHub 上设置自定义域名。 常见的修改域名方式有如下两种，不过个人推荐采用Vercel。">
+  <meta name="description" content="用 Streamlit 和 SQLite 构建高效数据库管理工具在数据驱动的开发中，数据库管理是一个不可或缺的环节。最近，我开发了一个基于 Python 的简单数据库管理工具，用于管理和展示石窟艺术数据。这个项目不仅帮助我巩固了对 Streamlit 和 SQLite 的理解，还让我体会到了快速开发工具的强大能力。 项目背景我们的目标是创建一个简单易用的工具，用于管理和展示石窟艺术数据。这些数据存">
 <meta property="og:type" content="article">
-<meta property="og:title" content="hexo建站教学(2)">
-<meta property="og:url" content="https://lwow.xyz/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-2/">
+<meta property="og:title" content="如何开发基于 Streamlit 和 SQLite 的数据库管理工具">
+<meta property="og:url" content="https://lwow.xyz/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/">
 <meta property="og:site_name" content="William-Liwei&#39;s blog">
-<meta property="og:description" content="从一开始：更改Hexo网站域名本篇博客将详细介绍如何通过 Vercel 设置自定义域名，实现个性化且高效的网站托管。本文将逐步介绍  如何使用 Vercel 以及如何在 GitHub 上设置自定义域名。 常见的修改域名方式有如下两种，不过个人推荐采用Vercel。">
+<meta property="og:description" content="用 Streamlit 和 SQLite 构建高效数据库管理工具在数据驱动的开发中，数据库管理是一个不可或缺的环节。最近，我开发了一个基于 Python 的简单数据库管理工具，用于管理和展示石窟艺术数据。这个项目不仅帮助我巩固了对 Streamlit 和 SQLite 的理解，还让我体会到了快速开发工具的强大能力。 项目背景我们的目标是创建一个简单易用的工具，用于管理和展示石窟艺术数据。这些数据存">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2025-02-16T06:22:15.000Z">
-<meta property="article:modified_time" content="2025-02-16T06:37:57.515Z">
+<meta property="article:published_time" content="2025-02-18T15:19:26.000Z">
+<meta property="article:modified_time" content="2025-02-18T15:20:46.803Z">
 <meta property="article:author" content="黎玮">
-<meta property="article:tag" content="建站">
-<meta property="article:tag" content="教学">
-<meta property="article:tag" content="hexo">
-<meta property="article:tag" content="github">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="Streamlit">
+<meta property="article:tag" content="SQLite">
+<meta property="article:tag" content="数据库管理">
 <meta name="twitter:card" content="summary">
   
     <link rel="alternative" href="/atom.xml" title="William-Liwei&#39;s blog" type="application/atom+xml">
@@ -217,14 +217,14 @@
               class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-hexo建站教学-2" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-如何开发基于-Streamlit-和-SQLite-的数据库管理工具" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
   
   
     <h1 class="article-title" itemprop="name">
-      hexo建站教学(2)
+      如何开发基于 Streamlit 和 SQLite 的数据库管理工具
     </h1>
   
 
@@ -236,8 +236,8 @@
               <i class="icon-smile icon"></i> 阅读数：<span id="busuanzi_value_page_pv"></span>次
         </span>
 
-<a href="/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-2/" class="archive-article-date">
-        <time datetime="2025-02-16T06:22:15.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2025-02-16</time>
+<a href="/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/" class="archive-article-date">
+        <time datetime="2025-02-18T15:19:26.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2025-02-18</time>
 </a>
 
   
@@ -250,7 +250,7 @@
       <!-- 百度字体平台:http://fontstore.baidu.com/static/editor/index.html -->
       <i class="icon-statistics"></i>
       <span class="post-meta-item-text"> 字数统计:</span>
-      <span class="post-count">934字</span>
+      <span class="post-count">1k字</span>
     </span>
   </span>
 
@@ -259,7 +259,7 @@
     <span class="post-meta-item-icon">
       <i class="icon-book icon"></i>
       <span class="post-meta-item-text"> 阅读时长≈</span>
-      <span class="post-count">3分</span>
+      <span class="post-count">4分</span>
     </span>
   </span>
 </div>
@@ -270,91 +270,40 @@
   
   <div class="article-entry" itemprop="articleBody">
     
-    <h2 id="从一开始：更改Hexo网站域名"><a href="#从一开始：更改Hexo网站域名" class="headerlink" title="从一开始：更改Hexo网站域名"></a><strong>从一开始：更改Hexo网站域名</strong></h2><p>本篇博客将详细介绍如何通过 Vercel 设置自定义域名，实现个性化且高效的网站托管。本文将逐步介绍  如何使用 Vercel 以及如何在 GitHub 上设置自定义域名。</p>
-<p>常见的修改域名方式有如下两种，不过个人推荐采用Vercel。</p>
+    <h2 id="用-Streamlit-和-SQLite-构建高效数据库管理工具"><a href="#用-Streamlit-和-SQLite-构建高效数据库管理工具" class="headerlink" title="用 Streamlit 和 SQLite 构建高效数据库管理工具"></a>用 Streamlit 和 SQLite 构建高效数据库管理工具</h2><p>在数据驱动的开发中，数据库管理是一个不可或缺的环节。最近，我开发了一个基于 Python 的简单数据库管理工具，用于管理和展示石窟艺术数据。这个项目不仅帮助我巩固了对 Streamlit 和 SQLite 的理解，还让我体会到了快速开发工具的强大能力。</p>
+<h3 id="项目背景"><a href="#项目背景" class="headerlink" title="项目背景"></a>项目背景</h3><p>我们的目标是创建一个简单易用的工具，用于管理和展示石窟艺术数据。这些数据存储在一个 SQLite 数据库中，包括雕塑的时期、洞窟名称、洞窟编号、来源、地区以及相关的图片等信息。为了实现这一目标，我选择了 Python 的 Streamlit 框架，因为它能够快速搭建交互式 Web 应用。</p>
 <span id="more"></span>
 
-<h3 id="1-使用-Vercel-更改域名（推荐使用这种方式）"><a href="#1-使用-Vercel-更改域名（推荐使用这种方式）" class="headerlink" title="1. 使用 Vercel 更改域名（推荐使用这种方式）"></a>1. 使用 Vercel 更改域名（推荐使用这种方式）</h3><p>Vercel 是一个用于部署前端项目的云平台，支持自定义域名。以下是使用 Vercel 更改域名的步骤：</p>
-<ol>
-<li><p><strong>注册并登录 Vercel</strong>：访问 <a target="_blank" rel="noopener" href="https://vercel.com/">Vercel 官网</a>，使用 GitHub 或 Google 账号注册并登录。</p>
-</li>
-<li><p><strong>导入项目</strong>：在 Vercel 仪表板中，点击 “Import Project”，选择你的 Hexo 项目仓库（可以是 GitHub、GitLab 或 Bitbucket 等）。</p>
-</li>
-<li><p><strong>选择项目</strong>：选择你要部署的 Hexo 项目，Vercel 会自动拉取项目代码。</p>
-</li>
-<li><p><strong>配置构建</strong>：在 “Build &amp; Development Settings” 中，配置项目的构建命令和输出目录。对于 Hexo 项目，通常设置如下：</p>
+<h3 id="技术栈"><a href="#技术栈" class="headerlink" title="技术栈"></a>技术栈</h3><ul>
+<li><strong>Python</strong>：作为开发语言，简洁且功能强大。</li>
+<li><strong>Streamlit</strong>：用于构建交互式 Web 界面。</li>
+<li><strong>SQLite</strong>：轻量级数据库，适合小型项目。</li>
+</ul>
+<h3 id="功能实现"><a href="#功能实现" class="headerlink" title="功能实现"></a>功能实现</h3><h4 id="1-数据库操作"><a href="#1-数据库操作" class="headerlink" title="1. 数据库操作"></a>1. 数据库操作</h4><p>我封装了几个关键的数据库操作函数，包括查询、插入&#x2F;更新和删除记录。以下是部分代码示例：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">query_database</span>(<span class="params">period=<span class="literal">None</span>, cave_name=<span class="literal">None</span>, cave_number=<span class="literal">None</span>, source=<span class="literal">None</span>, region=<span class="literal">None</span></span>):</span><br><span class="line">    conn = sqlite3.connect(sqlite_db_path)</span><br><span class="line">    cursor = conn.cursor()</span><br><span class="line">    query = <span class="string">&quot;SELECT * FROM BuddhaSculptures&quot;</span></span><br><span class="line">    params = []</span><br><span class="line">    conditions = []</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> period:</span><br><span class="line">        conditions.append(<span class="string">&quot;period = ?&quot;</span>)</span><br><span class="line">        params.append(period)</span><br><span class="line">    <span class="keyword">if</span> cave_name:</span><br><span class="line">        conditions.append(<span class="string">&quot;cave_name = ?&quot;</span>)</span><br><span class="line">        params.append(cave_name)</span><br><span class="line">    <span class="keyword">if</span> cave_number:</span><br><span class="line">        conditions.append(<span class="string">&quot;cave_number = ?&quot;</span>)</span><br><span class="line">        params.append(cave_number)</span><br><span class="line">    <span class="keyword">if</span> source:</span><br><span class="line">        conditions.append(<span class="string">&quot;source = ?&quot;</span>)</span><br><span class="line">        params.append(source)</span><br><span class="line">    <span class="keyword">if</span> region:</span><br><span class="line">        conditions.append(<span class="string">&quot;region = ?&quot;</span>)</span><br><span class="line">        params.append(region)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> conditions:</span><br><span class="line">        query += <span class="string">&quot; WHERE &quot;</span> + <span class="string">&quot; AND &quot;</span>.join(conditions)</span><br><span class="line"></span><br><span class="line">    cursor.execute(query, params)</span><br><span class="line">    results = cursor.fetchall()</span><br><span class="line">    cursor.close()</span><br><span class="line">    conn.close()</span><br><span class="line">    <span class="keyword">return</span> results</span><br></pre></td></tr></table></figure>
+
+<p>这些函数通过 SQLite 的 Python 接口实现了对数据库的基本操作。</p>
+<h4 id="2-Streamlit-界面开发"><a href="#2-Streamlit-界面开发" class="headerlink" title="2. Streamlit 界面开发"></a>2. Streamlit 界面开发</h4><p>Streamlit 的界面开发非常直观。我通过简单的表单和按钮实现了查询、添加&#x2F;更新和删除记录的功能。以下是部分界面代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">st.subheader(<span class="string">&quot;Query Records&quot;</span>)</span><br><span class="line">period = st.text_input(<span class="string">&quot;Period&quot;</span>)</span><br><span class="line">cave_name = st.text_input(<span class="string">&quot;Cave Name&quot;</span>)</span><br><span class="line"><span class="comment"># 其他输入框...</span></span><br><span class="line"><span class="keyword">if</span> st.button(<span class="string">&quot;Query&quot;</span>):</span><br><span class="line">    results = query_database(period, cave_name, cave_number, source, region)</span><br><span class="line">    <span class="keyword">if</span> results:</span><br><span class="line">        st.write(<span class="string">f&quot;Found <span class="subst">&#123;<span class="built_in">len</span>(results)&#125;</span> results:&quot;</span>)</span><br><span class="line">        <span class="keyword">for</span> row <span class="keyword">in</span> results:</span><br><span class="line">            st.write(<span class="string">f&quot;ID: <span class="subst">&#123;row[<span class="number">0</span>]&#125;</span>, Period: <span class="subst">&#123;row[<span class="number">5</span>]&#125;</span>, Cave Name: <span class="subst">&#123;row[<span class="number">3</span>]&#125;</span>&quot;</span>)</span><br><span class="line">            image_data = row[-<span class="number">1</span>]</span><br><span class="line">            image = display_image_from_blob(image_data)</span><br><span class="line">            <span class="keyword">if</span> image:</span><br><span class="line">                st.image(image, caption=<span class="string">f&quot;Image ID: <span class="subst">&#123;row[<span class="number">0</span>]&#125;</span>&quot;</span>, use_container_width=<span class="literal">True</span>)</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                st.write(<span class="string">&quot;No image available.&quot;</span>)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        st.write(<span class="string">&quot;No results found.&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>通过 Streamlit 提供的组件，如 <code>st.text_input</code> 和 <code>st.button</code>，用户可以轻松进行数据查询。</p>
+<h4 id="3-图片处理"><a href="#3-图片处理" class="headerlink" title="3. 图片处理"></a>3. 图片处理</h4><p>为了支持图片的上传和展示，我使用了 <code>Pillow</code> 库来处理图片数据，并将其以 BLOB 格式存储在数据库中。以下是图片展示的代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">display_image_from_blob</span>(<span class="params">blob_data</span>):</span><br><span class="line">    <span class="keyword">if</span> blob_data:</span><br><span class="line">        image_bytes = io.BytesIO(blob_data)</span><br><span class="line">        image = Image.<span class="built_in">open</span>(image_bytes)</span><br><span class="line">        <span class="keyword">return</span> image</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span></span><br></pre></td></tr></table></figure>
+
+<p>通过这种方式，用户可以方便地上传图片，并在查询时直接查看图片内容。</p>
+<h3 id="项目运行"><a href="#项目运行" class="headerlink" title="项目运行"></a>项目运行</h3><p>为了方便启动项目，我编写了一个启动脚本 <code>db_start_streamlit.py</code>，它会检查环境变量，确保 Streamlit 只运行一次。以下是启动脚本的核心代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    <span class="keyword">if</span> os.environ.get(ENV_FLAG) <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">        os.environ[ENV_FLAG] = <span class="string">&quot;1&quot;</span></span><br><span class="line">        os.system(<span class="string">&quot;streamlit run db_streamlit.py&quot;</span>)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Streamlit is already running.&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>通过这个脚本，用户只需运行一个命令即可启动整个应用。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>通过这个项目，我不仅巩固了 Python 和 SQLite 的开发技能，还学习了如何使用 Streamlit 构建简单的 Web 应用。这个工具虽然简单，但已经能够满足我们对石窟艺术数据的基本管理需求。未来，我计划进一步优化界面设计，并尝试将数据迁移到更强大的数据库系统中，以支持更大的数据量和更复杂的查询。</p>
+<p>如果你对这个项目感兴趣，或者有类似的开发需求，欢迎与我交流！</p>
+<hr>
+<p><strong>附录</strong></p>
 <ul>
-<li><strong>Build Command</strong>：<code>hexo clean &amp;&amp; hexo generate</code></li>
-<li><strong>Output Directory</strong>：<code>public</code>（Hexo 默认生成的静态文件目录）</li>
+<li><a target="_blank" rel="noopener" href="https://docs.streamlit.io/">Streamlit 官方文档</a> </li>
+<li><a target="_blank" rel="noopener" href="https://www.sqlite.org/docs.html">SQLite 官方文档</a> </li>
+<li><a target="_blank" rel="noopener" href="https://pillow.readthedocs.io/en/stable/">Pillow 官方文档</a></li>
 </ul>
-</li>
-<li><p><strong>添加自定义域名</strong>：</p>
-<ul>
-<li>在 Vercel 仪表板中，点击你的项目，进入项目详情页面。</li>
-<li>点击 “Domains” 选项卡，然后点击 “Add Domain”。</li>
-<li>输入你的自定义域名，例如 <code>yourdomain.com</code>，然后点击 “Add”。</li>
-</ul>
-</li>
-<li><p><strong>配置 DNS 解析</strong>：<em>（这一块可以参照CSDN上”菜鸟是大神“的blog，其中有更详细的说明，很有帮助）</em></p>
-<ul>
-<li>登录你的域名注册商（如阿里云、腾讯云等），进入域名管理控制台。</li>
-<li>添加两条记录：<ul>
-<li><strong>A 记录</strong>：主机记录为 <code>@</code>，记录值为 Vercel 提供的 IP 地址（可以在 Vercel 的 “DNS” 设置中查看）。</li>
-<li><strong>CNAME 记录</strong>：主机记录为 <code>www</code>，记录值为 <code>yourdomain.com</code>。</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p><strong>等待 DNS 生效</strong>：DNS 解析通常需要几分钟到几小时的时间生效。生效后，你的域名将指向 Vercel 上的 Hexo 项目。</p>
-<blockquote>
-<p>【详细教程hexo博客搭建】2、Vercel部署并绑定自定义域名+安装Butterfly主题_vercel自定义域名-CSDN博客 <a target="_blank" rel="noopener" href="https://blog.csdn.net/wufaqidong1/article/details/132951333">https://blog.csdn.net/wufaqidong1/article/details/132951333</a></p>
-</blockquote>
-</li>
-</ol>
-<h3 id="2-在-Hexo-部署到-GitHub-时设置自定义域名"><a href="#2-在-Hexo-部署到-GitHub-时设置自定义域名" class="headerlink" title="2. 在 Hexo 部署到 GitHub 时设置自定义域名"></a>2. 在 Hexo 部署到 GitHub 时设置自定义域名</h3><p>除了使用 Vercel，你还可以在 Hexo 部署到 GitHub 时设置自定义域名。以下是具体步骤：</p>
-<ol>
-<li><p><strong>购买并配置域名</strong>：</p>
-<ul>
-<li>购买一个域名，例如在阿里云或腾讯云上购买。</li>
-<li>在域名注册商的控制台中，添加两条记录：<ul>
-<li><strong>A 记录</strong>：主机记录为 <code>@</code>，记录值为 GitHub Pages 的 IP 地址（可以通过 <code>ping username.github.io</code> 获取，例如 <code>185.199.110.153</code>）。</li>
-<li><strong>CNAME 记录</strong>：主机记录为 <code>www</code>，记录值为 <code>username.github.io</code>（将 <code>username</code> 替换为你的 GitHub 用户名）。</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p><strong>配置 Hexo 项目</strong>：</p>
-<ul>
-<li><p>在 Hexo 项目的根目录下，创建一个名为 <code>CNAME</code> 的文件（无后缀），文件内容为你的自定义域名，例如 <code>yourdomain.com</code>。</p>
-</li>
-<li><p>修改 <code>_config.yml</code> 文件，将 <code>url</code> 和 <code>root</code> 设置为你的自定义域名：</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">url:</span> <span class="string">https://yourdomain.com</span></span><br><span class="line"><span class="attr">root:</span> <span class="string">/</span></span><br></pre></td></tr></table></figure></li>
-</ul>
-</li>
-<li><p><strong>部署到 GitHub</strong>：</p>
-<ul>
-<li><p>确保你的 GitHub 仓库名称为 <code>username.github.io</code>，其中 <code>username</code> 是你的 GitHub 用户名。</p>
-</li>
-<li><p>在 <code>_config.yml</code> 中配置部署设置：</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">deploy:</span></span><br><span class="line">  <span class="attr">type:</span> <span class="string">git</span></span><br><span class="line">  <span class="attr">repo:</span> <span class="string">https://github.com/username/username.github.io.git</span></span><br><span class="line">  <span class="attr">branch:</span> <span class="string">main</span></span><br></pre></td></tr></table></figure>
-</li>
-<li><p>运行以下命令生成静态文件并部署：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">hexo clean</span><br><span class="line">hexo generate</span><br><span class="line">hexo deploy</span><br></pre></td></tr></table></figure></li>
-</ul>
-</li>
-<li><p><strong>在 GitHub 设置自定义域名</strong>：</p>
-<ul>
-<li>登录 GitHub，进入你的仓库，点击 “Settings”。</li>
-<li>在左侧菜单中选择 “Pages”，然后在 “Custom domain” 中输入你的自定义域名，例如 <code>yourdomain.com</code>，点击 “Save”。</li>
-</ul>
-</li>
-<li><p><strong>开启 HTTPS</strong>：</p>
-<ul>
-<li>在 GitHub Pages 设置中，找到 “Enforce HTTPS” 选项，勾选该选项以强制使用 HTTPS。</li>
-<li>如果需要，可以在域名注册商处申请免费的 SSL 证书（如阿里云的免费 SSL 证书），并按照提示操作。</li>
-</ul>
-</li>
-</ol>
 
     
 
@@ -396,7 +345,7 @@
         </li>
         <li>
           <strong>本文链接：</strong>
-          <a href="https://lwow.xyz/2025/02/16/hexo建站教学-2/" title="hexo建站教学(2)" target="_blank">https://lwow.xyz/2025/02/16/hexo建站教学-2/</a>
+          <a href="https://lwow.xyz/2025/02/18/如何开发基于-Streamlit-和-SQLite-的数据库管理工具/" title="如何开发基于 Streamlit 和 SQLite 的数据库管理工具" target="_blank">https://lwow.xyz/2025/02/18/如何开发基于-Streamlit-和-SQLite-的数据库管理工具/</a>
         </li>
         
         <li>
@@ -418,19 +367,19 @@
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">建站</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Python</a>
         		</li>
       		 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">教学</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Streamlit</a>
         		</li>
       		 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">hexo</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">SQLite</a>
         		</li>
       		 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">github</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">数据库管理</a>
         		</li>
       		
 		</ul>
@@ -486,7 +435,7 @@
     <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-     <!-- <img src="//pan.baidu.com/share/qrcode?url=https://lwow.xyz/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-2/" alt="微信分享二维码"> -->
+     <!-- <img src="//pan.baidu.com/share/qrcode?url=https://lwow.xyz/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/" alt="微信分享二维码"> -->
     </div>
 </div>
 
@@ -501,18 +450,9 @@
 
 <nav id="article-nav">
   
-    <a href="/2025/02/17/%E8%AF%BE%E7%A8%8B%E7%BF%BC%E9%80%89%E9%80%9A%EF%BC%9A%E5%9F%BA%E4%BA%8Eflask%E5%92%8Cplaywright%E7%9A%84%E4%BA%91%E4%B8%BB%E6%9C%BA%E9%83%A8%E7%BD%B2%E7%BD%91%E7%AB%99/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          课程翼选通：基于flask和playwright的云主机部署网站
-        
-      </div>
-    </a>
   
-  
-    <a href="/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-1/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">hexo建站教学(1)</div>
+    <a href="/2025/02/17/%E8%AF%BE%E7%A8%8B%E7%BF%BC%E9%80%89%E9%80%9A%EF%BC%9A%E5%9F%BA%E4%BA%8Eflask%E5%92%8Cplaywright%E7%9A%84%E4%BA%91%E4%B8%BB%E6%9C%BA%E9%83%A8%E7%BD%B2%E7%BD%91%E7%AB%99/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">课程翼选通：基于flask和playwright的云主机部署网站</div>
       <i class="icon-circle-right"></i>
     </a>
   
@@ -539,7 +479,7 @@
                 </span>
                 <span class="tooltip-content">
                     <div class="toc-article">
-                    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%8E%E4%B8%80%E5%BC%80%E5%A7%8B%EF%BC%9A%E6%9B%B4%E6%94%B9Hexo%E7%BD%91%E7%AB%99%E5%9F%9F%E5%90%8D"><span class="toc-number">1.</span> <span class="toc-text">从一开始：更改Hexo网站域名</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E4%BD%BF%E7%94%A8-Vercel-%E6%9B%B4%E6%94%B9%E5%9F%9F%E5%90%8D%EF%BC%88%E6%8E%A8%E8%8D%90%E4%BD%BF%E7%94%A8%E8%BF%99%E7%A7%8D%E6%96%B9%E5%BC%8F%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">1. 使用 Vercel 更改域名（推荐使用这种方式）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%9C%A8-Hexo-%E9%83%A8%E7%BD%B2%E5%88%B0-GitHub-%E6%97%B6%E8%AE%BE%E7%BD%AE%E8%87%AA%E5%AE%9A%E4%B9%89%E5%9F%9F%E5%90%8D"><span class="toc-number">1.2.</span> <span class="toc-text">2. 在 Hexo 部署到 GitHub 时设置自定义域名</span></a></li></ol></li></ol>
+                    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%A8-Streamlit-%E5%92%8C-SQLite-%E6%9E%84%E5%BB%BA%E9%AB%98%E6%95%88%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7"><span class="toc-number">1.</span> <span class="toc-text">用 Streamlit 和 SQLite 构建高效数据库管理工具</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A1%B9%E7%9B%AE%E8%83%8C%E6%99%AF"><span class="toc-number">1.1.</span> <span class="toc-text">项目背景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8A%80%E6%9C%AF%E6%A0%88"><span class="toc-number">1.2.</span> <span class="toc-text">技术栈</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0"><span class="toc-number">1.3.</span> <span class="toc-text">功能实现</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-%E6%95%B0%E6%8D%AE%E5%BA%93%E6%93%8D%E4%BD%9C"><span class="toc-number">1.3.1.</span> <span class="toc-text">1. 数据库操作</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-Streamlit-%E7%95%8C%E9%9D%A2%E5%BC%80%E5%8F%91"><span class="toc-number">1.3.2.</span> <span class="toc-text">2. Streamlit 界面开发</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-%E5%9B%BE%E7%89%87%E5%A4%84%E7%90%86"><span class="toc-number">1.3.3.</span> <span class="toc-text">3. 图片处理</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A1%B9%E7%9B%AE%E8%BF%90%E8%A1%8C"><span class="toc-number">1.4.</span> <span class="toc-text">项目运行</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">1.5.</span> <span class="toc-text">总结</span></a></li></ol></li></ol>
                     </div>
                 </span>
             </div>
