@@ -6,16 +6,22 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="https://lwow.xyz">
-  <title>Tag: 数据库管理 | William-Liwei&#39;s blog</title>
+  <title>本地部署DeepSeek的个人经验 | William-Liwei&#39;s blog</title>
   <meta name="generator" content="hexo-theme-yilia-plus">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   
-  <meta property="og:type" content="website">
-<meta property="og:title" content="William-Liwei&#39;s blog">
-<meta property="og:url" content="https://lwow.xyz/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86/">
+  <meta name="description" content="本地部署DeepSeek-R1模型全攻略：Ollama+Page Assist轻量化方案——零代码实现私有知识库与AI助手  摘要本文记录了个人在本地部署DeepSeek系列大语言模型的完整过程，为需要私有化部署AI模型的开发者提供参考。 核心优势 隐私安全：数据完全本地化，避免敏感信息泄露  轻量部署：集成显卡即可运行1.5B&#x2F;7B模型，RTX4060也可运行14B甚至32B模型  扩">
+<meta property="og:type" content="article">
+<meta property="og:title" content="本地部署DeepSeek的个人经验">
+<meta property="og:url" content="https://lwow.xyz/2025/02/23/%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2DeepSeek%E7%9A%84%E4%B8%AA%E4%BA%BA%E7%BB%8F%E9%AA%8C/">
 <meta property="og:site_name" content="William-Liwei&#39;s blog">
+<meta property="og:description" content="本地部署DeepSeek-R1模型全攻略：Ollama+Page Assist轻量化方案——零代码实现私有知识库与AI助手  摘要本文记录了个人在本地部署DeepSeek系列大语言模型的完整过程，为需要私有化部署AI模型的开发者提供参考。 核心优势 隐私安全：数据完全本地化，避免敏感信息泄露  轻量部署：集成显卡即可运行1.5B&#x2F;7B模型，RTX4060也可运行14B甚至32B模型  扩">
 <meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-02-23T12:25:26.000Z">
+<meta property="article:modified_time" content="2025-02-23T12:47:27.841Z">
 <meta property="article:author" content="黎玮">
+<meta property="article:tag" content="DeepSeek">
+<meta property="article:tag" content="Ollama">
 <meta name="twitter:card" content="summary">
   
     <link rel="alternative" href="/atom.xml" title="William-Liwei&#39;s blog" type="application/atom+xml">
@@ -209,77 +215,318 @@
               class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-本地部署DeepSeek的个人经验" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2025" class="archive-year">2025</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	
-<a href="/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/" class="archive-article-date">
-        <time datetime="2025-02-18T15:19:26.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2025-02-18</time>
-</a>
-
-        </div>
-    	 
+      <header class="article-header">
   
-    <h1 itemprop="name">
-	
-	  <a class="archive-article-title" href="/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/" target="_blank">如何开发基于 Streamlit 和 SQLite 的数据库管理工具</a>
   
+    <h1 class="article-title" itemprop="name">
+      本地部署DeepSeek的个人经验
     </h1>
   
 
 
-        <div class="article-info info-on-right">
+  
+  
+        
+        <span id="busuanzi_container_page_pv" style='display:none' class="archive-article-date">
+              <i class="icon-smile icon"></i> 阅读数：<span id="busuanzi_value_page_pv"></span>次
+        </span>
+
+<a href="/2025/02/23/%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2DeepSeek%E7%9A%84%E4%B8%AA%E4%BA%BA%E7%BB%8F%E9%AA%8C/" class="archive-article-date">
+        <time datetime="2025-02-23T12:25:26.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2025-02-23</time>
+</a>
+
+  
+  
+    
+<div style="margin-top:10px;">
+  <span class="post-time">
+    <span class="post-meta-item-icon">
+      <!-- fonts.scss -->
+      <!-- 百度字体平台:http://fontstore.baidu.com/static/editor/index.html -->
+      <i class="icon-statistics"></i>
+      <span class="post-meta-item-text"> 字数统计:</span>
+      <span class="post-count">549字</span>
+    </span>
+  </span>
+
+  <span class="post-time">
+    &nbsp; | &nbsp;
+    <span class="post-meta-item-icon">
+      <i class="icon-book icon"></i>
+      <span class="post-meta-item-text"> 阅读时长≈</span>
+      <span class="post-count">2分</span>
+    </span>
+  </span>
+</div>
+
+
+  
+  </header>
+  
+  <div class="article-entry" itemprop="articleBody">
+    
+    <h2 id="本地部署DeepSeek-R1模型全攻略：Ollama-Page-Assist轻量化方案"><a href="#本地部署DeepSeek-R1模型全攻略：Ollama-Page-Assist轻量化方案" class="headerlink" title="本地部署DeepSeek-R1模型全攻略：Ollama+Page Assist轻量化方案"></a><strong>本地部署DeepSeek-R1模型全攻略：Ollama+Page Assist轻量化方案</strong></h2><p><strong>——零代码实现私有知识库与AI助手</strong></p>
+<hr>
+<h3 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h3><p>本文记录了个人在本地部署DeepSeek系列大语言模型的完整过程，为需要私有化部署AI模型的开发者提供参考。</p>
+<h3 id="核心优势"><a href="#核心优势" class="headerlink" title="核心优势"></a><strong>核心优势</strong></h3><ol>
+<li><p>隐私安全：数据完全本地化，避免敏感信息泄露</p>
+</li>
+<li><p>轻量部署：集成显卡即可运行1.5B&#x2F;7B模型，RTX4060也可运行14B甚至32B模型</p>
+</li>
+<li><p>扩展性强：支持PDF&#x2F;文本构建知识库</p>
+<span id="more"></span></li>
+</ol>
+<hr>
+<h3 id="环境搭建四步曲"><a href="#环境搭建四步曲" class="headerlink" title="环境搭建四步曲"></a><strong>环境搭建四步曲</strong></h3><p><strong>1. Ollama安装</strong></p>
+<ul>
+<li><p>Windows用户官网下载安装包（推荐国内镜像加速）</p>
+<p><a target="_blank" rel="noopener" href="https://ollama.com/">Ollama官网</a></p>
+<p>如果发现下载太慢，个人发现：可以将链接复制到迅雷内进行下载，速度很快，三分钟之内可以下载完成。Windows用户可以直接点击：<a target="_blank" rel="noopener" href="https://ollama.com/download/OllamaSetup.exe">下载链接</a></p>
+</li>
+<li><p>验证安装：终端执行</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ollama -v</span><br></pre></td></tr></table></figure>
+
+<p>显示版本号即成功</p>
+</li>
+</ul>
+<p><strong>2. 模型部署</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ollama run deepseek-r1:7b  <span class="comment"># 中端配置推荐7B模型</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>显存适配方案：</p>
+<p>▫️ 4GB显存 → 1.5B模型（GTX 1050 Ti）</p>
+<p>▫️ 8GB显存 → 7B模型（RTX 3060）</p>
+<p>我个人的配置是RTX4060，但是跑14B模型也毫无压力。个人推荐：如果是集成显卡，直接上7B及以上，如果是独显甚至是4060以上的显卡，建议最低上14B，参数过少的蒸馏版本智力水平稍微有些难以满足生产力需要。</p>
+</li>
+</ul>
+<p><strong>3. Page Assist配置</strong></p>
+<ul>
+<li><p>浏览器插件安装：</p>
+<p>▫️ Edge商店直接安装 → 搜索”Page Assist”</p>
+<p>▫️ 离线安装包 → 解压拖拽至扩展管理界面</p>
+<p><a target="_blank" rel="noopener" href="https://pageassist.xyz/">官网链接</a></p>
+</li>
+<li><p>关键设置：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ollama pull nomic-embed-text  <span class="comment"># 加载轻量化嵌入模型</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+<p><strong>4. 知识库构建</strong></p>
+<ul>
+<li><p>支持格式：PDF&#x2F;TXT&#x2F;DOCX（建议预处理文本内容）</p>
+</li>
+<li><p>上传路径：Page Assist首页 → 添加知识库</p>
+</li>
+</ul>
+<hr>
+<h3 id="典型问题解决方案"><a href="#典型问题解决方案" class="headerlink" title="典型问题解决方案"></a><strong>典型问题解决方案</strong></h3><table>
+<thead>
+<tr>
+<th align="center">问题现象</th>
+<th align="center">解决方案</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">模型下载失败或太慢</td>
+<td align="center">复制链接到迅雷下载</td>
+</tr>
+<tr>
+<td align="center">对话响应延迟</td>
+<td align="center">降低模型参数（如7B→1.5B）或启用4bit量化</td>
+</tr>
+<tr>
+<td align="center">知识库检索异常</td>
+<td align="center">检查nomic-embed-text模型是否加载成功</td>
+</tr>
+</tbody></table>
+
+    
+
+    
+    <div class="page-reward">
+      <a href="javascript:void(0);" class="page-reward-btn tooltip-top" target="_self">
+        <div class="tooltip tooltip-east">
+          <span class="tooltip-item">
+            赏
+          </span>
+          <span class="tooltip-content">
+            <span class="tooltip-text">
+              <span class="tooltip-inner">
+                <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i
+                    class="icon icon-quo-right"></i></p>
+                <div class="reward-box">
+                  
+                  
+                  <div class="reward-box-item">
+                    <img class="reward-img" src="/img/wechat.jpg">
+                    <span class="reward-type">微信</span>
+                  </div>
+                  
+                </div>
+              </span>
+            </span>
+          </span>
+        </div>
+      </a>
+    </div>
+    
+
+    
+    <div class="declare"> 
+      <ul class="post-copyright">
+        <li>
+          <strong>本文作者：</strong>
+          黎玮
+        </li>
+        <li>
+          <strong>本文链接：</strong>
+          <a href="https://lwow.xyz/2025/02/23/本地部署DeepSeek的个人经验/" title="本地部署DeepSeek的个人经验" target="_blank">https://lwow.xyz/2025/02/23/本地部署DeepSeek的个人经验/</a>
+        </li>
+        
+        <li>
+          <strong>版权声明： </strong>
           
+          © William-Liwei. All rights reserved.
+        </li>
+        
+      </ul>
+    </div>
+    
+
+  </div>
+  <div class="article-info article-info-index">
+    
+    
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Python</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">DeepSeek</a>
         		</li>
       		 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">Streamlit</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">SQLite</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">数据库管理</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Ollama</a>
         		</li>
       		
 		</ul>
 	</div>
 
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-  
-    </div></section>
-  
+    
 
     
+
+    
+    
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <!-- <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a> -->
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
+        </div>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+     <!-- <img src="//pan.baidu.com/share/qrcode?url=https://lwow.xyz/2025/02/23/%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2DeepSeek%E7%9A%84%E4%B8%AA%E4%BA%BA%E7%BB%8F%E9%AA%8C/" alt="微信分享二维码"> -->
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
+
+    
+    <div class="clearfix"></div>
+  </div>
+  </div>
+</article>
+
+
+<nav id="article-nav">
+  
+  
+    <a href="/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">如何开发基于 Streamlit 和 SQLite 的数据库管理工具</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+        <div class="toc-container tooltip-left">
+            <i class="icon-font icon-category"></i>
+            <div class="tooltip tooltip-east">
+                <span class="tooltip-item">
+                </span>
+                <span class="tooltip-content">
+                    <div class="toc-article">
+                    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2DeepSeek-R1%E6%A8%A1%E5%9E%8B%E5%85%A8%E6%94%BB%E7%95%A5%EF%BC%9AOllama-Page-Assist%E8%BD%BB%E9%87%8F%E5%8C%96%E6%96%B9%E6%A1%88"><span class="toc-number">1.</span> <span class="toc-text">本地部署DeepSeek-R1模型全攻略：Ollama+Page Assist轻量化方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%91%98%E8%A6%81"><span class="toc-number">1.1.</span> <span class="toc-text">摘要</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B8%E5%BF%83%E4%BC%98%E5%8A%BF"><span class="toc-number">1.2.</span> <span class="toc-text">核心优势</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA%E5%9B%9B%E6%AD%A5%E6%9B%B2"><span class="toc-number">1.3.</span> <span class="toc-text">环境搭建四步曲</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B8%E5%9E%8B%E9%97%AE%E9%A2%98%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="toc-number">1.4.</span> <span class="toc-text">典型问题解决方案</span></a></li></ol></li></ol>
+                    </div>
+                </span>
+            </div>
+        </div>
+        
+    </div>
+</aside>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
           </div>
@@ -320,9 +567,9 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
+		isPost: true,
 		isArchive: false,
-		isTag: true,
+		isTag: false,
 		isCategory: false,
 		open_in_new: true,
 		toc_hide_index: true,

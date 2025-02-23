@@ -6,7 +6,7 @@
   <link href="https://lwow.xyz/atom.xml" rel="self"/>
   
   <link href="https://lwow.xyz/"/>
-  <updated>2025-02-18T15:20:46.803Z</updated>
+  <updated>2025-02-23T12:47:27.841Z</updated>
   <id>https://lwow.xyz/</id>
   
   <author>
@@ -15,6 +15,35 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>本地部署DeepSeek的个人经验</title>
+    <link href="https://lwow.xyz/2025/02/23/%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2DeepSeek%E7%9A%84%E4%B8%AA%E4%BA%BA%E7%BB%8F%E9%AA%8C/"/>
+    <id>https://lwow.xyz/2025/02/23/%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2DeepSeek%E7%9A%84%E4%B8%AA%E4%BA%BA%E7%BB%8F%E9%AA%8C/</id>
+    <published>2025-02-23T12:25:26.000Z</published>
+    <updated>2025-02-23T12:47:27.841Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="本地部署DeepSeek-R1模型全攻略：Ollama-Page-Assist轻量化方案"><a href="#本地部署DeepSeek-R1模型全攻略：Ollama-Page-Assist轻量化方案" class="headerlink" title="本地部署DeepSeek-R1模型全攻略：Ollama+Page Assist轻量化方案"></a><strong>本地部署DeepSeek-R1模型全攻略：Ollama+Page Assist轻量化方案</strong></h2><p><strong>——零代码实现私有知识库与AI助手</strong></p><hr><h3 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h3><p>本文记录了个人在本地部署DeepSeek系列大语言模型的完整过程，为需要私有化部署AI模型的开发者提供参考。</p><h3 id="核心优势"><a href="#核心优势" class="headerlink" title="核心优势"></a><strong>核心优势</strong></h3><ol><li><p>隐私安全：数据完全本地化，避免敏感信息泄露</p></li><li><p>轻量部署：集成显卡即可运行1.5B&#x2F;7B模型，RTX4060也可运行14B甚至32B模型</p></li><li><p>扩展性强：支持PDF&#x2F;文本构建知识库</p><span id="more"></span></li></ol><hr><h3 id="环境搭建四步曲"><a href="#环境搭建四步曲" class="headerlink" title="环境搭建四步曲"></a><strong>环境搭建四步曲</strong></h3><p><strong>1. Ollama安装</strong></p><ul><li><p>Windows用户官网下载安装包（推荐国内镜像加速）</p><p><a href="https://ollama.com/">Ollama官网</a></p><p>如果发现下载太慢，个人发现：可以将链接复制到迅雷内进行下载，速度很快，三分钟之内可以下载完成。Windows用户可以直接点击：<a href="https://ollama.com/download/OllamaSetup.exe">下载链接</a></p></li><li><p>验证安装：终端执行</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ollama -v</span><br></pre></td></tr></table></figure><p>显示版本号即成功</p></li></ul><p><strong>2. 模型部署</strong></p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ollama run deepseek-r1:7b  <span class="comment"># 中端配置推荐7B模型</span></span><br></pre></td></tr></table></figure><ul><li><p>显存适配方案：</p><p>▫️ 4GB显存 → 1.5B模型（GTX 1050 Ti）</p><p>▫️ 8GB显存 → 7B模型（RTX 3060）</p><p>我个人的配置是RTX4060，但是跑14B模型也毫无压力。个人推荐：如果是集成显卡，直接上7B及以上，如果是独显甚至是4060以上的显卡，建议最低上14B，参数过少的蒸馏版本智力水平稍微有些难以满足生产力需要。</p></li></ul><p><strong>3. Page Assist配置</strong></p><ul><li><p>浏览器插件安装：</p><p>▫️ Edge商店直接安装 → 搜索”Page Assist”</p><p>▫️ 离线安装包 → 解压拖拽至扩展管理界面</p><p><a href="https://pageassist.xyz/">官网链接</a></p></li><li><p>关键设置：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ollama pull nomic-embed-text  <span class="comment"># 加载轻量化嵌入模型</span></span><br></pre></td></tr></table></figure></li></ul><p><strong>4. 知识库构建</strong></p><ul><li><p>支持格式：PDF&#x2F;TXT&#x2F;DOCX（建议预处理文本内容）</p></li><li><p>上传路径：Page Assist首页 → 添加知识库</p></li></ul><hr><h3 id="典型问题解决方案"><a href="#典型问题解决方案" class="headerlink" title="典型问题解决方案"></a><strong>典型问题解决方案</strong></h3><table><thead><tr><th align="center">问题现象</th><th align="center">解决方案</th></tr></thead><tbody><tr><td align="center">模型下载失败或太慢</td><td align="center">复制链接到迅雷下载</td></tr><tr><td align="center">对话响应延迟</td><td align="center">降低模型参数（如7B→1.5B）或启用4bit量化</td></tr><tr><td align="center">知识库检索异常</td><td align="center">检查nomic-embed-text模型是否加载成功</td></tr></tbody></table>]]></content>
+    
+    
+    <summary type="html">&lt;h2 id=&quot;本地部署DeepSeek-R1模型全攻略：Ollama-Page-Assist轻量化方案&quot;&gt;&lt;a href=&quot;#本地部署DeepSeek-R1模型全攻略：Ollama-Page-Assist轻量化方案&quot; class=&quot;headerlink&quot; title=&quot;本地部署DeepSeek-R1模型全攻略：Ollama+Page Assist轻量化方案&quot;&gt;&lt;/a&gt;&lt;strong&gt;本地部署DeepSeek-R1模型全攻略：Ollama+Page Assist轻量化方案&lt;/strong&gt;&lt;/h2&gt;&lt;p&gt;&lt;strong&gt;——零代码实现私有知识库与AI助手&lt;/strong&gt;&lt;/p&gt;
+&lt;hr&gt;
+&lt;h3 id=&quot;摘要&quot;&gt;&lt;a href=&quot;#摘要&quot; class=&quot;headerlink&quot; title=&quot;摘要&quot;&gt;&lt;/a&gt;摘要&lt;/h3&gt;&lt;p&gt;本文记录了个人在本地部署DeepSeek系列大语言模型的完整过程，为需要私有化部署AI模型的开发者提供参考。&lt;/p&gt;
+&lt;h3 id=&quot;核心优势&quot;&gt;&lt;a href=&quot;#核心优势&quot; class=&quot;headerlink&quot; title=&quot;核心优势&quot;&gt;&lt;/a&gt;&lt;strong&gt;核心优势&lt;/strong&gt;&lt;/h3&gt;&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;隐私安全：数据完全本地化，避免敏感信息泄露&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;轻量部署：集成显卡即可运行1.5B&amp;#x2F;7B模型，RTX4060也可运行14B甚至32B模型&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;扩展性强：支持PDF&amp;#x2F;文本构建知识库&lt;/p&gt;</summary>
+    
+    
+    
+    
+    <category term="DeepSeek" scheme="https://lwow.xyz/tags/DeepSeek/"/>
+    
+    <category term="Ollama" scheme="https://lwow.xyz/tags/Ollama/"/>
+    
+  </entry>
   
   <entry>
     <title>如何开发基于 Streamlit 和 SQLite 的数据库管理工具</title>
