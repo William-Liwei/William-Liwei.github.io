@@ -6,7 +6,7 @@
   <link href="https://lwow.xyz/atom.xml" rel="self"/>
   
   <link href="https://lwow.xyz/"/>
-  <updated>2025-03-05T12:30:01.079Z</updated>
+  <updated>2025-03-27T10:51:14.094Z</updated>
   <id>https://lwow.xyz/</id>
   
   <author>
@@ -15,6 +15,29 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>软著申请记录</title>
+    <link href="https://lwow.xyz/2025/03/27/%E8%BD%AF%E8%91%97%E7%94%B3%E8%AF%B7%E8%AE%B0%E5%BD%95/"/>
+    <id>https://lwow.xyz/2025/03/27/%E8%BD%AF%E8%91%97%E7%94%B3%E8%AF%B7%E8%AE%B0%E5%BD%95/</id>
+    <published>2025-03-27T10:46:26.000Z</published>
+    <updated>2025-03-27T10:51:14.094Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="从零到软著——我的软件著作权申请全记录"><a href="#从零到软著——我的软件著作权申请全记录" class="headerlink" title="从零到软著——我的软件著作权申请全记录"></a>从零到软著——我的软件著作权申请全记录</h1><h2 id="💡-为什么需要申请软著？"><a href="#💡-为什么需要申请软著？" class="headerlink" title="💡 为什么需要申请软著？"></a>💡 为什么需要申请软著？</h2><p>最近我开发的「课程翼选通」智能选课系统成功获得软件著作权，这个基于Playwright+Flask的选课系统从立项到上线历时半年。申请软著不仅是知识产权的保护，更是对团队成果的官方认证，后续申报项目&#x2F;评奖都有重要作用。</p> <span id="more"></span><h2 id="📦-准备材料清单（关键！）"><a href="#📦-准备材料清单（关键！）" class="headerlink" title="📦 准备材料清单（关键！）"></a>📦 准备材料清单（关键！）</h2><ol><li><strong>源代码</strong></li></ol><ul><li>需提交前30页+后30页（共60页）</li><li>每页50行代码，必须包含核心模块</li><li>我们提交了智能选课<code>rob_course()</code>和用户管理<code>User类</code>的核心逻辑</li></ul><ol start="2"><li><strong>用户手册</strong></li></ol><ul><li>包含系统架构图（2.1前端&#x2F;2.2后端架构）</li><li>核心功能说明（4.1智能选课&#x2F;4.3评论AI分析）</li><li>安装部署指南（3.2系统安装）</li></ul><ol start="3"><li><strong>合作开发协议</strong></li></ol><ul><li>明确约定三方著作权归属（一.2条款）</li><li>包含违约责任（四条款）和变更机制（五条款）</li><li>需所有开发者签字扫描</li></ul><h2 id="🚀-申请流程时间线"><a href="#🚀-申请流程时间线" class="headerlink" title="🚀 申请流程时间线"></a>🚀 申请流程时间线</h2><ol><li><strong>中国版权保护中心官网注册</strong>（1工作日）</li></ol><ul><li>需准备身份证正反面扫描件</li></ul><ol start="2"><li><strong>在线填报</strong>（3小时）</li></ol><ul><li>重点填写：<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">-</span> 软件全称：《课程翼选通智能选课与学生互动社区系统V1.0》</span><br><span class="line"><span class="bullet">-</span> 开发方式</span><br><span class="line"><span class="bullet">-</span> 编程语言</span><br><span class="line"><span class="bullet">-</span> 硬件环境</span><br></pre></td></tr></table></figure></li></ul><ol><li><strong>材料上传</strong>（特别注意！）</li></ol><ul><li>源代码文档需添加页眉：软件名称+版本号</li><li>用户手册需含目录（文档2的1-6章结构）</li><li>所有PDF文件必须&lt;100MB</li></ul><ol><li><strong>受理审查</strong>（约30工作日）</li></ol><ul><li>期间可能收到补正通知</li></ul><h2 id="💡-经验总结"><a href="#💡-经验总结" class="headerlink" title="💡 经验总结"></a>💡 经验总结</h2><ol><li><strong>版本号一致性</strong><br>所有材料中的<code>V1.0</code>必须完全统一，连标点都不能有差异</li><li><strong>手册编写技巧</strong><br>技术文档中穿插功能截图（如图3&#x2F;图4选课流程），我们补充了：</li></ol><figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">img</span> <span class="attr">src</span>=<span class="string">&quot;/static/images/result-popup.png&quot;</span> </span></span><br><span class="line"><span class="tag">     <span class="attr">alt</span>=<span class="string">&quot;选课成功弹窗提示&quot;</span>&gt;</span></span><br></pre></td></tr></table></figure><h2 id="📮-常见问题"><a href="#📮-常见问题" class="headerlink" title="📮 常见问题"></a>📮 常见问题</h2><p>Q：需要实物邮寄吗？<br>A：2023年起全面电子化，但需保留纸质材料5年备查</p><p>Q：学生可以申请吗？<br>A：完全可以！我们团队就是在校生，用身份证即可申请</p><p>目前已下证，整个流程从准备到拿证约2个月。建议开发者都在项目初期就做好文档规范化管理，这会大幅减少后期申请工作量。完整材料模板可联系我获取~</p>]]></content>
+    
+    
+    <summary type="html">&lt;h1 id=&quot;从零到软著——我的软件著作权申请全记录&quot;&gt;&lt;a href=&quot;#从零到软著——我的软件著作权申请全记录&quot; class=&quot;headerlink&quot; title=&quot;从零到软著——我的软件著作权申请全记录&quot;&gt;&lt;/a&gt;从零到软著——我的软件著作权申请全记录&lt;/h1&gt;&lt;h2 id=&quot;💡-为什么需要申请软著？&quot;&gt;&lt;a href=&quot;#💡-为什么需要申请软著？&quot; class=&quot;headerlink&quot; title=&quot;💡 为什么需要申请软著？&quot;&gt;&lt;/a&gt;💡 为什么需要申请软著？&lt;/h2&gt;&lt;p&gt;最近我开发的「课程翼选通」智能选课系统成功获得软件著作权，这个基于Playwright+Flask的选课系统从立项到上线历时半年。申请软著不仅是知识产权的保护，更是对团队成果的官方认证，后续申报项目&amp;#x2F;评奖都有重要作用。&lt;/p&gt;</summary>
+    
+    
+    
+    
+    <category term="软件开发" scheme="https://lwow.xyz/tags/%E8%BD%AF%E4%BB%B6%E5%BC%80%E5%8F%91/"/>
+    
+    <category term="知识产权" scheme="https://lwow.xyz/tags/%E7%9F%A5%E8%AF%86%E4%BA%A7%E6%9D%83/"/>
+    
+    <category term="软件著作权" scheme="https://lwow.xyz/tags/%E8%BD%AF%E4%BB%B6%E8%91%97%E4%BD%9C%E6%9D%83/"/>
+    
+  </entry>
   
   <entry>
     <title>上大计院2025认可竞赛列表</title>
