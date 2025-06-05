@@ -1,8 +1,3 @@
----
-title: GithubReadme
-date: 2025-06-05 14:39:03
----
-
 ![header](/img/header.png)
 
 # About Me:
@@ -10,10 +5,7 @@ date: 2025-06-05 14:39:03
 An undergraduate majoring in computer science and technology at Shanghai University. <br>My research focuses on deep learning and time series prediction. <br>
 You can contact me by email: [![email](https://img.shields.io/badge/Email-D14836?logo=gmail&logoColor=white)](mailto:liwei008009@163.com)  <br>
 
-<p align="center">
-  <img alt="GitHub User's stars" src="img/codecat.gif" width="20%">
-</p>
-
+![codecat](/img/codecat.gif)
 
 # Tech Stack:
 
