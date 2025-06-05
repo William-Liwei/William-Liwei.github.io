@@ -3,7 +3,7 @@ title: GithubReadme
 date: 2025-06-05 14:39:03
 ---
 
-![header](https://github.com/William-Liwei/William-Liwei/blob/main/header.png)
+![header](/img/header.png)
 
 # About Me:
 
@@ -11,7 +11,7 @@ An undergraduate majoring in computer science and technology at Shanghai Univers
 You can contact me by email: [![email](https://img.shields.io/badge/Email-D14836?logo=gmail&logoColor=white)](mailto:liwei008009@163.com)  <br>
 
 <p align="center">
-  <img alt="GitHub User's stars" src="https://github.com/William-Liwei/William-Liwei/blob/main/codecat.gif" width="20%">
+  <img alt="GitHub User's stars" src="img/codecat.gif" width="20%">
 </p>
 
 
