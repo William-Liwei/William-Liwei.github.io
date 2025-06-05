@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GithubReadme</title>
+    <style>
+        /* 嵌入的 CSS 样式 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            margin-top: 24px;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        h1 {
+            font-size: 2em;
+        }
+
+        h2 {
+            font-size: 1.75em;
+        }
+
+        h3 {
+            font-size: 1.5em;
+        }
+
+        h4 {
+            font-size: 1.25em;
+        }
+
+        p {
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        ul, ol {
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+
+        li {
+            margin-left: 40px;
+        }
+
+        a {
+            color: #0366d6;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .code-block {
+            background-color: #f6f8fa;
+            border-radius: 6px;
+            padding: 16px;
+            font-family: monospace;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="content"></div>
+    </div>
+
+    <script>
+        // 嵌入的 JavaScript 代码
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取 Markdown 文件内容
+            fetch('index.md')
+                .then(response => response.text())
+                .then(markdownText => {
+                    // 使用标记解析库将 Markdown 转换为 HTML
+                    const htmlContent = marked.parse(markdownText);
+                    // 将转换后的内容插入到页面中
+                    document.getElementById('content').innerHTML = htmlContent;
+                })
+                .catch(error => {
+                    console.error('Error loading Markdown file:', error);
+                });
+        });
+    </script>
+    <!-- 引入 marked.js 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.0.0/marked.min.js"></script>
+</body>
+</html>
