@@ -6,7 +6,7 @@
   <link href="https://lwow.xyz/atom.xml" rel="self"/>
   
   <link href="https://lwow.xyz/"/>
-  <updated>2025-06-07T10:59:02.950Z</updated>
+  <updated>2025-06-07T12:22:15.931Z</updated>
   <id>https://lwow.xyz/</id>
   
   <author>
@@ -15,6 +15,30 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>我的世界地铁线路图</title>
+    <link href="https://lwow.xyz/2025/06/07/%E6%88%91%E7%9A%84%E4%B8%96%E7%95%8C%E5%9C%B0%E9%93%81%E7%BA%BF%E8%B7%AF%E5%9B%BE/"/>
+    <id>https://lwow.xyz/2025/06/07/%E6%88%91%E7%9A%84%E4%B8%96%E7%95%8C%E5%9C%B0%E9%93%81%E7%BA%BF%E8%B7%AF%E5%9B%BE/</id>
+    <published>2025-06-07T11:52:49.000Z</published>
+    <updated>2025-06-07T12:22:15.931Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="我的世界地铁线路图"><a href="#我的世界地铁线路图" class="headerlink" title="我的世界地铁线路图"></a>我的世界地铁线路图</h1><p><img src="/2025/06/07/%E6%88%91%E7%9A%84%E4%B8%96%E7%95%8C%E5%9C%B0%E9%93%81%E7%BA%BF%E8%B7%AF%E5%9B%BE/230630.jpg" alt="metro"></p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h1 id=&quot;我的世界地铁线路图&quot;&gt;&lt;a href=&quot;#我的世界地铁线路图&quot; class=&quot;headerlink&quot; title=&quot;我的世界地铁线路图&quot;&gt;&lt;/a&gt;我的世界地铁线路图&lt;/h1&gt;&lt;p&gt;&lt;img src=&quot;/2025/06/07/%E6%88%91%E7%9A%84%E</summary>
+      
+    
+    
+    
+    
+    <category term="游戏" scheme="https://lwow.xyz/tags/%E6%B8%B8%E6%88%8F/"/>
+    
+    <category term="我的世界" scheme="https://lwow.xyz/tags/%E6%88%91%E7%9A%84%E4%B8%96%E7%95%8C/"/>
+    
+  </entry>
   
   <entry>
     <title>起飞记录</title>
@@ -396,7 +420,7 @@
     <published>2025-02-14T15:16:13.000Z</published>
     <updated>2025-06-06T04:09:40.262Z</updated>
     
-    <content type="html"><![CDATA[<h2 id="Olympic-Medal-Prediction-via-Adaptive-Triple-Fusion-Combining-AAC-Model-with-ARIMA-State-Space-Dynamics"><a href="#Olympic-Medal-Prediction-via-Adaptive-Triple-Fusion-Combining-AAC-Model-with-ARIMA-State-Space-Dynamics" class="headerlink" title="Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics"></a>Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics</h2><ul><li><p><strong>Authors</strong>：Wei Li, Zixin Wang, Qixiang Gao, Fenglei Yang*</p></li><li><p><strong>Published in</strong>：CAMMIC 2025 (EI Indexed Conference), Full Paper (Poster Presentation).</p></li><li><p><strong>Email</strong>：<a href="mailto:&#x6c;&#105;&#x77;&#x65;&#x69;&#x30;&#x30;&#x38;&#48;&#48;&#x39;&#x40;&#49;&#x36;&#x33;&#x2e;&#99;&#x6f;&#109;">&#x6c;&#105;&#x77;&#x65;&#x69;&#x30;&#x30;&#x38;&#48;&#48;&#x39;&#x40;&#49;&#x36;&#x33;&#x2e;&#99;&#x6f;&#109;</a></p><span id="more"></span><p><img src="/2025/02/14/%E5%AD%A6%E6%9C%AF%E6%B5%B7%E6%8A%A5/ver2.0.jpg" alt="图片"></p></li><li><p>This poster presents a novel approach to predicting Olympic medal tallies using an Adaptive Triple-Fusion (AAS) model, which combines the AAC (senior Athlete-new Athlete-Country) model with ARIMA-State Space dynamics. The research integrates athlete dynamics and national trends, achieving a mean error rate of less than 5% for major nations in the 2024 Olympics. The framework leverages measure-theoretic probability and hierarchical Bayesian modeling to ensure robust predictions and interpretability.</p></li></ul>]]></content>
+    <content type="html"><![CDATA[<h2 id="Olympic-Medal-Prediction-via-Adaptive-Triple-Fusion-Combining-AAC-Model-with-ARIMA-State-Space-Dynamics"><a href="#Olympic-Medal-Prediction-via-Adaptive-Triple-Fusion-Combining-AAC-Model-with-ARIMA-State-Space-Dynamics" class="headerlink" title="Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics"></a>Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics</h2><ul><li><p><strong>Authors</strong>：Wei Li, Zixin Wang, Qixiang Gao, Fenglei Yang*</p></li><li><p><strong>Published in</strong>：CAMMIC 2025 (EI Indexed Conference), Full Paper (Poster Presentation).</p></li><li><p><strong>Email</strong>：<a href="mailto:&#x6c;&#105;&#119;&#101;&#105;&#x30;&#48;&#x38;&#48;&#48;&#57;&#x40;&#49;&#x36;&#x33;&#x2e;&#99;&#111;&#109;">&#x6c;&#105;&#119;&#101;&#105;&#x30;&#48;&#x38;&#48;&#48;&#57;&#x40;&#49;&#x36;&#x33;&#x2e;&#99;&#111;&#109;</a></p><span id="more"></span><p><img src="/2025/02/14/%E5%AD%A6%E6%9C%AF%E6%B5%B7%E6%8A%A5/ver2.0.jpg" alt="图片"></p></li><li><p>This poster presents a novel approach to predicting Olympic medal tallies using an Adaptive Triple-Fusion (AAS) model, which combines the AAC (senior Athlete-new Athlete-Country) model with ARIMA-State Space dynamics. The research integrates athlete dynamics and national trends, achieving a mean error rate of less than 5% for major nations in the 2024 Olympics. The framework leverages measure-theoretic probability and hierarchical Bayesian modeling to ensure robust predictions and interpretability.</p></li></ul>]]></content>
     
     
     <summary type="html">&lt;h2 id=&quot;Olympic-Medal-Prediction-via-Adaptive-Triple-Fusion-Combining-AAC-Model-with-ARIMA-State-Space-Dynamics&quot;&gt;&lt;a href=&quot;#Olympic-Medal-Prediction-via-Adaptive-Triple-Fusion-Combining-AAC-Model-with-ARIMA-State-Space-Dynamics&quot; class=&quot;headerlink&quot; title=&quot;Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics&quot;&gt;&lt;/a&gt;Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics&lt;/h2&gt;&lt;ul&gt;
@@ -404,7 +428,7 @@
 &lt;/li&gt;
 &lt;li&gt;&lt;p&gt;&lt;strong&gt;Published in&lt;/strong&gt;：CAMMIC 2025 (EI Indexed Conference), Full Paper (Poster Presentation).&lt;/p&gt;
 &lt;/li&gt;
-&lt;li&gt;&lt;p&gt;&lt;strong&gt;Email&lt;/strong&gt;：&lt;a href=&quot;mailto:&amp;#x6c;&amp;#105;&amp;#x77;&amp;#x65;&amp;#x69;&amp;#x30;&amp;#x30;&amp;#x38;&amp;#48;&amp;#48;&amp;#x39;&amp;#x40;&amp;#49;&amp;#x36;&amp;#x33;&amp;#x2e;&amp;#99;&amp;#x6f;&amp;#109;&quot;&gt;&amp;#x6c;&amp;#105;&amp;#x77;&amp;#x65;&amp;#x69;&amp;#x30;&amp;#x30;&amp;#x38;&amp;#48;&amp;#48;&amp;#x39;&amp;#x40;&amp;#49;&amp;#x36;&amp;#x33;&amp;#x2e;&amp;#99;&amp;#x6f;&amp;#109;&lt;/a&gt;&lt;/p&gt;</summary>
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;Email&lt;/strong&gt;：&lt;a href=&quot;mailto:&amp;#x6c;&amp;#105;&amp;#119;&amp;#101;&amp;#105;&amp;#x30;&amp;#48;&amp;#x38;&amp;#48;&amp;#48;&amp;#57;&amp;#x40;&amp;#49;&amp;#x36;&amp;#x33;&amp;#x2e;&amp;#99;&amp;#111;&amp;#109;&quot;&gt;&amp;#x6c;&amp;#105;&amp;#119;&amp;#101;&amp;#105;&amp;#x30;&amp;#48;&amp;#x38;&amp;#48;&amp;#48;&amp;#57;&amp;#x40;&amp;#49;&amp;#x36;&amp;#x33;&amp;#x2e;&amp;#99;&amp;#111;&amp;#109;&lt;/a&gt;&lt;/p&gt;</summary>
     
     
     
