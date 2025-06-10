@@ -135,11 +135,50 @@
                 <li><a href="https://discord.gg/stardewvalley" target="_blank">Stardew Valley Discord Server</a> - Join the official Discord community.</li>
             </ul>
         </section>
+        <button class="export-btn" onclick="exportToXML()">Export to XML</button>
     </div>
     <footer>
         <div class="container">
             <p>23122693 黎玮 William</p>
         </div>
     </footer>
+    <script>
+        function exportToXML() {
+            // 获取网页内容
+            const content = document.documentElement.outerHTML;
+
+            // 创建 XML 文件内容
+            const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<website>
+    <title>${document.title}</title>
+    <content>${escapeHTML(content)}</content>
+</website>`;
+
+            // 创建下载链接
+            const blob = new Blob([xmlContent], { type: 'application/xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'website.xml';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // 转义 HTML 特殊字符以确保 XML 有效
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, function (match) {
+                switch (match) {
+                    case '&': return '&amp;';
+                    case '<': return '&lt;';
+                    case '>': return '&gt;';
+                    case '\'': return '&apos;';
+                    case '"': return '&quot;';
+                    default: return match;
+                }
+            });
+        }
+    </script>
 </body>
 </html>
