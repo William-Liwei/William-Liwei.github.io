@@ -3,78 +3,525 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stardew Valley - 23122693 黎玮</title>
+    <title>Stardew Valley - Digital Humanities Project - 23122693 黎玮</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            line-height: 1.6;
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+        :root {
+            --primary-color: #5cb85c;
+            --primary-dark: #4cae4c;
+            --secondary-color: #f5f5f5;
+            --text-color: #333;
+            --white: #fff;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
             margin: 0;
             padding: 0;
-            background-color: #f5f5f5;
-            color: #333;
+            box-sizing: border-box;
         }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
         header {
-            background-color: #5cb85c;
-            color: white;
+            background: linear-gradient(135deg, var(--primary-color), #3d9970);
+            color: var(--white);
             text-align: center;
-            padding: 2rem 0;
+            padding: 3rem 0;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
         }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://www.transparenttextures.com/patterns/icecast.png');
+            opacity: 0.1;
+        }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
+
         h1 {
-            font-size: 3rem;
+            font-size: 3.5rem;
             margin-bottom: 0.5rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
+
         .subtitle {
             font-size: 1.5rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 300;
         }
-        .game-intro {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-        }
-        .features {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            gap: 20px;
-        }
-        .feature {
-            flex-basis: calc(33.333% - 20px);
-            background-color: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .feature h3 {
-            color: #5cb85c;
-            border-bottom: 2px solid #5cb85c;
-            padding-bottom: 8px;
-        }
-        .gallery {
+
+        .intro-text {
             margin-top: 2rem;
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
         }
+
+        .game-intro {
+            background-color: var(--white);
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            margin: 2rem 0;
+            transition: var(--transition);
+            transform: translateY(0);
+        }
+
+        .game-intro:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .feature {
+            background-color: var(--white);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            transform: translateY(0);
+        }
+
+        .feature:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-weight: 500;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        .feature h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background-color: var(--primary-color);
+        }
+
+        .gallery {
+            margin: 3rem 0;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
         .gallery img {
             width: 100%;
+            border-radius: 12px;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .gallery img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .additional-info {
+            background-color: var(--white);
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            margin: 2rem 0;
+        }
+
+        .additional-info h2 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+
+        .additional-info ul {
+            list-style-type: none;
+            margin-top: 1.5rem;
+        }
+
+        .additional-info li {
+            padding: 1rem 0;
+            border-bottom: 1px solid #eee;
+            transition: var(--transition);
+        }
+
+        .additional-info li:hover {
+            transform: translateX(10px);
+        }
+
+        .additional-info a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .additional-info a:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        .export-btn {
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin: 2rem auto;
+            display: block;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: var(--transition);
+        }
+
+        .export-btn:hover {
+            background-color: var(--primary-dark);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            transform: translateY(-3px);
+        }
+
+        footer {
+            background-color: #222;
+            color: var(--white);
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 3rem;
+            position: relative;
+        }
+
+        footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        }
+
+        footer p {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 1s ease forwards;
+        }
+
+        .delay-1 {
+            animation-delay: 0.2s;
+        }
+
+        .delay-2 {
+            animation-delay: 0.4s;
+        }
+
+        .delay-3 {
+            animation-delay: 0.6s;
+        }
+
+        /* 导航栏 */
+        nav {
+            background-color: var(--primary-color);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+
+        nav ul {
+            display: flex;
+            justify-content: center;
+            list-style-type: none;
+        }
+
+        nav li {
+            margin: 0 1rem;
+        }
+
+        nav a {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        nav a:hover {
+            color: #eee;
+        }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: var(--white);
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+
+        .modal-image {
+            width: 100%;
             border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .modal-description {
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        /* 粒子效果 */
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+        /* 数据可视化 */
+        .data-visualization {
+            margin: 3rem 0;
+        }
+
+        .chart-container {
+    background-color: var(--white);
+    padding: 1rem; /* 调小了内边距 */
+    border-radius: 8px; /* 调小了圆角 */
+    box-shadow: var(--shadow);
+    margin-top: 2rem;
+}
+
+        /* 互动时间线 */
+        .timeline {
+            position: relative;
+            max-width: 1200px;
+            margin: 3rem auto;
+        }
+
+        .timeline::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            background-color: var(--primary-color);
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            margin-left: -3px;
+        }
+
+        .timeline-item {
+            padding: 10px 40px;
+            position: relative;
+            width: 50%;
+            box-sizing: border-box;
+        }
+
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            background-color: var(--white);
+            border: 4px solid var(--primary-color);
+            border-radius: 50%;
+            top: 15px;
+            z-index: 1;
+        }
+
+        .left {
+            left: 0;
+        }
+
+        .right {
+            left: 50%;
+        }
+
+        .left::after {
+            right: -17px;
+        }
+
+        .right::after {
+            left: -17px;
+        }
+
+        .timeline-content {
+            padding: 20px;
+            background-color: var(--white);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .timeline-content h3 {
+            color: var(--primary-color);
             margin-bottom: 10px;
         }
-        footer {
-            background-color: #333;
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            .timeline::after {
+                left: 31px;
+            }
+
+            .timeline-item {
+                width: 100%;
+                padding-left: 70px;
+                padding-right: 25px;
+            }
+
+            .timeline-item::after {
+                left: 15px;
+            }
+
+            .left::after, .right::after {
+                left: 15px;
+            }
+
+            .right {
+                left: 0;
+            }
+
+            nav ul {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            nav li {
+                margin: 0.5rem 0;
+            }
+        }
+
+        /* XML预览和下载 */
+        .xml-preview {
+            background-color: #f8f9fa;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            margin: 2rem 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-family: monospace;
+            position: relative;
+        }
+
+        .download-container {
+            display: flex;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+
+        .xml-header {
+            background-color: var(--primary-color);
             color: white;
-            text-align: center;
-            padding: 1rem 0;
-            margin-top: 2rem;
+            padding: 10px;
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
+    <div id="particles-js"></div>
+
+    <nav>
+        <ul>
+            <li><a href="#about">About</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#gallery">Gallery</a></li>
+            <li><a href="#info">Info</a></li>
+            <li><a href="#digital-humanities">Digital Humanities</a></li>
+            <li><a href="#game-analysis">Game Analysis</a></li>
+            <li><a href="#community">Community</a></li>
+            <li><a href="#visualization">Visualization</a></li>
+            <li><a href="#timeline">Timeline</a></li>
+	    <li><a href="#additional-info">additional infomation</a></li>
+            <li><a href="#export">Export</a></li>
+        </ul>
+    </nav>
+
     <header>
         <div class="container">
             <h1>Stardew Valley</h1>
@@ -83,13 +530,22 @@
             <p>This webpage is specially designed for the course "Introduction to Digital Humanities". If there is any infringement, please tell me and I will modify it immediately.</p>
         </div>
     </header>
+
     <div class="container">
-        <section class="game-intro">
+        <section id="digital-humanities">
+            <h2>Digital Humanities</h2>
+            <p>Digital Humanities is an interdisciplinary field that combines traditional humanities research with digital tools and methodologies. In this project, I explore how digital platforms can be used to analyze, interpret, and present cultural artifacts and experiences.</p>
+            <p>Stardew Valley, as a digital game, offers a unique lens through which we can examine themes of rural life, community, and sustainability. By combining game mechanics with narrative elements, Stardew Valley creates an immersive experience that allows players to engage with these themes in meaningful ways.</p>
+            <p>This project aims to demonstrate how digital humanities methodologies can be applied to the study of video games, providing new insights into both the game itself and the broader cultural context in which it exists.</p>
+        </section>
+
+        <section id="about" class="game-intro">
             <h2>About Stardew Valley</h2>
             <p>Stardew Valley is a farming role-playing game developed and published by ConcernedApe. The game follows the story of a character who leaves their corporate life in the city to return to their grandfather's old farm in the peaceful rural town of Pelican Town.</p>
             <p>As a farmer, you can grow crops, raise animals, fish, forage, mine for resources, and interact with the friendly townsfolk. You can also customize your character's appearance, build relationships with others, and uncover the mysteries of the Stardew Valley world.</p>
         </section>
-        <section class="features">
+
+        <section id="features" class="features">
             <div class="feature">
                 <h3>Farming</h3>
                 <p>Grow a variety of crops and tend to animals to build your farm. As you progress, you can upgrade your equipment and expand your farming operations.</p>
@@ -115,13 +571,87 @@
                 <p>Defend yourself from enemies in the mines and other dangerous areas. Upgrade your weapons and learn different combat techniques to survive.</p>
             </div>
         </section>
-        <section class="gallery">
+
+        <section id="gallery" class="gallery">
             <h2>Game Screenshots</h2>
-            <img src="https://tse4-mm.cn.bing.net/th/id/OIP-C.8HE2uh0g-W6jjou3hnAx2gHaE7?rs=1&pid=ImgDetMain" alt="Stardew Valley Screenshot">
-            <img src="https://tse4-mm.cn.bing.net/th/id/OIP-C.vn7WngTyjAyFBgDyr5vHHwHaEK?rs=1&pid=ImgDetMain" alt="Stardew Valley Screenshot">
-            <img src="https://www.stardewvalley.net/presskit/Stardew%20Valley/images/SDV_iPhone_08.png" alt="Stardew Valley Screenshot">
+            <div class="gallery-grid">
+                <img src="https://tse4-mm.cn.bing.net/th/id/OIP-C.8HE2uh0g-W6jjou3hnAx2gHaE7?rs=1&pid=ImgDetMain" alt="Stardew Valley Screenshot" onclick="openModal(this.src, 'Gameplay Screenshot', 'A beautiful view of your farm in Stardew Valley.')">
+                <img src="https://tse4-mm.cn.bing.net/th/id/OIP-C.vn7WngTyjAyFBgDyr5vHHwHaEK?rs=1&pid=ImgDetMain" alt="Stardew Valley Screenshot" onclick="openModal(this.src, 'Farming Screenshot', 'Exploring the farming in Stardew Valley.')">
+                <img src="https://www.stardewvalley.net/presskit/Stardew%20Valley/images/SDV_iPhone_08.png" alt="Stardew Valley Screenshot" onclick="openModal(this.src, 'Beautiful Screenshot', 'Exploring the charm in Stardew Valley.')">
+            </div>
         </section>
-	<section class="additional-info">
+
+        <section id="game-analysis">
+            <h2>Game Analysis</h2>
+            <p>Stardew Valley offers a rich and immersive experience that combines elements of farming, exploration, and community building. The game's narrative focuses on themes of returning to nature, finding personal fulfillment, and reconnecting with community values.</p>
+            <p>One of the key aspects of Stardew Valley is its emphasis on player agency. Players are given the freedom to choose how they want to spend their time in the game world, whether it's focusing on farming, exploring the mines, fishing, or building relationships with the townsfolk. This freedom allows players to create a personalized experience that reflects their own values and priorities.</p>
+            <p>The game also incorporates elements of time management and strategic planning. Players must carefully manage their resources, time, and energy to achieve their goals. This adds a layer of depth to the gameplay, requiring players to think ahead and make strategic decisions.</p>
+            <p>Stardew Valley's art style and music contribute significantly to its immersive quality. The game features a charming pixel art style that evokes a sense of nostalgia while remaining visually appealing. The soundtrack, composed by concernsApe, enhances the game's atmosphere and emotional impact, with different themes corresponding to various activities and locations within the game.</p>
+        </section>
+
+        <section id="community">
+            <h2>Community and Impact</h2>
+            <p>Since its release in 2016, Stardew Valley has built a dedicated and passionate community of players. The game's success can be attributed to its combination of engaging gameplay, rich narrative, and player freedom. Players have created a wide range of content, including mods, fan art, and fan fiction, contributing to the game's cultural impact.</p>
+            <p>The Stardew Valley community is known for its inclusivity and creativity. Players from diverse backgrounds come together to share their experiences, create custom content, and support one another. This sense of community extends beyond the game itself, with players organizing events, collaborating on projects, and forming friendships that extend into the real world.</p>
+            <p>Stardew Valley has also been recognized for its positive representation of different lifestyles and relationships. The game features characters from diverse backgrounds and offers players the freedom to form relationships and marry characters of any gender, promoting inclusivity and acceptance.</p>
+        </section>
+
+        <section id="visualization" class="data-visualization">
+            <h2>Data Visualization</h2>
+            <p>The following charts provide a visual representation of various aspects of Stardew Valley, including crop growth cycles, player activities, and game progression of myself (Because I am just a greenhand of this game, so maybe there's some data mistakes......).</p>
+
+            <div class="chart-container">
+                <h3>Crop Growth Cycles</h3>
+                <canvas id="cropChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h3>Player Activities by Season</h3>
+                <canvas id="activityChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h3>Game Progression Metrics</h3>
+                <canvas id="progressionChart"></canvas>
+            </div>
+        </section>
+
+        <section id="timeline">
+            <h2>Development Timeline</h2>
+            <div class="timeline">
+                <div class="timeline-item left">
+                    <div class="timeline-content">
+                        <h3>2016 - Initial Release</h3>
+                        <p>Stardew Valley was initially released on February 26, 2016, for Microsoft Windows, macOS, and Linux.</p>
+                    </div>
+                </div>
+                <div class="timeline-item right">
+                    <div class="timeline-content">
+                        <h3>2017 - Console Release</h3>
+                        <p>The game was released on PlayStation 4, Xbox One, and Nintendo Switch, expanding its accessibility to a broader audience.</p>
+                    </div>
+                </div>
+                <div class="timeline-item left">
+                    <div class="timeline-content">
+                        <h3>2018 - Mobile Release</h3>
+                        <p>Stardew Valley was released for iOS and Android devices, further expanding its reach and allowing players to enjoy the game on the go.</p>
+                    </div>
+                </div>
+                <div class="timeline-item right">
+                    <div class="timeline-content">
+                        <h3>2020 - Major Updates</h3>
+                        <p>The game received several major updates, including new content, features, and quality-of-life improvements based on player feedback.</p>
+                    </div>
+                </div>
+                <div class="timeline-item left">
+                    <div class="timeline-content">
+                        <h3>2023 - Ongoing Support</h3>
+                        <p>Developer ConcernedApe continues to support the game with regular updates, demonstrating a commitment to the game's longevity and player community.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+	<section class="additional-info" id="additional-info">
             <h2>Additional Information</h2>
             <p>For more information about Stardew Valley, you can visit the following resources:</p>
             <ul>
@@ -135,38 +665,101 @@
                 <li><a href="https://discord.gg/stardewvalley" target="_blank">Stardew Valley Discord Server</a> - Join the official Discord community.</li>
             </ul>
         </section>
-        <button class="export-btn" onclick="exportToXML()">Export to XML</button>
+
+        <section id="export">
+            <h2>Data Export</h2>
+            <p>Export various data from the Stardew Valley project in XML format.</p>
+            <button class="export-btn" onclick="previewAndExport('website')">Export Website to XML</button>
+            <button class="export-btn" onclick="previewAndExport('features')">Export Features to XML</button>
+            <button class="export-btn" onclick="previewAndExport('gallery')">Export Gallery to XML</button>
+            <button class="export-btn" onclick="previewAndExport('analysis')">Export Analysis to XML</button>
+            <button class="export-btn" onclick="previewAndExport('community')">Export Community to XML</button>
+            <button class="export-btn" onclick="previewAndExport('visualization')">Export Visualization to XML</button>
+            <button class="export-btn" onclick="previewAndExport('timeline')">Export Timeline to XML</button>
+
+            <div id="xmlPreviewContainer" class="xml-preview" style="display: none;"></div>
+            <div id="downloadButtonContainer" class="download-container" style="display: none;">
+                <button id="downloadBtn" class="export-btn">Download XML</button>
+                <button id="closePreviewBtn" class="export-btn" style="background-color: #eee; color: #333; margin-left: 1rem;">Close</button>
+            </div>
+        </section>
     </div>
+
     <footer>
         <div class="container">
             <p>23122693 黎玮 William</p>
         </div>
     </footer>
+
+    <div class="modal" id="imageModal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <img class="modal-image" id="modalImage" src="" alt="Modal Image">
+            <h3 id="modalTitle"></h3>
+            <p class="modal-description" id="modalDescription"></p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        function exportToXML() {
-            // 获取网页内容
-            const content = document.documentElement.outerHTML;
+        // 粒子效果初始化
+        particlesJS("particles-js", {
+            particles: {
+                number: { value: 80, density: { enable: true, value_area: 800 } },
+                color: { value: "#5cb85c" },
+                shape: {
+                    type: "circle",
+                    stroke: { width: 0, color: "#000000" },
+                    polygon: { nb_sides: 5 }
+                },
+                opacity: {
+                    value: 0.5,
+                    random: false,
+                    anim: { enable: false, speed: 1, opacity_min: 0.1, sync: false }
+                },
+                size: {
+                    value: 3,
+                    random: true,
+                    anim: { enable: false, speed: 40, size_min: 0.1, sync: false }
+                },
+                line_linked: {
+                    enable: true,
+                    distance: 150,
+                    color: "#5cb85c",
+                    opacity: 0.4,
+                    width: 1
+                },
+                move: {
+                    enable: true,
+                    speed: 2,
+                    direction: "none",
+                    random: false,
+                    straight: false,
+                    out_mode: "out",
+                    bounce: false,
+                    attract: { enable: false, rotateX: 600, rotateY: 1200 }
+                }
+            },
+            interactivity: {
+                detect_on: "canvas",
+                events: {
+                    onhover: { enable: true, mode: "grab" },
+                    onclick: { enable: true, mode: "push" },
+                    resize: true
+                },
+                modes: {
+                    grab: { distance: 140, line_linked: { opacity: 1 } },
+                    bubble: { distance: 400, size: 40, duration: 2, opacity: 8, speed: 3 },
+                    repulse: { distance: 200, duration: 0.4 },
+                    push: { particles_nb: 4 },
+                    remove: { particles_nb: 2 }
+                }
+            },
+            retina_detect: true
+        });
 
-            // 创建 XML 文件内容
-            const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
-<website>
-    <title>${document.title}</title>
-    <content>${escapeHTML(content)}</content>
-</website>`;
-
-            // 创建下载链接
-            const blob = new Blob([xmlContent], { type: 'application/xml' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'website.xml';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        // 转义 HTML 特殊字符以确保 XML 有效
+        // 转义HTML特殊字符
         function escapeHTML(str) {
             return str.replace(/[&<>'"]/g, function (match) {
                 switch (match) {
@@ -179,6 +772,447 @@
                 }
             });
         }
+
+        // 模态框功能
+        function openModal(imgSrc, title, description) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalDesc = document.getElementById('modalDescription');
+
+            modal.style.display = 'flex';
+            modalImg.src = imgSrc;
+            modalTitle.textContent = title;
+            modalDesc.textContent = description;
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            modal.style.display = 'none';
+        }
+
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('header, .game-intro, .features, .gallery, .additional-info, footer');
+            elements.forEach((el, index) => {
+                setTimeout(() => {
+                    el.classList.add('fade-in');
+                }, index * 200);
+            });
+
+            // 特性卡片悬停效果增强
+            const features = document.querySelectorAll('.feature');
+            features.forEach(feature => {
+                feature.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-15px)';
+                    this.style.boxShadow = '0 15px 30px rgba(0, 0, 0, 0.2)';
+                });
+                feature.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+                });
+            });
+
+            // 图片懒加载
+            const images = document.querySelectorAll('.gallery img');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        const src = img.getAttribute('data-src');
+                        img.src = src;
+                        observer.unobserve(img);
+                    }
+                });
+            });
+
+            images.forEach(img => {
+                img.setAttribute('data-src', img.src);
+                img.removeAttribute('src');
+                observer.observe(img);
+            });
+
+            // 平滑滚动
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    if (targetId === '#') return;
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+
+            // 数据可视化图表
+            const cropCtx = document.getElementById('cropChart').getContext('2d');
+            const cropChart = new Chart(cropCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Spring', 'Summer', 'Fall', 'Winter'],
+                    datasets: [
+                        {
+                            label: 'Growth Time (Days)',
+                            data: [7, 5, 6, 8],
+                            backgroundColor: [
+                                'rgba(75, 192, 192, 0.6)',
+                                'rgba(255, 206, 86, 0.6)',
+                                'rgba(255, 159, 64, 0.6)',
+                                'rgba(153, 102, 255, 0.6)'
+                            ],
+                            borderColor: [
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(255, 159, 64, 1)',
+                                'rgba(153, 102, 255, 1)'
+                            ],
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            const activityCtx = document.getElementById('activityChart').getContext('2d');
+            const activityChart = new Chart(activityCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Spring', 'Summer', 'Fall', 'Winter'],
+                    datasets: [
+                        {
+                            label: 'Farming',
+                            data: [85, 75, 90, 60],
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                            tension: 0.1,
+                            fill: true
+                        },
+                        {
+                            label: 'Mining',
+                            data: [60, 70, 80, 90],
+                            borderColor: 'rgba(255, 206, 86, 1)',
+                            backgroundColor: 'rgba(255, 206, 86, 0.1)',
+                            tension: 0.1,
+                            fill: true
+                        },
+                        {
+                            label: 'Fishing',
+                            data: [40, 50, 60, 70],
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            backgroundColor: 'rgba(255, 159, 64, 0.1)',
+                            tension: 0.1,
+                            fill: true
+                        },
+                        {
+                            label: 'Foraging',
+                            data: [70, 65, 85, 50],
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            backgroundColor: 'rgba(153, 102, 255, 0.1)',
+                            tension: 0.1,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            const progressionCtx = document.getElementById('progressionChart').getContext('2d');
+            const progressionChart = new Chart(progressionCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Farming', 'Mining', 'Foraging', 'Fishing', 'Combat', 'Socializing'],
+                    datasets: [
+                        {
+                            label: 'Skill Progression',
+                            data: [85, 75, 90, 60, 70, 80],
+                            backgroundColor: 'rgba(92, 184, 92, 0.2)',
+                            borderColor: 'rgba(92, 184, 92, 1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(92, 184, 92, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(92, 184, 92, 1)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    }
+                }
+            });
+        });
+
+        // 窗口滚动效果
+        window.addEventListener('scroll', function() {
+            const scrollPosition = window.scrollY;
+            const header = document.querySelector('header');
+            if (scrollPosition > 100) {
+                header.style.background = 'rgba(92, 184, 92, 0.9)';
+                header.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
+            } else {
+                header.style.background = 'linear-gradient(135deg, #5cb85c, #3d9970)';
+                header.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+            }
+        });
+
+// 预览和导出XML功能
+function previewAndExport(type) {
+    let xmlContent = '';
+    let filename = '';
+
+    switch (type) {
+        case 'website':
+            const content = document.documentElement.outerHTML;
+            xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<website>
+    <title>${document.title}</title>
+    <content>${escapeHTML(content)}</content>
+</website>`;
+            filename = 'website.xml';
+            break;
+
+        case 'features':
+            const features = [
+                { name: 'Farming', description: 'Grow a variety of crops and tend to animals to build your farm. As you progress, you can upgrade your equipment and expand your farming operations.' },
+                { name: 'Mining', description: 'Explore the mines beneath the valley to gather resources, defeat enemies, and find valuable items that can be sold or used to craft equipment.' },
+                { name: 'Fishing', description: 'Catch fish in rivers, lakes, and the ocean. Improve your fishing skills to catch rare fish and learn about different fishing spots and techniques.' },
+                { name: 'Foraging', description: 'Search for wild plants, mushrooms, and fruits in the fields and forests. Some items are seasonal and can be used for cooking or crafting.' },
+                { name: 'Community', description: 'Meet and interact with the friendly town residents. Build relationships, give gifts, and attend community events like festivals and fairs.' },
+                { name: 'Combat', description: 'Defend yourself from enemies in the mines and other dangerous areas. Upgrade your weapons and learn different combat techniques to survive.' }
+            ];
+
+            xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<features>
+`;
+
+            features.forEach(feature => {
+                xmlContent += `    <feature>
+        <name>${feature.name}</name>
+        <description>${feature.description}</description>
+    </feature>
+`;
+            });
+
+            xmlContent += `</features>`;
+            filename = 'features.xml';
+            break;
+
+        case 'gallery':
+            const galleryItems = [
+                { src: 'https://tse4-mm.cn.bing.net/th/id/OIP-C.8HE2uh0g-W6jjou3hnAx2gHaE7?rs=1&pid=ImgDetMain', title: 'Gameplay Screenshot', description: 'A beautiful view of your farm in Stardew Valley.' },
+                { src: 'https://tse4-mm.cn.bing.net/th/id/OIP-C.vn7WngTyjAyFBgDyr5vHHwHaEK?rs=1&pid=ImgDetMain', title: 'Mining Screenshot', description: 'Exploring the mines in Stardew Valley.' },
+                { src: 'https://www.stardewvalley.net/presskit/Stardew%20Valley/images/SDV_iPhone_08.png', title: 'Fishing Screenshot', description: 'Fishing by the lake in Stardew Valley.' }
+            ];
+
+            xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<gallery>
+`;
+
+            galleryItems.forEach(item => {
+                xmlContent += `    <item>
+        <src>${item.src}</src>
+        <title>${item.title}</title>
+        <description>${item.description}</description>
+    </item>
+`;
+            });
+
+            xmlContent += `</gallery>`;
+            filename = 'gallery.xml';
+            break;
+
+        case 'analysis':
+            const analysis = {
+                introduction: 'Stardew Valley offers a rich and immersive experience that combines elements of farming, exploration, and community building. The game\'s narrative focuses on themes of returning to nature, finding personal fulfillment, and reconnecting with community values.',
+                playerAgency: 'One of the key aspects of Stardew Valley is its emphasis on player agency. Players are given the freedom to choose how they want to spend their time in the game world, whether it\'s focusing on farming, exploring the mines, fishing, or building relationships with the townsfolk. This freedom allows players to create a personalized experience that reflects their own values and priorities.',
+                timeManagement: 'The game also incorporates elements of time management and strategic planning. Players must carefully manage their resources, time, and energy to achieve their goals. This adds a layer of depth to the gameplay, requiring players to think ahead and make strategic decisions.',
+                artStyle: 'Stardew Valley\'s art style and music contribute significantly to its immersive quality. The game features a charming pixel art style that evokes a sense of nostalgia while remaining visually appealing. The soundtrack, composed by concernsApe, enhances the game\'s atmosphere and emotional impact, with different themes corresponding to various activities and locations within the game.'
+            };
+
+            xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<analysis>
+    <introduction>${analysis.introduction}</introduction>
+    <playerAgency>${analysis.playerAgency}</playerAgency>
+    <timeManagement>${analysis.timeManagement}</timeManagement>
+    <artStyle>${analysis.artStyle}</artStyle>
+</analysis>`;
+            filename = 'analysis.xml';
+            break;
+
+        case 'community':
+            const community = {
+                introduction: 'Since its release in 2016, Stardew Valley has built a dedicated and passionate community of players. The game\'s success can be attributed to its combination of engaging gameplay, rich narrative, and player freedom. Players have created a wide range of content, including mods, fan art, and fan fiction, contributing to the game\'s cultural impact.',
+                inclusivity: 'The Stardew Valley community is known for its inclusivity and creativity. Players from diverse backgrounds come together to share their experiences, create custom content, and support one another. This sense of community extends beyond the game itself, with players organizing events, collaborating on projects, and forming friendships that extend into the real world.',
+                representation: 'Stardew Valley has also been recognized for its positive representation of different lifestyles and relationships. The game features characters from diverse backgrounds and offers players the freedom to form relationships and marry characters of any gender, promoting inclusivity and acceptance.'
+            };
+
+            xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<community>
+    <introduction>${community.introduction}</introduction>
+    <inclusivity>${community.inclusivity}</inclusivity>
+    <representation>${community.representation}</representation>
+</community>`;
+            filename = 'community.xml';
+            break;
+
+        case 'visualization':
+            const visualization = {
+                cropGrowthCycles: {
+                    spring: 7,
+                    summer: 5,
+                    fall: 6,
+                    winter: 8
+                },
+                playerActivities: {
+                    spring: { farming: 85, mining: 60, fishing: 40, foraging: 70 },
+                    summer: { farming: 75, mining: 70, fishing: 50, foraging: 65 },
+                    fall: { farming: 90, mining: 80, fishing: 60, foraging: 85 },
+                    winter: { farming: 60, mining: 90, fishing: 70, foraging: 50 }
+                },
+                skillProgression: {
+                    farming: 85,
+                    mining: 75,
+                    foraging: 90,
+                    fishing: 60,
+                    combat: 70,
+                    socializing: 80
+                }
+            };
+
+            xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<visualization>
+    <cropGrowthCycles>
+        <spring>${visualization.cropGrowthCycles.spring}</spring>
+        <summer>${visualization.cropGrowthCycles.summer}</summer>
+        <fall>${visualization.cropGrowthCycles.fall}</fall>
+        <winter>${visualization.cropGrowthCycles.winter}</winter>
+    </cropGrowthCycles>
+    <playerActivities>
+        <spring>
+            <farming>${visualization.playerActivities.spring.farming}</farming>
+            <mining>${visualization.playerActivities.spring.mining}</mining>
+            <fishing>${visualization.playerActivities.spring.fishing}</fishing>
+            <foraging>${visualization.playerActivities.spring.foraging}</foraging>
+        </spring>
+        <summer>
+            <farming>${visualization.playerActivities.summer.farming}</farming>
+            <mining>${visualization.playerActivities.summer.mining}</mining>
+            <fishing>${visualization.playerActivities.summer.fishing}</fishing>
+            <foraging>${visualization.playerActivities.summer.foraging}</foraging>
+        </summer>
+        <fall>
+            <farming>${visualization.playerActivities.fall.farming}</farming>
+            <mining>${visualization.playerActivities.fall.mining}</mining>
+            <fishing>${visualization.playerActivities.fall.fishing}</fishing>
+            <foraging>${visualization.playerActivities.fall.foraging}</foraging>
+        </fall>
+        <winter>
+            <farming>${visualization.playerActivities.winter.farming}</farming>
+            <mining>${visualization.playerActivities.winter.mining}</mining>
+            <fishing>${visualization.playerActivities.winter.fishing}</fishing>
+            <foraging>${visualization.playerActivities.winter.foraging}</foraging>
+        </winter>
+    </playerActivities>
+    <skillProgression>
+        <farming>${visualization.skillProgression.farming}</farming>
+        <mining>${visualization.skillProgression.mining}</mining>
+        <foraging>${visualization.skillProgression.foraging}</foraging>
+        <fishing>${visualization.skillProgression.fishing}</fishing>
+        <combat>${visualization.skillProgression.combat}</combat>
+        <socializing>${visualization.skillProgression.socializing}</socializing>
+    </skillProgression>
+</visualization>`;
+            filename = 'visualization.xml';
+            break;
+
+        case 'timeline':
+            const timelineItems = [
+                { year: '2016', event: 'Initial Release', description: 'Stardew Valley was initially released on February 26, 2016, for Microsoft Windows, macOS, and Linux.' },
+                { year: '2017', event: 'Console Release', description: 'The game was released on PlayStation 4, Xbox One, and Nintendo Switch, expanding its accessibility to a broader audience.' },
+                { year: '2018', event: 'Mobile Release', description: 'Stardew Valley was released for iOS and Android devices, further expanding its reach and allowing players to enjoy the game on the go.' },
+                { year: '2020', event: 'Major Updates', description: 'The game received several major updates, including new content, features, and quality-of-life improvements based on player feedback.' },
+                { year: '2023', event: 'Ongoing Support', description: 'Developer ConcernedApe continues to support the game with regular updates, demonstrating a commitment to the game\'s longevity and player community.' }
+            ];
+
+            xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<timeline>
+`;
+
+            timelineItems.forEach(item => {
+                xmlContent += `    <event>
+        <year>${item.year}</year>
+        <eventTitle>${item.event}</eventTitle>
+        <description>${item.description}</description>
+    </event>
+`;
+            });
+
+            xmlContent += `</timeline>`;
+            filename = 'timeline.xml';
+            break;
+    }
+
+// 显示XML预览
+const xmlPreviewContainer = document.getElementById('xmlPreviewContainer');
+const downloadButtonContainer = document.getElementById('downloadButtonContainer');
+const downloadBtn = document.getElementById('downloadBtn');
+const closePreviewBtn = document.getElementById('closePreviewBtn');
+
+// 创建一个TextNode来显示原始XML内容
+const textNode = document.createTextNode(xmlContent);
+xmlPreviewContainer.innerHTML = ""; // 清空容器
+xmlPreviewContainer.appendChild(textNode);
+xmlPreviewContainer.style.display = 'block';
+downloadButtonContainer.style.display = 'flex';
+
+    // 设置下载按钮的点击事件
+    downloadBtn.onclick = function() {
+        const blob = new Blob([xmlContent], { type: 'application/xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        // 关闭预览
+        xmlPreviewContainer.style.display = 'none';
+        downloadButtonContainer.style.display = 'none';
+    };
+
+    // 设置关闭按钮的点击事件
+    closePreviewBtn.onclick = function() {
+        xmlPreviewContainer.style.display = 'none';
+        downloadButtonContainer.style.display = 'none';
+    };
+}
     </script>
 </body>
 </html>
