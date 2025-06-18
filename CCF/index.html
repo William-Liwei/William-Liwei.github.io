@@ -322,11 +322,39 @@
             margin-bottom: 15px;
         }
         
-        table.table th,
-        table.table td {
-            padding: 8px 6px;
-            font-size: 14px;
+
+        table {
+            border: 0;
         }
+
+        table thead {
+            display: none;
+        }
+
+        table tr {
+            margin-bottom: 10px;
+            display: block;
+            border-bottom: 2px solid #ddd;
+        }
+
+        table td {
+            display: block;
+            text-align: right;
+            font-size: 13px;
+            border-bottom: 1px dotted #ccc;
+        }
+
+        table td:last-child {
+            border-bottom: 0;
+        }
+
+        table td:before {
+            content: attr(data-label);
+            float: left;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
         
         /* 表格在小屏幕上的横向滚动 */
         .table-container {
@@ -334,41 +362,7 @@
             -webkit-overflow-scrolling: touch; /* 平滑滚动效果 */
             margin-bottom: 20px;
         }
-        /* 限制表格列的宽度 */
-        table.table th:nth-child(1),
-        table.table td:nth-child(1) {
-            max-width: 20%;
-        }
-        
-        table.table th:nth-child(2),
-        table.table td:nth-child(2) {
-            max-width: 7.5%;
-        }
-        
-        table.table th:nth-child(3),
-        table.table td:nth-child(3) {
-            max-width: 7.5%;
-        }
-        
-        table.table th:nth-child(4),
-        table.table td:nth-child(4) {
-            max-width: 10%;
-        }
-        
-        table.table th:nth-child(5),
-        table.table td:nth-child(5) {
-            max-width: 25%;
-        }
-        
-        table.table th:nth-child(6),
-        table.table td:nth-child(6) {
-            max-width: 7.5%;
-        }
-        table.table th:nth-child(7),
-        table.table td:nth-child(7) {
-            max-width: 7.5%;
-        }
-    }
+
 </style>
 </head>
 <body>
@@ -608,13 +602,13 @@
                 data.forEach(item => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${item.category}</td>
-                        <td>${item.type}</td>
-                        <td>${item.level}</td>
-                        <td>${item.name}</td>
-			<td>${item.totalname}</td>
-                        <td>${item.publisher}</td>
-                        <td><a href="${item.url}" target="_blank">访问</a></td>
+                        <td data-label="领域">${item.category}</td>
+                        <td data-label="类型">${item.type}</td>
+                        <td data-label="级别">${item.level}</td>
+                        <td data-label="简称">${item.name}</td>
+			<td data-label="全称">${item.totalname}</td>
+                        <td data-label="出版社">${item.publisher}</td>
+                        <td data-label="链接"><a href="${item.url}" target="_blank">访问</a></td>
                     `;
                     tableBody.appendChild(row);
                 });
