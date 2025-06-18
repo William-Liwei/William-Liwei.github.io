@@ -166,6 +166,36 @@
         white-space: normal; /* 允许内容自动换行 */
         box-sizing: border-box; /* 边框为内边框 */
     }
+        /* 限制表格列的宽度 */
+        table.table th:nth-child(1),
+        table.table td:nth-child(1) {
+            max-width: 120px;
+        }
+        
+        table.table th:nth-child(2),
+        table.table td:nth-child(2) {
+            max-width: 80px;
+        }
+        
+        table.table th:nth-child(3),
+        table.table td:nth-child(3) {
+            max-width: 80px;
+        }
+        
+        table.table th:nth-child(4),
+        table.table td:nth-child(4) {
+            max-width: 100px;
+        }
+        
+        table.table th:nth-child(5),
+        table.table td:nth-child(5) {
+            max-width: 150px;
+        }
+        
+        table.table th:nth-child(6),
+        table.table td:nth-child(6) {
+            max-width: 120px;
+        }
     
     table.table tr:hover {
         background-color: #f5f7ff;
@@ -299,6 +329,36 @@
             overflow-x: auto;
             -webkit-overflow-scrolling: touch; /* 平滑滚动效果 */
             margin-bottom: 20px;
+        }
+        /* 限制表格列的宽度 */
+        table.table th:nth-child(1),
+        table.table td:nth-child(1) {
+            max-width: 100px;
+        }
+        
+        table.table th:nth-child(2),
+        table.table td:nth-child(2) {
+            max-width: 50px;
+        }
+        
+        table.table th:nth-child(3),
+        table.table td:nth-child(3) {
+            max-width: 50px;
+        }
+        
+        table.table th:nth-child(4),
+        table.table td:nth-child(4) {
+            max-width: 80px;
+        }
+        
+        table.table th:nth-child(5),
+        table.table td:nth-child(5) {
+            max-width: 100px;
+        }
+        
+        table.table th:nth-child(6),
+        table.table td:nth-child(6) {
+            max-width: 50px;
         }
     }
 </style>
