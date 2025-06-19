@@ -482,9 +482,9 @@
             <div class="row">
                 <div class="col-md-3">
                     <div class="filter-group">
-                        <label for="category-filter" class="form-label">类别</label>
+                        <label for="category-filter" class="form-label">领域</label>
                         <select id="category-filter" class="form-select">
-                            <option value="all">所有类别</option>
+                            <option value="all">所有领域</option>
                             <!-- 类别选项将通过 JavaScript 动态填充 -->
                         </select>
                     </div>
@@ -657,6 +657,7 @@
                 .then(buffer => {
                     const data = parseExcel(buffer);
                     jcrData = data;
+                    populateJCRFilterOptions(jcrData);
                     return data;
                 })
                 .catch(error => {
@@ -802,7 +803,7 @@
             
             // 填充 JCR 筛选选项
             function populateJCRFilterOptions(data) {
-                const categoryOptions = [...new Set(data.map(item => item.category.split(';')[0]))]; // 获取主要类别
+                const categoryOptions = [...new Set(data.flatMap(item => item.category.split(';')).filter(Boolean))];
                 
                 const categoryFilter = document.getElementById('jcr-category-filter');
                 
