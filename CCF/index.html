@@ -560,7 +560,7 @@
         
         <div class="table-container">
             <table class="table table-striped" id="data-table">
-                <thead>
+                <thead  id="table-header">
                     <tr>
                         <th>领域</th>
                         <th>类型</th>
@@ -587,6 +587,31 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // 定义 CCF 和 JCR 表头模板
+        const ccfHeaderTemplate = `
+            <tr>
+                <th>领域</th>
+                <th>类型</th>
+                <th>级别</th>
+                <th>简称</th>
+                <th>全称</th>
+                <th>出版社</th>
+                <th>链接</th>
+            </tr>
+        `;
+
+        const jcrHeaderTemplate = `
+            <tr>
+                <th>期刊名</th>
+                <th>ISSN</th>
+                <th>eISSN</th>
+                <th>类别</th>
+                <th>总引用次数</th>
+                <th>影响因子</th>
+                <th>分区</th>
+                <th>排名</th>
+            </tr>
+        `;
         document.addEventListener('DOMContentLoaded', function() {
             let ccfData = [];
             let jcrData = [];
@@ -794,6 +819,14 @@
             
             // 更新表格显示
             function updateTable(tab) {
+                // 获取表头元素并更新表头
+                const tableHeader = document.getElementById('table-header');
+                if (tab === 'ccf') {
+                    tableHeader.innerHTML = ccfHeaderTemplate;
+                } else if (tab === 'jcr') {
+                    tableHeader.innerHTML = jcrHeaderTemplate;
+                }
+
                 const tableBody = document.getElementById('table-body');
                 tableBody.innerHTML = '';
 
@@ -993,9 +1026,10 @@
                                 <td data-label="ISSN">${item.issn}</td>
                                 <td data-label="eISSN">${item.eissn}</td>
                                 <td data-label="类别">${item.category}</td>
-                                <td data-label="引用次数">${item.totalCitation}</td>
+                                <td data-label="总引用次数">${item.totalCitation}</td>
                                 <td data-label="影响因子">${item.impactFactor}</td>
                                 <td data-label="分区">${item.quartile} (${item.partition})</td>
+                                <td data-label="排名">${item.rank}</td>
                             `;
                         }
 
