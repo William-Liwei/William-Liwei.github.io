@@ -808,7 +808,7 @@
         const ccfHeaderTemplate = `
             <tr>
                 <th class="sortable-header" data-column="title">
-                    会议名称 <span class="sort-indicator none"></span>
+                    简称 <span class="sort-indicator none"></span>
                 </th>
                 <th class="sortable-header" data-column="description">
                     全称 <span class="sort-indicator none"></span>
@@ -867,7 +867,7 @@
         const markdownHeaderTemplate = `
             <tr>
                 <th class="sortable-header" data-column="name">
-                    期刊名 <span class="sort-indicator none"></span>
+                    简称 <span class="sort-indicator none"></span>
                 </th>
                 <th class="sortable-header" data-column="totalname">
                     全称 <span class="sort-indicator none"></span>
@@ -1557,7 +1557,7 @@
                         const categoryName = categoryMap[item.sub] || item.sub;
                         
                         row.innerHTML = `
-                            <td data-label="会议名称">${item.title}</td>
+                            <td data-label="简称">${item.title}</td>
                             <td data-label="全称">${item.description}</td>
                             <td data-label="领域">${categoryName}</td>
                             <td data-label="CCF">${item.ccf_rank}</td>
@@ -1580,7 +1580,7 @@
                         `;
                     } else if (tab === 'markdown') {
                         row.innerHTML = `
-                            <td data-label="期刊名">${item.name}</td>
+                            <td data-label="简称">${item.name}</td>
                             <td data-label="全称">${item.totalname}</td>
                             <td data-label="领域">${item.category}</td>
                             <td data-label="级别">${item.level}</td>
