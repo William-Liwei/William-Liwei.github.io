@@ -1241,11 +1241,11 @@
         function populateConferenceFilterOptions(data) {
             const categories = [...new Set(data.map(item => item.sub))].sort();
             const years = [...new Set(data.map(item => item.year))].sort((a, b) => b - a);
-            const types = [...new Set(data.map(item => item.type))].filter(Boolean);
+            // const types = [...new Set(data.map(item => item.type))].filter(Boolean);
             
             const categoryFilter = document.getElementById('category-filter');
             const yearFilter = document.getElementById('year-filter');
-            const typeFilter = document.getElementById('type-filter');
+            // const typeFilter = document.getElementById('type-filter');
             
             // 清空现有选项
             categoryFilter.innerHTML = '<option value="all">所有领域</option>';
@@ -1326,6 +1326,23 @@
                 }
             });
         }
+
+        // 填充 JCR 筛选选项
+        function populateJCRFilterOptions(data) {
+                const categoryOptions = [...new Set(data.flatMap(item => item.category.split(';')).filter(Boolean))];
+                
+                const categoryFilter = document.getElementById('jcr-category-filter');
+                
+                // 填充类别选项
+                categoryOptions.forEach(category => {
+                    if (category) {
+                        const option = document.createElement('option');
+                        option.value = category;
+                        option.textContent = category;
+                        categoryFilter.appendChild(option);
+                    }
+                });
+            }
 
         // 更新表格显示
         function updateTable(tab) {
@@ -1637,7 +1654,7 @@
                 .then(buffer => {
                     const data = parseExcel(buffer);
                     jcrData = data;
-                    // populateJCRFilterOptions(jcrData);
+                    populateJCRFilterOptions(jcrData);
                 })
                 .catch(error => {
                     console.error('Error loading or parsing Excel file:', error);
@@ -1664,11 +1681,9 @@
             document.getElementById('reset-btn').addEventListener('click', function() {
                 document.getElementById('search-input').value = '';
                 document.getElementById('category-filter').value = 'all';
-                document.getElementById('type-filter').value = 'all';
                 document.getElementById('level-filter').value = 'all';
                 document.getElementById('year-filter').value = 'all';
                 document.getElementById('deadline-filter').value = 'all';
-                document.getElementById('publisher-filter').value = 'all';
                 document.getElementById('jcr-category-filter').value = 'all';
                 document.getElementById('jcr-impact-filter').value = 'all';
                 document.getElementById('jcr-quartile-filter').value = 'all';
