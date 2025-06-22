@@ -1702,7 +1702,7 @@
                 updateTable(currentTab);
             });
             
-            ['category-filter', 'type-filter', 'level-filter', 'year-filter', 'deadline-filter', 'publisher-filter'].forEach(id => {
+            ['category-filter', 'level-filter', 'year-filter', 'deadline-filter'].forEach(id => {
                 document.getElementById(id).addEventListener('change', function() {
                     updateTable(currentTab);
                 });
