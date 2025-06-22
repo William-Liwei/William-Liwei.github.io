@@ -789,6 +789,7 @@
         let markdownData = [];
         let currentTab = 'ccf';
         let sortState = { column: null, direction: 'none' };
+        let acceptanceRateData = [];
         
         // 分类映射
         const categoryMap = {
@@ -824,6 +825,9 @@
                 </th>
                 <th class="sortable-header" data-column="deadline">
                     截稿时间 <span class="sort-indicator none"></span>
+                </th>
+                <th class="sortable-header" data-column="acceptance_rate">
+                    录用率 <span class="sort-indicator none"></span>
                 </th>
                 <th class="sortable-header" data-column="date">
                     会议日期 <span class="sort-indicator none"></span>
@@ -963,6 +967,10 @@
                 } else if (column === 'impactFactor' || column === 'totalCitation' || column === 'rank') {
                     valueA = parseFloat(valueA) || 0;
                     valueB = parseFloat(valueB) || 0;
+                } else if (column === 'acceptance_rate') {
+                    // 录用率排序处理
+                    valueA = a.acceptance_rate ? a.acceptance_rate.rate : -1; // 没有数据的排在最后
+                    valueB = b.acceptance_rate ? b.acceptance_rate.rate : -1;
                 } else {
                     valueA = valueA.toString().toLowerCase();
                     valueB = valueB.toString().toLowerCase();
@@ -1019,6 +1027,7 @@
                                 : '';
                             
                             processedData.push({
+                                acceptance_rate: getAcceptanceRate(conference.title, conf.year),
                                 title: conference.title,
                                 description: conference.description,
                                 sub: conference.sub,
@@ -1041,6 +1050,45 @@
                 console.error('YAML解析失败:', error);
                 return [];
             }
+        }
+
+        function processAcceptanceRateData(yamlText) {
+            try {
+                const data = jsyaml.load(yamlText);
+                const processedData = {};
+                
+                data.forEach(conference => {
+                    if (conference.title && conference.accept_rates) {
+                        processedData[conference.title] = conference.accept_rates.map(rate => ({
+                            year: rate.year,
+                            rate: rate.rate,
+                            str: rate.str
+                        }));
+                    }
+                });
+                
+                return processedData;
+            } catch (error) {
+                console.error('录用率YAML解析失败:', error);
+                return {};
+            }
+        }
+
+
+        function getAcceptanceRate(title, year) {
+            if (!acceptanceRateData[title]) return null;
+            
+            // 查找对应年份的录用率，如果没有找到，则使用最近的年份
+            const rates = acceptanceRateData[title];
+            const exactMatch = rates.find(rate => rate.year === parseInt(year));
+            
+            if (exactMatch) {
+                return exactMatch;
+            }
+            
+            // 如果没有精确匹配，返回最近的数据
+            const sortedRates = rates.sort((a, b) => Math.abs(a.year - year) - Math.abs(b.year - year));
+            return sortedRates[0] || null;
         }
 
         // 数据更新功能
@@ -1070,6 +1118,22 @@
                 }
                 
                 conferenceData = data;
+
+                try {
+                    const acceptanceResponse = await fetch('https://raw.githubusercontent.com/ccfddl/ccfddl.github.io/page/conference/allacc.yml?' + Date.now());
+                    if (acceptanceResponse.ok) {
+                        const acceptanceYamlText = await acceptanceResponse.text();
+                        acceptanceRateData = processAcceptanceRateData(acceptanceYamlText);
+                        
+                        // 重新处理会议数据以包含录用率
+                        conferenceData = conferenceData.map(conf => ({
+                            ...conf,
+                            acceptance_rate: getAcceptanceRate(conf.title, conf.year)
+                        }));
+                    }
+                } catch (error) {
+                    console.warn('获取录用率数据失败:', error);
+                }
                 
                 // 更新本地存储
                 localStorage.setItem('conferenceData', JSON.stringify(conferenceData));
@@ -1112,6 +1176,7 @@
                     deadline: '2024-12-09 23:59:59',
                     date: 'February 25-27, 2025',
                     place: 'Philadelphia, Pennsylvania, USA',
+                    acceptance_rate: { rate: 0.3, str: '30.0%(100/333 25\')', year: 2025 },
                     link: 'https://aaai.org/conference/aaai/aaai-25/',
                     dblp: 'aaai',
                     timezone: 'UTC-12'
@@ -1126,6 +1191,7 @@
                     deadline: '2025-01-30 23:59:59',
                     date: 'July 11-19, 2025',
                     place: 'Vancouver, Canada',
+                    acceptance_rate: { rate: 0.3, str: '30.0%(100/333 25\')', year: 2025 },
                     link: 'https://icml.cc/Conferences/2025',
                     dblp: 'icml',
                     timezone: 'UTC-12'
@@ -1140,6 +1206,7 @@
                     deadline: '2024-11-04 19:59:59',
                     date: 'June 23-27, 2025',
                     place: 'Prague, Czech Republic',
+                    acceptance_rate: { rate: 0.3, str: '30.0%(100/333 25\')', year: 2025 },
                     link: 'http://acm-stoc.org/stoc2025/',
                     dblp: 'stoc',
                     timezone: 'UTC-5'
@@ -1572,6 +1639,9 @@
                     if (tab === 'ccf') {
                         const deadlineHtml = formatDeadline(item.deadline);
                         const categoryName = categoryMap[item.sub] || item.sub;
+                        const acceptanceRateHtml = item.acceptance_rate 
+                            ? `<span title="${item.acceptance_rate.str}">${(item.acceptance_rate.rate * 100).toFixed(1)}%</span>`
+                            : '<span class="text-muted">N/A</span>';
                         
                         row.innerHTML = `
                             <td data-label="简称">${item.title}</td>
@@ -1580,6 +1650,7 @@
                             <td data-label="CCF">${item.ccf_rank}</td>
                             <td data-label="年份">${item.year}</td>
                             <td data-label="截稿时间">${deadlineHtml}</td>
+                            <td data-label="录用率">${acceptanceRateHtml}</td>
                             <td data-label="会议日期">${item.date}</td>
                             <td data-label="地点">${item.place}</td>
                             <td data-label="链接"><a href="${item.link}" target="_blank">访问</a></td>
@@ -1613,6 +1684,7 @@
 
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
+        
             // 加载本地缓存的会议数据
             const cachedConferenceData = localStorage.getItem('conferenceData');
             if (cachedConferenceData) {
