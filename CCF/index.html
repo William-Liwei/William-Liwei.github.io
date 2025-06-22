@@ -950,8 +950,16 @@
                     valueA = parseInt(valueA) || 0;
                     valueB = parseInt(valueB) || 0;
                 } else if (column === 'deadline') {
-                    valueA = valueA ? new Date(valueA).getTime() : 0;
-                    valueB = valueB ? new Date(valueB).getTime() : 0;
+                    // 将截稿时间转换为 Date 对象
+                    valueA = new Date(valueA instanceof Date ? valueA : (valueA && valueA.replace(/-/g, '/')));
+                    valueB = new Date(valueB instanceof Date ? valueB : (valueB && valueB.replace(/-/g, '/')));
+                    
+                    // 如果是无效日期，则赋予一个默认值（如：1970-01-01）
+                    valueA = valueA.toString() === 'Invalid Date' ? new Date(0) : valueA;
+                    valueB = valueB.toString() === 'Invalid Date' ? new Date(0) : valueB;
+                    
+                    valueA = valueA.getTime();
+                    valueB = valueB.getTime();
                 } else if (column === 'impactFactor' || column === 'totalCitation' || column === 'rank') {
                     valueA = parseFloat(valueA) || 0;
                     valueB = parseFloat(valueB) || 0;
