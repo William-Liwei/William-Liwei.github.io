@@ -6,7 +6,7 @@
   <link href="https://lwow.xyz/atom.xml" rel="self"/>
   
   <link href="https://lwow.xyz/"/>
-  <updated>2025-06-10T05:10:56.077Z</updated>
+  <updated>2025-06-25T11:30:23.541Z</updated>
   <id>https://lwow.xyz/</id>
   
   <author>
@@ -15,6 +15,34 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>SWIFT</title>
+    <link href="https://lwow.xyz/2025/06/25/SWIFT/"/>
+    <id>https://lwow.xyz/2025/06/25/SWIFT/</id>
+    <published>2025-06-25T11:30:00.000Z</published>
+    <updated>2025-06-25T11:30:23.541Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="SWIFT-State-space-Wavelet-Integrated-Forecasting-Technology-for-Enhanced-Time-Series-Prediction"><a href="#SWIFT-State-space-Wavelet-Integrated-Forecasting-Technology-for-Enhanced-Time-Series-Prediction" class="headerlink" title="SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction"></a>SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction</h1><p>This is an official implementation of [SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction].</p><p><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="license"> <a href="https://github.com/William-Liwei/SWIFT/issues"><img src="https://badgen.net/github/issues/William-Liwei/SWIFT?color=red" alt="Issues"></a> <a href="https://github.com/William-Liwei/SWIFT/pulls"><img src="https://badgen.net/github/prs/William-Liwei/SWIFT?color=yellow" alt="PRs"></a> <img src="https://img.shields.io/github/repo-size/william-liwei/SWIFT?color=green" alt="GitHub repo size"> <img src="https://badgen.net/github/stars/William-Liwei/SWIFT?color=orange" alt="GitHub Repo stars"> <img src="https://badgen.net/github/forks/William-Liwei/SWIFT?color=pink" alt="GitHub forks"></p><h2 id="Author-s"><a href="#Author-s" class="headerlink" title="Author(s)"></a>Author(s)</h2><p>Wei Li, Shanghai University;</p><h2 id="Prerequisites"><a href="#Prerequisites" class="headerlink" title="Prerequisites"></a>Prerequisites</h2><p>Ensure you are using Python 3.9 and install the necessary dependencies by running:</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -r requirements.txt</span><br></pre></td></tr></table></figure><h2 id="Data-set-preparation"><a href="#Data-set-preparation" class="headerlink" title="Data set preparation"></a>Data set preparation</h2><p>Due to the storage space limitations of GitHub, some data sets may need to be downloaded separately. However, some small data sets have been included in the repository for demonstration purposes. If you encounter any issues with the data sets, please contact us via email.</p><h2 id="Citation"><a href="#Citation" class="headerlink" title="Citation"></a>Citation</h2><p>If you find this repo useful, please cite it as follows:</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">@inproceedings&#123;li2025swift,</span><br><span class="line">  title=&#123;SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction&#125;,</span><br><span class="line">  author=&#123;Li, Wei&#125;,</span><br><span class="line">  booktitle=&#123;International Conference on Artificial Neural Networks&#125;,</span><br><span class="line">  year=&#123;2025&#125;,</span><br><span class="line">  note=&#123;to be published&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><h2 id="Contact"><a href="#Contact" class="headerlink" title="Contact"></a>Contact</h2><p>If you have any questions, please contact <a href="mailto:&#x6c;&#x69;&#119;&#x65;&#x69;&#x30;&#x30;&#x38;&#48;&#x30;&#57;&#x40;&#49;&#54;&#51;&#46;&#x63;&#111;&#x6d;">&#x6c;&#x69;&#119;&#x65;&#x69;&#x30;&#x30;&#x38;&#48;&#x30;&#57;&#x40;&#49;&#54;&#51;&#46;&#x63;&#111;&#x6d;</a> or submit an issue.<br>Due to time constraints, business agreements and intellectual property protection, the implementation of this model is partial. If you are interested in our model, please contact me by email.<br>This repo model is a simplified model and is allowed for commercial use, but please cite. If you want to use the complete implementation model, you can further negotiate business cooperation, thank you very much for your attention.</p><h2 id="Acknowledgement"><a href="#Acknowledgement" class="headerlink" title="Acknowledgement"></a>Acknowledgement</h2><p>We extend our gratitude to the following repositories for their valuable code and datasets:</p><ul><li><a href="https://github.com/thuml/Time-Series-Library">https://github.com/thuml/Time-Series-Library</a></li><li><a href="https://github.com/thuml/Autoformer">https://github.com/thuml/Autoformer</a></li><li><a href="https://github.com/Hank0626/WFTNet">https://github.com/Hank0626/WFTNet</a></li><li><a href="https://github.com/William-Liwei/EnergyPatchTST">https://github.com/William-Liwei/EnergyPatchTST</a></li></ul><h2 id="Star-History"><a href="#Star-History" class="headerlink" title="Star History"></a>Star History</h2><a href="https://www.star-history.com/#William-Liwei/SWIFT&Date"> <picture>   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=William-Liwei/SWIFT&type=Date&theme=dark" />   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=William-Liwei/SWIFT&type=Date" />   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=William-Liwei/SWIFT&type=Date" /> </picture></a>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h1 id=&quot;SWIFT-State-space-Wavelet-Integrated-Forecasting-Technology-for-Enhanced-Time-Series-Prediction&quot;&gt;&lt;a href=&quot;#SWIFT-State-space-Wavelet</summary>
+      
+    
+    
+    
+    
+    <category term="论文" scheme="https://lwow.xyz/tags/%E8%AE%BA%E6%96%87/"/>
+    
+    <category term="Time Series" scheme="https://lwow.xyz/tags/Time-Series/"/>
+    
+    <category term="学术" scheme="https://lwow.xyz/tags/%E5%AD%A6%E6%9C%AF/"/>
+    
+    <category term="GitHub" scheme="https://lwow.xyz/tags/GitHub/"/>
+    
+  </entry>
   
   <entry>
     <title>2025.06.09随笔</title>
