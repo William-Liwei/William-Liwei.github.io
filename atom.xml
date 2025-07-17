@@ -6,7 +6,7 @@
   <link href="https://lwow.xyz/atom.xml" rel="self"/>
   
   <link href="https://lwow.xyz/"/>
-  <updated>2025-06-25T11:35:43.194Z</updated>
+  <updated>2025-07-17T08:47:19.905Z</updated>
   <id>https://lwow.xyz/</id>
   
   <author>
@@ -15,6 +15,26 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>AnyRouter</title>
+    <link href="https://lwow.xyz/2025/07/17/AnyRouter/"/>
+    <id>https://lwow.xyz/2025/07/17/AnyRouter/</id>
+    <published>2025-07-17T08:36:07.000Z</published>
+    <updated>2025-07-17T08:47:19.905Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="最近很火的Claude-Code免费使用方法"><a href="#最近很火的Claude-Code免费使用方法" class="headerlink" title="最近很火的Claude Code免费使用方法"></a>最近很火的Claude Code免费使用方法</h1><p>Claude Code</p><h1 id="免费用-Claude-Code-？"><a href="#免费用-Claude-Code-？" class="headerlink" title="免费用 Claude Code ？"></a>免费用 Claude Code ？</h1><p>最近各大技术群里都在传一个「不花钱也能用 Claude Code」的骚操作，核心其实就是 AnyRouter 这个中转平台。下面把完整流程拆给你，照着做就能免费薅 API 额度。</p><span id="more"></span><hr><h3 id="先上车：注册-AnyRouter"><a href="#先上车：注册-AnyRouter" class="headerlink" title="先上车：注册 AnyRouter"></a>先上车：注册 AnyRouter</h3><ul><li>官网：anyrouter.top  </li><li>建议用 GitHub 一键登录，省事。  </li><li>直接注册送 50 美元，走邀请链接能多拿 50 美元，凑够 100 美元，够你写几万行代码<br>我的邀请链接：<a href="https://anyrouter.top/register?aff=b0LN">https://anyrouter.top/register?aff=b0LN</a></li></ul><hr><h3 id="领key：生成-API-Token"><a href="#领key：生成-API-Token" class="headerlink" title="领key：生成 API Token"></a>领key：生成 API Token</h3><ul><li>登录后点「API 令牌」→「添加令牌」。  </li><li>名称随意写，比如「claude-free」。  </li><li>模型限制可以选 <code>claude-sonnet-4-20250514</code>，也可以留空。  </li><li><strong>务必勾「无限额度」</strong>，不然一次对话就报销。  </li><li>复制以 <code>sk-</code> 开头的那串字符，待会儿要用。</li></ul><hr><h3 id="装-Claude-Code"><a href="#装-Claude-Code" class="headerlink" title="装 Claude Code"></a>装 Claude Code</h3><ul><li>Windows 记得开 WSL；macOS &#x2F; Linux 直接终端。  </li><li>保证 Node.js ≥ 18：  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">npm install -g @anthropic-ai/claude-code</span><br><span class="line">claude --version   <span class="comment"># 能看到版本号就行</span></span><br></pre></td></tr></table></figure></li><li>网络节点优先新加坡或美国，稳。</li></ul><hr><h3 id="配环境变量（二选一）"><a href="#配环境变量（二选一）" class="headerlink" title="配环境变量（二选一）"></a>配环境变量（二选一）</h3><p><strong>临时方案</strong>：每次开终端都要敲  </p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> ANTHROPIC_AUTH_TOKEN=sk-你的Token</span><br><span class="line"><span class="built_in">export</span> ANTHROPIC_BASE_URL=https://anyrouter.top</span><br></pre></td></tr></table></figure><p><strong>永久方案</strong>：写进 shell 配置，一次搞定  </p><ul><li>Bash：<code>~/.bashrc</code>  </li><li>Zsh：<code>~/.zshrc</code><br>把上面两行粘进去，保存后 <code>source ~/.zshrc</code> 或者重开终端。</li></ul><hr><h3 id="开干"><a href="#开干" class="headerlink" title="开干"></a>开干</h3><ol><li>进项目目录：<code>claude</code>  </li><li>首次启动会提示选主题、确认安全须知、信任目录，一路回车即可。  </li><li>输入 <code>/init</code> 初始化，之后就可以用自然语言指挥它写代码了，例如：  <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">帮我用 React 写一个带验证码的登录页</span><br></pre></td></tr></table></figure>它就会自动创建文件、装依赖、跑 dev server。</li></ol><hr><h3 id="额度-模型小贴士"><a href="#额度-模型小贴士" class="headerlink" title="额度 &amp; 模型小贴士"></a>额度 &amp; 模型小贴士</h3><ul><li>简单需求（小工具、页面）≈ 0.2 美元一次。  </li><li>日常用 Sonnet 就够；遇到复杂逻辑，对话里 <code>/model</code> 切成 Opus。  </li><li>额度见底？拉人头：每邀请一位，双方再得 50 美元。</li></ul><hr><h3 id="避坑指南"><a href="#避坑指南" class="headerlink" title="避坑指南"></a>避坑指南</h3><ul><li><strong>网络抽风</strong>：先重启 <code>claude</code>；实在不行换节点。  </li><li><strong>代码安全</strong>：改关键文件前 <code>git commit</code> 一下，AI 翻车能回滚。  </li><li><strong>隐私雷区</strong>：AnyRouter 会留存上下文，别拿它撸涉密代码。</li></ul><hr><h3 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h3><p>这套方法目前还能白嫖，但指不定哪天就收费。趁着免费，赶紧爽一波，记得别把公司核心项目往里扔就行。另外，最近网站据说遭到了攻击，目前似乎瘫痪了，不知道什么时候能修好。</p>]]></content>
+    
+    
+    <summary type="html">&lt;h1 id=&quot;最近很火的Claude-Code免费使用方法&quot;&gt;&lt;a href=&quot;#最近很火的Claude-Code免费使用方法&quot; class=&quot;headerlink&quot; title=&quot;最近很火的Claude Code免费使用方法&quot;&gt;&lt;/a&gt;最近很火的Claude Code免费使用方法&lt;/h1&gt;&lt;p&gt;Claude Code&lt;/p&gt;
+&lt;h1 id=&quot;免费用-Claude-Code-？&quot;&gt;&lt;a href=&quot;#免费用-Claude-Code-？&quot; class=&quot;headerlink&quot; title=&quot;免费用 Claude Code ？&quot;&gt;&lt;/a&gt;免费用 Claude Code ？&lt;/h1&gt;&lt;p&gt;最近各大技术群里都在传一个「不花钱也能用 Claude Code」的骚操作，核心其实就是 AnyRouter 这个中转平台。下面把完整流程拆给你，照着做就能免费薅 API 额度。&lt;/p&gt;</summary>
+    
+    
+    
+    
+    <category term="Claude" scheme="https://lwow.xyz/tags/Claude/"/>
+    
+  </entry>
   
   <entry>
     <title>SWIFT</title>
