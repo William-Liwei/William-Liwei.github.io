@@ -1,360 +1,223 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的项目 - William Li</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 50px;
-            color: white;
-        }
-
-        .header h1 {
-            font-size: 3em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .header p {
-            font-size: 1.2em;
-            opacity: 0.9;
-        }
-
-        .projects-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 30px;
-            margin-bottom: 50px;
-        }
-
-        .project-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .project-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-        }
-
-        .project-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-        }
-
-        .project-title {
-            font-size: 1.5em;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .project-subtitle {
-            color: #666;
-            margin-bottom: 15px;
-            font-style: italic;
-        }
-
-        .project-description {
-            line-height: 1.6;
-            margin-bottom: 20px;
-            color: #555;
-        }
-
-        .tech-stack {
-            margin-bottom: 20px;
-        }
-
-        .tech-tag {
-            display: inline-block;
-            background: #f0f4ff;
-            color: #5563df;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            margin: 2px;
-            border: 1px solid #e1e8ff;
-        }
-
-        .project-links {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border-radius: 25px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: #667eea;
-            border: 2px solid #667eea;
-        }
-
-        .btn:hover {
-            transform: scale(1.05);
-        }
-
-        .status-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            padding: 4px 12px;
-            border-radius: 15px;
-            font-size: 0.8em;
-            font-weight: bold;
-        }
-
-        .status-active {
-            background: #e8f5e8;
-            color: #2d8f2d;
-        }
-
-        .status-completed {
-            background: #e8f4ff;
-            color: #2d5aa0;
-        }
-
-        .status-research {
-            background: #fff3e0;
-            color: #e65100;
-        }
-
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2em;
-            }
-            
-            .projects-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>研究项目 - William Li</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --primary:#0d1b4c;
+      --accent:#c09f55;
+      --bg:#f5f7fa;
+      --card:#ffffffcc;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+      font-family:'Inter','Noto Serif SC',serif;
+      background:var(--bg);
+      color:#1d1d1f;
+      line-height:1.7;
+    }
+    header{
+      background:linear-gradient(135deg,#0d1b4c 0%, #1a2a6c 100%);
+      color:#fff;
+      padding:60px 20px 80px;
+      text-align:center;
+    }
+    header h1{font-size:3rem;letter-spacing:2px;margin-bottom:.5rem}
+    header p{font-size:1.2rem;opacity:.8}
+    .container{max-width:1200px;margin:-40px auto 0;padding:0 20px}
+    .timeline{
+      position:relative;
+      padding-left:40px;
+      border-left:4px solid var(--accent);
+    }
+    .project{
+      position:relative;
+      background:var(--card);
+      backdrop-filter:blur(10px);
+      border-radius:16px;
+      padding:30px;
+      margin-bottom:50px;
+      box-shadow:0 8px 32px rgba(0,0,0,.08);
+      transition:.4s;
+    }
+    .project:hover{transform:translateY(-6px) scale(1.01)}
+    .project::before{
+      content:'';
+      position:absolute;
+      left:-52px;top:28px;
+      width:16px;height:16px;
+      background:var(--accent);
+      border:4px solid #fff;
+      border-radius:50%;
+    }
+    .date{
+      font-size:.9rem;
+      font-weight:600;
+      color:var(--accent);
+      margin-bottom:8px;
+    }
+    .title{
+      font-size:1.5rem;
+      font-weight:700;
+      margin-bottom:6px;
+    }
+    .subtitle{
+      font-size:1rem;
+      color:#555;
+      margin-bottom:12px;
+    }
+    .abstract{margin-bottom:18px;color:#333}
+    .tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+    .tag{
+      background:#e6e9f3;
+      color:var(--primary);
+      padding:4px 12px;
+      font-size:.8rem;
+      border-radius:20px;
+    }
+    .links a{
+      margin-right:12px;
+      text-decoration:none;
+      font-weight:600;
+      color:var(--primary);
+      border-bottom:2px solid transparent;
+      transition:.3s;
+    }
+    .links a:hover{border-color:var(--accent)}
+    @media(max-width:600px){
+      .timeline{padding-left:20px}
+      .project{padding:20px}
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🚀 我的项目</h1>
-            <p>研究项目展示</p>
-        </div>
+  <header>
+    <h1>研究项目展示</h1>
+    <p>William Li / 上海大学 · 计算机科学与技术</p>
+  </header>
 
-        <div class="projects-grid">
-            <!-- 项目: CCF Online -->
-            <div class="project-card">
-                <div class="status-badge status-active">进行中</div>
-                <div class="project-title">CCF Online</div>
-                <div class="project-subtitle">CCF会议信息管理与展示系统</div>
-                <div class="project-description">
-                    一个集成的学术会议信息管理平台，提供CCF会议截稿时间查询、JCR期刊数据展示、CCF推荐列表等功能。
-                    支持实时数据更新、智能搜索筛选、多维度排序，并具备响应式设计和夜间模式。
-                </div>
-                <div class="tech-stack">
-                    <span class="tech-tag">JavaScript</span>
-                    <span class="tech-tag">Bootstrap</span>
-                    <span class="tech-tag">CSS3</span>
-                    <span class="tech-tag">YAML</span>
-                    <span class="tech-tag">Excel.js</span>
-                    <span class="tech-tag">Responsive</span>
-                </div>
-                <div class="project-links">
-                    <a href="https://www.lwow.xyz/CCF/" class="btn btn-primary">
-                        🌐 在线演示
-                    </a>
-                </div>
-            </div>
-
-            <!-- 项目: EnergyPatchTST -->
-            <div class="project-card">
-                <div class="status-badge status-completed">已完成</div>
-                <div class="project-title">EnergyPatchTST</div>
-                <div class="project-subtitle">能源时间序列预测模型</div>
-                <div class="project-description">
-                    基于Transformer架构的能源消耗预测模型，采用Patch机制处理长序列时间序列数据，
-                    在多个数据集上取得了SOTA性能。该项目专注于提高能源预测的准确性和效率。
-                </div>
-                <div class="tech-stack">
-                    <span class="tech-tag">PyTorch</span>
-                    <span class="tech-tag">Transformer</span>
-                    <span class="tech-tag">Time Series</span>
-                    <span class="tech-tag">Python</span>
-                    <span class="tech-tag">CUDA</span>
-                </div>
-                <div class="project-links">
-                    <a href="https://github.com/William-Liwei/EnergyPatchTST" class="btn btn-primary">
-                        📱 GitHub
-                    </a>
-                </div>
-            </div>
-
-            <!-- 项目: LWSpace -->
-            <div class="project-card">
-                <div class="status-badge status-completed">已完成</div>
-                <div class="project-title">LWSpace</div>
-                <div class="project-subtitle">多领域时间序列预测模型</div>
-                <div class="project-description">
-                    基于SSM的时序预测模型，与EnergyPatchTST不同的是LWSpace不专注于某一特定领域。
-                    在多个数据集上进行了测试，表现优异的同时压缩了耗时、降低了资源需求。
-                </div>
-                <div class="tech-stack">
-                    <span class="tech-tag">PyTorch</span>
-                    <span class="tech-tag">State Space</span>
-                    <span class="tech-tag">Time Series</span>
-                    <span class="tech-tag">Python</span>
-                    <span class="tech-tag">CUDA</span>
-                </div>
-                <div class="project-links">
-                    <a href="https://github.com/William-Liwei/LWSpace" class="btn btn-primary">
-                        📱 GitHub
-                    </a>
-                </div>
-            </div>
-
-	    <!-- 项目: SWIFT -->
-            <div class="project-card">
-                <div class="status-badge status-completed">已完成</div>
-                <div class="project-title">SWIFT</div>
-                <div class="project-subtitle">小波分解+SSM 时序预测</div>
-                <div class="project-description">
-                    结合小波分解和选择性状态空间模型，通过多尺度特征提取和门控机制提升时序预测精度。
-                </div>
-                <div class="tech-stack">
-                    <span class="tech-tag">PyTorch</span>
-                    <span class="tech-tag">State Space</span>
-                    <span class="tech-tag">Time Series</span>
-                    <span class="tech-tag">Python</span>
-                    <span class="tech-tag">CUDA</span>
-                </div>
-                <div class="project-links">
-                    <a href="https://github.com/William-Liwei/SWIFT" class="btn btn-primary">
-                        📱 GitHub
-                    </a>
-                </div>
-            </div>
-
-            <!-- 项目: Olympic Medal Prediction -->
-            <div class="project-card">
-                <div class="status-badge status-completed">已完成</div>
-                <div class="project-title">Olympic Medal Prediction</div>
-                <div class="project-subtitle">Combining AAC Model with ARIMA-State Space Dynamics</div>
-                <div class="project-description">
-                    A novel approach to predicting Olympic medal tallies using an Adaptive Triple-Fusion (AAS) model, 
-		    which combines the AAC (senior Athlete-new Athlete-Country) model with ARIMA-State Space dynamics. 
-                </div>
-                <div class="tech-stack">
-                    <span class="tech-tag">ARIMA</span>
-                    <span class="tech-tag">State Space</span>
-                    <span class="tech-tag">Time Series</span>
-                    <span class="tech-tag">Python</span>
-                    <span class="tech-tag">CUDA</span>
-                </div>
-                <div class="project-links">
-                    <a href="https://www.lwow.xyz/2025/02/14/%E5%AD%A6%E6%9C%AF%E6%B5%B7%E6%8A%A5/#more" class="btn btn-primary">
-                        📱 Poster
-                    </a>
-                </div>
-            </div>
-
-            <!-- 项目: 个人博客系统 -->
-            <div class="project-card">
-                <div class="status-badge status-active">进行中</div>
-                <div class="project-title">个人技术博客</div>
-                <div class="project-subtitle">基于Hexo的响应式博客系统</div>
-                <div class="project-description">
-                    使用Hexo框架搭建的个人技术博客，集成了项目展示、技能树、时间线等功能模块。
-                    采用响应式设计，支持多种主题切换和代码高亮。
-                </div>
-                <div class="tech-stack">
-                    <span class="tech-tag">Hexo</span>
-                    <span class="tech-tag">JavaScript</span>
-                    <span class="tech-tag">CSS3</span>
-                    <span class="tech-tag">Responsive</span>
-                </div>
-                <div class="project-links">
-                    <a href="https://www.lwow.xyz" class="btn btn-primary">
-                        🌐 访问博客
-                    </a>
-                    <a href="https://william-liwei.github.io" class="btn btn-secondary">
-                        🌐 备用链接
-                    </a>
-                </div>
-            </div>
-        </div>
+  <div class="container">
+    <div class="timeline" id="timeline">
+      <!-- 项目数据将通过 JS 动态插入并排序 -->
     </div>
+  </div>
 
-    <script>
-        // 添加一些交互动画
-        document.querySelectorAll('.project-card').forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-10px) scale(1.02)';
-            });
-            
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0) scale(1)';
-            });
-        });
+  <script>
+    // 项目数据（可自由增删改）
+    const projects = [
+      {
+        date: "2025.05 – 2025.06",
+        title: "CCF-Online",
+        subtitle: "计算机领域学术会议 & 期刊信息在线查询平台",
+        abstract: "实时抓取 CCF 推荐列表、JCR 分区、截稿日期与录用率，支持多维度筛选、响应式设计及夜间模式。数据每日更新，助力科研人员高效规划投稿。",
+        tags: ["JavaScript", "Bootstrap", "Scrapy", "GitHub Pages"],
+        links: [{text: "在线演示", url: "https://www.lwow.xyz/CCF/"}]
+      },
+      {
+        date: "2025.03 – 2025.04",
+        title: "TimeFlowDiffuser",
+        subtitle: "层级扩散框架的多步时间序列预测",
+        abstract: "提出 TimeFlowDiffuser，通过自适应上下文采样与层级扩散过程，显著提升多尺度长期预测精度。ICANN 2025 Oral。",
+        tags: ["PyTorch", "Diffusion", "State-Space"],
+        links: [{text: "GitHub", url: "https://github.com/William-Liwei/TimeFlowDiffuser"}]
+      },
+      {
+        date: "2025.04 – 2025.08",
+        title: "ScatterFusion",
+        subtitle: "层级散射变换的时间序列预测框架",
+        abstract: "ScatterFusion 利用层级散射网络与注意力机制，实现多尺度特征增强；在多个基准上优于现有方法。在审。",
+        tags: ["Scattering Transform", "Attention", "PyTorch"],
+        links: [{text: "GitHub", url: "https://github.com/William-Liwei/ScatterFusion"}]
+      },
+      {
+        date: "2025.03",
+        title: "SWIFT",
+        subtitle: "小波-状态空间融合时序预测技术",
+        abstract: "结合小波分解与选择性状态空间模型，引入门控机制，实现低资源消耗下的高精度多尺度预测。ICANN 2025 Oral。",
+        tags: ["Wavelet", "SSM", "CUDA"],
+        links: [{text: "GitHub", url: "https://github.com/William-Liwei/SWIFT"}]
+      },
+      {
+        date: "2025.02",
+        title: "Olympic Medal Prediction",
+        subtitle: "自适应三重融合的奥运奖牌预测模型",
+        abstract: "融合 AAC（资深运动员-新秀-国家）模型与 ARIMA-状态空间动力学，提出 AAS 框架；在 2024 奥运数据上主要国家平均误差 < 5%。CAMMIC 2025 Poster。",
+        tags: ["ARIMA", "State Space", "Bayesian"],
+        links: [{text: "学术海报", url: "https://www.lwow.xyz/2025/02/14/学术海报/"}]
+      },
+      {
+        date: "2025.04",
+        title: "EnergyPatchTST",
+        subtitle: "能源不确定性多尺度 Transformer",
+        abstract: "基于 PatchTST 改进，提出面向能源预测的多尺度 Transformer 并引入不确定性估计；在多个能源数据集上误差降低 7-12%。ICIC 2025 Oral。",
+        tags: ["Transformer", "Energy", "Uncertainty"],
+        links: [{text: "GitHub", url: "https://github.com/William-Liwei/EnergyPatchTST"}]
+      },
+      {
+        date: "2025.03",
+        title: "LWSpace",
+        subtitle: "通用多尺度状态空间时序框架",
+        abstract: "提出 LWSpace —— 集成小波分解与选择性状态空间的通用时序预测模型；跨领域测试均优于现有方法，同时显著压缩训练时间与显存。ICIC 2025 Oral。",
+        tags: ["SSM", "Wavelet", "Cross-Domain"],
+        links: [{text: "GitHub", url: "https://github.com/William-Liwei/LWSpace"}]
+      },
+      {
+        date: "2024.09 – 2024.12",
+        title: "产品装配策略优化",
+        subtitle: "贝叶斯决策网络 × 遗传算法",
+        abstract: "针对零部件与工序数量不定的普遍生产场景，构建贝叶斯更新次品率的决策网络，并用遗传算法求解最优装配策略；获书院本科生学术论坛二等奖。",
+        tags: ["Bayesian Network", "GA", "Python"]
+      },
+      {
+        date: "2024.08 – 2024.11",
+        title: "课程翼选通",
+        subtitle: "基于 Playwright + Flask 的云主机选课系统",
+        abstract: "部署于天翼云主机的教育辅助平台，集成选课自动化、成绩查询、课程评价及情感量化功能，获上海市“天翼云杯”二等奖，已获批软件著作权。",
+        tags: ["Flask", "Playwright", "Sentiment Analysis"]
+      },
+      {
+        date: "2024.03 – 2024.07",
+        title: "停易达",
+        subtitle: "全域智慧停车物联网平台",
+        abstract: "Python+Flask 构建前后端系统，融合微信小程序实现车位实时查询、预约与缴费，获 2024 上大创新大赛校内金奖。",
+        tags: ["IoT", "WeChat Mini Program", "Python"]
+      },
+      {
+        date: "2024.03 – 至今",
+        title: "硅酸盐质文物数据库",
+        subtitle: "文化遗产数字化管理平台",
+        abstract: "为上海大学硅酸盐质文物保护重点实验室开发佛首文化遗产数据库，支持 MySQL + Streamlit，实现文物信息录入、检索、可视化分析。",
+        tags: ["MySQL", "MongoDB", "Data Visualization", "Cultural Heritage"]
+      }
 
-        // 页面加载动画
-        window.addEventListener('load', function() {
-            const cards = document.querySelectorAll('.project-card');
-            cards.forEach((card, index) => {
-                setTimeout(() => {
-                    card.style.opacity = '0';
-                    card.style.transform = 'translateY(50px)';
-                    card.style.transition = 'all 0.6s ease';
-                    
-                    setTimeout(() => {
-                        card.style.opacity = '1';
-                        card.style.transform = 'translateY(0)';
-                    }, 100);
-                }, index * 200);
-            });
-        });
-    </script>
+    ];
+
+    // 解析日期为时间戳（支持区间时间，取开始时间）
+    function parseDate(dateStr) {
+      const start = dateStr.split("–")[0].trim();
+      const [year, month] = start.split(".");
+      return new Date(`${year}-${month || 1}-01`).getTime();
+    }
+
+    // 自动排序并渲染
+    projects
+      .sort((a, b) => parseDate(b.date) - parseDate(a.date))
+      .forEach(p => {
+        const div = document.createElement("div");
+        div.className = "project";
+        div.innerHTML = `
+          <div class="date">${p.date}</div>
+          <div class="title">${p.title}</div>
+          <div class="subtitle">${p.subtitle}</div>
+          <div class="abstract">${p.abstract}</div>
+          <div class="tags">${p.tags.map(t=>`<span class="tag">${t}</span>`).join("")}</div>
+          <div class="links">${(p.links || []).map(l=>`<a href="${l.url}" target="_blank">${l.text}</a>`).join("")}</div>
+        `;
+        document.getElementById("timeline").appendChild(div);
+      });
+  </script>
 </body>
 </html>
