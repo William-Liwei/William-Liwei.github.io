@@ -6,7 +6,7 @@
   <link href="https://lwow.xyz/atom.xml" rel="self"/>
   
   <link href="https://lwow.xyz/"/>
-  <updated>2025-07-30T11:37:09.494Z</updated>
+  <updated>2025-07-30T11:44:48.646Z</updated>
   <id>https://lwow.xyz/</id>
   
   <author>
@@ -15,6 +15,49 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>CCFOnline</title>
+    <link href="https://lwow.xyz/2025/07/30/CCFOnline/"/>
+    <id>https://lwow.xyz/2025/07/30/CCFOnline/</id>
+    <published>2025-07-30T11:43:11.000Z</published>
+    <updated>2025-07-30T11:44:48.646Z</updated>
+    
+    <content type="html"><![CDATA[<h3 id="告别Ctrl-F！这个CCF在线查询神器，治好了我的投稿焦虑症"><a href="#告别Ctrl-F！这个CCF在线查询神器，治好了我的投稿焦虑症" class="headerlink" title="告别Ctrl+F！这个CCF在线查询神器，治好了我的投稿焦虑症"></a>告别Ctrl+F！这个CCF在线查询神器，治好了我的投稿焦虑症</h3><p>你一定经历过这样的场景。</p><p>一篇论文的初稿终于基本成型，Introduction的逻辑捋顺了，实验数据也更新到了最后一版。你长舒一口气，泡上一杯茶，然后打开了那个你再熟悉不过的PDF文件——<strong>《中国计算机学会推荐国际学术会议和期刊目录》</strong>。</p><p>接下来，是一套堪称“学术仪式”的固定操作：</p><ol><li><p>按下 <code>Ctrl+F</code>。</p></li><li><p>输入你研究领域的一个关键词，比如“Security”或者“Vision”。</p></li><li><p>在一片黄色的高亮中，费力地寻找那些被标记为“A类”或“B类”的会议。</p></li><li><p>找到一个眼熟的缩写，比如<code>USENIX Security</code>，然后打开浏览器，新开一个标签页。</p></li><li><p>在Google里输入“USENIX Security 2025 deadline”。</p></li><li><p>在另一个标签页里打开WikiCFP或者会议官网，交叉验证那个让你心跳加速的截稿日期。</p></li><li><p>把这个信息，手动复制粘贴到你的个人Excel或者备忘录里。</p></li><li><p>回到那个PDF，继续寻找下一个可能的目标……</p><span id="more"></span></li></ol><p>这个过程，短则半小时，长则一个下午。它枯燥、低效，而且极易出错。我们本应投入在思考和创造上的宝贵精力，就这样被消磨在了一次又一次的机械检索中。</p><p>我们是计算机科学家，我们用代码改变世界，却在每天用着最“原始”的方式，管理着我们学术生涯中最重要的信息。</p><p>这听起来，是不是有点讽刺？</p><h4 id="一、我们忍受的，远不止是“麻烦”"><a href="#一、我们忍受的，远不止是“麻烦”" class="headerlink" title="一、我们忍受的，远不止是“麻烦”"></a>一、我们忍受的，远不止是“麻烦”</h4><p>这种低效的查询方式带来的，绝不仅仅是时间上的浪费。它像一个幽灵，持续不断地给我们制造着一种“投稿焦虑”。</p><ul><li><strong>信息孤岛</strong>：CCF列表是A表，会议DDL是B表，期刊分区是C表…… 我们的决策，依赖于在这些孤立的表格之间进行“人肉连接”，心智负担极重。</li><li><strong>机会错失</strong>：你可能因为一次疏忽，就错过了一个和你研究方向完美匹配的B类会议的截稿日期，而下一次投稿窗口，可能就是半年之后。</li><li><strong>移动端的灾难</strong>：导师在群里突然提到一个会议，想在手机上快速查一下它的等级和领域？打开那个几十页的PDF，你会体验到什么叫“绝望的缩放和平移”。</li></ul><p>我们都曾幻想过，如果有一个工具，能像我们写的代码一样优雅、高效，那该多好？</p><p>如果，它能在一个页面上，让我看到所有<strong>人工智能领域</strong>的<strong>CCF-A类会议</strong>，并且按<strong>截稿日期</strong>排好序呢？<br>如果，我只需输入<code>CVPR</code>，就能立刻看到它的所有信息，而不用在一堆“计算机视觉”的高亮里寻找呢？</p><p>这个“如果”，现在有人把它变成了现实。</p><h4 id="二、相见恨晚的神器：CCF-Online"><a href="#二、相见恨晚的神器：CCF-Online" class="headerlink" title="二、相见恨晚的神器：CCF-Online"></a>二、相见恨晚的神器：CCF-Online</h4><p>直到上周，一位师兄在组会分享时，云淡风轻地打开了一个网址： <code>https://www.lwow.xyz/CCF/</code></p><p>那一刻，我感觉整个实验室都安静了。</p><p>展现在我们面前的，是一个无比清爽、无比直观的界面。没有广告，没有干扰，只有我们最需要的信息，以一种前所未有的优雅方式组织在一起。</p><p>它就是 <strong>CCF-Online</strong>。一个由懂我们的人，为我们量身打造的在线查询工具。</p><p>我迫不及待地体验了几分钟，然后毫不犹豫地把它添加到了浏览器的收藏夹，并且置顶。因为它完美地解决了我们曾经忍受的一切：</p><ul><li><p><strong>瞬时搜索与多维筛选</strong><br>你可以像用Google一样，直接在搜索框里输入会议&#x2F;期刊的缩写或全称，结果实时呈现。更强大的是它的筛选功能，你可以<strong>像点菜一样</strong>，轻松组合你想要的条件：“<strong>CCF-A</strong>” + “<strong>计算机网络</strong>” + “<strong>会议</strong>”，只需三下点击，一份为你量身定制的投稿目标清单便跃然屏上。</p></li><li><p><strong>清晰直观的信息聚合</strong><br>每一条记录都像一张精致的卡片，清晰地列出了<strong>类别、领域、全称、出版社</strong>。你再也不用在密密麻麻的表格里看得眼花缭乱。</p></li><li><p><strong>完美的移动端适配</strong><br>我试着用手机打开了它，体验如丝般顺滑。从此，无论是在地铁上，还是在咖啡馆里，我都能随时随地、优雅地规划我的投稿蓝图。</p></li></ul><p><strong>CCF-Online</strong> 将我们过去一个小时的繁琐劳动，压缩成了一分钟的从容操作。它做的，正是我们最擅长也最欣赏的事情——<strong>用技术，解决一个重复性的、低效的问题。</strong></p><h4 id="三、把时间，还给真正的科研"><a href="#三、把时间，还给真正的科研" class="headerlink" title="三、把时间，还给真正的科研"></a>三、把时间，还给真正的科研</h4><p>创造这个工具的开发者，我素未谋面。但我知道，他&#x2F;她一定也曾在那样的深夜里，为了一次投稿而反复检索、焦虑不安。</p><p>他没有选择忍受，而是选择用自己的代码，为我们所有同行，创造了一个更好的解决方案。而且，它是免费的，开放的。</p><p>这是一种纯粹的、属于我们技术人的浪漫。</p><p>我今天写下这篇文章，不是为了给谁做广告，而是出于一种朴素的分享欲。我真心觉得，这样优秀、纯粹的工具，应该被更多还在“Ctrl+F”里挣扎的同学看到。</p><p>它无法帮助你写出论文，但它能为你节省下宝贵的时间和精力，让你能更专注于思考、实验和创造——那些真正决定你学术高度的事情。</p><p><strong>把这个网站收藏起来吧，把它分享给你的室友和实验室的伙伴们。</strong></p><p><strong>网址：<a href="https://www.lwow.xyz/CCF/">https://www.lwow.xyz/CCF/</a></strong></p><p>让我们一起，把时间还给科研，把从容还给自己。</p>]]></content>
+    
+    
+    <summary type="html">&lt;h3 id=&quot;告别Ctrl-F！这个CCF在线查询神器，治好了我的投稿焦虑症&quot;&gt;&lt;a href=&quot;#告别Ctrl-F！这个CCF在线查询神器，治好了我的投稿焦虑症&quot; class=&quot;headerlink&quot; title=&quot;告别Ctrl+F！这个CCF在线查询神器，治好了我的投稿焦虑症&quot;&gt;&lt;/a&gt;告别Ctrl+F！这个CCF在线查询神器，治好了我的投稿焦虑症&lt;/h3&gt;&lt;p&gt;你一定经历过这样的场景。&lt;/p&gt;
+&lt;p&gt;一篇论文的初稿终于基本成型，Introduction的逻辑捋顺了，实验数据也更新到了最后一版。你长舒一口气，泡上一杯茶，然后打开了那个你再熟悉不过的PDF文件——&lt;strong&gt;《中国计算机学会推荐国际学术会议和期刊目录》&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;接下来，是一套堪称“学术仪式”的固定操作：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;按下 &lt;code&gt;Ctrl+F&lt;/code&gt;。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;输入你研究领域的一个关键词，比如“Security”或者“Vision”。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;在一片黄色的高亮中，费力地寻找那些被标记为“A类”或“B类”的会议。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;找到一个眼熟的缩写，比如&lt;code&gt;USENIX Security&lt;/code&gt;，然后打开浏览器，新开一个标签页。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;在Google里输入“USENIX Security 2025 deadline”。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;在另一个标签页里打开WikiCFP或者会议官网，交叉验证那个让你心跳加速的截稿日期。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;把这个信息，手动复制粘贴到你的个人Excel或者备忘录里。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;回到那个PDF，继续寻找下一个可能的目标……&lt;/p&gt;</summary>
+    
+    
+    
+    
+    <category term="论文" scheme="https://lwow.xyz/tags/%E8%AE%BA%E6%96%87/"/>
+    
+    <category term="学术" scheme="https://lwow.xyz/tags/%E5%AD%A6%E6%9C%AF/"/>
+    
+    <category term="CCF" scheme="https://lwow.xyz/tags/CCF/"/>
+    
+    <category term="创业" scheme="https://lwow.xyz/tags/%E5%88%9B%E4%B8%9A/"/>
+    
+  </entry>
   
   <entry>
     <title>ApexScholar</title>
@@ -464,31 +507,6 @@
     
     <summary type="html">&lt;h2 id=&quot;从一开始：更改Hexo网站域名&quot;&gt;&lt;a href=&quot;#从一开始：更改Hexo网站域名&quot; class=&quot;headerlink&quot; title=&quot;从一开始：更改Hexo网站域名&quot;&gt;&lt;/a&gt;&lt;strong&gt;从一开始：更改Hexo网站域名&lt;/strong&gt;&lt;/h2&gt;&lt;p&gt;本篇博客将详细介绍如何通过 Vercel 设置自定义域名，实现个性化且高效的网站托管。本文将逐步介绍  如何使用 Vercel 以及如何在 GitHub 上设置自定义域名。&lt;/p&gt;
 &lt;p&gt;常见的修改域名方式有如下两种，不过个人推荐采用Vercel。&lt;/p&gt;</summary>
-    
-    
-    
-    
-    <category term="建站" scheme="https://lwow.xyz/tags/%E5%BB%BA%E7%AB%99/"/>
-    
-    <category term="教学" scheme="https://lwow.xyz/tags/%E6%95%99%E5%AD%A6/"/>
-    
-    <category term="hexo" scheme="https://lwow.xyz/tags/hexo/"/>
-    
-    <category term="github" scheme="https://lwow.xyz/tags/github/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>hexo建站教学(1)</title>
-    <link href="https://lwow.xyz/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-1/"/>
-    <id>https://lwow.xyz/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-1/</id>
-    <published>2025-02-16T06:13:43.000Z</published>
-    <updated>2025-05-30T04:13:40.252Z</updated>
-    
-    <content type="html"><![CDATA[<h2 id="从零开始：使用-Hexo-搭建并部署个人博客到-GitHub"><a href="#从零开始：使用-Hexo-搭建并部署个人博客到-GitHub" class="headerlink" title="从零开始：使用 Hexo 搭建并部署个人博客到 GitHub"></a>从零开始：使用 Hexo 搭建并部署个人博客到 GitHub</h2><p>本篇博客将详细介绍如何使用 Hexo 搭建个人博客，并将其部署到 GitHub 上，实现免费且高效的个人网站托管。我们将从环境准备开始，逐步介绍 Hexo 的安装、配置、内容创作以及最终的部署过程。</p><span id="more"></span><h3 id="1-环境准备"><a href="#1-环境准备" class="headerlink" title="1. 环境准备"></a>1. 环境准备</h3><p>在开始之前，请确保你的系统已经安装了以下工具：</p><ul><li><p><strong>Node.js 和 npm</strong>：Hexo 是基于 Node.js 的静态网站生成器，因此需要先安装 Node.js 和 npm（Node.js 自带 npm）。你可以通过以下命令检查是否已安装：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">node -v</span><br><span class="line">npm -v</span><br></pre></td></tr></table></figure></li></ul><p>如果未安装，可以从 <a href="https://nodejs.org/">Node.js 官方网站</a> 下载并安装。</p><ul><li><strong>Git</strong>：用于将代码推送到 GitHub。你可以从 <a href="https://git-scm.com/">Git 官方网站</a> 下载并安装。</li></ul><h3 id="2-安装-Hexo"><a href="#2-安装-Hexo" class="headerlink" title="2. 安装 Hexo"></a>2. 安装 Hexo</h3><p>安装 Hexo 非常简单，只需使用 npm 全局安装即可：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install -g hexo-cli</span><br></pre></td></tr></table></figure><p>安装完成后，可以通过以下命令验证是否安装成功：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo -v</span><br></pre></td></tr></table></figure><p>注意：如果无法运行，可以在所有涉及到 ” hexo“ 的命令之前加上 ”npx“ ，例如：</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npx hexo -v</span><br></pre></td></tr></table></figure><h3 id="3-创建-Hexo-项目"><a href="#3-创建-Hexo-项目" class="headerlink" title="3. 创建 Hexo 项目"></a>3. 创建 Hexo 项目</h3><p>在你希望存放博客的目录下，运行以下命令创建一个新的 Hexo 项目：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hexo init myblog</span><br><span class="line"><span class="built_in">cd</span> myblog</span><br></pre></td></tr></table></figure><p>Hexo 会自动安装项目所需的依赖包：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install</span><br></pre></td></tr></table></figure><h3 id="4-配置-Hexo"><a href="#4-配置-Hexo" class="headerlink" title="4. 配置 Hexo"></a>4. 配置 Hexo</h3><p>Hexo 的配置文件位于项目根目录下的 <code>_config.yml</code> 文件中。我们需要对其进行一些基本配置，例如站点名称、作者、描述等：</p><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">title:</span> <span class="string">My</span> <span class="string">Blog</span></span><br><span class="line"><span class="attr">subtitle:</span> <span class="string">A</span> <span class="string">Personal</span> <span class="string">Blog</span> <span class="string">Powered</span> <span class="string">by</span> <span class="string">Hexo</span></span><br><span class="line"><span class="attr">description:</span> <span class="string">This</span> <span class="string">is</span> <span class="string">my</span> <span class="string">personal</span> <span class="string">blog</span> <span class="string">where</span> <span class="string">I</span> <span class="string">share</span> <span class="string">my</span> <span class="string">thoughts</span> <span class="string">and</span> <span class="string">experiences.</span></span><br><span class="line"><span class="attr">author:</span> <span class="string">Your</span> <span class="string">Name</span></span><br><span class="line"><span class="attr">language:</span> <span class="string">en</span></span><br><span class="line"><span class="attr">timezone:</span> <span class="string">Asia/Shanghai</span></span><br></pre></td></tr></table></figure><h3 id="5-选择主题"><a href="#5-选择主题" class="headerlink" title="5. 选择主题"></a>5. 选择主题</h3><p>Hexo 支持多种主题，你可以根据自己的喜好选择。这里我们以官方推荐的 <a href="https://theme-next.js.org/">NexT</a> 主题为例：</p><ol><li><p>安装主题：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/theme-next/hexo-theme-next.git themes/next</span><br></pre></td></tr></table></figure></li><li><p>在 <code>_config.yml</code> 中设置主题：</p><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">theme:</span> <span class="string">next</span></span><br></pre></td></tr></table></figure></li><li><p>安装主题依赖：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> themes/next</span><br><span class="line">npm install</span><br><span class="line"><span class="built_in">cd</span> ../..</span><br></pre></td></tr></table></figure></li></ol><h3 id="6-创建内容"><a href="#6-创建内容" class="headerlink" title="6. 创建内容"></a>6. 创建内容</h3><p>Hexo 使用 Markdown 编写内容。你可以通过以下命令创建一篇新文章：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo new post <span class="string">&quot;My First Post&quot;</span></span><br></pre></td></tr></table></figure><p>这将在 <code>source/_posts</code> 目录下生成一篇名为 <code>my-first-post.md</code> 的文章。编辑该文件，添加你的内容：</p><figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">---</span><br><span class="line">title: My First Post</span><br><span class="line">date: 2025-02-16 23:16:13</span><br><span class="line"><span class="section">tags: [Hexo, Blog]</span></span><br><span class="line"><span class="section">---</span></span><br><span class="line"></span><br><span class="line"><span class="section"># Welcome to My Blog</span></span><br><span class="line"></span><br><span class="line">This is my first post using Hexo. I&#x27;m excited to start sharing my thoughts and experiences here.</span><br></pre></td></tr></table></figure><h3 id="7-本地预览"><a href="#7-本地预览" class="headerlink" title="7. 本地预览"></a>7. 本地预览</h3><p>在推送代码到 GitHub 之前，可以使用 Hexo 的服务器功能进行本地预览：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo server</span><br></pre></td></tr></table></figure><p>打开浏览器，访问 <code>http://localhost:4000</code>，即可看到你的博客。</p><h3 id="8-部署到-GitHub"><a href="#8-部署到-GitHub" class="headerlink" title="8. 部署到 GitHub"></a>8. 部署到 GitHub</h3><ol><li><p><strong>创建 GitHub 仓库</strong>：登录你的 GitHub 账号，创建一个新的仓库，例如 <code>yourusername.github.io</code>。</p></li><li><p><strong>配置部署</strong>：在 <code>_config.yml</code> 中添加部署配置：</p><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">deploy:</span></span><br><span class="line">  <span class="attr">type:</span> <span class="string">git</span></span><br><span class="line">  <span class="attr">repo:</span> <span class="string">https://github.com/yourusername/yourusername.github.io.git</span></span><br><span class="line">  <span class="attr">branch:</span> <span class="string">main</span></span><br></pre></td></tr></table></figure></li><li><p><strong>生成静态文件并部署</strong>：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">hexo clean</span><br><span class="line">hexo generate</span><br><span class="line">hexo deploy</span><br></pre></td></tr></table></figure><p>如果一切顺利，Hexo 会将生成的静态文件推送到你的 GitHub 仓库。</p></li></ol><h3 id="9-访问博客"><a href="#9-访问博客" class="headerlink" title="9. 访问博客"></a>9. 访问博客</h3><p>部署完成后，你的博客将可以通过 <code>https://yourusername.github.io</code> 访问。</p><h3 id="10-后续操作"><a href="#10-后续操作" class="headerlink" title="10. 后续操作"></a>10. 后续操作</h3><ul><li><strong>更新内容</strong>：每次更新文章或修改配置后，运行 <code>hexo clean</code>、<code>hexo generate</code> 和 <code>hexo deploy</code> 即可更新博客。</li><li><strong>自定义主题</strong>：你可以根据 NexT 主题的文档，进一步自定义博客的外观和功能。</li></ul><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>通过 Hexo 和 GitHub，你可以轻松搭建一个属于自己的个人博客，展示你的技术文章或个人作品。希望这篇博客对你有所帮助，祝你建站愉快！</p><h3 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h3><ul><li><a href="https://hexo.io/docs/">Hexo 官方文档</a></li><li><a href="https://theme-next.js.org/docs/">NexT 主题文档</a></li><li><a href="https://pages.github.com/">GitHub Pages 官方文档</a></li></ul>]]></content>
-    
-    
-    <summary type="html">&lt;h2 id=&quot;从零开始：使用-Hexo-搭建并部署个人博客到-GitHub&quot;&gt;&lt;a href=&quot;#从零开始：使用-Hexo-搭建并部署个人博客到-GitHub&quot; class=&quot;headerlink&quot; title=&quot;从零开始：使用 Hexo 搭建并部署个人博客到 GitHub&quot;&gt;&lt;/a&gt;从零开始：使用 Hexo 搭建并部署个人博客到 GitHub&lt;/h2&gt;&lt;p&gt;本篇博客将详细介绍如何使用 Hexo 搭建个人博客，并将其部署到 GitHub 上，实现免费且高效的个人网站托管。我们将从环境准备开始，逐步介绍 Hexo 的安装、配置、内容创作以及最终的部署过程。&lt;/p&gt;</summary>
     
     
     
