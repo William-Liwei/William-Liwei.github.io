@@ -6,7 +6,7 @@
   <link href="https://lwow.xyz/atom.xml" rel="self"/>
   
   <link href="https://lwow.xyz/"/>
-  <updated>2025-07-17T08:50:32.361Z</updated>
+  <updated>2025-07-30T11:37:09.494Z</updated>
   <id>https://lwow.xyz/</id>
   
   <author>
@@ -15,6 +15,33 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>ApexScholar</title>
+    <link href="https://lwow.xyz/2025/07/30/ApexScholar/"/>
+    <id>https://lwow.xyz/2025/07/30/ApexScholar/</id>
+    <published>2025-07-30T11:28:28.000Z</published>
+    <updated>2025-07-30T11:37:09.494Z</updated>
+    
+    <content type="html"><![CDATA[<h3 id="那封深夜才收到的CCF录用信，和我的导师没教给我的事"><a href="#那封深夜才收到的CCF录用信，和我的导师没教给我的事" class="headerlink" title="那封深夜才收到的CCF录用信，和我的导师没教给我的事"></a>那封深夜才收到的CCF录用信，和我的导师没教给我的事</h3><p>凌晨两点半，我按下了<code>F5</code>。</p><p>屏幕上闪烁的光标，像是无声的嘲讽。邮箱里最新的，仍然是几个小时前订阅的ArXiv推送。半凉的咖啡已经失去了味道，只有窗外GPU风扇的嗡鸣，证明这个世界还在运转。</p><p>我在等一封信。一封决定我接下来一年，甚至三年命运的信。</p><span id="more"></span><p>这是我第三次投递这篇关于时间序列的论文。为了它，我熬过的夜、掉过的头发、舍弃的周末，已经多到不想去计算。我自认为Idea新颖，实验也比SOTA（State-of-the-Art）高了零点几个点。可为什么，前两次的回复都是那么相似？“<em>novelty is incremental</em>”, “<em>the motivation is not clear</em>”, “<em>more ablation studies are needed</em>”.</p><p>这不仅仅是我的故事。我知道，这很可能也是你的。</p><p>是我们这些在计算机科研这条路上奋力前行的人，共同的“无声战争”。</p><h4 id="一、那堵看不见的墙"><a href="#一、那堵看不见的墙" class="headerlink" title="一、那堵看不见的墙"></a>一、那堵看不见的墙</h4><p>我们的导师，大多是了不起的战略家。他们能为我们指出一片星辰大海，告诉我们“人工智能的未来在……”“多模态是个好方向”。他们是学术方向的舵手，却很少有时间，能坐在我们身边，告诉我们一砖一瓦要如何搭建。</p><p>于是，我们一头扎进了名为“科研”的迷宫。</p><p>我们学会了如何用Python和PyTorch搭建模型，却不知道如何把这个模型的故事讲得动听；我们跑出了上百组实验，却不知道该把哪几张图表放在正文，哪几句分析写进结论；我们读完了海量的文献，笔记记了满满当当，轮到自己下笔写Introduction时，却发现脑子里一片空白。</p><p>我们和顶会论文之间，仿佛隔着一堵看不见的墙。我们能模糊地感知到墙那边的轮廓，却始终找不到那扇能让我们走进去的门。</p><h4 id="二、我的“陈师兄”"><a href="#二、我的“陈师兄”" class="headerlink" title="二、我的“陈师兄”"></a>二、我的“陈师兄”</h4><p>转机发生在我第二次被拒后的一个下午。我近乎绝望地找到了已经毕业、在业界风生水起的陈师兄。我把我的论文和审稿意见一股脑地发给了他。</p><p>我以为他会和我讨论模型，讨论技术细节。</p><p>但他没有。</p><p>他只问了我一个问题：“<strong>你觉得，你的论文，是在对谁说话？想让他听懂一个什么故事？</strong>”</p><p>我愣住了。</p><p>那个下午，他没动我的代码，没改我的公式。他拿起一支笔，在我的草稿上画了一个逻辑流。从“我们遇到了一个什么样的问题”，到“现有的方法为什么不够好”，再到“我的方法巧妙在哪里”，最后是“实验如何像一位严谨的证人一样，证明了我的巧妙”。</p><p>他说：“<strong>论文不是实验报告，是故事。</strong> 审稿人每天看几十篇论文，他没有时间去爱上你的模型，你必须在三分钟内让他爱上你的故事。”</p><p>他还说：“<strong>代码是你的论据，不是你的论点。</strong> 代码跑出的结果再好，如果不能有力地支撑你的故事主线，那它就只是一个数字。学会取舍，突出核心贡献。”</p><p>我茅塞顿开。原来我一直是在用“工匠思维”做科研，试图用复杂的公式和微弱的性能提升去打动审”匠人”。而顶会要的，是“叙事者”，是一个能清晰定义问题、优雅解决问题、并把这个过程讲得精彩的人。</p><p>我花了两周时间，没有增加一个新实验，几乎是重写了整篇论文的Introduction和Methodology部分。然后，我再次投稿。</p><p>三个月后，就是故事开头的那一幕。在那个凌晨，我等到了人生中第一封来自CCF-C会议的录用信。</p><h4 id="三、我想成为你的“陈师兄”"><a href="#三、我想成为你的“陈师兄”" class="headerlink" title="三、我想成为你的“陈师兄”"></a>三、我想成为你的“陈师兄”</h4><p>从那以后，我仿佛打通了任督二脉。我开始有意识地用“讲故事”的逻辑去构建我的每一项研究。我陆续发表了更多的论文，从CCF-C到更高等级，从一作到独作。</p><p>我愈发觉得，陈师兄教给我的，是这整个学术体系里最宝贵、也最稀缺的“屠龙之术”。</p><p>我不想让这份来之不易的经验，只尘封在我自己的档案里。那些你正在熬的夜，正在经历的迷茫，我都感同身受。如果我的经验能成为一盏灯，哪怕只是帮你照亮一小段路，让你少走一些弯路，我觉得这件事就无比值得。</p><p>于是，我创建了<strong>Apex Scholar</strong>。</p><p>我希望它不是一个冰冷的交易平台，而是一个温暖的学术互助社区。在这里，我希望成为你的“陈师兄”。</p><p>我们可以一起：</p><ul><li><strong>聊聊你的Idea</strong>，看看它是否能构成一个足够吸引人的“故事内核”。</li><li><strong>设计你的实验</strong>，让它们像环环相扣的证据链，无可辩驳。</li><li><strong>打磨你的文字</strong>，从标题到参考文献，让它读起来像一篇顶刊范文。</li><li><strong>复盘你的代码</strong>，确保它的专业性和可复现性，为你未来的学术声誉打下坚实的基础。</li></ul><p>无论是从零开始的全程陪伴，还是在你已有成果上的“临门一脚”式的润色和拔高，我都愿意倾囊相授。</p><p>并且，我将延续这份学术的真诚，许下一个承诺：<strong>不成功，不收费。</strong> 这是我对这份信任最基本的尊重。</p><h4 id="四、天亮之后，路总会更清晰"><a href="#四、天亮之后，路总会更清晰" class="headerlink" title="四、天亮之后，路总会更清晰"></a>四、天亮之后，路总会更清晰</h4><p>如果你读到了这里，也许你和我一样，是对学术有着一份执着和热爱的人。</p><p>科研的路很难，但也许它最迷人的地方，恰恰在于每一次自我怀疑后的坚持，和每一次柳暗花明后的豁然开朗。</p><p>如果你愿意，我希望能有一个喝杯咖啡的时间，听听你的故事和困惑。也许我的经验，正好能解答你此刻的难题。</p><p>天亮之后，路总会更清晰一些。而这一次，也许有人能陪你一起走。</p><blockquote><p><strong>可以访问我的小站，了解更多关于我的背景、成功案例和详细的服务内容。期待在那里，收到你的来信。</strong></p><p><strong><a href="https://www.lwow.xyz/ApexScholar/">https://www.lwow.xyz/ApexScholar/</a></strong></p></blockquote>]]></content>
+    
+    
+    <summary type="html">&lt;h3 id=&quot;那封深夜才收到的CCF录用信，和我的导师没教给我的事&quot;&gt;&lt;a href=&quot;#那封深夜才收到的CCF录用信，和我的导师没教给我的事&quot; class=&quot;headerlink&quot; title=&quot;那封深夜才收到的CCF录用信，和我的导师没教给我的事&quot;&gt;&lt;/a&gt;那封深夜才收到的CCF录用信，和我的导师没教给我的事&lt;/h3&gt;&lt;p&gt;凌晨两点半，我按下了&lt;code&gt;F5&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;屏幕上闪烁的光标，像是无声的嘲讽。邮箱里最新的，仍然是几个小时前订阅的ArXiv推送。半凉的咖啡已经失去了味道，只有窗外GPU风扇的嗡鸣，证明这个世界还在运转。&lt;/p&gt;
+&lt;p&gt;我在等一封信。一封决定我接下来一年，甚至三年命运的信。&lt;/p&gt;</summary>
+    
+    
+    
+    
+    <category term="论文" scheme="https://lwow.xyz/tags/%E8%AE%BA%E6%96%87/"/>
+    
+    <category term="学术" scheme="https://lwow.xyz/tags/%E5%AD%A6%E6%9C%AF/"/>
+    
+    <category term="ApexScholar" scheme="https://lwow.xyz/tags/ApexScholar/"/>
+    
+    <category term="创业" scheme="https://lwow.xyz/tags/%E5%88%9B%E4%B8%9A/"/>
+    
+  </entry>
   
   <entry>
     <title>AnyRouter</title>
@@ -473,32 +500,6 @@
     <category term="hexo" scheme="https://lwow.xyz/tags/hexo/"/>
     
     <category term="github" scheme="https://lwow.xyz/tags/github/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>学术海报</title>
-    <link href="https://lwow.xyz/2025/02/14/%E5%AD%A6%E6%9C%AF%E6%B5%B7%E6%8A%A5/"/>
-    <id>https://lwow.xyz/2025/02/14/%E5%AD%A6%E6%9C%AF%E6%B5%B7%E6%8A%A5/</id>
-    <published>2025-02-14T15:16:13.000Z</published>
-    <updated>2025-06-06T04:09:40.262Z</updated>
-    
-    <content type="html"><![CDATA[<h2 id="Olympic-Medal-Prediction-via-Adaptive-Triple-Fusion-Combining-AAC-Model-with-ARIMA-State-Space-Dynamics"><a href="#Olympic-Medal-Prediction-via-Adaptive-Triple-Fusion-Combining-AAC-Model-with-ARIMA-State-Space-Dynamics" class="headerlink" title="Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics"></a>Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics</h2><ul><li><p><strong>Authors</strong>：Wei Li, Zixin Wang, Qixiang Gao, Fenglei Yang*</p></li><li><p><strong>Published in</strong>：CAMMIC 2025 (EI Indexed Conference), Full Paper (Poster Presentation).</p></li><li><p><strong>Email</strong>：<a href="mailto:&#x6c;&#x69;&#119;&#x65;&#105;&#48;&#48;&#x38;&#x30;&#48;&#x39;&#64;&#x31;&#x36;&#51;&#46;&#x63;&#x6f;&#x6d;">&#x6c;&#x69;&#119;&#x65;&#105;&#48;&#48;&#x38;&#x30;&#48;&#x39;&#64;&#x31;&#x36;&#51;&#46;&#x63;&#x6f;&#x6d;</a></p><span id="more"></span><p><img src="/2025/02/14/%E5%AD%A6%E6%9C%AF%E6%B5%B7%E6%8A%A5/ver2.0.jpg" alt="图片"></p></li><li><p>This poster presents a novel approach to predicting Olympic medal tallies using an Adaptive Triple-Fusion (AAS) model, which combines the AAC (senior Athlete-new Athlete-Country) model with ARIMA-State Space dynamics. The research integrates athlete dynamics and national trends, achieving a mean error rate of less than 5% for major nations in the 2024 Olympics. The framework leverages measure-theoretic probability and hierarchical Bayesian modeling to ensure robust predictions and interpretability.</p></li></ul>]]></content>
-    
-    
-    <summary type="html">&lt;h2 id=&quot;Olympic-Medal-Prediction-via-Adaptive-Triple-Fusion-Combining-AAC-Model-with-ARIMA-State-Space-Dynamics&quot;&gt;&lt;a href=&quot;#Olympic-Medal-Prediction-via-Adaptive-Triple-Fusion-Combining-AAC-Model-with-ARIMA-State-Space-Dynamics&quot; class=&quot;headerlink&quot; title=&quot;Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics&quot;&gt;&lt;/a&gt;Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics&lt;/h2&gt;&lt;ul&gt;
-&lt;li&gt;&lt;p&gt;&lt;strong&gt;Authors&lt;/strong&gt;：Wei Li, Zixin Wang, Qixiang Gao, Fenglei Yang*&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;&lt;strong&gt;Published in&lt;/strong&gt;：CAMMIC 2025 (EI Indexed Conference), Full Paper (Poster Presentation).&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;&lt;strong&gt;Email&lt;/strong&gt;：&lt;a href=&quot;mailto:&amp;#x6c;&amp;#x69;&amp;#119;&amp;#x65;&amp;#105;&amp;#48;&amp;#48;&amp;#x38;&amp;#x30;&amp;#48;&amp;#x39;&amp;#64;&amp;#x31;&amp;#x36;&amp;#51;&amp;#46;&amp;#x63;&amp;#x6f;&amp;#x6d;&quot;&gt;&amp;#x6c;&amp;#x69;&amp;#119;&amp;#x65;&amp;#105;&amp;#48;&amp;#48;&amp;#x38;&amp;#x30;&amp;#48;&amp;#x39;&amp;#64;&amp;#x31;&amp;#x36;&amp;#51;&amp;#46;&amp;#x63;&amp;#x6f;&amp;#x6d;&lt;/a&gt;&lt;/p&gt;</summary>
-    
-    
-    
-    
-    <category term="论文" scheme="https://lwow.xyz/tags/%E8%AE%BA%E6%96%87/"/>
-    
-    <category term="学术" scheme="https://lwow.xyz/tags/%E5%AD%A6%E6%9C%AF/"/>
     
   </entry>
   
