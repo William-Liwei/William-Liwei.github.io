@@ -10,12 +10,12 @@
   <meta name="generator" content="hexo-theme-yilia-plus">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   
-  <meta name="description" content="EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy ForecastingThis is an official implementation of  [EnergyPatchTST: Multi-scale Time Series Transformers with">
+  <meta name="description" content="EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy ForecastingThis is an official implementation of  EnergyPatchTST: Multi-scale Time Series Transformers with">
 <meta property="og:type" content="article">
 <meta property="og:title" content="EnergyPatchTST">
 <meta property="og:url" content="https://lwow.xyz/2025/05/31/EnergyPatchTST/">
 <meta property="og:site_name" content="William-Liwei&#39;s blog">
-<meta property="og:description" content="EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy ForecastingThis is an official implementation of  [EnergyPatchTST: Multi-scale Time Series Transformers with">
+<meta property="og:description" content="EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy ForecastingThis is an official implementation of  EnergyPatchTST: Multi-scale Time Series Transformers with">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://img.shields.io/badge/License-Apache_2.0-blue.svg">
 <meta property="og:image" content="https://badgen.net/github/issues/William-Liwei/EnergyPatchTST?color=red">
@@ -25,7 +25,7 @@
 <meta property="og:image" content="https://badgen.net/github/forks/William-Liwei/EnergyPatchTST?color=pink">
 <meta property="og:image" content="https://api.star-history.com/svg?repos=William-Liwei/EnergyPatchTST&type=Date">
 <meta property="article:published_time" content="2025-05-31T06:13:43.000Z">
-<meta property="article:modified_time" content="2025-06-07T11:01:23.302Z">
+<meta property="article:modified_time" content="2025-08-01T02:27:42.085Z">
 <meta property="article:author" content="黎玮">
 <meta property="article:tag" content="论文">
 <meta property="article:tag" content="Time Series">
@@ -270,7 +270,7 @@
       <!-- 百度字体平台:http://fontstore.baidu.com/static/editor/index.html -->
       <i class="icon-statistics"></i>
       <span class="post-meta-item-text"> 字数统计:</span>
-      <span class="post-count">599字</span>
+      <span class="post-count">611字</span>
     </span>
   </span>
 
@@ -290,7 +290,7 @@
   
   <div class="article-entry" itemprop="articleBody">
     
-    <h1 id="EnergyPatchTST-Multi-scale-Time-Series-Transformers-with-Uncertainty-Estimation-for-Energy-Forecasting"><a href="#EnergyPatchTST-Multi-scale-Time-Series-Transformers-with-Uncertainty-Estimation-for-Energy-Forecasting" class="headerlink" title="EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting"></a>EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting</h1><p>This is an official implementation of  [EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting].</p>
+    <h1 id="EnergyPatchTST-Multi-scale-Time-Series-Transformers-with-Uncertainty-Estimation-for-Energy-Forecasting"><a href="#EnergyPatchTST-Multi-scale-Time-Series-Transformers-with-Uncertainty-Estimation-for-Energy-Forecasting" class="headerlink" title="EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting"></a>EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting</h1><p>This is an official implementation of  <a target="_blank" rel="noopener" href="https://link.springer.com/chapter/10.1007/978-981-96-9815-8_27">EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting</a>.</p>
 <p><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="license"> <a target="_blank" rel="noopener" href="https://github.com/William-Liwei/EnergyPatchTST/issues"><img src="https://badgen.net/github/issues/William-Liwei/EnergyPatchTST?color=red" alt="Issues"></a> <a target="_blank" rel="noopener" href="https://github.com/William-Liwei/EnergyPatchTST/pulls"><img src="https://badgen.net/github/prs/William-Liwei/EnergyPatchTST?color=yellow" alt="PRs"></a> <img src="https://img.shields.io/github/repo-size/william-liwei/energypatchtst?color=green" alt="GitHub repo size"> <img src="https://badgen.net/github/stars/William-Liwei/EnergyPatchTST?color=orange" alt="GitHub Repo stars"> <img src="https://badgen.net/github/forks/William-Liwei/EnergyPatchTST?color=pink" alt="GitHub forks"></p>
 <h2 id="Authors"><a href="#Authors" class="headerlink" title="Authors"></a>Authors</h2><ul>
 <li>Wei Li, Shanghai University;</li>
@@ -299,13 +299,11 @@
 <li>Qixiang Gao, Fudan University;</li>
 <li>*Fenglei Yang, Shanghai Univeristy;</li>
 </ul>
-<span id="more"></span>
-
 <h2 id="Introduction-Motivation"><a href="#Introduction-Motivation" class="headerlink" title="Introduction &amp; Motivation"></a>Introduction &amp; Motivation</h2><p>Accurate energy time series prediction is crucial for power generation planning and allocation. However, existing deep learning methods face limitations due to the multi-scale time dynamics and irregularity of real-world energy data. Our proposed model, EnergyPatchTST, is an extension of the Patch Time Series Transformer specifically designed for energy forecasting. It addresses the unique challenges of energy time series by incorporating multi-scale feature extraction, uncertainty estimation through a probabilistic prediction framework, integration of future known variables, and a pre-training and fine-tuning strategy leveraging transfer learning.</p>
 <h2 id="Prerequisites"><a href="#Prerequisites" class="headerlink" title="Prerequisites"></a>Prerequisites</h2><p>Ensure you are using Python 3.9 and install the necessary dependencies by running:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install -r requirements.txt</span><br></pre></td></tr></table></figure>
 
-<h2 id="Data-set-preparation"><a href="#Data-set-preparation" class="headerlink" title="Data set preparation"></a>Data set preparation</h2><p>Due to the storage space limitations of GitHub, some data sets may need to be downloaded separately. However, some small data sets have been included in the repository for demonstration purposes. If you encounter any issues with the data sets, please contact us via email.</p>
+<h2 id="Data-set-preparation"><a href="#Data-set-preparation" class="headerlink" title="Data set preparation"></a>Data set preparation</h2><p>Due to the storage space limitations of GitHub, some data sets may need to be downloaded separately. However, some small data sets have been included in the repository for demonstration purposes. If you encounter any issues with the data sets, please contact us via email <a href="mailto:liwei008009@163.com">liwei008009@163.com</a>.</p>
 <h2 id="Model-Overview"><a href="#Model-Overview" class="headerlink" title="Model Overview"></a>Model Overview</h2><p>EnergyPatchTST is built upon the PatchTST architecture and introduces several key enhancements for energy forecasting. It processes time series data at different temporal resolutions to capture short-term fluctuations and long-term trends. The model also incorporates future known variables such as weather forecasts through a specialized projection pathway. Additionally, it provides reliable uncertainty estimates using a Monte Carlo dropout mechanism and employs a pre-training and fine-tuning approach to effectively leverage general time series datasets.</p>
 <h2 id="Key-Features"><a href="#Key-Features" class="headerlink" title="Key Features"></a>Key Features</h2><ul>
 <li><strong>Multi-scale Feature Extraction</strong>: Captures patterns at different time resolutions, from immediate fluctuations to daily and seasonal patterns.</li>
@@ -329,7 +327,7 @@
 <li><a target="_blank" rel="noopener" href="https://github.com/William-Liwei/LWSpace">https://github.com/William-Liwei/LWSpace</a></li>
 </ul>
 <h2 id="Citation"><a href="#Citation" class="headerlink" title="Citation"></a>Citation</h2><p>If you find this repo useful, please cite it as follows:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">@article&#123;li2025energypatchtst,</span><br><span class="line">  title=&#123;EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting&#125;,</span><br><span class="line">  author=&#123;Li, Wei and Wang, Zixin and Sun, Qizheng and Gao, Qixiang and Yang, Fenglei&#125;,</span><br><span class="line">  journal=&#123;International Conference on Intelligent Computing&#125;,</span><br><span class="line">  year=&#123;2025&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">@inproceedings&#123;li2025energypatchtst,</span><br><span class="line">  title=&#123;EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting&#125;,</span><br><span class="line">  author=&#123;Li, Wei and Wang, Zixin and Sun, Qizheng and Gao, Qixiang and Yang, Fenglei&#125;,</span><br><span class="line">  booktitle=&#123;International Conference on Intelligent Computing&#125;,</span><br><span class="line">  pages=&#123;319--330&#125;,</span><br><span class="line">  year=&#123;2025&#125;,</span><br><span class="line">  organization=&#123;Springer&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <h2 id="Star-History"><a href="#Star-History" class="headerlink" title="Star History"></a>Star History</h2><a target="_blank" rel="noopener" href="https://www.star-history.com/#William-Liwei/EnergyPatchTST&Date">
 
