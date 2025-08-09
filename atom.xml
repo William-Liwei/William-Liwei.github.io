@@ -222,56 +222,6 @@
   </entry>
   
   <entry>
-    <title>起飞记录</title>
-    <link href="https://lwow.xyz/2025/06/07/%E8%B5%B7%E9%A3%9E%E8%AE%B0%E5%BD%95/"/>
-    <id>https://lwow.xyz/2025/06/07/%E8%B5%B7%E9%A3%9E%E8%AE%B0%E5%BD%95/</id>
-    <published>2025-06-07T10:55:29.000Z</published>
-    <updated>2025-06-07T10:59:02.950Z</updated>
-    
-    <content type="html"><![CDATA[<h1 id="起飞记录"><a href="#起飞记录" class="headerlink" title="起飞记录"></a>起飞记录</h1><p>自制的一个基于HTML的起飞记录：&#x2F;FlightRecord&#x2F;</p><p>游戏地址：<a href="https://lwow.xyz/FlightRecord/">https://lwow.xyz/FlightRecord/</a><br>备用地址：<a href="https://william-liwei.github.io/FlightRecord/">https://william-liwei.github.io/FlightRecord/</a></p>]]></content>
-    
-    
-      
-      
-    <summary type="html">&lt;h1 id=&quot;起飞记录&quot;&gt;&lt;a href=&quot;#起飞记录&quot; class=&quot;headerlink&quot; title=&quot;起飞记录&quot;&gt;&lt;/a&gt;起飞记录&lt;/h1&gt;&lt;p&gt;自制的一个基于HTML的起飞记录：&amp;#x2F;FlightRecord&amp;#x2F;&lt;/p&gt;
-&lt;p&gt;游戏地址：&lt;a href=</summary>
-      
-    
-    
-    
-    
-    <category term="html" scheme="https://lwow.xyz/tags/html/"/>
-    
-    <category term="游戏" scheme="https://lwow.xyz/tags/%E6%B8%B8%E6%88%8F/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>修仙小游戏</title>
-    <link href="https://lwow.xyz/2025/06/07/%E4%BF%AE%E4%BB%99%E5%B0%8F%E6%B8%B8%E6%88%8F/"/>
-    <id>https://lwow.xyz/2025/06/07/%E4%BF%AE%E4%BB%99%E5%B0%8F%E6%B8%B8%E6%88%8F/</id>
-    <published>2025-06-07T10:50:43.000Z</published>
-    <updated>2025-06-07T10:57:43.797Z</updated>
-    
-    <content type="html"><![CDATA[<h1 id="修仙小游戏"><a href="#修仙小游戏" class="headerlink" title="修仙小游戏"></a>修仙小游戏</h1><p>自制的一个基于HTML的小游戏，放置修仙：&#x2F;XiuXian&#x2F;</p><p>游戏地址：<a href="https://lwow.xyz/XiuXian/">https://lwow.xyz/XiuXian/</a><br>备用地址：<a href="https://william-liwei.github.io/XiuXian/">https://william-liwei.github.io/XiuXian/</a></p>]]></content>
-    
-    
-      
-      
-    <summary type="html">&lt;h1 id=&quot;修仙小游戏&quot;&gt;&lt;a href=&quot;#修仙小游戏&quot; class=&quot;headerlink&quot; title=&quot;修仙小游戏&quot;&gt;&lt;/a&gt;修仙小游戏&lt;/h1&gt;&lt;p&gt;自制的一个基于HTML的小游戏，放置修仙：&amp;#x2F;XiuXian&amp;#x2F;&lt;/p&gt;
-&lt;p&gt;游戏地址：&lt;a hr</summary>
-      
-    
-    
-    
-    
-    <category term="html" scheme="https://lwow.xyz/tags/html/"/>
-    
-    <category term="游戏" scheme="https://lwow.xyz/tags/%E6%B8%B8%E6%88%8F/"/>
-    
-  </entry>
-  
-  <entry>
     <title>EnergyPatchTST</title>
     <link href="https://lwow.xyz/2025/05/31/EnergyPatchTST/"/>
     <id>https://lwow.xyz/2025/05/31/EnergyPatchTST/</id>
@@ -507,6 +457,60 @@
     <category term="SQLite" scheme="https://lwow.xyz/tags/SQLite/"/>
     
     <category term="数据库管理" scheme="https://lwow.xyz/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>课程翼选通：基于flask和playwright的云主机部署网站</title>
+    <link href="https://lwow.xyz/2025/02/17/%E8%AF%BE%E7%A8%8B%E7%BF%BC%E9%80%89%E9%80%9A%EF%BC%9A%E5%9F%BA%E4%BA%8Eflask%E5%92%8Cplaywright%E7%9A%84%E4%BA%91%E4%B8%BB%E6%9C%BA%E9%83%A8%E7%BD%B2%E7%BD%91%E7%AB%99/"/>
+    <id>https://lwow.xyz/2025/02/17/%E8%AF%BE%E7%A8%8B%E7%BF%BC%E9%80%89%E9%80%9A%EF%BC%9A%E5%9F%BA%E4%BA%8Eflask%E5%92%8Cplaywright%E7%9A%84%E4%BA%91%E4%B8%BB%E6%9C%BA%E9%83%A8%E7%BD%B2%E7%BD%91%E7%AB%99/</id>
+    <published>2025-02-17T14:21:37.000Z</published>
+    <updated>2025-02-17T14:53:37.285Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="课程翼选通：基于-Playwright-与-Flask-的云主机部署网站"><a href="#课程翼选通：基于-Playwright-与-Flask-的云主机部署网站" class="headerlink" title="课程翼选通：基于 Playwright 与 Flask 的云主机部署网站"></a>课程翼选通：基于 Playwright 与 Flask 的云主机部署网站</h1><p><em>黎玮，王子欣</em></p><p>上海大学计算机工程与科学学院</p><p><em>摘要</em></p><p>“课程翼选通”是一个创新的部署于天翼云主机上的教育辅助平台，旨在通过技术手段简化高校学生的选课流程，提升选课效率，并通过集成成绩查询、课程评价和用户社区等功能，构建一个全方位的教务辅助系统。该系统采用 Flask 框架进行后端开发，确保了服务的稳定性和扩展性。同时，通过 Playwright 实现的自动化操作，使得选课过程更加智能化。此外，系统还引入了情感分析等 AI 技术，以增强用户体验，提供更加个性化的服务。通过这些技术的应用，“课程翼选通”不仅能够简化选课流程，还能促进教育资源的合理分配，为教育公平做出贡献。</p><span id="more"></span><h2 id="一、背景"><a href="#一、背景" class="headerlink" title="一、背景"></a>一、背景</h2><p>随着信息技术的快速发展，教育行业正经历着前所未有的变革。在高等教育领域，课程选择是学生学业规划的重要环节，但传统的选课系统存在诸多问题，如选课难、抢课累，甚至出现了买卖课程的不良现象。为了解决这些问题，我们设计并实现了“课程翼选通”，一个基于 Playwright 与 Flask 的云主机部署网站，旨在简化选课流程，提高学生的选课体验，并促进教育资源的合理分配。</p><h2 id="二、选课难的现状详析"><a href="#二、选课难的现状详析" class="headerlink" title="二、选课难的现状详析"></a>二、选课难的现状详析</h2><p>选课难的现状，是多重因素交织的结果。首先，高校课程资源有限，尤其是热门课程，其名额往往远不能满足学生的需求，导致供不应求的现象普遍存在。其次，技术门槛的存在，使得部分学生在选课高峰期难以迅速完成选课操作，错失了心仪的课程。再者，网络拥堵问题进一步加剧了选课的难度，选课系统开放时，大量学生同时登录，导致服务器负载过重，网页加载缓慢甚至崩溃，严重影响了选课的顺利进行。</p><p>这种不公平的教育资源分配方式，不仅影响了学生的学业发展，更在一定程度上破坏了教育生态的和谐与稳定。此外，抢课现象还催生了一系列不正当行为，如课程买卖、恶意占座等，这些行为严重违背了教育的初衷和伦理道德，对学校的长远发展造成了不良影响。</p><h2 id="三、系统架构"><a href="#三、系统架构" class="headerlink" title="三、系统架构"></a>三、系统架构</h2><p>“课程翼选通”的前端架构采用响应式设计，以适应不同设备的屏幕尺寸和分辨率，确保用户在任何设备上都能获得一致的体验。前端界面使用 HTML5、CSS3 和 JavaScript 构建，这些技术的选择不仅保证了页面的现代感和交互性，还使得页面加载速度更快，用户体验更佳。系统实现了实时数据更新和动态交互，用户可以即时看到选课状态的变化，无需刷新页面，极大地提升了操作的便捷性。</p><p>后端架构基于 Flask 框架，它轻量级且灵活，非常适合处理 HTTP 请求和路由分发。使用 SQLAlchemy 进行数据库操作，它提供了一个高层次的 ORM（对象关系映射）工具，使得数据库操作更加直观和安全。Playwright 用于执行自动化任务，如模拟用户登录、选课等操作，提高了系统的自动化程度。此外，后端还集成了深度学习模型，用于实现评论的情感分析，这不仅提升了系统的智能化水平，也为用户带来了更加丰富的交互体验。</p><h2 id="四、核心功能模块"><a href="#四、核心功能模块" class="headerlink" title="四、核心功能模块"></a>四、核心功能模块</h2><h3 id="（一）智能选课系统"><a href="#（一）智能选课系统" class="headerlink" title="（一）智能选课系统"></a>（一）智能选课系统</h3><p>智能选课系统是“课程翼选通”的核心功能之一，它通过 rob_course() 函数实现，支持多课程并发选课，能够处理高并发情况下的选课请求。该系统实现了定时选课功能，用户可以预设选课时间，系统自动执行选课操作，极大地方便了用户。同时，系统还能自动识别课程状态，如课程是否已满、是否冲突等，并及时发送邮件通知用户选课结果，提高了选课的成功率和用户体验。</p><h3 id="（二）用户管理系统"><a href="#（二）用户管理系统" class="headerlink" title="（二）用户管理系统"></a>（二）用户管理系统</h3><p>用户管理系统是“课程翼选通”的另一个核心模块，它通过 User 类实现。该系统为用户提供了等级体系和经验值系统，用户可以通过参与社区活动、发表评论等方式积累经验值，提升等级。此外，系统还提供了头像管理功能，用户可以上传个性化头像，增强个人标识。社交互动功能则允许用户之间进行互动，如点赞、评论等，增强了社区的活跃度。</p><h3 id="（三）评论系统与-AI-分析"><a href="#（三）评论系统与-AI-分析" class="headerlink" title="（三）评论系统与 AI 分析"></a>（三）评论系统与 AI 分析</h3><p>评论系统与 AI 分析模块通过 SentimentAnalyzer 类实现，它集成了情感分析模型，能够对用户评论进行情感倾向分析，提供多维度的评价指标。系统还能将分析结果进行数据可视化展示，使用户能够直观地了解课程的受欢迎程度和优缺点。智能评论推荐功能则根据用户的历史行为和偏好，推荐相关的评论内容，提升了用户的参与度和满意度。</p><h2 id="五、技术创新点"><a href="#五、技术创新点" class="headerlink" title="五、技术创新点"></a>五、技术创新点</h2><p>“课程翼选通”在技术创新方面也取得了显著成果。系统集成了 RoBERTa 模型进行评论情感分析，这是一种先进的自然语言处理模型，能够准确地识别和分析文本数据中的情感倾向。通过这种技术，系统能够实现多维度的课程评价分析，提供智能评论摘要和推荐，极大地丰富了用户的交互体验，并为课程改进提供了数据支持。</p><p>“课程翼选通”在自动化技术方面也取得了显著成果。系统基于 Playwright 的无头浏览器操作，能够模拟用户的选课行为，包括登录、选课、查分等操作，极大地提高了选课的自动化程度。智能验证码处理技术使得系统能够自动识别和处理验证码，减少了用户的操作负担。此外，系统还实现了多线程并发选课，提高了选课的效率和成功率。</p><p>为了提升用户体验，“课程翼选通”引入了用户等级和经验值系统，激励用户积极参与社区活动。实时邮件通知功能则确保用户能够及时了解自己的选课状态和系统动态。个性化数据展示则根据用户的行为和偏好，展示定制化的信息和推荐，提升了用户的满意度和忠诚度。</p><h2 id="六、系统性能"><a href="#六、系统性能" class="headerlink" title="六、系统性能"></a>六、系统性能</h2><p>在并发处理方面，“课程翼选通”采用了线程锁来保证数据的一致性，避免了多线程操作时可能出现的数据冲突问题。通过实现模型单例模式，系统减少了对象的创建和销毁，提高了性能。同时，系统还优化了数据库查询效率，通过索引、查询优化等技术，提高了数据处理速度，确保了系统在高并发情况下的稳定运行。</p><p>系统性能的另一个重要方面是错误处理。“课程翼选通”具备完善的异常处理机制，能够捕获和处理各种异常情况，确保系统的稳定运行。日志记录系统则记录了系统运行过程中的关键信息，便于问题的追踪和分析。自动重试机制则在遇到暂时性错误时自动重新执行操作，提高了系统的鲁棒性。</p><h2 id="七、安全性设计"><a href="#七、安全性设计" class="headerlink" title="七、安全性设计"></a>七、安全性设计</h2><p>安全性设计是“课程翼选通”的另一个重点。系统采用了会话管理和认证机制，确保了用户数据的安全和隐私。文件上传安全控制则防止了恶意文件的上传，保护了系统不受攻击。数据加密存储则确保了用户数据在存储和传输过程中的安全性，防止了数据泄露。</p><h2 id="八、部署方案"><a href="#八、部署方案" class="headerlink" title="八、部署方案"></a>八、部署方案</h2><p>“课程翼选通”基于云服务器部署，这不仅提高了系统的可访问性和稳定性，还降低了维护成本。域名已经成功备案，用户可以通过访问网站来使用“课程翼选通”服务。云部署方案还提供了易于扩展的架构，便于系统功能的扩展和性能的提升。</p><h2 id="九、未来展望"><a href="#九、未来展望" class="headerlink" title="九、未来展望"></a>九、未来展望</h2><p>展望未来，“课程翼选通”计划引入更多的 AI 技术，如自然语言处理、机器学习等，以进一步增强用户体验。系统还计划扩展社区功能，增加用户间的互动和交流，打造一个更加活跃的学术社区。同时，系统将继续优化性能，提升处理速度和稳定性。此外，增加移动端支持也是未来的发展方向，使得用户能够随时随地访问“课程翼选通”，享受便捷的服务。</p><h2 id="十、技术亮点总结"><a href="#十、技术亮点总结" class="headerlink" title="十、技术亮点总结"></a>十、技术亮点总结</h2><p>“课程翼选通”的技术亮点主要包括 AI 技术的应用、高度的自动化、优秀的用户体验、强大的扩展性和良好的安全性。AI 技术的应用使得系统能够提供更加智能化的服务，如情感分析、智能推荐等。高度的自动化则简化了用户的操作流程，提高了效率。优秀的用户体验则体现在系统的易用性、个性化服务等方面。强大的扩展性使得系统能够不断引入新功能，适应不断变化的需求。良好的安全性则确保了用户数据的安全和隐私。这些技术的结合，使得“课程翼选通”成为一个创新且实用的教育科技项目。</p><h2 id="十一、操作手册"><a href="#十一、操作手册" class="headerlink" title="十一、操作手册"></a>十一、操作手册</h2><h3 id="1-访问网站"><a href="#1-访问网站" class="headerlink" title="1. 访问网站"></a>1. 访问网站</h3><p>进入“课程翼选通”助手（可通过域名访问；也可通过 IP 地址进行访问：xxxxxxxx:5000）。为方便测试，网站默认填写了一个登陆账号，点击“发送验证码”，再点击“登录”。</p><h3 id="2-填写个人信息"><a href="#2-填写个人信息" class="headerlink" title="2. 填写个人信息"></a>2. 填写个人信息</h3><p>进入网站后，填写个人信息。注意：受限于“课程黄牛”的存在，为避免出现恶意占课、抢课等行为，课程翼选通 web 端的“定时选课”功能暂时不对外开放，仅在课程翼选通的 portable 端上开放使用。</p><h3 id="3-获取-Cookie"><a href="#3-获取-Cookie" class="headerlink" title="3. 获取 Cookie"></a>3. 获取 Cookie</h3><p>滑动至页面底部，点击“获取 cookie”选项。</p><h3 id="4-填写课程信息"><a href="#4-填写课程信息" class="headerlink" title="4. 填写课程信息"></a>4. 填写课程信息</h3><p>向上滑动，填写课程信息。</p><h3 id="5-更新数据并开始排课"><a href="#5-更新数据并开始排课" class="headerlink" title="5. 更新数据并开始排课"></a>5. 更新数据并开始排课</h3><p>滑动至页面底部，点击“更新数据”，再点击“开始排课！”选项。此时云主机会弹出新页面，进入上海大学选课网站。选课结束后，客户端网页上将会显示排课结果。若选课成功，会向用户发送弹窗，提示选课成功。与此同时，系统会自动向用户所登录的邮箱（即登录时接受验证码的邮箱）发送一封“选课成功通知”，方便用户在离开电脑后依然可以随时收到信息。</p><h3 id="6-打开选课网站"><a href="#6-打开选课网站" class="headerlink" title="6. 打开选课网站"></a>6. 打开选课网站</h3><p>点击“打开选课”选项，会跳转至上海大学选课网站。该功能使用场景：对于某一课程尚未有具体了解，或对课程号不太清楚，此时前往上大选课官网，可详细了解该课程的介绍，并记录相关课程号、教师号等数据，以便用于选课。</p><h3 id="7-打开排课助手"><a href="#7-打开排课助手" class="headerlink" title="7. 打开排课助手"></a>7. 打开排课助手</h3><p>点击“打开排课助手”选项，会跳转至 <a href="https://xk.shuosc.com/">https://xk.shuosc.com/</a> 选课助手。该功能使用场景：对于课程时间上是否重叠不太清楚，或有多种排课方案想要比较利弊，此时打开 shuosc 选课助手，即可快速了解各类课程的时间排布，便于确定最需要抢选的课程。</p><h3 id="8-打开考试网站"><a href="#8-打开考试网站" class="headerlink" title="8. 打开考试网站"></a>8. 打开考试网站</h3><p>点击“打开考试”选项，会跳转至 <a href="https://cj.shu.edu.cn/Home/StudentIndex">https://cj.shu.edu.cn/Home/StudentIndex</a> 上海大学成绩查询。该功能使用场景：选课完毕后，需要了解各类课程的考核类型、考核时间；完成考试后，想要了解自己所得分数。登录考试网站，即可查询相关信息。</p><h3 id="9-成绩查询"><a href="#9-成绩查询" class="headerlink" title="9. 成绩查询"></a>9. 成绩查询</h3><ol><li>填写自己想要查询的考试学期。</li><li>滑动至页面底部，点击“更新数据”选项。</li><li>顶部会显示“数据更新成功”。</li><li>滑动至页面底部，点击“开始查分”选项。</li><li>等待片刻后，会有分数弹窗。与此同时，系统会自动向用户所登录的邮箱（即登录时接受验证码的邮箱）发送一封“成绩查询结果”，方便用户在离开电脑后依然可以随时收到信息。</li></ol><h3 id="10-课程评论"><a href="#10-课程评论" class="headerlink" title="10. 课程评论"></a>10. 课程评论</h3><ol><li>点击“课程评论”选项，会跳转到课程评论页面。</li><li>填写自己要评价的课程，点击“提交评论”。</li><li>输入自己想查询的课程号，点击“查找评论”，会显示查找结果（课程评价均分、每条评价的详细内容等等）。</li><li>完成所有需求后，回到主页底部，点击“登出”，退出账号。</li></ol><h2 id="十二、推荐资源"><a href="#十二、推荐资源" class="headerlink" title="十二、推荐资源"></a>十二、推荐资源</h2><p>如果您对“课程翼选通”的技术实现感兴趣，可以查看相关的 GitHub 代码：<a href="https://github.com/William-Liwei/Course-wing-gating">课程翼选通 GitHub 仓库</a>。您也可以阅读指南 PDF 文件，以获取更详细的指导。</p>]]></content>
+    
+    
+    <summary type="html">&lt;h1 id=&quot;课程翼选通：基于-Playwright-与-Flask-的云主机部署网站&quot;&gt;&lt;a href=&quot;#课程翼选通：基于-Playwright-与-Flask-的云主机部署网站&quot; class=&quot;headerlink&quot; title=&quot;课程翼选通：基于 Playwright 与 Flask 的云主机部署网站&quot;&gt;&lt;/a&gt;课程翼选通：基于 Playwright 与 Flask 的云主机部署网站&lt;/h1&gt;&lt;p&gt;&lt;em&gt;黎玮，王子欣&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;上海大学计算机工程与科学学院&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;摘要&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;“课程翼选通”是一个创新的部署于天翼云主机上的教育辅助平台，旨在通过技术手段简化高校学生的选课流程，提升选课效率，并通过集成成绩查询、课程评价和用户社区等功能，构建一个全方位的教务辅助系统。该系统采用 Flask 框架进行后端开发，确保了服务的稳定性和扩展性。同时，通过 Playwright 实现的自动化操作，使得选课过程更加智能化。此外，系统还引入了情感分析等 AI 技术，以增强用户体验，提供更加个性化的服务。通过这些技术的应用，“课程翼选通”不仅能够简化选课流程，还能促进教育资源的合理分配，为教育公平做出贡献。&lt;/p&gt;</summary>
+    
+    
+    
+    
+    <category term="建站" scheme="https://lwow.xyz/tags/%E5%BB%BA%E7%AB%99/"/>
+    
+    <category term="flask" scheme="https://lwow.xyz/tags/flask/"/>
+    
+    <category term="playwright" scheme="https://lwow.xyz/tags/playwright/"/>
+    
+    <category term="选课" scheme="https://lwow.xyz/tags/%E9%80%89%E8%AF%BE/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>hexo建站教学(2)</title>
+    <link href="https://lwow.xyz/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-2/"/>
+    <id>https://lwow.xyz/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-2/</id>
+    <published>2025-02-16T06:22:15.000Z</published>
+    <updated>2025-02-16T06:37:57.515Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="从一开始：更改Hexo网站域名"><a href="#从一开始：更改Hexo网站域名" class="headerlink" title="从一开始：更改Hexo网站域名"></a><strong>从一开始：更改Hexo网站域名</strong></h2><p>本篇博客将详细介绍如何通过 Vercel 设置自定义域名，实现个性化且高效的网站托管。本文将逐步介绍  如何使用 Vercel 以及如何在 GitHub 上设置自定义域名。</p><p>常见的修改域名方式有如下两种，不过个人推荐采用Vercel。</p><span id="more"></span><h3 id="1-使用-Vercel-更改域名（推荐使用这种方式）"><a href="#1-使用-Vercel-更改域名（推荐使用这种方式）" class="headerlink" title="1. 使用 Vercel 更改域名（推荐使用这种方式）"></a>1. 使用 Vercel 更改域名（推荐使用这种方式）</h3><p>Vercel 是一个用于部署前端项目的云平台，支持自定义域名。以下是使用 Vercel 更改域名的步骤：</p><ol><li><p><strong>注册并登录 Vercel</strong>：访问 <a href="https://vercel.com/">Vercel 官网</a>，使用 GitHub 或 Google 账号注册并登录。</p></li><li><p><strong>导入项目</strong>：在 Vercel 仪表板中，点击 “Import Project”，选择你的 Hexo 项目仓库（可以是 GitHub、GitLab 或 Bitbucket 等）。</p></li><li><p><strong>选择项目</strong>：选择你要部署的 Hexo 项目，Vercel 会自动拉取项目代码。</p></li><li><p><strong>配置构建</strong>：在 “Build &amp; Development Settings” 中，配置项目的构建命令和输出目录。对于 Hexo 项目，通常设置如下：</p><ul><li><strong>Build Command</strong>：<code>hexo clean &amp;&amp; hexo generate</code></li><li><strong>Output Directory</strong>：<code>public</code>（Hexo 默认生成的静态文件目录）</li></ul></li><li><p><strong>添加自定义域名</strong>：</p><ul><li>在 Vercel 仪表板中，点击你的项目，进入项目详情页面。</li><li>点击 “Domains” 选项卡，然后点击 “Add Domain”。</li><li>输入你的自定义域名，例如 <code>yourdomain.com</code>，然后点击 “Add”。</li></ul></li><li><p><strong>配置 DNS 解析</strong>：<em>（这一块可以参照CSDN上”菜鸟是大神“的blog，其中有更详细的说明，很有帮助）</em></p><ul><li>登录你的域名注册商（如阿里云、腾讯云等），进入域名管理控制台。</li><li>添加两条记录：<ul><li><strong>A 记录</strong>：主机记录为 <code>@</code>，记录值为 Vercel 提供的 IP 地址（可以在 Vercel 的 “DNS” 设置中查看）。</li><li><strong>CNAME 记录</strong>：主机记录为 <code>www</code>，记录值为 <code>yourdomain.com</code>。</li></ul></li></ul></li><li><p><strong>等待 DNS 生效</strong>：DNS 解析通常需要几分钟到几小时的时间生效。生效后，你的域名将指向 Vercel 上的 Hexo 项目。</p><blockquote><p>【详细教程hexo博客搭建】2、Vercel部署并绑定自定义域名+安装Butterfly主题_vercel自定义域名-CSDN博客 <a href="https://blog.csdn.net/wufaqidong1/article/details/132951333">https://blog.csdn.net/wufaqidong1/article/details/132951333</a></p></blockquote></li></ol><h3 id="2-在-Hexo-部署到-GitHub-时设置自定义域名"><a href="#2-在-Hexo-部署到-GitHub-时设置自定义域名" class="headerlink" title="2. 在 Hexo 部署到 GitHub 时设置自定义域名"></a>2. 在 Hexo 部署到 GitHub 时设置自定义域名</h3><p>除了使用 Vercel，你还可以在 Hexo 部署到 GitHub 时设置自定义域名。以下是具体步骤：</p><ol><li><p><strong>购买并配置域名</strong>：</p><ul><li>购买一个域名，例如在阿里云或腾讯云上购买。</li><li>在域名注册商的控制台中，添加两条记录：<ul><li><strong>A 记录</strong>：主机记录为 <code>@</code>，记录值为 GitHub Pages 的 IP 地址（可以通过 <code>ping username.github.io</code> 获取，例如 <code>185.199.110.153</code>）。</li><li><strong>CNAME 记录</strong>：主机记录为 <code>www</code>，记录值为 <code>username.github.io</code>（将 <code>username</code> 替换为你的 GitHub 用户名）。</li></ul></li></ul></li><li><p><strong>配置 Hexo 项目</strong>：</p><ul><li><p>在 Hexo 项目的根目录下，创建一个名为 <code>CNAME</code> 的文件（无后缀），文件内容为你的自定义域名，例如 <code>yourdomain.com</code>。</p></li><li><p>修改 <code>_config.yml</code> 文件，将 <code>url</code> 和 <code>root</code> 设置为你的自定义域名：</p><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">url:</span> <span class="string">https://yourdomain.com</span></span><br><span class="line"><span class="attr">root:</span> <span class="string">/</span></span><br></pre></td></tr></table></figure></li></ul></li><li><p><strong>部署到 GitHub</strong>：</p><ul><li><p>确保你的 GitHub 仓库名称为 <code>username.github.io</code>，其中 <code>username</code> 是你的 GitHub 用户名。</p></li><li><p>在 <code>_config.yml</code> 中配置部署设置：</p><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">deploy:</span></span><br><span class="line">  <span class="attr">type:</span> <span class="string">git</span></span><br><span class="line">  <span class="attr">repo:</span> <span class="string">https://github.com/username/username.github.io.git</span></span><br><span class="line">  <span class="attr">branch:</span> <span class="string">main</span></span><br></pre></td></tr></table></figure></li><li><p>运行以下命令生成静态文件并部署：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">hexo clean</span><br><span class="line">hexo generate</span><br><span class="line">hexo deploy</span><br></pre></td></tr></table></figure></li></ul></li><li><p><strong>在 GitHub 设置自定义域名</strong>：</p><ul><li>登录 GitHub，进入你的仓库，点击 “Settings”。</li><li>在左侧菜单中选择 “Pages”，然后在 “Custom domain” 中输入你的自定义域名，例如 <code>yourdomain.com</code>，点击 “Save”。</li></ul></li><li><p><strong>开启 HTTPS</strong>：</p><ul><li>在 GitHub Pages 设置中，找到 “Enforce HTTPS” 选项，勾选该选项以强制使用 HTTPS。</li><li>如果需要，可以在域名注册商处申请免费的 SSL 证书（如阿里云的免费 SSL 证书），并按照提示操作。</li></ul></li></ol>]]></content>
+    
+    
+    <summary type="html">&lt;h2 id=&quot;从一开始：更改Hexo网站域名&quot;&gt;&lt;a href=&quot;#从一开始：更改Hexo网站域名&quot; class=&quot;headerlink&quot; title=&quot;从一开始：更改Hexo网站域名&quot;&gt;&lt;/a&gt;&lt;strong&gt;从一开始：更改Hexo网站域名&lt;/strong&gt;&lt;/h2&gt;&lt;p&gt;本篇博客将详细介绍如何通过 Vercel 设置自定义域名，实现个性化且高效的网站托管。本文将逐步介绍  如何使用 Vercel 以及如何在 GitHub 上设置自定义域名。&lt;/p&gt;
+&lt;p&gt;常见的修改域名方式有如下两种，不过个人推荐采用Vercel。&lt;/p&gt;</summary>
+    
+    
+    
+    
+    <category term="建站" scheme="https://lwow.xyz/tags/%E5%BB%BA%E7%AB%99/"/>
+    
+    <category term="教学" scheme="https://lwow.xyz/tags/%E6%95%99%E5%AD%A6/"/>
+    
+    <category term="hexo" scheme="https://lwow.xyz/tags/hexo/"/>
+    
+    <category term="github" scheme="https://lwow.xyz/tags/github/"/>
     
   </entry>
   
