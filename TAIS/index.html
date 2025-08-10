@@ -79,6 +79,19 @@
         .toc-item .keywords { margin-top: 10px; }
         .toc-item .keyword { display: inline-block; background-color: var(--secondary-color); color: var(--muted-color); padding: 3px 10px; border-radius: 15px; font-size: 0.85em; margin-right: 8px; margin-bottom: 5px; border: 1px solid var(--border-color); }
 
+        .archive-item {
+        margin-bottom: 40px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+        }
+        .archive-item:last-child {
+        border-bottom: none;
+        }
+        .archive-item h4 {
+        margin-bottom: 15px;
+        font-size: 1.4em;
+        }
+
         /* Special Issue & Submission Section */
         .special-issue-call { display: flex; align-items: flex-start; gap: 30px; background-color: var(--secondary-color); padding: 30px; border-radius: 8px; border: 1px solid var(--border-color); }
         .special-issue-icon svg { width: 60px; height: 60px; fill: var(--primary-color); }
@@ -135,7 +148,7 @@
   "issues": [
     {
       "volume": 1,
-      "issue": 1,
+      "issue": 2,
       "date": "August 2025",
       "articles": [
         {
@@ -151,7 +164,27 @@
           "keywords": ["Human-Computer Interaction", "Machine Learning", "Adaptive Systems"]
         }
       ]
+    },
+    {
+      "volume": 1,
+      "issue": 1,
+      "date": "July 2025",
+      "articles": [
+        {
+          "title": "Sample Article: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting",
+          "authors": "Jane Doe, John Smith",
+          "pdf": "pdf/sample1.pdf",
+          "keywords": ["Time Series Forecasting", "Energy Prediction", "Transformers"]
+        },
+        {
+          "title": "Sample Article: Adaptive Interfaces for Human-in-the-Loop ML",
+          "authors": "Jane Doe, John Smith",
+          "pdf": "pdf/sample2.pdf",
+          "keywords": ["Human-Computer Interaction", "Machine Learning", "Adaptive Systems"]
+        }
+      ]
     }
+    
   ]
 }
 </script>
@@ -250,6 +283,11 @@
                     <div id="board-list"><!-- JS will populate this --></div>
                 </div>
 
+                <div id="archive">
+                    <h3>Archive / Past Issues</h3>
+                    <div id="archive-list"><!-- JS 填充 --></div>
+                </div>
+
             </div>
         </section>
     </main>
@@ -287,6 +325,25 @@
                         </div>`).join('')}
                 `;
             }
+
+            const archiveHtml = issues.map(iss => `
+                <div class="archive-item">
+                    <h4>Volume ${iss.volume}, Issue ${iss.issue} — ${iss.date}</h4>
+                    ${iss.articles.map(art => `
+                    <div class="toc-item">
+                        <p class="title">
+                        <a href="#" onclick="openPdf('${art.pdf}'); return false;">${art.title}</a>
+                        </p>
+                        <p class="authors">${art.authors}</p>
+                        <p class="actions">
+                        <a href="#" onclick="openPdf('${art.pdf}'); return false;">Read Online</a>
+                        <a href="${art.pdf}" download>Download PDF</a>
+                        </p>
+                    </div>
+                    `).join('')}
+                </div>
+                `).join('');
+                document.getElementById('archive-list').innerHTML = archiveHtml;
 
             const eicHtml = board.editorInChief.map(m => createMemberCard(m, 'Editor-in-Chief')).join('');
             const assocEicHtml = board.associateEICs.map(m => createMemberCard(m, 'Associate Editor-in-Chief')).join('');
