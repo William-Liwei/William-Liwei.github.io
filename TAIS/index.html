@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAIS | Transactions on Adaptive and Intelligent Systems</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0d47a1; --secondary-color: #f8f9fa; --text-color: #212529;
+            --muted-color: #6c757d; --border-color: #dee2e6; --header-font: 'Playfair Display', serif;
+            --body-font: 'Inter', sans-serif; --shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+        }
+        html { scroll-behavior: smooth; }
+        body { font-family: var(--body-font); line-height: 1.8; margin: 0; background-color: #fff; color: var(--text-color); }
+        .container { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+        section { padding: 80px 0; border-bottom: 1px solid var(--border-color); }
+        h1, h2, h3, h4 { font-family: var(--header-font); color: var(--primary-color); font-weight: 700; }
+        h2.section-heading { font-size: 2.8em; text-align: center; margin-bottom: 50px; }
+        
+        /* Header & Navigation */
+        .site-header { background-color: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 15px 0; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid var(--border-color); }
+        .header-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+        .logo a { text-decoration: none; display: flex; align-items: center; gap: 12px; }
+        .logo-text { font-family: var(--header-font); font-size: 1.8em; color: var(--primary-color); }
+        .main-nav ul { margin: 0; padding: 0; list-style: none; display: flex; }
+        .main-nav li { margin-left: 35px; }
+        .main-nav a { text-decoration: none; color: var(--text-color); font-weight: 600; font-size: 1em; position: relative; padding: 5px 0; }
+        .main-nav a::after { content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--primary-color); transition: width 0.3s; }
+        .main-nav a:hover::after, .main-nav li.active a::after { width: 100%; }
+
+        /* Welcome Section with Background Image */
+        #welcome {
+            position: relative; text-align: center; padding: 150px 0; color: #fff;
+            background-image: url('fig/hero-background.png');
+            background-size: cover; background-position: center center; background-attachment: fixed;
+        }
+        #welcome::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(13, 71, 161, 0.65), rgba(13, 71, 161, 0.8)); z-index: 1;
+        }
+        #welcome .container { position: relative; z-index: 2; }
+        #welcome h1 { font-size: 4.5em; line-height: 1.2; margin: 0 auto 20px; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        #welcome .subtitle { font-size: 1.4em; max-width: 750px; margin: 0 auto 40px; color: rgba(255, 255, 255, 0.85); }
+        .btn { display: inline-block; background-color: var(--primary-color); color: #fff; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; transition: all 0.3s; border: 2px solid var(--primary-color); box-shadow: var(--shadow); }
+        .btn.btn-outline { background-color: transparent; border-color: #fff; }
+        .btn.btn-outline:hover { background-color: #fff; color: var(--primary-color); transform: translateY(-3px); }
+
+        /* Main Content Flow - Single Column */
+        #main-content > div { margin-bottom: 60px; }
+        #main-content h3 { font-size: 2.2em; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 30px; }
+        #main-content ul { padding-left: 25px; }
+        
+        /* About Section Refined */
+        .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: flex-start; }
+        .values-list { display: flex; flex-direction: column; gap: 20px; margin-top: 10px; }
+        .values-list div { display: flex; align-items: flex-start; gap: 15px; }
+        .values-list svg { width: 28px; height: 28px; flex-shrink: 0; fill: var(--primary-color); margin-top: 5px; }
+        .values-list h4 { margin: 0; font-family: var(--body-font); font-size: 1.2em; color: var(--text-color); }
+        .values-list p { margin: 0; font-size: 1em; }
+        
+        /* News Section */
+        .news-list { list-style: none; padding-left: 0; }
+        .news-list li { padding: 15px 0; border-bottom: 1px solid var(--border-color); font-size: 1.05em; }
+        .news-list li:last-child { border-bottom: none; }
+        .news-date { font-weight: 600; color: var(--text-color); margin-right: 15px; display: inline-block; width: 150px; }
+
+        /* Current Issue */
+        .issue-header { display: flex; justify-content: space-between; align-items: baseline; }
+        .issue-header .issue-date { font-family: var(--body-font); font-size: 1.2rem; color: var(--muted-color); }
+        .toc-item { margin-bottom: 25px; }
+        .toc-item .title a { text-decoration: none; font-weight: 700; color: var(--text-color); font-size: 1.3em; line-height: 1.4; }
+        .toc-item .authors { font-size: 1em; color: var(--muted-color); font-style: italic; margin-top: 5px; }
+        .toc-item .actions { margin-top: 15px; }
+        .toc-item .actions a { text-decoration: none; margin-right: 15px; font-weight: 600; font-size: 0.9em; padding: 6px 15px; border-radius: 5px; border: 1px solid var(--border-color); transition: all 0.3s; }
+        .toc-item .actions a:hover { background-color: var(--primary-color); color: #fff; border-color: var(--primary-color); }
+        .toc-item .keywords { margin-top: 10px; }
+        .toc-item .keyword { display: inline-block; background-color: var(--secondary-color); color: var(--muted-color); padding: 3px 10px; border-radius: 15px; font-size: 0.85em; margin-right: 8px; margin-bottom: 5px; border: 1px solid var(--border-color); }
+
+        /* Special Issue & Submission Section */
+        .special-issue-call { display: flex; align-items: flex-start; gap: 30px; background-color: var(--secondary-color); padding: 30px; border-radius: 8px; border: 1px solid var(--border-color); }
+        .special-issue-icon svg { width: 60px; height: 60px; fill: var(--primary-color); }
+        .special-issue-call h4 { margin-top: 0; font-size: 1.5em; }
+        .license-box { background: var(--secondary-color); padding: 30px; border-radius: 8px; margin-top: 30px; border: 1px solid var(--border-color); }
+        
+        /* Editorial Board */
+        .board-category h4 { font-size: 1.5em; color: var(--muted-color); margin-top: 40px; margin-bottom: 20px; border-bottom: none; }
+        .board-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .board-member { text-align: center; }
+        .board-member .name { font-weight: 700; font-size: 1.2em; margin: 0; color: var(--text-color); }
+        .board-member .role { font-size: 0.9em; font-weight: 500; color: var(--primary-color); margin: 5px 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+        .board-member .affiliation { font-style: italic; color: var(--muted-color); }
+
+        /* PDF Viewer & Footer */
+        .pdf-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; display: none; align-items: center; justify-content: center; }
+        .pdf-modal.active { display: flex; }
+        .pdf-container { width: 90%; height: 90%; background: #fff; }
+        .pdf-close { position: absolute; top: 20px; right: 30px; font-size: 50px; color: #fff; cursor: pointer; }
+        .site-footer { background-color: var(--text-color); color: #fff; padding: 60px 20px; }
+        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 40px; text-align: left; max-width: 1200px; margin: 0 auto; }
+        .footer-col h4 { font-family: var(--header-font); color: #fff; border-bottom: 1px solid #666; padding-bottom: 10px; margin-bottom: 15px; }
+        .footer-col p, .footer-col a { color: #ccc; font-size: 0.95em; text-decoration: none; }
+        .footer-col a:hover { text-decoration: underline; }
+        .footer-nav { list-style: none; padding: 0; }
+        .footer-nav li { margin-bottom: 8px; }
+        .copyright { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #666; font-size: 0.9em; color: #ccc; }
+    </style>
+</head>
+<body>
+
+<!-- =================================================================== -->
+<!-- DATABASE: All journal data is here. Only edit this section!       -->
+<!-- =================================================================== -->
+<script type="application/json" id="journalData">
+{
+  "journalInfo": {
+    "name": "Transactions on Adaptive and Intelligent Systems",
+    "shortName": "TAIS",
+    "issn": "Pending",
+    "publisher": "TAIS Young Scholars Initiative",
+    "contactEmail": "liwei008009@163.com",
+    "submissionEmail": "liwei008009@163.com"
+  },
+  "editorialBoard": {
+    "editorInChief": [ { "name": "Wei Li", "affiliation": "Shanghai University" } ],
+    "associateEICs": [
+       { "name": "Zixin Wang", "affiliation": "Shanghai University" },
+       { "name": "Qizheng Sun", "affiliation": "Shanghai University" }
+    ],
+    "managingEditors": [ { "name": "Qixiang Gao", "affiliation": "Fudan University" } ],
+    "boardMembers": [ { "name": "Haowen Zheng", "affiliation": "East China University of Political Science and Law"} ]
+  },
+  "issues": [
+    {
+      "volume": 1,
+      "issue": 1,
+      "date": "August 2025",
+      "articles": [
+        {
+          "title": "Sample Article: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting",
+          "authors": "Jane Doe, John Smith",
+          "pdf": "pdf/sample1.pdf",
+          "keywords": ["Time Series Forecasting", "Energy Prediction", "Transformers"]
+        },
+        {
+          "title": "Sample Article: Adaptive Interfaces for Human-in-the-Loop ML",
+          "authors": "Jane Doe, John Smith",
+          "pdf": "pdf/sample2.pdf",
+          "keywords": ["Human-Computer Interaction", "Machine Learning", "Adaptive Systems"]
+        }
+      ]
+    }
+  ]
+}
+</script>
+<!-- END OF DATABASE -->
+
+    <header class="site-header">
+        <div class="header-container">
+            <div class="logo">
+                <a href="#welcome">
+                    <svg id="logo-svg" width="48" height="48" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#1e88e5;"/><stop offset="100%" style="stop-color:#0d47a1;"/></linearGradient></defs>
+                        <path d="M10 85 H 90" stroke="url(#grad1)" stroke-width="12" stroke-linecap="round"/><path d="M30 65 L 50 25 L 70 65" fill="none" stroke="url(#grad1)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="15" r="8" fill="#1e88e5"/>
+                    </svg>
+                    <span class="logo-text" id="journal-short-name-header"></span>
+                </a>
+            </div>
+            <nav class="main-nav">
+                <ul id="nav-list">
+                    <li><a href="#about">About & Scope</a></li>
+                    <li><a href="#current-issue">Current Issue</a></li>
+                    <li><a href="#submissions">Submissions</a></li>
+                    <li><a href="#editors">Editorial Board</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section id="welcome">
+            <div class="container">
+                <h1 id="journal-full-name"></h1>
+                <p class="subtitle">Advancing the science and engineering of systems that learn, adapt, and reason. We are a community of young scholars shaping the future of intelligent computing.</p>
+                <a href="#submissions" class="btn btn-outline">Submit Your Paper</a>
+            </div>
+        </section>
+
+        <section id="main-content">
+            <div class="container">
+                <div id="about">
+                    <h3>About the Journal</h3>
+                    <div class="about-grid">
+                        <div>
+                            <h4>Aims & Vision</h4>
+                            <p><strong>Transactions on Adaptive and Intelligent Systems (TAIS)</strong> aims to be the authoritative source for novel research at the intersection of machine learning, system design, and human-computer interaction. Our vision is to foster a global, interdisciplinary dialogue that bridges the gap between technical innovation and societal well-being, emphasizing principles of transparency, fairness, and ethical design in all intelligent systems.</p>
+                        </div>
+                        <div>
+                            <h4>Scope</h4>
+                            <p>We welcome high-quality, original submissions on all aspects of adaptive and intelligent systems. Topics of interest include, but are not limited to:</p>
+                            <ul>
+                                <li><strong>Core Methodologies:</strong> Machine Learning, Deep Learning, Reinforcement Learning.</li>
+                                <li><strong>Sequential & Dynamic Systems:</strong> Time Series Analysis & Forecasting, NLP, State-Space Models.</li>
+                                <li><strong>Human-Centered AI:</strong> Explainable AI (XAI), Human-in-the-Loop Systems, Adaptive Interfaces.</li>
+                                <li><strong>Applications:</strong> Autonomous Systems, Computational Social Science, and other applied domains.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="news-announcements">
+                    <h3>News & Announcements</h3>
+                    <ul class="news-list">
+                        <li><span class="news-date">[August 10, 2025]</span> TAIS is proud to announce the publication of its inaugural issue, Volume 1, Issue 1.</li>
+                        <li><span class="news-date">[July 15, 2025]</span> We are now officially accepting submissions. See our submission guidelines for more information.</li>
+                    </ul>
+                </div>
+
+                <div id="current-issue">
+                    <!-- JS will populate this -->
+                </div>
+
+                <div id="submissions">
+                    <h3>Submissions & Publication Policy</h3>
+                    <div class="license-box">
+                        <h4>TAIS Non-Exclusive Distribution License</h4>
+                        <p>By submitting an article, the authors grant TAIS a perpetual, non-exclusive license to distribute this article. The authors certify that they have the right to grant this license. Authors retain full copyright to their work and are free to pursue other publication venues. Submissions, once published, cannot be removed to ensure the integrity of the scholarly record.</p>
+                    </div>
+                    <p style="margin-top: 30px;">To submit, please email your manuscript in PDF format (LaTeX/Word source files are welcome) to <strong id="submission-link-main"></strong>, with the subject "TAIS Submission: [Your Manuscript Title]".</p>
+                </div>
+
+                <div id="special-issues">
+                    <h3>Call for Special Issues</h3>
+                    <div class="special-issue-call">
+                        <div class="special-issue-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V6h10v2z"></path></svg>
+                        </div>
+                        <div>
+                            <h4>Propose a Special Issue</h4>
+                            <p>TAIS invites proposals for Special Issues on timely and significant topics within our scope. If you are interested in leading an issue as a Guest Editor, please contact the Editor-in-Chief.</p>
+                            <a id="special-issue-link" href="#" class="btn" style="padding: 10px 25px; font-size: 1em;">Contact Us</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="editors">
+                    <h3>Editorial Board</h3>
+                    <div id="board-list"><!-- JS will populate this --></div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+    
+    <footer class="site-footer"></footer>
+    <div class="pdf-modal" id="pdf-viewer-modal"></div>
+
+    <script>
+        const journalData = JSON.parse(document.getElementById('journalData').textContent);
+
+        function renderContent() {
+            const info = journalData.journalInfo;
+            const board = journalData.editorialBoard;
+            const issues = journalData.issues;
+
+            document.getElementById('journal-short-name-header').textContent = info.shortName;
+            document.getElementById('journal-full-name').textContent = info.name;
+
+            const currentIssue = issues[0];
+            if (currentIssue) {
+                document.getElementById('current-issue').innerHTML = `
+                    <div class="issue-header">
+                        <h3>Current Issue</h3>
+                        <span class="issue-date">Volume ${currentIssue.volume}, Issue ${currentIssue.issue} &ndash; ${currentIssue.date}</span>
+                    </div>
+                    ${currentIssue.articles.map(article => `
+                        <div class="toc-item">
+                            <p class="title"><a href="#" onclick="openPdf('${article.pdf}'); return false;">${article.title}</a></p>
+                            <p class="authors">${article.authors}</p>
+                            ${article.keywords ? `<div class="keywords">${article.keywords.map(k => `<span class="keyword">${k}</span>`).join('')}</div>` : ''}
+                            <p class="actions">
+                                <a href="#" onclick="openPdf('${article.pdf}'); return false;">Read Online</a>
+                                <a href="${article.pdf}" download>Download PDF</a>
+                            </p>
+                        </div>`).join('')}
+                `;
+            }
+
+            const eicHtml = board.editorInChief.map(m => createMemberCard(m, 'Editor-in-Chief')).join('');
+            const assocEicHtml = board.associateEICs.map(m => createMemberCard(m, 'Associate Editor-in-Chief')).join('');
+            const managingHtml = board.managingEditors.map(m => createMemberCard(m, 'Managing Editor')).join('');
+            const membersHtml = board.boardMembers.map(m => createMemberCard(m, 'Editorial Board Member')).join('');
+
+            document.getElementById('board-list').innerHTML = `
+                <div class="board-category"><h4>Editor-in-Chief</h4><div class="board-grid">${eicHtml}</div></div>
+                <div class="board-category"><h4>Associate Editors-in-Chief</h4><div class="board-grid">${assocEicHtml}</div></div>
+                <div class="board-category"><h4>Managing Editors</h4><div class="board-grid">${managingHtml}</div></div>
+                <div class="board-category"><h4>Editorial Board Members</h4><div class="board-grid">${membersHtml}</div></div>`;
+
+            document.getElementById('submission-link-main').innerHTML = `<a href="mailto:${info.submissionEmail}">${info.submissionEmail}</a>`;
+            document.getElementById('special-issue-link').href = `mailto:${info.contactEmail}?subject=Proposal for TAIS Special Issue`;
+            
+            document.querySelector('.site-footer').innerHTML = `<div class="container">
+                <div class="footer-grid">
+                    <div class="footer-col"><h4>TAIS</h4><p>An independent, student-led publication advancing the science of adaptive and intelligent systems.</p></div>
+                    <div class="footer-col"><h4>Navigate</h4><ul class="footer-nav">
+                        <li><a href="#about">About & Scope</a></li><li><a href="#submissions">Submissions</a></li><li><a href="#editors">Editorial Board</a></li>
+                    </ul></div>
+                    <div class="footer-col"><h4>Contact & Policy</h4><ul class="footer-nav">
+                        <li><a href="mailto:${info.contactEmail}">Contact Us</a></li><li><a href="#submissions">Publication Policy</a></li>
+                    </ul></div>
+                </div>
+                <div class="copyright">&copy; ${new Date().getFullYear()} ${info.shortName}. Authors retain copyright under our non-exclusive license.</div></div>`;
+        }
+
+        function createMemberCard(member, role) { return `<div class="board-member"><p class="name">${member.name}</p><p class="role">${role}</p><p class="affiliation">${member.affiliation}</p></div>`; }
+        
+        const modal = document.getElementById('pdf-viewer-modal');
+        function openPdf(pdfUrl) {
+            modal.innerHTML = '<div class="pdf-close" onclick="closePdf()">&times;</div><div class="pdf-container"><iframe src="' + pdfUrl + '" frameborder="0" width="100%" height="100%"></iframe></div>';
+            modal.classList.add('active');
+        }
+        function closePdf() { modal.classList.remove('active'); modal.innerHTML = ''; }
+        
+        document.addEventListener('DOMContentLoaded', renderContent);
+    </script>
+
+</body>
+</html>
