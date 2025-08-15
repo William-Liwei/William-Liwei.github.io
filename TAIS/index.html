@@ -105,6 +105,20 @@
         .board-member .name { font-weight: 700; font-size: 1.2em; margin: 0; color: var(--text-color); }
         .board-member .role { font-size: 0.9em; font-weight: 500; color: var(--primary-color); margin: 5px 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px; }
         .board-member .affiliation { font-style: italic; color: var(--muted-color); }
+        .board-member .bio {
+            font-size: 0.9em;
+            margin-top: 15px;
+            text-align: left;
+            color: var(--muted-color);
+            flex-grow: 1; /* 让bio部分占据多余空间 */
+        }
+        .board-member .link a {
+            display: inline-block;
+            margin-top: 15px;
+            font-weight: 600;
+            text-decoration: none;
+            color: var(--primary-color);
+        }
 
         /* PDF Viewer & Footer */
         .pdf-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; display: none; align-items: center; justify-content: center; }
@@ -137,13 +151,23 @@
     "submissionEmail": "taiseditorial@163.com"
   },
   "editorialBoard": {
-    "editorInChief": [ { "name": "Wei Li (William)", "affiliation": "Shanghai University" } ],
+    "editorInChief": [ { "name": "Wei Li (William)", "affiliation": "Shanghai University" ,
+      "bio": "Wei Li (William) is an undergraduate in Computer Science. His research focuses on Deep Learning, AI, Time Series and HCI. He aims to build TAIS into a globally recognized platform for young scholars."} ],
     "associateEICs": [
-       { "name": "Luc (Zixin Wang)", "affiliation": "Shanghai University" },
-       { "name": "Qizheng Sun", "affiliation": "Shanghai University" }
+       { "name": "Luc (Zixin Wang)", "affiliation": "Shanghai University",
+         "bio": "Luc (Zixin Wang) is a Computer Science undergraduate at Shanghai University. His research interests include Machine Learning and Human-Computer Interaction. He is committed to fostering a vibrant community of young researchers." },
+       { "name": "Qizheng Sun", "affiliation": "Shanghai University",
+         "bio": "Qizheng Sun is an undergraduate student at Shanghai University, specializing in Electronic Information Science and Technology. He is dedicated to promoting the work of young scholars in the field." }
     ],
-    "managingEditors": [ { "name": "Chi-Hsiang Kao (Qixiang Gao)", "affiliation": "Fudan University" } ],
-    "boardMembers": [ { "name": "Haowen Zheng", "affiliation": "East China University of Political Science and Law"} ]
+    "managingEditors": [ 
+      { 
+        "name": "Chi-Hsiang Kao (Qixiang Gao)", 
+        "affiliation": "Fudan University",
+        "bio": "Chi-Hsiang Kao (Qixiang Gao) is an undergraduate at Fudan University. His interests include Mathematics, data science, and interdisciplinary research. He is passionate about supporting young scholars in publishing impactful research."
+      }
+    ],
+    "boardMembers": [ { "name": "Haowen Zheng", "affiliation": "East China University of Political Science and Law",
+        "bio": "Haowen Zheng is an undergraduate student at East China University of Political Science and Law. His research interests include AI4Law, interdisciplinary and Social Science." } ]
   },
   "issues": [
     {
@@ -225,6 +249,10 @@
             <div class="container">
                 <div id="about">
                     <h3>About the Journal</h3>
+                    <div style="text-align: left; max-width: 800px; margin: -20px auto 50px; font-size: 1em; background: var(--secondary-color); padding: 20px; border-radius: 8px;">
+                        <p><strong>TAIS (Transactions on Adaptive and Intelligent Systems)</strong> is a peer-reviewed academic repository operated by the <strong>TAIS Young Scholars Initiative</strong>, a team of undergraduate students from leading universities including Shanghai University, Fudan University, and more.</p>
+                        <p>Our mission is to provide a premier platform for outstanding undergraduate students worldwide to showcase, share, and protect their original research. We function as a <strong>peer-reviewed preprint server</strong>, while authors retain full copyright and the freedom to submit their work to any other conference or journal.</p>
+                    </div>
                     <div class="about-grid">
                         <div>
                             <h4>Aims & Vision</h4>
@@ -246,7 +274,8 @@
                 <div id="news-announcements">
                     <h3>News & Announcements</h3>
                     <ul class="news-list">
-                        <li><span class="news-date">[August 10, 2025]</span> TAIS is proud to announce the publication of its inaugural issue, Volume 1, Issue 1.</li>
+                        <!-- <li><span class="news-date">[August 10, 2025]</span> TAIS is proud to announce the publication of its inaugural issue, Volume 1, Issue 1.</li>
+                        -->
                         <li><span class="news-date">[July 15, 2025]</span> We are now officially accepting submissions. See our submission guidelines for more information.</li>
                     </ul>
                 </div>
@@ -256,12 +285,24 @@
                 </div>
 
                 <div id="submissions">
-                    <h3>Submissions & Publication Policy</h3>
-                    <div class="license-box">
-                        <h4>TAIS Non-Exclusive Distribution License</h4>
-                        <p>By submitting an article, the authors grant TAIS a perpetual, non-exclusive license to distribute this article. The authors certify that they have the right to grant this license. Authors retain full copyright to their work and are free to pursue other publication venues. Submissions, once published, cannot be removed to ensure the integrity of the scholarly record.</p>
+                    <h3>Author Guidelines & Publication Policy</h3>
+                    
+                    <div class="license-box" style="margin-bottom: 30px;">
+                        <h4>Our Core Commitments to Authors</h4>
+                        <ul>
+                            <li><strong>You Retain Full Copyright:</strong> Authors retain 100% of the copyright to their work. We operate under a non-exclusive license, meaning you are free to submit your work to any other venue at any time.</li>
+                            <li><strong>No Impact on Future Submissions:</strong> TAIS functions as a peer-reviewed preprint repository. Posting your work here is not considered a formal publication by most academic conferences and journals (e.g., NeurIPS, CVPR, Nature).</li>
+                            <li><strong>Protect Your Idea with a DOI:</strong> Every article published on TAIS receives a permanent, citable DOI from Zenodo, providing a public, time-stamped record of your original work to prevent intellectual property theft.</li>
+                        </ul>
                     </div>
-                    <p style="margin-top: 30px;">To submit, please email your manuscript in PDF format (LaTeX/Word source files are welcome) to <strong id="submission-link-main"></strong>, with the subject "TAIS Submission: [Your Manuscript Title]".</p>
+                    
+                    <h4>Submission Process</h4>
+                    <p>We welcome submissions from undergraduate students worldwide. To submit, please email your manuscript in PDF format to <strong id="submission-link-main"></strong>, with the subject "TAIS Submission: [Your Manuscript Title]". Our student-led editorial board will conduct a rigorous peer review to provide constructive feedback and ensure quality.</p>
+
+                    <h4>Frequently Asked Questions (FAQ)</h4>
+                    <p><strong>Q: What kind of work do you accept?</strong><br>A: We accept high-quality course projects, competition reports, literature reviews, and original research reports authored by undergraduate students.</p>
+                    <p><strong>Q: Is there a publication fee?</strong><br>A: No. TAIS is completely free for both authors and readers.</p>
+                    <p><strong>Q: How do I verify if my target journal accepts preprints?</strong><br>A: We recommend checking the journal's official policy or using a service like <a href="https://v2.sherpa.ac.uk/romeo/" target="_blank">Sherpa/RoMEO</a> to verify.</p>
                 </div>
 
                 <div id="special-issues">
@@ -372,7 +413,8 @@
                 <div class="copyright">&copy; ${new Date().getFullYear()} ${info.shortName}. Authors retain copyright under our non-exclusive license.</div></div>`;
         }
 
-        function createMemberCard(member, role) { return `<div class="board-member"><p class="name">${member.name}</p><p class="role">${role}</p><p class="affiliation">${member.affiliation}</p></div>`; }
+        function createMemberCard(member, role) { return `<div class="board-member"><p class="name">${member.name}</p><p class="role">${role}</p><p class="affiliation">${member.affiliation}</p>${member.bio ? `<p class="bio">${member.bio}</p>` : ''}
+            ${member.link ? `<p class="link"><a href="${member.link}" target="_blank">Learn More &rarr;</a></p>` : ''}</div>`; }
         
         const modal = document.getElementById('pdf-viewer-modal');
         function openPdf(pdfUrl) {
