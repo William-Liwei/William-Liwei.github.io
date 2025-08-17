@@ -1,0 +1,447 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apex Scholar - 顶尖计算机科学研究与论文指导</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Lato:wght@400;700&display=swap');
+
+        :root {
+            --primary-color: #0d1b2a; /* 深邃夜空蓝 */
+            --secondary-color: #e0b86a; /* 典雅沙金色 */
+            --accent-color: #415a77; /* 石板蓝 */
+            --bg-color: #f8f9fa; /* 更柔和的背景色 */
+            --text-color: #343a40;
+            --white-color: #ffffff;
+            --heading-font: 'Noto Serif SC', serif;
+            --body-font: 'Lato', sans-serif;
+            --shadow-sm: 0 4px 15px rgba(0,0,0,0.05);
+            --shadow-md: 0 8px 25px rgba(0,0,0,0.08);
+        }
+
+        /* --- General & Layout --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--body-font);
+            line-height: 1.8;
+            color: var(--text-color);
+            background-color: var(--white-color);
+        }
+        .container {
+            width: 90%;
+            max-width: 1140px;
+            margin: auto;
+            padding: 80px 0;
+        }
+        section { border-bottom: 1px solid #e9ecef; }
+        section:last-of-type { border-bottom: none; }
+        h2 {
+            font-family: var(--heading-font);
+            font-size: 2.8em;
+            text-align: center;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+        .section-subtitle {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 60px;
+            font-size: 1.1em;
+            color: #6c757d;
+        }
+        
+        /* --- Fade-in Animation on Scroll --- */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- Header --- */
+        .header {
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px 5%;
+            position: sticky; top: 0; z-index: 1000;
+            box-shadow: var(--shadow-sm);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .logo {
+            font-family: var(--heading-font);
+            font-size: 1.8em;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        .logo span { color: var(--secondary-color); }
+        .nav-links a {
+            color: var(--primary-color);
+            text-decoration: none;
+            margin: 0 18px;
+            font-weight: 700;
+            transition: color 0.3s ease;
+        }
+        .nav-links a:hover { color: var(--secondary-color); }
+
+        /* --- Hero Section --- */
+        #hero {
+            text-align: center;
+            padding: 100px 20px;
+            background: linear-gradient(to right, #eef2f3, #f0f4f8);
+        }
+        #hero h1 {
+            font-family: var(--heading-font);
+            font-size: 3.5em;
+            color: var(--primary-color);
+        }
+        #hero p { font-size: 1.3em; margin: 20px auto 40px; color: #555; max-width: 800px; }
+        .cta-button {
+            background: var(--secondary-color); color: var(--primary-color);
+            padding: 15px 35px; text-decoration: none; border-radius: 5px;
+            font-weight: 700; transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(224, 184, 106, 0.4);
+        }
+        .cta-button:hover { 
+            background-color: var(--primary-color);
+            color: var(--secondary-color);
+            box-shadow: 0 6px 20px rgba(13, 27, 42, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        /* --- Resume Section --- */
+        .resume-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 50px;
+            background: var(--white-color);
+            padding: 50px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+        }
+        .resume-left h3 {
+            font-family: var(--body-font); font-size: 1.4em; color: var(--primary-color);
+            border-bottom: 2px solid var(--secondary-color); padding-bottom: 10px; margin-bottom: 20px;
+        }
+        .resume-left p { margin-bottom: 15px; }
+        .resume-right h4 {
+            font-family: var(--heading-font); font-size: 1.6em; color: var(--accent-color);
+            margin-bottom: 15px;
+        }
+        .publication-list li, .skills-list li { margin-bottom: 10px; list-style-type: none; }
+        .pub-tag {
+            display: inline-block; background: var(--bg-color); color: var(--accent-color);
+            padding: 2px 8px; border-radius: 3px; font-weight: bold; font-size: 0.9em; margin-right: 10px;
+        }
+
+        /* --- Services & Pricing Section --- */
+        #services { background: var(--bg-color); }
+        .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        .pricing-card {
+            background: var(--white-color); padding: 30px; border-radius: 8px;
+            box-shadow: var(--shadow-sm); transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .pricing-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+        .pricing-card h3 {
+            font-family: var(--heading-font); font-size: 1.8em; text-align: center; margin-bottom: 20px;
+        }
+        .pricing-card ul { list-style: none; margin-bottom: 20px; }
+        .pricing-card li { margin-bottom: 12px; }
+        .pricing-card li::before {
+            content: '✓'; color: var(--secondary-color); font-weight: bold; margin-right: 10px;
+        }
+        .price {
+            display: block; text-align: center; font-size: 1.5em; font-weight: bold;
+            color: var(--primary-color); margin-top: 20px;
+        }
+
+        /* --- Case Studies --- */
+        .case-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px;
+        }
+        .case-card {
+            background: var(--white-color); padding: 30px; border-radius: 8px;
+            border-top: 4px solid var(--secondary-color); box-shadow: var(--shadow-sm);
+        }
+        .case-card h3 { font-size: 1.3em; margin-bottom: 10px; }
+        .case-card blockquote {
+            font-style: italic; color: #555; border-left: 3px solid var(--bg-color);
+            padding-left: 15px; margin: 15px 0;
+        }
+        .case-outcome { font-weight: bold; }
+
+        /* --- Code Service --- */
+        #code { background: var(--bg-color); }
+        .code-features-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px;
+        }
+        .feature-item { display: flex; align-items: flex-start; gap: 20px; }
+        .feature-item .icon { font-size: 2em; color: var(--secondary-color); line-height: 1; }
+        .feature-item h4 { margin-bottom: 5px; font-family: var(--body-font); }
+
+        /* --- Contact Form --- */
+        #contact { background: var(--white-color); }
+        .contact-form {
+            max-width: 800px; margin: auto; background: var(--bg-color);
+            padding: 40px; border-radius: 8px; box-shadow: var(--shadow-md);
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group textarea {
+            width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px;
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none; border-color: var(--secondary-color);
+            box-shadow: 0 0 0 2px rgba(224, 184, 106, 0.3);
+        }
+        .submit-btn {
+            display: block; width: 100%; padding: 15px; background: var(--primary-color);
+            color: var(--white-color); border: none; border-radius: 4px;
+            font-size: 1.2em; cursor: pointer; transition: background 0.3s;
+        }
+        .submit-btn:hover { background: var(--accent-color); }
+
+        /* --- Footer --- */
+        .footer {
+            background: var(--primary-color); color: var(--bg-color);
+            text-align: center; padding: 40px 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <a href="#hero" class="logo">Apex<span>Scholar</span></a>
+        <nav class="nav-links">
+            <a href="#resume">导师简历</a>
+            <a href="#services">服务与报价</a>
+            <a href="#cases">成功案例</a>
+            <a href="#code">代码服务</a>
+            <a href="#contact">立即咨询</a>
+        </nav>
+    </header>
+
+    <main>
+        <section id="hero">
+            <h1 class="fade-in">顶尖科研指导，通往学术卓越之路</h1>
+            <p class="fade-in">融合顶会一作实战经验与专业代码实现能力，为您提供从论文构思到成功发表的全程护航。</p>
+            <a href="#contact" class="cta-button fade-in">获取免费初步评估</a>
+        </section>
+
+        <section id="resume" class="container">
+            <div class="fade-in">
+                <h2>关于导师</h2>
+                <p class="section-subtitle">我们坚信，最好的指导来自于亲身走过这条路的人。导师不仅是理论家，更是具备丰富实战经验的一线研究者。下列为Apex Scholar部分导师，更多导师信息可咨询我们。</p>
+                <div class="resume-grid">
+                    <div class="resume-left">
+                        <h3>导师 L.</h3>
+                        <p><strong>身份:</strong> 国内顶尖211高校 计算机科学与技术</p>
+                        <p><strong>研究方向:</strong> 深度学习, 时序数据分析</p>
+                        <h3>预期辅导规划</h3>
+                        <p><strong>论文等级</strong><br>CCF-C, EI</p>
+                        <p><strong>辅导时间</strong><br>每周一次线上会议, 不定时文字沟通, 每篇论文1-2次代码帮写</p>
+                    </div>
+                    <div class="resume-right">
+                        <h4>代表性学术成果</h4>
+                        <ul class="publication-list">
+                            <li><span class="pub-tag">CCF-C</span> 某人工智能领域国际知名会议A Oral (2025, 一作)</li>
+                            <li><span class="pub-tag">CCF-C</span> 某人工智能领域国际知名会议A Oral (2025, 独作)</li>
+                            <li><span class="pub-tag">CCF-C</span> 某人工智能领域国际知名会议B Oral (2025, 独作)</li>
+                            <li><span class="pub-tag">CCF-C</span> 某人工智能领域国际知名会议B Oral (2025, 一作)</li>
+                            <li><span class="pub-tag">EI</span> 某国际智能计算会议C (2025, 一作)</li>
+                            <li><span class="pub-tag">CCF-B/A</span> 多篇更高等级会议论文在投/审稿中...</li>
+                        </ul>
+                        <h4>核心技能</h4>
+                        <ul class="skills-list">
+                            <li><strong>编程语言:</strong> 熟悉 Python, 熟练掌握 C++, MATLAB</li>
+                            <li><strong>深度学习框架:</strong> 熟悉 PyTorch, TensorFlow</li>
+                            <li><strong>研究工具:</strong> Git, Overleaf, LaTeX, and so on</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="resume-grid">
+                    <div class="resume-left">
+                        <h3>导师 X.</h3>
+                        <p><strong>身份:</strong> 世界一流高校 CS</p>
+                        <p><strong>研究方向:</strong> 深度学习, 机器学习, 数据处理</p>
+                        <h3>预期辅导规划</h3>
+                        <p><strong>论文等级</strong><br>CCF-A/B/C, EI</p>
+                        <p><strong>辅导时间</strong><br>按实际情况决定</p>
+                    </div>
+                    <div class="resume-right">
+                        <h4>代表性学术成果</h4>
+                        <ul class="publication-list">
+                            <li><span class="pub-tag">CCF-A</span> 某人工智能领域国际知名会议A</li>
+                            <li><span class="pub-tag">CCF-B</span> 某人工智能领域国际知名会议B</li>
+                            <li><span class="pub-tag">CCF-B/A</span> 多篇更高等级会议论文在投/审稿中...</li>
+                        </ul>
+                        <h4>核心技能</h4>
+                        <ul class="skills-list">
+                            <li><strong>编程语言:</strong> Python, C++, MATLAB均可</li>
+                            <li><strong>深度学习框架:</strong> 主要采用PyTorch</li>
+                            <li><strong>研究工具:</strong> Git, Overleaf, LaTeX, and so on</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="services" class="container">
+            <div class="fade-in">
+                <h2>服务与报价体系</h2>
+                <p class="section-subtitle">我们提供“全包”与“菜单式”单项服务，以满足不同阶段、不同需求的研究者。下单后只需预付20%定金，若不成功全额退回，所有服务均承诺“不成功分文不取，录用后再付尾款”。</p>
+                <div class="pricing-grid">
+                    <div class="pricing-card">
+                        <h3>“全包”指导服务</h3>
+                        <ul>
+                            <li>全程一对一指导</li>
+                            <li>选题与创新点挖掘</li>
+                            <li>研究方案与实验设计</li>
+                            <li>代码实现与调试</li>
+                            <li>论文撰写与投稿</li>
+                            <li>审稿意见(Rebuttal)回复</li>
+                        </ul>
+                        <span class="price">EI 会议: ¥3,000 起 (不含版面费)</span>
+                        <span class="price">CCF-C 会议: ¥15,000 - ¥30,000 (不含版面费)</span>
+                        <span class="price">CCF-B 会议: ¥80,000 起 (不含版面费)</span>
+                        <span class="price">CCF-A 会议: ¥200,000 起 (不含版面费)</span>
+                    </div>
+                    <div class="pricing-card">
+                        <h3>“菜单式”单项服务</h3>
+                        <ul>
+                            <li>选题与思路梳理 (2-3次会议)</li>
+                            <li>现有论文深度润色与拔高</li>
+                            <li>Rebuttal 策略咨询与回复撰写</li>
+                            <li>投稿前终审 (格式、逻辑、语言)</li>
+                            <li>核心算法模块代码实现</li>
+                            <li>实验复现与结果分析</li>
+                        </ul>
+                        <span class="price">¥1,000 - ¥10,000+ / 项</span>
+                        <p style="text-align:center; font-style:italic; margin-top:10px;">具体价格根据项目复杂度评估</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="cases" class="container">
+            <div class="fade-in">
+                <h2>成功案例</h2>
+                <p class="section-subtitle">每一个案例都是我们专业能力和负责态度的证明。</p>
+                <div class="case-grid">
+                    <div class="case-card">
+                        <h3>案例一：硕士生的毕业论文冲刺</h3>
+                        <p><strong>背景:</strong> 张同学，某211高校研二，研究方向为异常检测，苦于没有创新点，毕业论文堪忧。</p>
+                        <blockquote>我们介入后，用2周时间帮他梳理了现有工作，结合前沿动态，提出了一个轻量级网络架构的改进方案。后续全程指导实验和写作。</blockquote>
+                        <p class="case-outcome"><strong>成果:</strong> 论文最终被某 CCF-C 会议录用，张同学顺利达到毕业要求。</p>
+                    </div>
+                    <div class="case-card">
+                        <h3>案例二：本科生的瓶颈突破</h3>
+                        <p><strong>背景:</strong> 李同学，某著名高校大三，研究方向为时间序列。有一个很好的想法但实验效果不佳，文章被拒2次。</p>
+                        <blockquote>我们对其代码和实验设置进行了全面审查，发现了一个数据预处理的微小错误和超参数设置问题。同时，我们建议补充了2个关键的消融实验。</blockquote>
+                        <p class="case-outcome"><strong>成果:</strong> 修改后的论文重投，成功命中目标 EI 会议，为他的研究生申请打开了新局面。</p>
+                    </div>
+                     <div class="case-card">
+                        <h3>案例三：在职人士的学术追求</h3>
+                        <p><strong>背景:</strong> 赵先生，某科技公司算法工程师，希望申请海外博士，需要一篇高质量论文作为敲门砖。</p>
+                        <blockquote>我们利用他的工程经验，将其在工作中遇到的实际问题抽象为一个学术问题，并提供了完整的科研范式指导，将工程优势转化为学术创新。</blockquote>
+                        <p class="case-outcome"><strong>成果:</strong> 合作产出的论文发表在领域内知名EI会议上，为他的博士申请增添了重要砝码。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="code" class="container">
+            <div class="fade-in">
+                <h2>专业级代码撰写服务</h2>
+                <p class="section-subtitle">我们交付的不仅是能运行的代码，更是符合学术和工业标准的、高质量的工程实践。</p>
+                <div class="code-features-grid">
+                    <div class="feature-item">
+                        <span class="icon">🔄</span>
+                        <div><h4>完全可复现</h4><p>提供完整的 `requirements.txt` 或 `environment.yml` 文件，并附有清晰的运行指南，确保任何人在任何机器上都能复现论文结果。</p></div>
+                    </div>
+                    <div class="feature-item">
+                        <span class="icon">✍️</span>
+                        <div><h4>详尽的注释与文档</h4><p>关键函数、核心模块均有符合标准的Docstrings。代码逻辑清晰，易于阅读、理解和二次开发。</p></div>
+                    </div>
+                    <div class="feature-item">
+                        <span class="icon">🧱</span>
+                        <div><h4>模块化设计</h4><p>代码结构解耦，数据处理、模型定义、训练、评估等模块分离，方便进行消融实验和模型替换，符合现代深度学习工程实践。</p></div>
+                    </div>
+                    <div class="feature-item">
+                        <span class="icon">✨</span>
+                        <div><h4>遵循代码规范</h4><p>所有Python代码均使用`black`和`isort`进行格式化，遵循PEP8代码风格，确保代码的美观与专业性。</p></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="container">
+            <div class="fade-in">
+                <h2>开启您的学术咨询</h2>
+                <p class="section-subtitle">请填写以下表单，我们会尽快通过您的邮箱取得联系，进行免费的初步评估。您的所有信息都将被严格保密。</p>
+                <div class="contact-form">
+                    <form action="https://api.web3forms.com/submit" method="POST">
+                        <!-- 
+                          重要提示: 为了能收到邮件通知，请进行以下配置:
+                          1. 访问 https://web3forms.com/ 注册并获取一个免费的 access key.
+                          2. 将下方隐藏input中的 "YOUR_ACCESS_KEY_HERE" 替换为你自己的key.
+                        -->
+                        <input type="hidden" name="access_key" value="aa0ae610-540d-4dfe-8fdc-ef893732f5fb">
+                        <input type="hidden" name="from_name" value="ApexScholar官网咨询">
+                        <input type="hidden" name="subject" value="新的论文辅导咨询申请">
+
+                        <div class="form-group">
+                            <label for="contact-name">您的称呼</label>
+                            <input type="text" id="contact-name" name="姓名" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contact-email">您的邮箱</label>
+                            <input type="email" id="contact-email" name="邮箱" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contact-details">您的需求简述 (请尽可能详细)</label>
+                            <textarea id="contact-details" name="需求简述" rows="6" placeholder="例如：研二在读，方向时间序列预测，希望发一篇CCF-C，目前有初步想法但无完整思路。或者：已有论文初稿，希望进行润色和拔高..."></textarea>
+                        </div>
+                        <button type="submit" class="submit-btn">提交咨询申请</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>© 2025 Apex Scholar. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Fade-in animation on scroll ---
+        const faders = document.querySelectorAll('.fade-in');
+        
+        const appearOptions = {
+            threshold: 0.1,
+            rootMargin: "0px 0px -50px 0px"
+        };
+
+        const appearOnScroll = new IntersectionObserver(function(entries, observer) {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) {
+                    return;
+                }
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            });
+        }, appearOptions);
+
+        faders.forEach(fader => {
+            appearOnScroll.observe(fader);
+        });
+    });
+    </script>
+</body>
+</html>
