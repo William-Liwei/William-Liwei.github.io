@@ -95,7 +95,7 @@
         border: 1px solid var(--border-color);
         margin-top: 5px;
         object-fit: cover;
-        cursor: pointer; /* Indicates it's clickable */
+        cursor: pointer;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
     .pub-thumbnail:hover {
@@ -104,6 +104,7 @@
     }
     .pub-details {
         flex-grow: 1;
+        min-width: 0; /* Important fix for flex items to prevent overflow */
     }
     .pub-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.25rem; }
     .pub-authors { font-style: italic; margin-bottom: 0.25rem; }
@@ -150,8 +151,6 @@
         border: 1px solid var(--border-color);
         border-radius: 8px;
         font-family: 'Courier New', Courier, monospace;
-        white-space: pre-wrap;
-        word-break: break-all;
         font-size: 0.85rem;
         color: var(--text-color);
         box-sizing: border-box;
@@ -166,8 +165,15 @@
         max-height: 500px;
         padding: 1rem;
     }
+    .bibtex-container pre {
+        margin: 0;
+        /* CRITICAL FIX for BibTeX overflow */
+        white-space: pre-wrap;   
+        word-wrap: break-word;   
+        overflow-wrap: break-word; 
+    }
     
-    /* --- NEW Lightbox Styles --- */
+    /* --- Lightbox Styles --- */
     .lightbox {
         position: fixed;
         z-index: 1000;
@@ -182,14 +188,21 @@
         opacity: 0;
         visibility: hidden;
         transition: opacity 0.4s ease, visibility 0.4s;
+        padding: 2.5vw; /* Add some padding for small screens */
+        box-sizing: border-box;
     }
     .lightbox.visible {
         opacity: 1;
         visibility: visible;
     }
     .lightbox-content {
-        max-width: 90vw;
-        max-height: 90vh;
+        /* CRITICAL FIX for Lightbox image visibility */
+        max-width: 100%;
+        max-height: 100%;
+        width: 100%;
+        height: 100%;
+        object-fit: contain; /* This ensures the image scales down to fit while keeping aspect ratio */
+        
         border-radius: 8px;
         transform: scale(0.95);
         transition: transform 0.4s ease;
@@ -206,6 +219,7 @@
         font-weight: bold;
         cursor: pointer;
         transition: color 0.3s ease;
+        line-height: 1;
     }
     .lightbox-close:hover {
         color: var(--border-color);
@@ -259,10 +273,10 @@
     @media (max-width: 768px) {
         body { 
             font-size: 15px; 
-            -webkit-text-size-adjust: 100%; /* Prevent font scaling in landscape */
+            -webkit-text-size-adjust: 100%;
         }
         .container { 
-            padding: 0 20px; 
+            padding: 0 15px; 
         }
         section { 
             padding: 3rem 0; 
@@ -273,7 +287,7 @@
             font-size: 1.1rem; 
         }
         nav ul { 
-            display: none; /* Hide nav links on mobile */
+            display: none; 
         }
 
         /* --- Typography for Mobile --- */
@@ -293,37 +307,39 @@
         }
 
         /* --- Layout adjustments for Mobile --- */
-        #about { 
+        #about, .news-item, .pub-item, .honors-item { 
             flex-direction: column; 
-            padding-top: 3rem;
         }
-        .news-item { 
-            flex-direction: column; 
+        #about {
+            padding-top: 3rem;
         }
         .news-date { 
             margin-bottom: 0.25rem; 
             flex-basis: auto;
         }
-        .pub-item { 
-            flex-direction: column; 
-        }
         .pub-thumbnail { 
             width: 100%; 
-            max-width: 200px; /* Constrain image width on mobile */
+            max-width: 200px;
             margin-bottom: 1rem; 
-            align-self: center; /* Center the image */
+            align-self: center;
         }
         .project-grid { 
-            grid-template-columns: 1fr; /* Single column grid */
+            grid-template-columns: 1fr;
         }
         .honors-item { 
-            flex-direction: column; 
             align-items: flex-start; 
             padding: 1rem;
         }
         .honors-year {
             margin-right: 0;
             margin-bottom: 0.5rem;
+        }
+        
+        /* --- Mobile-specific fixes --- */
+        .lightbox-close {
+            font-size: 36px;
+            top: 15px;
+            right: 25px;
         }
     }
   </style>
@@ -383,7 +399,6 @@
       &copy; <span id="copyright-year"></span> Wei Li (William). All Rights Reserved.
   </footer>
 
-  <!-- NEW: Lightbox HTML structure -->
   <div id="lightbox" class="lightbox">
     <span class="lightbox-close">&times;</span>
     <img class="lightbox-content" id="lightbox-img">
@@ -430,7 +445,6 @@
       ],
 
       // 3. Publications (sorted automatically by year)
-      // IMPORTANT: Place your thumbnail images in a folder named "images" next to this HTML file.
       publications: [
         {
           title: "TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting",
@@ -445,7 +459,7 @@
           links: [
 
           ],
-          thumbnail: "images/timeflowdiffuser.png", // Local path
+          thumbnail: "images/timeflowdiffuser.png",
           bibtex: `@inproceedings{li2025timeflowdiffuser,
   title={TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting},
   author={Li, Wei},
@@ -467,7 +481,7 @@
           links: [
             { type: 'github', url: 'https://github.com/William-Liwei/SWIFT' }
           ],
-          thumbnail: "images/swift.png", // Local path
+          thumbnail: "images/swift.png",
           bibtex: `@inproceedings{li2025swift,
   title={SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction},
   author={Li, Wei},
@@ -490,7 +504,7 @@
           links: [
             { type: 'github', url: 'https://github.com/William-Liwei/EnergyPatchTST' }
           ],
-          thumbnail: "images/energypatchtst.png", // Local path
+          thumbnail: "images/energypatchtst.png",
           bibtex: `@inproceedings{li2025energypatchtst,
   title={EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting},
   author={Li, Wei and Wang, Zixin and Sun, Qizheng and Gao, Qixiang and Yang, Fenglei},
@@ -514,7 +528,7 @@
           links: [
 
           ],
-          thumbnail: "images/lwspace.png", // Local path
+          thumbnail: "images/lwspace.png",
           bibtex: `@inproceedings{li2025lwspace,
   title={LWSpace: A Multi-scale State Space Framework for Enhanced Time Series Forecasting},
   author={Li, Wei},
@@ -535,7 +549,7 @@
             { type: 'poster', text: 'Poster' },
             { type: 'author', text: 'First Author' }
           ],
-          thumbnail: "images/olympic.png", // Local path
+          thumbnail: "images/olympic.png",
           bibtex: `@inproceedings{li2025olympic,
   title={Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics},
   author={Li, Wei and Wang, Z. and Gao, Q. and Yang, Fenglei},
@@ -612,7 +626,6 @@
     /****************************************************************
      *                                                              *
      *                      RENDERING LOGIC                         *
-     *         This code uses the data above to build the page.     *
      *                  No modifications needed below.              *
      *                                                              *
      ****************************************************************/
@@ -666,23 +679,18 @@
                   .forEach((p, index) => {
                       const div = document.createElement('div');
                       div.className = 'pub-item';
-                      
                       const badgesHTML = p.badges.map(b => `<span class="badge-${b.type.toLowerCase()}">${b.text}</span>`).join('');
-                      
                       let linksHTML = (p.links || []).map(l => {
                           const text = l.type.replace('_', ' ').replace(/\b\w/g, char => char.toUpperCase());
                           return `<a href="${l.url}" target="_blank" rel="noopener noreferrer">${this.getIcon(l.type, text)}</a>`;
                       }).join('');
-                      
                       if (p.bibtex) {
                           linksHTML += `<button class="bib-toggle-btn" data-target="bib-${index}">${this.getIcon('bibtex', 'BibTeX')}</button>`;
                       }
-                      
                       const thumbnailHTML = p.thumbnail ? 
                         `<a href="${p.thumbnail}" class="thumbnail-link">
                            <img src="${p.thumbnail}" alt="Thumbnail for ${p.title}" class="pub-thumbnail">
                          </a>` : '';
-
                       div.innerHTML = `
                           ${thumbnailHTML}
                           <div class="pub-details">
@@ -726,19 +734,13 @@
               const lightbox = document.getElementById('lightbox');
               const lightboxImg = document.getElementById('lightbox-img');
               const lightboxClose = lightbox.querySelector('.lightbox-close');
-
               pubContainer.addEventListener('click', (event) => {
-                  // BibTeX toggle logic
                   const bibButton = event.target.closest('.bib-toggle-btn');
                   if (bibButton) {
                       const targetId = bibButton.dataset.target;
                       const bibContainer = document.getElementById(targetId);
-                      if (bibContainer) {
-                          bibContainer.classList.toggle('visible');
-                      }
+                      if (bibContainer) bibContainer.classList.toggle('visible');
                   }
-
-                  // Lightbox open logic
                   const thumbnailLink = event.target.closest('.thumbnail-link');
                   if (thumbnailLink) {
                       event.preventDefault();
@@ -746,21 +748,13 @@
                       lightbox.classList.add('visible');
                   }
               });
-
-              // Lightbox close logic
-              const closeLightbox = () => {
-                lightbox.classList.remove('visible');
-              };
-
+              const closeLightbox = () => lightbox.classList.remove('visible');
               lightboxClose.addEventListener('click', closeLightbox);
               lightbox.addEventListener('click', (event) => {
-                  if (event.target === lightbox) { // Only close if background is clicked
-                      closeLightbox();
-                  }
+                  if (event.target === lightbox) closeLightbox();
               });
           }
       };
-
       renderEngine.init();
     });
   </script>
