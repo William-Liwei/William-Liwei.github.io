@@ -79,7 +79,32 @@
     .news-date { flex: 0 0 110px; font-weight: 500; color: var(--light-text); }
     
     /* --- Publications Section --- */
-    .pub-item { margin-bottom: 2.5rem; }
+    .pub-item {
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .pub-thumbnail {
+        flex-shrink: 0;
+        width: 160px;
+        height: auto;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        margin-top: 5px;
+        object-fit: cover;
+        cursor: pointer; /* Indicates it's clickable */
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .pub-thumbnail:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+    .pub-details {
+        flex-grow: 1;
+    }
     .pub-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.25rem; }
     .pub-authors { font-style: italic; margin-bottom: 0.25rem; }
     .pub-venue { color: var(--light-text); margin-bottom: 0.75rem; }
@@ -88,17 +113,105 @@
     .badge-oral, .badge-poster { background-color: #ede9fe; color: #5b21b6; }
     .badge-author { background-color: #dcfce7; color: #15803d; }
     .badge-review { background-color: #fef3c7; color: #92400e; }
-    .badge-link a { background-color: #f3f4f6; color: #4b5563; }
-    .badge-link a:hover { background-color: #e5e7eb; }
+    
+    .pub-links {
+        margin-top: 0.75rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    .pub-links a, .pub-links button {
+        font-family: var(--body-font);
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--primary-color);
+        background-color: #f3f4f6;
+        border: 1px solid var(--border-color);
+        padding: 6px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .pub-links a:hover, .pub-links button:hover {
+        background-color: #e5e7eb;
+        color: var(--accent-color);
+    }
+    .pub-links svg {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+    .bibtex-container {
+        margin-top: 1rem;
+        background-color: #f9fafb;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-family: 'Courier New', Courier, monospace;
+        white-space: pre-wrap;
+        word-break: break-all;
+        font-size: 0.85rem;
+        color: var(--text-color);
+        box-sizing: border-box;
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        padding: 0 1rem;
+        transition: max-height 0.5s ease-in-out, opacity 0.4s ease-in-out, padding 0.5s ease-in-out;
+    }
+    .bibtex-container.visible {
+        opacity: 1;
+        max-height: 500px;
+        padding: 1rem;
+    }
+    
+    /* --- NEW Lightbox Styles --- */
+    .lightbox {
+        position: fixed;
+        z-index: 1000;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.85);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.4s ease, visibility 0.4s;
+    }
+    .lightbox.visible {
+        opacity: 1;
+        visibility: visible;
+    }
+    .lightbox-content {
+        max-width: 90vw;
+        max-height: 90vh;
+        border-radius: 8px;
+        transform: scale(0.95);
+        transition: transform 0.4s ease;
+    }
+    .lightbox.visible .lightbox-content {
+        transform: scale(1);
+    }
+    .lightbox-close {
+        position: absolute;
+        top: 20px;
+        right: 35px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.3s ease;
+    }
+    .lightbox-close:hover {
+        color: var(--border-color);
+    }
 
     /* --- Projects & Honors --- */
-    .subsection-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--primary-color);
-        margin-top: 3.5rem;
-        margin-bottom: 2rem;
-    }
     .project-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -142,16 +255,76 @@
     /* --- Footer --- */
     footer { text-align: center; padding: 3rem 0; margin-top: 2rem; border-top: 1px solid var(--border-color); color: var(--light-text); }
 
-    /* --- Responsive Design --- */
+    /* --- Responsive Design (Mobile First Enhancements) --- */
     @media (max-width: 768px) {
-        body { font-size: 15px; }
-        #about { flex-direction: column; }
-        nav .logo { font-size: 1rem; }
-        nav ul { display: none; }
-        .news-item { flex-direction: column; }
-        .news-date { margin-bottom: 0.25rem; }
-        .project-grid { grid-template-columns: 1fr; }
-        .honors-item { flex-direction: column; align-items: flex-start; }
+        body { 
+            font-size: 15px; 
+            -webkit-text-size-adjust: 100%; /* Prevent font scaling in landscape */
+        }
+        .container { 
+            padding: 0 20px; 
+        }
+        section { 
+            padding: 3rem 0; 
+        }
+
+        /* --- Navigation for Mobile --- */
+        nav .logo { 
+            font-size: 1.1rem; 
+        }
+        nav ul { 
+            display: none; /* Hide nav links on mobile */
+        }
+
+        /* --- Typography for Mobile --- */
+        #about h1 { 
+            font-size: 2.5rem; 
+            line-height: 1.2;
+        }
+        #about .affiliation {
+            font-size: 1.1rem;
+        }
+        .section-title { 
+            font-size: 2rem;
+            margin-bottom: 2.5rem;
+        }
+        .pub-title {
+            font-size: 1.1rem;
+        }
+
+        /* --- Layout adjustments for Mobile --- */
+        #about { 
+            flex-direction: column; 
+            padding-top: 3rem;
+        }
+        .news-item { 
+            flex-direction: column; 
+        }
+        .news-date { 
+            margin-bottom: 0.25rem; 
+            flex-basis: auto;
+        }
+        .pub-item { 
+            flex-direction: column; 
+        }
+        .pub-thumbnail { 
+            width: 100%; 
+            max-width: 200px; /* Constrain image width on mobile */
+            margin-bottom: 1rem; 
+            align-self: center; /* Center the image */
+        }
+        .project-grid { 
+            grid-template-columns: 1fr; /* Single column grid */
+        }
+        .honors-item { 
+            flex-direction: column; 
+            align-items: flex-start; 
+            padding: 1rem;
+        }
+        .honors-year {
+            margin-right: 0;
+            margin-bottom: 0.5rem;
+        }
     }
   </style>
 </head>
@@ -210,6 +383,11 @@
       &copy; <span id="copyright-year"></span> Wei Li (William). All Rights Reserved.
   </footer>
 
+  <!-- NEW: Lightbox HTML structure -->
+  <div id="lightbox" class="lightbox">
+    <span class="lightbox-close">&times;</span>
+    <img class="lightbox-content" id="lightbox-img">
+  </div>
 
   <script>
     /****************************************************************
@@ -229,42 +407,205 @@
 
       // 2. News (sorted automatically by date)
       news: [
-        { date: '2025-06', content: "Two papers (SWIFT, TimeFlowDiffuser) accepted for <strong>Oral Presentation</strong> at <strong>ICANN 2025 (CCF-C)</strong>." },
-        { date: '2025-05', content: "Two papers (LWSpace, EnergyPatchTST) accepted for <strong>Oral Presentation</strong> at <strong>ICIC 2025 (CCF-C)</strong>." },
-        { date: '2025-05', content: "The self-developed <strong>CCF-Online</strong> academic conference portal is now live." },
-        { date: '2024-11', content: "Awarded Second Prize in the 'E-Cloud Cup' Shanghai Collegiate Cloud Computing Application Contest." },
-        // { date: '2025-06', content: "Received the National Second Prize in the National College Student Information Security and Countermeasures Contest." },
-        { date: '2024-07', content: "Awarded Gold Medal in the university-level China 'Internet+' Innovation Competition." }
+        { 
+            date: '2025-06', 
+            content: "Two papers (SWIFT, TimeFlowDiffuser) accepted at <strong>ICANN 2025 (CCF-C)</strong>." 
+        },
+        { 
+            date: '2025-05', 
+            content: "Two papers (LWSpace, EnergyPatchTST) accepted for <strong>Oral Presentation</strong> at <strong>ICIC 2025 (CCF-C)</strong>." 
+        },
+        { 
+            date: '2025-05', 
+            content: "The self-developed <strong>CCF-Online</strong> academic conference portal is now live." 
+        },
+        { 
+            date: '2024-11', 
+            content: "Awarded Second Prize in the 'E-Cloud Cup' Shanghai Collegiate Cloud Computing Application Contest." 
+        },
+        { 
+            date: '2024-07', 
+            content: "Awarded Gold Medal in the university-level China 'Internet+' Innovation Competition." 
+        }
       ],
 
       // 3. Publications (sorted automatically by year)
+      // IMPORTANT: Place your thumbnail images in a folder named "images" next to this HTML file.
       publications: [
-        // Accepted Papers Only
-        { title: "TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting", authors: "<strong>Li, W.</strong>", venue: "International Conference on Artificial Neural Networks (ICANN 2025)", year: 2025, badges: [{ type: 'ccf', text: 'CCF-C' }, { type: 'oral', text: 'Oral' }, { type: 'author', text: 'Sole Author' }], links: [{ type: 'github', url: 'https://github.com/William-Liwei/TimeFlowDiffuser' }] },
-        { title: "SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction", authors: "<strong>Li, W.</strong>", venue: "International Conference on Artificial Neural Networks (ICANN 2025)", year: 2025, badges: [{ type: 'ccf', text: 'CCF-C' }, { type: 'oral', text: 'Oral' }, { type: 'author', text: 'Sole Author' }], links: [{ type: 'github', url: 'https://github.com/William-Liwei/SWIFT' }] },
-        { title: "EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting", authors: "<strong>Li, W.</strong>, Wang, Z., Sun, Q., Gao, Q., & Yang, F.", venue: "International Conference on Intelligent Computing (ICIC 2025)", year: 2025, badges: [{ type: 'ccf', text: 'CCF-C' }, { type: 'oral', text: 'Oral' }, { type: 'author', text: 'First Author' }], links: [{ type: 'github', url: 'https://github.com/William-Liwei/EnergyPatchTST' }] },
-        { title: "LWSpace: Multi-Scale State Space Framework for Time Series Forecasting", authors: "<strong>Li, W.</strong>", venue: "International Conference on Intelligent Computing (ICIC 2025)", year: 2025, badges: [{ type: 'ccf', text: 'CCF-C' }, { type: 'oral', text: 'Oral' }, { type: 'author', text: 'Sole Author' }], links: [{ type: 'github', url: 'https://github.com/William-Liwei/LWSpace' }] },
-        { title: "Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics", authors: "<strong>Li, W.</strong>, Wang, Z., Gao, Q., & Yang, F.", venue: "International Conference on Applied Mathematics, Modelling and Intelligent Computing (CAMMIC 2025)", year: 2025, badges: [{ type: 'ccf', text: 'EI Index' }, { type: 'poster', text: 'Poster' }, { type: 'author', text: 'First Author' }] }
+        {
+          title: "TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting",
+          authors: "<strong>Li, W.</strong>",
+          venue: "International Conference on Artificial Neural Networks (ICANN 2025)",
+          year: 2025,
+          month: 6,
+          badges: [
+            { type: 'ccf', text: 'CCF-C' },
+            { type: 'author', text: 'Sole Author' }
+          ],
+          links: [
+
+          ],
+          thumbnail: "images/timeflowdiffuser.png", // Local path
+          bibtex: `@inproceedings{li2025timeflowdiffuser,
+  title={TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting},
+  author={Li, Wei},
+  booktitle={International Conference on Artificial Neural Networks (ICANN 2025)},
+  year={2025},
+  note = {Accepted}
+}`
+        },
+        {
+          title: "SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction",
+          authors: "<strong>Li, W.</strong>",
+          venue: "International Conference on Artificial Neural Networks (ICANN 2025)",
+          year: 2025,
+          month: 6,
+          badges: [
+            { type: 'ccf', text: 'CCF-C' }, 
+            { type: 'author', text: 'Sole Author' }
+          ],
+          links: [
+            { type: 'github', url: 'https://github.com/William-Liwei/SWIFT' }
+          ],
+          thumbnail: "images/swift.png", // Local path
+          bibtex: `@inproceedings{li2025swift,
+  title={SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction},
+  author={Li, Wei},
+  booktitle={International Conference on Artificial Neural Networks (ICANN 2025)},
+  year={2025},
+  note = {Accepted}
+}`
+        },
+        {
+          title: "EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting",
+          authors: "<strong>Li, W.</strong>, Wang, Z., Sun, Q., Gao, Q., & Yang, F.",
+          venue: "International Conference on Intelligent Computing (ICIC 2025)",
+          year: 2025,
+          month: 5,
+          badges: [
+            { type: 'ccf', text: 'CCF-C' },
+            { type: 'oral', text: 'Oral' },
+            { type: 'author', text: 'First Author' }
+          ],
+          links: [
+            { type: 'github', url: 'https://github.com/William-Liwei/EnergyPatchTST' }
+          ],
+          thumbnail: "images/energypatchtst.png", // Local path
+          bibtex: `@inproceedings{li2025energypatchtst,
+  title={EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting},
+  author={Li, Wei and Wang, Zixin and Sun, Qizheng and Gao, Qixiang and Yang, Fenglei},
+  booktitle={International Conference on Intelligent Computing},
+  pages={319--330},
+  year={2025},
+  organization={Springer}
+}`
+        },
+        {
+          title: "LWSpace: Multi-Scale State Space Framework for Time Series Forecasting",
+          authors: "<strong>Li, W.</strong>",
+          venue: "International Conference on Intelligent Computing (ICIC 2025)",
+          year: 2025,
+          month: 5,
+          badges: [
+            { type: 'ccf', text: 'CCF-C' },
+            { type: 'oral', text: 'Oral' },
+            { type: 'author', text: 'Sole Author' }
+          ],
+          links: [
+
+          ],
+          thumbnail: "images/lwspace.png", // Local path
+          bibtex: `@inproceedings{li2025lwspace,
+  title={LWSpace: A Multi-scale State Space Framework for Enhanced Time Series Forecasting},
+  author={Li, Wei},
+  booktitle={International Conference on Intelligent Computing},
+  pages={295--306},
+  year={2025},
+  organization={Springer}
+}`
+        },
+        {
+          title: "Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics",
+          authors: "<strong>Li, W.</strong>, Wang, Z., Gao, Q., & Yang, F.",
+          venue: "International Conference on Applied Mathematics, Modelling and Intelligent Computing (CAMMIC 2025)",
+          year: 2025,
+          month: 3,
+          badges: [
+            { type: 'ccf', text: 'EI Index' },
+            { type: 'poster', text: 'Poster' },
+            { type: 'author', text: 'First Author' }
+          ],
+          thumbnail: "images/olympic.png", // Local path
+          bibtex: `@inproceedings{li2025olympic,
+  title={Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics},
+  author={Li, Wei and Wang, Z. and Gao, Q. and Yang, Fenglei},
+  booktitle={International Conference on Applied Mathematics, Modelling and Intelligent Computing (CAMMIC 2025)},
+  year={2025},
+  note = {Accepted}
+}`
+        }
       ],
       
       // 4. Featured Projects
       projects: [
-        { title: "Cultural Heritage Database System", desc: "Developed a digital management platform for the University's Key Laboratory of Silicate Cultural Heritage, supporting multi-source data entry, retrieval, and visualization.", tags: ["Database Design", "MySQL", "MongoDB", "Data Visualization"], links: [] },
-        { title: "'CCF-Online' Academic Conference Portal", desc: "Independently developed and deployed an online portal that scrapes and integrates data from multiple sources to provide researchers with efficient access to academic conference information.", tags: ["Independent Project", "Scrapy", "JavaScript"], links: [{ type: 'live_demo', url: 'https://www.weili.space/CCF/' }] },
-        { title: "Cloud-based Automated Course Selection System", desc: "Led the development of a cloud-hosted system that automates the course selection process, featuring an LLM-based sentiment analysis module for course reviews. Award-winning project.", tags: ["Project Lead", "Flask", "Playwright", "Cloud Computing"], links: [] },
-        { title: "Smart Parking IoT Platform", desc: "Designed and built a full-stack IoT parking solution, enabling real-time parking availability queries, reservations, and payments. Awarded Gold Medal at a university innovation competition.", tags: ["IoT", "Full-Stack", "Python", "Flask"], links: [] }
+        { 
+            title: "Cultural Heritage Database System", 
+            desc: "Developed a digital management platform for the University's Key Laboratory of Silicate Cultural Heritage, supporting multi-source data entry, retrieval, and visualization.", 
+            tags: ["Database Design", "MySQL", "Data Visualization"], 
+            links: [] 
+        },
+        { 
+            title: "'CCF-Online' Academic Conference Portal", 
+            desc: "Independently developed and deployed an online portal that scrapes and integrates data from multiple sources to provide researchers with efficient access to academic conference information.", 
+            tags: ["Independent Project", "Scrapy", "JavaScript"], 
+            links: [{ type: 'live_demo', url: 'https://www.weili.space/CCF/' }] 
+        },
+        { 
+            title: "Cloud-based Automated Course Selection System", 
+            desc: "Led the development of a cloud-hosted system that automates the course selection process, featuring an LLM-based sentiment analysis module for course reviews. Award-winning project.", 
+            tags: ["Project Lead", "Flask", "Playwright", "Cloud Computing"], 
+            links: [] 
+        },
+        { 
+            title: "Smart Parking IoT Platform", 
+            desc: "Designed and built a full-stack IoT parking solution, enabling real-time parking availability queries, reservations, and payments. Awarded Gold Medal at a university innovation competition.", 
+            tags: ["IoT", "Full-Stack", "Python", "Flask"], 
+            links: [] 
+        }
       ],
       
       // 5. Awards & Honors (sorted automatically by year)
       honors: [
-        { year: 2024, name: "Special Class Scholarship for Academic Excellence", level: "Shanghai University (Top-tier)" },
-        { year: 2025, name: "'Jie-Yi' Student Leadership Scholarship", level: "School of Computer Engineering and Science" },
-        // { year: 2025, name: "National College Student Information Security and Countermeasures Contest", level: "National Second Prize" },
-        // { year: 2025, name: "Baidu Star & Mati Cup Programming Contest", level: "Provincial First Prize" },
-        { year: 2024, name: "'E-Cloud Cup' Shanghai Collegiate Cloud Computing Application Contest", level: "Second Prize" },
-        { year: 2025, name: "Lanqiao Cup Programming Contest", level: "Provincial Second Prize" },
-        { year: 2024, name: "China 'Internet+' Innovation Competition", level: "Gold Medal (University Level)" },
-        { year: 2024, name: "Undergraduate Academic Forum", level: "Second Prize" }
+        { 
+            year: 2024, 
+            name: "Special Class Scholarship for Academic Excellence", 
+            level: "Shanghai University (Top-tier)" 
+        },
+        { 
+            year: 2025, 
+            name: "'Jie-Yi' Student Leadership Scholarship", 
+            level: "School of Computer Engineering and Science" 
+        },
+        { 
+            year: 2024, 
+            name: "'E-Cloud Cup' Shanghai Collegiate Cloud Computing Application Contest", 
+            level: "Second Prize" 
+        },
+        { 
+            year: 2025, 
+            name: "Lanqiao Cup Programming Contest", 
+            level: "Provincial Second Prize" 
+        },
+        { 
+            year: 2024, 
+            name: "China 'Internet+' Innovation Competition", 
+            level: "Gold Medal (University Level)" 
+        },
+        { 
+            year: 2024, 
+            name: "Undergraduate Academic Forum", 
+            level: "Second Prize" 
+        }
       ]
     };
 
@@ -277,11 +618,12 @@
      ****************************************************************/
     document.addEventListener('DOMContentLoaded', () => {
       const ICONS = {
-        email: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" /><path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" /></svg> Email`,
-        github: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 0C4.477 0 0 4.477 0 10c0 4.418 2.865 8.168 6.839 9.492.5.092.682-.217.682-.482 0-.237-.009-.868-.014-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.031-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.03 1.595 1.03 2.688 0 3.848-2.338 4.695-4.566 4.942.359.308.678.92.678 1.852 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.001 10.001 0 0020 10c0-5.523-4.477-10-10-10z" clip-rule="evenodd" /></svg> GitHub`,
-        orcid: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zM7.365 18.23H5.21V8.673h2.155V18.23zM6.287 7.72c-.723 0-1.306-.583-1.306-1.305s.583-1.305 1.306-1.305c.722 0 1.305.583 1.305 1.305S7.009 7.72 6.287 7.72zM18.79 18.23h-2.156v-4.88c0-1.162-.02-2.656-1.62-2.656-1.62 0-1.87 1.266-1.87 2.57v4.966H10.99V8.673h2.06v.943h.03c.287-.543 1.01-1.118 2.03-1.118 2.17 0 2.57 1.43 2.57 3.286v3.746z" /></svg> ORCID`,
-        live_demo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.25 5.5a.75.75 0 00-.75.75v8.5c0 .414.336.75.75.75h8.5a.75.75 0 00.75-.75v-4a.75.75 0 011.5 0v4A2.25 2.25 0 0112.75 17H4.25A2.25 2.25 0 012 14.75v-8.5A2.25 2.25 0 014.25 4h5a.75.75 0 010 1.5h-5z" clip-rule="evenodd" /><path fill-rule="evenodd" d="M6.194 12.852a.75.75 0 001.06 0l6.25-6.25a.75.75 0 10-1.06-1.06L6.939 11.06a.75.75 0 000 1.061l-.745.745z" clip-rule="evenodd" /><path d="M12.25 4a.75.75 0 000 1.5h1.5a.75.75 0 000-1.5h-1.5z" /></svg> Live Demo`,
-        default_link: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.665l3-3z" /><path d="M8.603 14.328a2.5 2.5 0 01-3.535 0l-1.225-1.225a.75.75 0 00-1.061 1.06l1.225 1.224a4 4 0 005.656 5.656l3-3a4 4 0 00-.225-5.865.75.75 0 00-.977 1.138 2.5 2.5 0 01.142 3.665l-3 3z" /></svg> Link`
+        email: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" /><path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" /></svg>`,
+        github: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 0C4.477 0 0 4.477 0 10c0 4.418 2.865 8.168 6.839 9.492.5.092.682-.217.682-.482 0-.237-.009-.868-.014-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.031-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.03 1.595 1.03 2.688 0 3.848-2.338 4.695-4.566 4.942.359.308.678.92.678 1.852 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.001 10.001 0 0020 10c0-5.523-4.477-10-10-10z" clip-rule="evenodd" /></svg>`,
+        orcid: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zM7.365 18.23H5.21V8.673h2.155V18.23zM6.287 7.72c-.723 0-1.306-.583-1.306-1.305s.583-1.305 1.306-1.305c.722 0 1.305.583 1.305 1.305S7.009 7.72 6.287 7.72zM18.79 18.23h-2.156v-4.88c0-1.162-.02-2.656-1.62-2.656-1.62 0-1.87 1.266-1.87 2.57v4.966H10.99V8.673h2.06v.943h.03c.287-.543 1.01-1.118 2.03-1.118 2.17 0 2.57 1.43 2.57 3.286v3.746z" /></svg>`,
+        live_demo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.25 5.5a.75.75 0 00-.75.75v8.5c0 .414.336.75.75.75h8.5a.75.75 0 00.75-.75v-4a.75.75 0 011.5 0v4A2.25 2.25 0 0112.75 17H4.25A2.25 2.25 0 012 14.75v-8.5A2.25 2.25 0 014.25 4h5a.75.75 0 010 1.5h-5z" clip-rule="evenodd" /><path fill-rule="evenodd" d="M6.194 12.852a.75.75 0 001.06 0l6.25-6.25a.75.75 0 10-1.06-1.06L6.939 11.06a.75.75 0 000 1.061l-.745.745z" clip-rule="evenodd" /><path d="M12.25 4a.75.75 0 000 1.5h1.5a.75.75 0 000-1.5h-1.5z" /></svg>`,
+        bibtex: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10zm0 5.25a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clip-rule="evenodd" /></svg>`,
+        default_link: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.665l3-3z" /><path d="M8.603 14.328a2.5 2.5 0 01-3.535 0l-1.225-1.225a.75.75 0 00-1.061 1.06l1.225 1.224a4 4 0 005.656 5.656l3-3a4 4 0 00-.225-5.865.75.75 0 00-.977 1.138 2.5 2.5 0 01.142 3.665l-3 3z" /></svg>`
       };
 
       const renderEngine = {
@@ -291,18 +633,20 @@
             this.renderPublications();
             this.renderProjects();
             this.renderHonors();
+            this.addEventListeners();
             document.getElementById('copyright-year').textContent = new Date().getFullYear();
           },
-          getIcon(type) {
-            const cleanType = type.toLowerCase().replace(/\s+/g, '_');
-            return ICONS[cleanType] || ICONS.default_link;
+          getIcon(type, customText = '') {
+            const cleanType = type.toLowerCase().replace(/[\s_]+/g, '_');
+            const iconHTML = ICONS[cleanType] || ICONS.default_link;
+            return `${iconHTML} ${customText}`.trim();
           },
           renderPersonalInfo() {
               const container = document.getElementById('social-links-container');
               container.innerHTML = `
-                  <a href="mailto:${DATA.personalInfo.email}">${this.getIcon('email')}</a>
-                  <a href="${DATA.personalInfo.github}" target="_blank" rel="noopener noreferrer">${this.getIcon('github')}</a>
-                  <a href="${DATA.personalInfo.orcid}" target="_blank" rel="noopener noreferrer">${this.getIcon('orcid')}</a>`;
+                  <a href="mailto:${DATA.personalInfo.email}">${this.getIcon('email', 'Email')}</a>
+                  <a href="${DATA.personalInfo.github}" target="_blank" rel="noopener noreferrer">${this.getIcon('github', 'GitHub')}</a>
+                  <a href="${DATA.personalInfo.orcid}" target="_blank" rel="noopener noreferrer">${this.getIcon('orcid', 'ORCID')}</a>`;
           },
           renderNews() {
               const container = document.getElementById('news-container');
@@ -318,13 +662,37 @@
           renderPublications() {
               const container = document.getElementById('publications-container');
               DATA.publications
-                  .sort((a, b) => b.year - a.year || a.venue.localeCompare(b.venue))
-                  .forEach(p => {
+                  .sort((a, b) => b.year - a.year || (b.month - a.month) || a.venue.localeCompare(b.venue))
+                  .forEach((p, index) => {
                       const div = document.createElement('div');
                       div.className = 'pub-item';
+                      
                       const badgesHTML = p.badges.map(b => `<span class="badge-${b.type.toLowerCase()}">${b.text}</span>`).join('');
-                      const linksHTML = (p.links || []).map(l => `<span class="badge-link badge-${l.type.toLowerCase()}"><a href="${l.url}" target="_blank" rel="noopener noreferrer">${this.getIcon(l.type)}</a></span>`).join('');
-                      div.innerHTML = `<div class="pub-title">${p.title}</div><div class="pub-authors">${p.authors}</div><div class="pub-venue">${p.venue} (${p.year})</div><div class="pub-badges">${badgesHTML}${linksHTML}</div>`;
+                      
+                      let linksHTML = (p.links || []).map(l => {
+                          const text = l.type.replace('_', ' ').replace(/\b\w/g, char => char.toUpperCase());
+                          return `<a href="${l.url}" target="_blank" rel="noopener noreferrer">${this.getIcon(l.type, text)}</a>`;
+                      }).join('');
+                      
+                      if (p.bibtex) {
+                          linksHTML += `<button class="bib-toggle-btn" data-target="bib-${index}">${this.getIcon('bibtex', 'BibTeX')}</button>`;
+                      }
+                      
+                      const thumbnailHTML = p.thumbnail ? 
+                        `<a href="${p.thumbnail}" class="thumbnail-link">
+                           <img src="${p.thumbnail}" alt="Thumbnail for ${p.title}" class="pub-thumbnail">
+                         </a>` : '';
+
+                      div.innerHTML = `
+                          ${thumbnailHTML}
+                          <div class="pub-details">
+                              <div class="pub-title">${p.title}</div>
+                              <div class="pub-authors">${p.authors}</div>
+                              <div class="pub-venue">${p.venue}</div>
+                              <div class="pub-badges">${badgesHTML}</div>
+                              <div class="pub-links">${linksHTML}</div>
+                              ${p.bibtex ? `<div class="bibtex-container" id="bib-${index}"><pre>${p.bibtex}</pre></div>` : ''}
+                          </div>`;
                       container.appendChild(div);
                   });
           },
@@ -334,7 +702,10 @@
                   const div = document.createElement('div');
                   div.className = 'project-card';
                   const tagsHTML = p.tags.map(t => `<span class="tag">${t}</span>`).join('');
-                  const linksHTML = (p.links || []).map(l => `<a href="${l.url}" target="_blank" rel="noopener noreferrer">${this.getIcon(l.type)}</a>`).join('');
+                  const linksHTML = (p.links || []).map(l => {
+                      const text = l.type.replace('_', ' ').replace(/\b\w/g, char => char.toUpperCase());
+                      return `<a href="${l.url}" target="_blank" rel="noopener noreferrer">${this.getIcon(l.type, text)}</a>`;
+                  }).join('');
                   div.innerHTML = `<h4 class="title">${p.title}</h4><p class="desc">${p.desc}</p><div class="tags">${tagsHTML}</div>${linksHTML ? `<div class="links">${linksHTML}</div>` : ''}`;
                   container.appendChild(div);
               });
@@ -349,6 +720,44 @@
                       li.innerHTML = `<div class="honors-year">${h.year}</div><div class="honors-name">${h.name}</div><div class="honors-level">${h.level}</div>`;
                       container.appendChild(li);
                   });
+          },
+          addEventListeners() {
+              const pubContainer = document.getElementById('publications-container');
+              const lightbox = document.getElementById('lightbox');
+              const lightboxImg = document.getElementById('lightbox-img');
+              const lightboxClose = lightbox.querySelector('.lightbox-close');
+
+              pubContainer.addEventListener('click', (event) => {
+                  // BibTeX toggle logic
+                  const bibButton = event.target.closest('.bib-toggle-btn');
+                  if (bibButton) {
+                      const targetId = bibButton.dataset.target;
+                      const bibContainer = document.getElementById(targetId);
+                      if (bibContainer) {
+                          bibContainer.classList.toggle('visible');
+                      }
+                  }
+
+                  // Lightbox open logic
+                  const thumbnailLink = event.target.closest('.thumbnail-link');
+                  if (thumbnailLink) {
+                      event.preventDefault();
+                      lightboxImg.src = thumbnailLink.href;
+                      lightbox.classList.add('visible');
+                  }
+              });
+
+              // Lightbox close logic
+              const closeLightbox = () => {
+                lightbox.classList.remove('visible');
+              };
+
+              lightboxClose.addEventListener('click', closeLightbox);
+              lightbox.addEventListener('click', (event) => {
+                  if (event.target === lightbox) { // Only close if background is clicked
+                      closeLightbox();
+                  }
+              });
           }
       };
 
