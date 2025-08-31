@@ -77,6 +77,80 @@
     /* --- News Section --- */
     .news-item { display: flex; margin-bottom: 1.5rem; }
     .news-date { flex: 0 0 110px; font-weight: 500; color: var(--light-text); }
+
+    .experience-item {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-left: 5px solid var(--accent-color);
+        border-radius: 8px;
+        padding: 1.75rem;
+        margin-bottom: 2rem;
+        transition: box-shadow 0.3s ease, border-left-color 0.3s ease;
+    }
+    .experience-item:hover {
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        border-left-color: var(--primary-color);
+    }
+    .experience-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 0.25rem;
+    }
+    .experience-title {
+        font-size: 1.3rem;
+        color: var(--primary-color);
+        margin: 0;
+    }
+    .experience-tag {
+        flex-shrink: 0;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 99px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin-top: 2px;
+    }
+    .tag-research {
+        background-color: #e0f2fe; /* Light Blue */
+        color: #0c4a6e;
+    }
+    .tag-internship {
+        background-color: #dcfce7; /* Light Green */
+        color: #15803d;
+    }
+    .experience-affiliation {
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+        margin-top: 0;
+    }
+    .experience-period {
+        color: var(--light-text);
+        font-size: 0.9rem;
+        margin-bottom: 1.25rem;
+        margin-top: 0;
+    }
+    .experience-details {
+        padding-left: 20px;
+        margin: 0;
+        line-height: 1.9;
+    }
+    .experience-details li {
+        margin-bottom: 0.5rem;
+    }
+    @media (max-width: 768px) {
+        .experience-title {
+            font-size: 1.15rem;
+        }
+        .experience-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+    }
     
     /* --- Publications Section --- */
     .pub-item {
@@ -352,6 +426,8 @@
       <div class="logo">WEI LI</div>
       <ul>
         <li><a href="#about">About</a></li>
+        <li><a href="#experience">Experience</a></li>
+        <li><a href="#news">News</a></li>
         <li><a href="#publications">Publications</a></li>
         <li><a href="#projects">Projects</a></li>
         <li><a href="#honors">Honors</a></li>
@@ -371,6 +447,13 @@
           My research interests lie at the intersection of <strong>Deep Learning</strong>, <strong>AI</strong>, <strong>Time Series</strong>, and <strong>HCI</strong>. Under the mentorship of Prof. Fenglei Yang, I focus on developing robust, efficient, and interpretable models for multi-scale temporal dynamics. My work has resulted in multiple sole-author and first-author publications accepted for <strong>Oral Presentations</strong> at several international conferences.
         </p>
         <div class="social-links" id="social-links-container"></div>
+      </div>
+    </section>
+
+    <section id="experience">
+      <h2 class="section-title">Experience</h2>
+      <div class="experience-list">
+        <!-- Experience items will be dynamically inserted here by JavaScript -->
       </div>
     </section>
 
@@ -424,23 +507,27 @@
       // 2. News (sorted automatically by date)
       news: [
         { 
-            date: '2025-06', 
-            content: "Two papers (SWIFT, TimeFlowDiffuser) accepted at <strong>ICANN 2025 (CCF-C)</strong>." 
+            year: 2025, month: 8, 
+            content: "Awarded First Prize in the <strong>Baidu Star Programming Contest - Talent Track</strong> and <strong>MaTiBei Collegiate Programming Contest</strong>." 
         },
         { 
-            date: '2025-05', 
+            year: 2025, month: 6, 
+            content: "Two papers (SWIFT, TimeFlowDiffuser) accepted for <strong>Oral Presentation</strong> at <strong>ICANN 2025 (CCF-C)</strong>." 
+        },
+        { 
+            year: 2025, month: 5, 
             content: "Two papers (LWSpace, EnergyPatchTST) accepted for <strong>Oral Presentation</strong> at <strong>ICIC 2025 (CCF-C)</strong>." 
         },
         { 
-            date: '2025-05', 
+            year: 2025, month: 5, 
             content: "The self-developed <strong>CCF-Online</strong> academic conference portal is now live." 
         },
         { 
-            date: '2024-11', 
+            year: 2024, month: 11, 
             content: "Awarded Second Prize in the 'E-Cloud Cup' Shanghai Collegiate Cloud Computing Application Contest." 
         },
         { 
-            date: '2024-07', 
+            year: 2024, month: 7, 
             content: "Awarded Gold Medal in the university-level China 'Internet+' Innovation Competition." 
         }
       ],
@@ -455,6 +542,7 @@
           month: 6,
           badges: [
             { type: 'ccf', text: 'CCF-C' },
+            { type: 'oral', text: 'Oral' },
             { type: 'author', text: 'Sole Author' }
           ],
           links: [
@@ -477,6 +565,7 @@
           month: 6,
           badges: [
             { type: 'ccf', text: 'CCF-C' }, 
+            { type: 'oral', text: 'Oral' },
             { type: 'author', text: 'Sole Author' }
           ],
           links: [
@@ -564,16 +653,10 @@
       // 4. Featured Projects
       projects: [
         { 
-            title: "Cultural Heritage Database System", 
-            desc: "Developed a digital management platform for the University's Key Laboratory of Silicate Cultural Heritage, supporting multi-source data entry, retrieval, and visualization.", 
-            tags: ["Database Design", "MySQL", "Data Visualization"], 
-            links: [] 
-        },
-        { 
             title: "'CCF-Online' Academic Conference Portal", 
             desc: "Independently developed and deployed an online portal that scrapes and integrates data from multiple sources to provide researchers with efficient access to academic conference information.", 
             tags: ["Independent Project", "Scrapy", "JavaScript"], 
-            links: [{ type: 'live_demo', url: 'https://www.weili.space/CCF/' }] 
+            links: [{ type: 'live_demo', url: 'https://www.weili.space/ccf/' }] 
         },
         { 
             title: "Cloud-based Automated Course Selection System", 
@@ -582,9 +665,21 @@
             links: [] 
         },
         { 
+            title: "Cultural Heritage Database System", 
+            desc: "Developed a digital management platform for the University's Key Laboratory of Silicate Cultural Heritage, supporting multi-source data entry, retrieval, and visualization.", 
+            tags: ["Database Design", "MySQL", "Data Visualization"], 
+            links: [] 
+        },
+        { 
             title: "Smart Parking IoT Platform", 
             desc: "Designed and built a full-stack IoT parking solution, enabling real-time parking availability queries, reservations, and payments. Awarded Gold Medal at a university innovation competition.", 
             tags: ["IoT", "Full-Stack", "Python", "Flask"], 
+            links: [] 
+        },
+        { 
+            title: "Research on Product Assembly Strategy Optimization", 
+            desc: "Led a research project applying Bayesian decision networks and genetic algorithms to optimize complex assembly strategies for products with variable components and processes.", 
+            tags: ["Optimization", "Bayesian Networks", "Genetic Algorithms"], 
             links: [] 
         }
       ],
@@ -592,35 +687,97 @@
       // 5. Awards & Honors (sorted automatically by year)
       honors: [
         { 
-            year: 2024, 
-            name: "Special Class Scholarship for Academic Excellence", 
-            level: "Shanghai University (Top-tier)" 
+            year: 2025, month: 8, 
+            name: "Baidu Star Programming Contest - Talent Track", 
+            level: "National First Prize" 
         },
         { 
-            year: 2025, 
+            year: 2025, month: 8, 
+            name: "MaTiBei Collegiate Programming Contest", 
+            level: "National First Prize" 
+        },
+        { 
+            year: 2025, month: 7, 
+            name: "National College Student Information Security Contest (ISCC)", 
+            level: "National Second Prize" 
+        },
+        { 
+            year: 2025, month: 1,
             name: "'Jie-Yi' Student Leadership Scholarship", 
             level: "School of Computer Engineering and Science" 
         },
         { 
-            year: 2024, 
-            name: "'E-Cloud Cup' Shanghai Collegiate Cloud Computing Application Contest", 
-            level: "Second Prize" 
-        },
-        { 
-            year: 2025, 
+            year: 2025, month: 5,
             name: "Lanqiao Cup Programming Contest", 
             level: "Provincial Second Prize" 
         },
         { 
-            year: 2024, 
+            year: 2024, month: 12,
+            name: "Contemporary Undergraduate Mathematical Contest in Modeling", 
+            level: "Provincial Third Prize" 
+        },
+        { 
+            year: 2024, month: 11,
+            name: "'E-Cloud Cup' Shanghai Collegiate Cloud Computing Application Contest", 
+            level: "Second Prize" 
+        },
+        { 
+            year: 2024, month: 10,
+            name: "Special Class Scholarship for Academic Excellence", 
+            level: "Shanghai University (Top-tier)" 
+        },
+        { 
+            year: 2024, month: 7,
             name: "China 'Internet+' Innovation Competition", 
             level: "Gold Medal (University Level)" 
         },
         { 
-            year: 2024, 
+            year: 2024, month: 10,
             name: "Undergraduate Academic Forum", 
             level: "Second Prize" 
         }
+      ],
+
+      // 6. Experience (sorted automatically by date)
+      experience: [
+        {
+          type: 'Research', // The tag that will be displayed
+          title: 'Time Series Forecasting & Deep Learning',
+          affiliation: 'Independent Research | Advisor: <strong>Prof. Fenglei Yang</strong>',
+          year_start: 2024, month_start: 1,
+          year_end: null, month_end: null, // Use null for 'Present'
+          details: [
+            'Focused on multi-scale time series modeling and long-term forecasting challenges.',
+            'Researched and developed novel architectures involving State Space Models (SSM), Transformers, and Diffusion Models.',
+            'Achieved significant performance improvements on various energy and other forecasting benchmarks, leading to multiple publications.'
+          ]
+        },
+        {
+          type: 'Research',
+          title: 'Cultural Heritage Data Management',
+          affiliation: 'Undergraduate Researcher | Key Laboratory of Silicate Cultural Heritage Protection, Shanghai University',
+          year_start: 2024, month_start: 3,
+          year_end: null, month_end: null,
+          details: [
+            'Developed a specialized database using MySQL and Streamlit for managing cultural heritage data (Buddhist head sculptures).',
+            'Participated in data analysis and management tasks related to cultural relic preservation.'
+          ]
+        }
+        /*
+        // Future Internship Example:
+        {
+          type: 'Internship',
+          title: 'Software Engineer Intern',
+          affiliation: 'Example Tech Company | Shanghai, China',
+          year_start: 2026, month_start: 6,
+          year_end: 2026, month_end: 8,
+          details: [
+            'Contributed to the development of the company\'s flagship product using Python and Go.',
+            'Designed and implemented a new API endpoint for the user authentication service.',
+            'Wrote unit and integration tests, improving code coverage by 15%.'
+          ]
+        }
+        */
       ]
     };
 
@@ -643,6 +800,7 @@
       const renderEngine = {
           init() {
             this.renderPersonalInfo();
+            this.renderExperience();
             this.renderNews();
             this.renderPublications();
             this.renderProjects();
@@ -662,14 +820,49 @@
                   <a href="${DATA.personalInfo.github}" target="_blank" rel="noopener noreferrer">${this.getIcon('github', 'GitHub')}</a>
                   <a href="${DATA.personalInfo.orcid}" target="_blank" rel="noopener noreferrer">${this.getIcon('orcid', 'ORCID')}</a>`;
           },
+          renderExperience() {
+              const container = document.querySelector('#experience .experience-list');
+              const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+              
+              DATA.experience
+                  .sort((a, b) => (b.year_start - a.year_start) || (b.month_start - a.month_start))
+                  .forEach(exp => {
+                      const div = document.createElement('div');
+                      div.className = 'experience-item';
+
+                      // Format the period string
+                      let period = `${MONTHS[exp.month_start - 1]} ${exp.year_start} – `;
+                      if (exp.year_end === null) {
+                          period += 'Present';
+                      } else {
+                          period += `${MONTHS[exp.month_end - 1]} ${exp.year_end}`;
+                      }
+
+                      // Format the details list
+                      const detailsHTML = exp.details.map(d => `<li>${d}</li>`).join('');
+                      
+                      const tagClass = `tag-${exp.type.toLowerCase()}`;
+
+                      div.innerHTML = `
+                          <div class="experience-header">
+                              <h3 class="experience-title">${exp.title}</h3>
+                              <span class="experience-tag ${tagClass}">${exp.type}</span>
+                          </div>
+                          <p class="experience-affiliation">${exp.affiliation}</p>
+                          <p class="experience-period">${period}</p>
+                          <ul class="experience-details">${detailsHTML}</ul>
+                      `;
+                      container.appendChild(div);
+                  });
+          },
           renderNews() {
               const container = document.getElementById('news-container');
               DATA.news
-                  .sort((a, b) => new Date(b.date) - new Date(a.date))
+                  .sort((a, b) => b.year - a.year || b.month - a.month)
                   .forEach(item => {
                       const div = document.createElement('div');
                       div.className = 'news-item';
-                      div.innerHTML = `<div class="news-date">${item.date.replace('-', '.')}</div><div>${item.content}</div>`;
+                      div.innerHTML = `<div class="news-date">${item.year}.${String(item.month).padStart(2, '0')}</div><div>${item.content}</div>`;
                       container.appendChild(div);
                   });
           },
@@ -722,11 +915,11 @@
           renderHonors() {
               const container = document.getElementById('honors-container');
               DATA.honors
-                  .sort((a, b) => b.year - a.year || a.name.localeCompare(b.name))
+                  .sort((a, b) => b.year - a.year || b.month - a.month || a.name.localeCompare(b.name))
                   .forEach(h => {
                       const li = document.createElement('li');
                       li.className = 'honors-item';
-                      li.innerHTML = `<div class="honors-year">${h.year}</div><div class="honors-name">${h.name}</div><div class="honors-level">${h.level}</div>`;
+                      li.innerHTML = `<div class="honors-year">${h.year}.${String(h.month).padStart(2, '0')}</div><div class="honors-name">${h.name}</div><div class="honors-level">${h.level}</div>`;
                       container.appendChild(li);
                   });
           },
