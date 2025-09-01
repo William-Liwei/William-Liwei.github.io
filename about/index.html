@@ -58,7 +58,7 @@
     #about .affiliation { font-size: 1.25rem; color: var(--light-text); margin-bottom: 1.5rem; }
     .social-links { margin-top: 2rem; display: flex; gap: 1.5rem; flex-wrap: wrap; }
     .social-links a { font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem; }
-    .social-links svg { width: 20px; height: 20px; fill: currentColor; }
+    .social-links svg { width: 20px; height: auto; fill: currentColor; }
 
     /* --- Section Titles --- */
     .section-title {
@@ -501,6 +501,7 @@
       personalInfo: {
         email: "liwei008009@163.com",
         github: "https://github.com/William-Liwei",
+        googleScholar: "https://scholar.google.com/citations?user=jLPVuhoAAAAJ",
         orcid: "https://orcid.org/0009-0008-8108-4854",
       },
 
@@ -791,7 +792,8 @@
       const ICONS = {
         email: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" /><path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" /></svg>`,
         github: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 0C4.477 0 0 4.477 0 10c0 4.418 2.865 8.168 6.839 9.492.5.092.682-.217.682-.482 0-.237-.009-.868-.014-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.031-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.03 1.595 1.03 2.688 0 3.848-2.338 4.695-4.566 4.942.359.308.678.92.678 1.852 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.001 10.001 0 0020 10c0-5.523-4.477-10-10-10z" clip-rule="evenodd" /></svg>`,
-        orcid: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zM7.365 18.23H5.21V8.673h2.155V18.23zM6.287 7.72c-.723 0-1.306-.583-1.306-1.305s.583-1.305 1.306-1.305c.722 0 1.305.583 1.305 1.305S7.009 7.72 6.287 7.72zM18.79 18.23h-2.156v-4.88c0-1.162-.02-2.656-1.62-2.656-1.62 0-1.87 1.266-1.87 2.57v4.966H10.99V8.673h2.06v.943h.03c.287-.543 1.01-1.118 2.03-1.118 2.17 0 2.57 1.43 2.57 3.286v3.746z" /></svg>`,
+        googlescholar: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 10.99l-5 2.73-5-2.73v4.34l5 2.73 5-2.73v-4.34z"></path></svg>`,
+        orcid: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="black"/><text x="12" y="12.5" fill="white" font-size="12" font-weight="bold" font-family="sans-serif" text-anchor="middle" dominant-baseline="middle">iD</text></svg>`,
         live_demo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.25 5.5a.75.75 0 00-.75.75v8.5c0 .414.336.75.75.75h8.5a.75.75 0 00.75-.75v-4a.75.75 0 011.5 0v4A2.25 2.25 0 0112.75 17H4.25A2.25 2.25 0 012 14.75v-8.5A2.25 2.25 0 014.25 4h5a.75.75 0 010 1.5h-5z" clip-rule="evenodd" /><path fill-rule="evenodd" d="M6.194 12.852a.75.75 0 001.06 0l6.25-6.25a.75.75 0 10-1.06-1.06L6.939 11.06a.75.75 0 000 1.061l-.745.745z" clip-rule="evenodd" /><path d="M12.25 4a.75.75 0 000 1.5h1.5a.75.75 0 000-1.5h-1.5z" /></svg>`,
         bibtex: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10zm0 5.25a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clip-rule="evenodd" /></svg>`,
         default_link: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.665l3-3z" /><path d="M8.603 14.328a2.5 2.5 0 01-3.535 0l-1.225-1.225a.75.75 0 00-1.061 1.06l1.225 1.224a4 4 0 005.656 5.656l3-3a4 4 0 00-.225-5.865.75.75 0 00-.977 1.138 2.5 2.5 0 01.142 3.665l-3 3z" /></svg>`
@@ -818,6 +820,7 @@
               container.innerHTML = `
                   <a href="mailto:${DATA.personalInfo.email}">${this.getIcon('email', 'Email')}</a>
                   <a href="${DATA.personalInfo.github}" target="_blank" rel="noopener noreferrer">${this.getIcon('github', 'GitHub')}</a>
+                  <a href="${DATA.personalInfo.googleScholar}" target="_blank" rel="noopener noreferrer">${this.getIcon('googlescholar', 'Google Scholar')}</a>
                   <a href="${DATA.personalInfo.orcid}" target="_blank" rel="noopener noreferrer">${this.getIcon('orcid', 'ORCID')}</a>`;
           },
           renderExperience() {
