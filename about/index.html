@@ -78,6 +78,7 @@
     .news-item { display: flex; margin-bottom: 1.5rem; }
     .news-date { flex: 0 0 110px; font-weight: 500; color: var(--light-text); }
 
+    /* --- Experience Section --- */
     .experience-item {
         background-color: var(--card-bg);
         border: 1px solid var(--border-color);
@@ -121,6 +122,10 @@
         background-color: #dcfce7; /* Light Green */
         color: #15803d;
     }
+    .tag-part-time {
+        background-color: #fef3c7; /* Light Yellow */
+        color: #92400e;
+    }
     .experience-affiliation {
         font-weight: 500;
         margin-bottom: 0.25rem;
@@ -137,49 +142,13 @@
         margin: 0;
         line-height: 1.9;
     }
-    .experience-details li {
-        margin-bottom: 0.5rem;
-    }
-    @media (max-width: 768px) {
-        .experience-title {
-            font-size: 1.15rem;
-        }
-        .experience-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.5rem;
-            margin-bottom: 0.75rem;
-        }
-    }
+    .experience-details li { margin-bottom: 0.5rem; }
     
     /* --- Publications Section --- */
-    .pub-item {
-        display: flex;
-        gap: 1.5rem;
-        align-items: flex-start;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1.5rem;
-        border-bottom: 1px solid var(--border-color);
-    }
-    .pub-thumbnail {
-        flex-shrink: 0;
-        width: 160px;
-        height: auto;
-        border-radius: 8px;
-        border: 1px solid var(--border-color);
-        margin-top: 5px;
-        object-fit: cover;
-        cursor: pointer;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    .pub-thumbnail:hover {
-        transform: scale(1.05);
-        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-    }
-    .pub-details {
-        flex-grow: 1;
-        min-width: 0; /* Important fix for flex items to prevent overflow */
-    }
+    .pub-item { display: flex; gap: 1.5rem; align-items: flex-start; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); }
+    .pub-thumbnail { flex-shrink: 0; width: 160px; height: auto; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 5px; object-fit: cover; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .pub-thumbnail:hover { transform: scale(1.05); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+    .pub-details { flex-grow: 1; min-width: 0; }
     .pub-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.25rem; }
     .pub-authors { font-style: italic; margin-bottom: 0.25rem; }
     .pub-venue { color: var(--light-text); margin-bottom: 0.75rem; }
@@ -188,136 +157,31 @@
     .badge-oral, .badge-poster { background-color: #ede9fe; color: #5b21b6; }
     .badge-author { background-color: #dcfce7; color: #15803d; }
     .badge-review { background-color: #fef3c7; color: #92400e; }
-    
-    .pub-links {
-        margin-top: 0.75rem;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-    }
-    .pub-links a, .pub-links button {
-        font-family: var(--body-font);
-        font-size: 0.9rem;
-        font-weight: 500;
-        color: var(--primary-color);
-        background-color: #f3f4f6;
-        border: 1px solid var(--border-color);
-        padding: 6px 12px;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    .pub-links a:hover, .pub-links button:hover {
-        background-color: #e5e7eb;
-        color: var(--accent-color);
-    }
-    .pub-links svg {
-        width: 16px;
-        height: 16px;
-        flex-shrink: 0;
-    }
-    .bibtex-container {
-        margin-top: 1rem;
-        background-color: #f9fafb;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        font-family: 'Courier New', Courier, monospace;
-        font-size: 0.85rem;
-        color: var(--text-color);
-        box-sizing: border-box;
-        max-height: 0;
-        opacity: 0;
-        overflow: hidden;
-        padding: 0 1rem;
-        transition: max-height 0.5s ease-in-out, opacity 0.4s ease-in-out, padding 0.5s ease-in-out;
-    }
-    .bibtex-container.visible {
-        opacity: 1;
-        max-height: 500px;
-        padding: 1rem;
-    }
-    .bibtex-container pre {
-        margin: 0;
-        /* CRITICAL FIX for BibTeX overflow */
-        white-space: pre-wrap;   
-        word-wrap: break-word;   
-        overflow-wrap: break-word; 
-    }
-    
-    /* --- Lightbox Styles --- */
-    .lightbox {
-        position: fixed;
-        z-index: 1000;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.85);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.4s ease, visibility 0.4s;
-        padding: 2.5vw; /* Add some padding for small screens */
-        box-sizing: border-box;
-    }
-    .lightbox.visible {
-        opacity: 1;
-        visibility: visible;
-    }
-    .lightbox-content {
-        /* CRITICAL FIX for Lightbox image visibility */
-        max-width: 100%;
-        max-height: 100%;
-        width: 100%;
-        height: 100%;
-        object-fit: contain; /* This ensures the image scales down to fit while keeping aspect ratio */
-        
-        border-radius: 8px;
-        transform: scale(0.95);
-        transition: transform 0.4s ease;
-    }
-    .lightbox.visible .lightbox-content {
-        transform: scale(1);
-    }
-    .lightbox-close {
-        position: absolute;
-        top: 20px;
-        right: 35px;
-        color: #fff;
-        font-size: 40px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: color 0.3s ease;
-        line-height: 1;
-        z-index: 1010;
-    }
-    .lightbox-close:hover {
-        color: var(--border-color);
-    }
+    .pub-links { margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .pub-links a, .pub-links button { font-family: var(--body-font); font-size: 0.9rem; font-weight: 500; color: var(--primary-color); background-color: #f3f4f6; border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .pub-links a:hover, .pub-links button:hover { background-color: #e5e7eb; color: var(--accent-color); }
+    .pub-links svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .bibtex-container { margin-top: 1rem; background-color: #f9fafb; border: 1px solid var(--border-color); border-radius: 8px; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; color: var(--text-color); box-sizing: border-box; max-height: 0; opacity: 0; overflow: hidden; padding: 0 1rem; transition: max-height 0.5s ease-in-out, opacity 0.4s ease-in-out, padding 0.5s ease-in-out; }
+    .bibtex-container.visible { opacity: 1; max-height: 500px; padding: 1rem; }
+    .bibtex-container pre { margin: 0; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; }
 
-    /* --- Projects & Honors --- */
-    .project-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        gap: 1.5rem;
-    }
-    .project-card {
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 12px;
-        padding: 1.5rem;
-        display: flex; flex-direction: column;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    .project-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.07);
-    }
+    /* --- Academic Engagement Section --- */
+    .engagement-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
+    .engagement-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; }
+    .engagement-card-header { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
+    .engagement-card-icon { flex-shrink: 0; color: var(--accent-color); background-color: #fef3c7; padding: 10px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .engagement-card-icon svg { width: 24px; height: 24px; }
+    .engagement-card-title { font-size: 1.25rem; font-weight: 700; color: var(--primary-color); margin: 0; padding-top: 8px; }
+    .engagement-card-list { list-style: none; padding: 0; margin: 0; }
+    .engagement-card-list li { padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); font-size: 0.95rem; }
+    .engagement-card-list li:last-child { border-bottom: none; }
+    .engagement-event { font-weight: 500; }
+    .engagement-role { color: var(--light-text); font-size: 0.9rem; }
+    
+    /* --- Projects & Honors Section --- */
+    .project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
+    .project-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .project-card:hover { transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0,0,0,0.07); }
     .project-card .title { font-size: 1.25rem; font-weight: 700; color: var(--primary-color); }
     .project-card .desc { flex-grow: 1; margin: 0.75rem 0; }
     .project-card .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
@@ -327,156 +191,136 @@
     .project-card .links svg { width: 16px; height: 16px; }
 
     .honors-list { list-style: none; padding: 0; }
-    .honors-item {
-        display: flex;
-        align-items: center;
-        margin-bottom: 1rem;
-        padding: 0.75rem;
-        border-left: 4px solid var(--accent-color);
-        background-color: var(--card-bg);
-        border-radius: 0 8px 8px 0;
-    }
+    .honors-item { display: flex; align-items: center; margin-bottom: 1rem; padding: 0.75rem; border-left: 4px solid var(--accent-color); background-color: var(--card-bg); border-radius: 0 8px 8px 0; }
     .honors-year { font-weight: 700; margin-right: 1rem; color: var(--primary-color); }
     .honors-name { flex-grow: 1; }
     .honors-level { font-weight: 500; color: var(--light-text); }
+    
+    /* --- Pagination/Toggle Controls --- */
+    .hidden { display: none; }
+    .controls-container { text-align: center; margin-top: 2rem; }
+    .toggle-btn { font-family: var(--body-font); font-weight: 500; font-size: 0.9rem; padding: 8px 20px; border: 1px solid var(--border-color); background-color: var(--card-bg); border-radius: 99px; cursor: pointer; transition: all 0.3s ease; }
+    .toggle-btn:hover { background-color: #e5e7eb; color: var(--accent-color); }
 
+    /* --- Lightbox Styles --- */
+    .lightbox { position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0.4s; padding: 2.5vw; box-sizing: border-box; }
+    .lightbox.visible { opacity: 1; visibility: visible; }
+    .lightbox-content { max-width: 100%; max-height: 100%; width: 100%; height: 100%; object-fit: contain; border-radius: 8px; transform: scale(0.95); transition: transform 0.4s ease; }
+    .lightbox.visible .lightbox-content { transform: scale(1); }
+    .lightbox-close { position: absolute; top: 20px; right: 35px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; transition: color 0.3s ease; line-height: 1; z-index: 1010; }
+    .lightbox-close:hover { color: var(--border-color); }
 
     /* --- Footer --- */
     footer { text-align: center; padding: 3rem 0; margin-top: 2rem; border-top: 1px solid var(--border-color); color: var(--light-text); }
 
     /* --- Responsive Design (Mobile First Enhancements) --- */
     @media (max-width: 768px) {
-        body { 
-            font-size: 15px; 
-            -webkit-text-size-adjust: 100%;
-        }
-        .container { 
-            padding: 0 15px; 
-        }
-        section { 
-            padding: 3rem 0; 
-        }
-
-        /* --- Navigation for Mobile --- */
-        nav .logo { 
-            font-size: 1.1rem; 
-        }
-        nav ul { 
-            display: none; 
-        }
-
-        /* --- Typography for Mobile --- */
-        #about h1 { 
-            font-size: 2.5rem; 
-            line-height: 1.2;
-        }
-        #about .affiliation {
-            font-size: 1.1rem;
-        }
-        .section-title { 
-            font-size: 2rem;
-            margin-bottom: 2.5rem;
-        }
-        .pub-title {
-            font-size: 1.1rem;
-        }
-
-        /* --- Layout adjustments for Mobile --- */
-        #about, .news-item, .pub-item, .honors-item { 
-            flex-direction: column; 
-        }
-        #about {
-            padding-top: 3rem;
-        }
-        .news-date { 
-            margin-bottom: 0.25rem; 
-            flex-basis: auto;
-        }
-        .pub-thumbnail { 
-            width: 100%; 
-            max-width: 200px;
-            margin-bottom: 1rem; 
-            align-self: center;
-        }
-        .project-grid { 
-            grid-template-columns: 1fr;
-        }
-        .honors-item { 
-            align-items: flex-start; 
-            padding: 1rem;
-        }
-        .honors-year {
-            margin-right: 0;
-            margin-bottom: 0.5rem;
-        }
-        
-        /* --- Mobile-specific fixes --- */
-        .lightbox-close {
-            font-size: 36px;
-            top: 15px;
-            right: 25px;
-        }
+        body { font-size: 15px; -webkit-text-size-adjust: 100%; }
+        .container { padding: 0 15px; }
+        section { padding: 3rem 0; }
+        nav .logo { font-size: 1.1rem; }
+        nav ul { display: none; }
+        #about h1 { font-size: 2.5rem; line-height: 1.2; }
+        #about .affiliation { font-size: 1.1rem; }
+        .section-title { font-size: 2rem; margin-bottom: 2.5rem; }
+        .pub-title { font-size: 1.1rem; }
+        #about, .news-item, .pub-item, .honors-item { flex-direction: column; }
+        .experience-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.75rem; }
+        #about { padding-top: 3rem; }
+        .news-date { margin-bottom: 0.25rem; flex-basis: auto; }
+        .pub-thumbnail { width: 100%; max-width: 200px; margin-bottom: 1rem; align-self: center; }
+        .project-grid, .engagement-grid { grid-template-columns: 1fr; }
+        .honors-item { align-items: flex-start; padding: 1rem; }
+        .honors-year { margin-right: 0; margin-bottom: 0.5rem; }
+        .lightbox-close { font-size: 36px; top: 15px; right: 25px; }
     }
   </style>
 </head>
 
 <body>
-  <nav>
+    <nav>
     <div class="container">
       <div class="logo">WEI LI</div>
       <ul>
         <li><a href="#about">About</a></li>
-        <li><a href="#experience">Experience</a></li>
         <li><a href="#news">News</a></li>
         <li><a href="#publications">Publications</a></li>
-        <li><a href="#projects">Projects</a></li>
+        <li><a href="#experience">Experience</a></li>
         <li><a href="#honors">Honors</a></li>
+        <li><a href="#projects">Projects</a></li>
+        <li><a href="#engagement">Engagement</a></li>
       </ul>
     </div>
   </nav>
-
   <main class="container">
+    
     <section id="about">
       <div class="bio">
         <h1>Wei Li (William)</h1>
         <p class="affiliation">Undergraduate Researcher, Shanghai University</p>
         <p>
-          I am an undergraduate researcher in Computer Science at Shanghai University (Project 211), with an expected graduation in June 2027.
+          I am a Computer Science undergraduate at Shanghai University (Project 211) with a strong focus on deep learning, AI, Time Series and so on. My recent researches center on architecting and implementing deep learning models for time series analysis.
         </p>
         <p>
-          My research interests lie at the intersection of <strong>Deep Learning</strong>, <strong>AI</strong>, <strong>Time Series</strong>, and <strong>HCI</strong>. Under the mentorship of Prof. Fenglei Yang, I focus on developing robust, efficient, and interpretable models for multi-scale temporal dynamics. My work has resulted in multiple sole-author and first-author publications accepted for <strong>Oral Presentations</strong> at several international conferences.
+          My objective is to develop models that are not only highly accurate but also computationally efficient and interpretable, addressing fundamental challenges in long-term forecasting. This focus has led to multiple <strong>sole-author</strong> and <strong>first-author</strong> publications accepted for <strong>Oral Presentation</strong> at international conferences.
         </p>
         <div class="social-links" id="social-links-container"></div>
-      </div>
-    </section>
-
-    <section id="experience">
-      <h2 class="section-title">Experience</h2>
-      <div class="experience-list">
-        <!-- Experience items will be dynamically inserted here by JavaScript -->
       </div>
     </section>
 
     <section id="news">
       <h2 class="section-title">News</h2>
       <div id="news-container"></div>
+      <div class="controls-container">
+        <button id="news-toggle-btn" class="toggle-btn">Show More</button>
+      </div>
     </section>
 
     <section id="publications">
       <h2 class="section-title">Publications</h2>
       <p style="color: var(--light-text); margin-top: -2rem; margin-bottom: 2rem;">(* denotes equal contribution)</p>
       <div id="publications-container"></div>
+      <div class="controls-container">
+        <button id="pubs-toggle-btn" class="toggle-btn">Show More</button>
+      </div>
     </section>
 
-    <section id="projects">
-      <h2 class="section-title">Featured Projects & Systems</h2>
-      <div class="project-grid" id="projects-container"></div>
+    <section id="experience">
+      <h2 class="section-title">Experience</h2>
+      <div class="experience-list" id="experience-container">
+        <!-- Experience items will be dynamically inserted here -->
+      </div>
+      <div class="controls-container">
+        <button id="experience-toggle-btn" class="toggle-btn">Show More</button>
+      </div>
     </section>
 
     <section id="honors">
         <h2 class="section-title">Awards & Honors</h2>
         <div class="honors-list" id="honors-container"></div>
+        <div class="controls-container">
+            <button id="honors-toggle-btn" class="toggle-btn">Show More</button>
+        </div>
     </section>
+
+    <section id="projects">
+      <h2 class="section-title">Featured Projects & Systems</h2>
+      <div class="project-grid" id="projects-container"></div>
+      <div class="controls-container">
+        <button id="projects-toggle-btn" class="toggle-btn">Show More</button>
+      </div>
+    </section>
+
+    <section id="engagement">
+        <h2 class="section-title">Professional Engagement</h2>
+        <div class="engagement-grid" id="engagement-container">
+            <!-- Engagement cards will be dynamically inserted here -->
+        </div>
+        <div class="controls-container">
+            <button id="engagement-toggle-btn" class="toggle-btn">Show More</button>
+        </div>
+    </section>
+    
   </main>
   
   <footer>
@@ -488,115 +332,80 @@
     <img class="lightbox-content" id="lightbox-img">
   </div>
 
-  <script>
-    /****************************************************************
-     *                                                              *
-     *                      DATA & CONFIGURATION                    *
-     *    To update the page, simply modify the data in this section.*
-     *                                                              *
-     ****************************************************************/
+<script>
+/****************************************************************
+ *                                                              *
+ *                      DATA & CONFIGURATION                    *
+ *    To update the page, simply modify the data in this section.*
+ *                                                              *
+ *****************************************************************/
 
-    const DATA = {
-      // 1. Personal Info
-      personalInfo: {
-        email: "liwei008009@163.com",
-        github: "https://github.com/William-Liwei",
-        googleScholar: "https://scholar.google.com/citations?user=jLPVuhoAAAAJ",
-        orcid: "https://orcid.org/0009-0008-8108-4854",
-      },
+const CONFIG = {
+    INITIAL_NEWS_COUNT: 4,
+    INITIAL_PUBS_COUNT: 3,
+    INITIAL_PROJECTS_COUNT: 4, 
+    INITIAL_ENGAGEMENT_COUNT: 2, 
+    INITIAL_HONORS_COUNT: 5,
+    INITIAL_EXPERIENCE_COUNT: 2,
+};
 
-      // 2. News (sorted automatically by date)
-      news: [
-        { 
-            year: 2025, month: 8, 
-            content: "Awarded First Prize in the <strong>Baidu Star Programming Contest - Talent Track</strong> and <strong>MaTiBei Collegiate Programming Contest</strong>." 
-        },
-        { 
-            year: 2025, month: 6, 
-            content: "Two papers (SWIFT, TimeFlowDiffuser) accepted for <strong>Oral Presentation</strong> at <strong>ICANN 2025 (CCF-C)</strong>." 
-        },
-        { 
-            year: 2025, month: 5, 
-            content: "Two papers (LWSpace, EnergyPatchTST) accepted for <strong>Oral Presentation</strong> at <strong>ICIC 2025 (CCF-C)</strong>." 
-        },
-        { 
-            year: 2025, month: 5, 
-            content: "The self-developed <strong>CCF-Online</strong> academic conference portal is now live." 
-        },
-        { 
-            year: 2024, month: 11, 
-            content: "Awarded Second Prize in the 'E-Cloud Cup' Shanghai Collegiate Cloud Computing Application Contest." 
-        },
-        { 
-            year: 2024, month: 7, 
-            content: "Awarded Gold Medal in the university-level China 'Internet+' Innovation Competition." 
-        }
-      ],
-
-      // 3. Publications (sorted automatically by year)
-      publications: [
-        {
-          title: "TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting",
-          authors: "<strong>Li, W.</strong>",
-          venue: "International Conference on Artificial Neural Networks (ICANN 2025)",
-          year: 2025,
-          month: 6,
-          badges: [
-            { type: 'ccf', text: 'CCF-C' },
-            { type: 'oral', text: 'Oral' },
-            { type: 'author', text: 'Sole Author' }
-          ],
-          links: [
-
-          ],
-          thumbnail: "images/timeflowdiffuser.png",
-          bibtex: `@inproceedings{li2025timeflowdiffuser,
+const DATA = {
+  personalInfo: {
+    email: "liwei008009@163.com",
+    github: "https://github.com/William-Liwei",
+    googleScholar: "https://scholar.google.com/citations?user=jLPVuhoAAAAJ",
+    orcid: "https://orcid.org/0009-0008-8108-4854",
+  },
+  news: [
+    { year: 2025, month: 8, content: "Awarded First Prize in the <strong>Baidu Star Programming Contest - Talent Track</strong> and <strong>MaTiBei Collegiate Programming Contest</strong>." },
+    { year: 2025, month: 6, content: "Two papers (SWIFT, TimeFlowDiffuser) accepted for <strong>Oral Presentation</strong> at <strong>ICANN 2025 (CCF-C)</strong>." },
+    { year: 2025, month: 5, content: "Two papers (LWSpace, EnergyPatchTST) accepted for <strong>Oral Presentation</strong> at <strong>ICIC 2025 (CCF-C)</strong>." },
+    { year: 2025, month: 5, content: "The self-developed <strong>CCF-Online</strong> academic conference portal is now live." },
+    { year: 2024, month: 11, content: "Awarded Second Prize in the 'E-Cloud Cup' Shanghai Collegiate Cloud Computing Application Contest." },
+    { year: 2024, month: 7, content: "Awarded Gold Medal in the university-level China 'Internet+' Innovation Competition." }
+  ],
+  publications: [
+    {
+      title: "TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting",
+      authors: "<strong>Li, W.</strong>",
+      venue: "International Conference on Artificial Neural Networks (ICANN 2025)",
+      year: 2025, month: 6,
+      badges: [{ type: 'ccf', text: 'CCF-C' }, { type: 'oral', text: 'Oral' }, { type: 'author', text: 'Sole Author' }],
+      links: [],
+      thumbnail: "images/timeflowdiffuser.png",
+      bibtex: `@inproceedings{li2025timeflowdiffuser,
   title={TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting},
   author={Li, Wei},
   booktitle={International Conference on Artificial Neural Networks (ICANN 2025)},
   year={2025},
   note = {Accepted}
 }`
-        },
-        {
-          title: "SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction",
-          authors: "<strong>Li, W.</strong>",
-          venue: "International Conference on Artificial Neural Networks (ICANN 2025)",
-          year: 2025,
-          month: 6,
-          badges: [
-            { type: 'ccf', text: 'CCF-C' }, 
-            { type: 'oral', text: 'Oral' },
-            { type: 'author', text: 'Sole Author' }
-          ],
-          links: [
-            { type: 'github', url: 'https://github.com/William-Liwei/SWIFT' }
-          ],
-          thumbnail: "images/swift.png",
-          bibtex: `@inproceedings{li2025swift,
+    },
+    {
+      title: "SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction",
+      authors: "<strong>Li, W.</strong>",
+      venue: "International Conference on Artificial Neural Networks (ICANN 2025)",
+      year: 2025, month: 6,
+      badges: [{ type: 'ccf', text: 'CCF-C' }, { type: 'oral', text: 'Oral' }, { type: 'author', text: 'Sole Author' }],
+      links: [{ type: 'github', url: 'https://github.com/William-Liwei/SWIFT' }],
+      thumbnail: "images/swift.png",
+      bibtex: `@inproceedings{li2025swift,
   title={SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction},
   author={Li, Wei},
   booktitle={International Conference on Artificial Neural Networks (ICANN 2025)},
   year={2025},
   note = {Accepted}
 }`
-        },
-        {
-          title: "EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting",
-          authors: "<strong>Li, W.</strong>, Wang, Z., Sun, Q., Gao, Q., & Yang, F.",
-          venue: "International Conference on Intelligent Computing (ICIC 2025)",
-          year: 2025,
-          month: 5,
-          badges: [
-            { type: 'ccf', text: 'CCF-C' },
-            { type: 'oral', text: 'Oral' },
-            { type: 'author', text: 'First Author' }
-          ],
-          links: [
-            { type: 'github', url: 'https://github.com/William-Liwei/EnergyPatchTST' }
-          ],
-          thumbnail: "images/energypatchtst.png",
-          bibtex: `@inproceedings{li2025energypatchtst,
+    },
+    {
+      title: "EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting",
+      authors: "<strong>Li, W.</strong>, Wang, Z., Sun, Q., Gao, Q., & Yang, F.",
+      venue: "International Conference on Intelligent Computing (ICIC 2025)",
+      year: 2025, month: 5,
+      badges: [{ type: 'ccf', text: 'CCF-C' }, { type: 'oral', text: 'Oral' }, { type: 'author', text: 'First Author' }],
+      links: [{ type: 'github', url: 'https://github.com/William-Liwei/EnergyPatchTST' }],
+      thumbnail: "images/energypatchtst.png",
+      bibtex: `@inproceedings{li2025energypatchtst,
   title={EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting},
   author={Li, Wei and Wang, Zixin and Sun, Qizheng and Gao, Qixiang and Yang, Fenglei},
   booktitle={International Conference on Intelligent Computing},
@@ -604,23 +413,16 @@
   year={2025},
   organization={Springer}
 }`
-        },
-        {
-          title: "LWSpace: Multi-Scale State Space Framework for Time Series Forecasting",
-          authors: "<strong>Li, W.</strong>",
-          venue: "International Conference on Intelligent Computing (ICIC 2025)",
-          year: 2025,
-          month: 5,
-          badges: [
-            { type: 'ccf', text: 'CCF-C' },
-            { type: 'oral', text: 'Oral' },
-            { type: 'author', text: 'Sole Author' }
-          ],
-          links: [
-
-          ],
-          thumbnail: "images/lwspace.png",
-          bibtex: `@inproceedings{li2025lwspace,
+    },
+    {
+      title: "LWSpace: Multi-Scale State Space Framework for Time Series Forecasting",
+      authors: "<strong>Li, W.</strong>",
+      venue: "International Conference on Intelligent Computing (ICIC 2025)",
+      year: 2025, month: 5,
+      badges: [{ type: 'ccf', text: 'CCF-C' }, { type: 'oral', text: 'Oral' }, { type: 'author', text: 'Sole Author' }],
+      links: [],
+      thumbnail: "images/lwspace.png",
+      bibtex: `@inproceedings{li2025lwspace,
   title={LWSpace: A Multi-scale State Space Framework for Enhanced Time Series Forecasting},
   author={Li, Wei},
   booktitle={International Conference on Intelligent Computing},
@@ -628,332 +430,319 @@
   year={2025},
   organization={Springer}
 }`
-        },
-        {
-          title: "Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics",
-          authors: "<strong>Li, W.</strong>, Wang, Z., Gao, Q., & Yang, F.",
-          venue: "International Conference on Applied Mathematics, Modelling and Intelligent Computing (CAMMIC 2025)",
-          year: 2025,
-          month: 3,
-          badges: [
-            { type: 'ccf', text: 'EI Index' },
-            { type: 'poster', text: 'Poster' },
-            { type: 'author', text: 'First Author' }
-          ],
-          thumbnail: "images/olympic.png",
-          bibtex: `@inproceedings{li2025olympic,
+    },
+    {
+      title: "Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics",
+      authors: "<strong>Li, W.</strong>, Wang, Z., Gao, Q., & Yang, F.",
+      venue: "International Conference on Applied Mathematics, Modelling and Intelligent Computing (CAMMIC 2025)",
+      year: 2025, month: 3,
+      badges: [{ type: 'ccf', text: 'EI Index' }, { type: 'poster', text: 'Poster' }, { type: 'author', text: 'First Author' }],
+      thumbnail: "images/olympic.png",
+      bibtex: `@inproceedings{li2025olympic,
   title={Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics},
   author={Li, Wei and Wang, Zixin and Gao, Qixiang and Yang, Fenglei},
   booktitle={Proceedings of the 2025 5th International Conference on Applied Mathematics, Modelling and Intelligent Computing},
   pages={699--703},
   year={2025}
 }`
-        }
-      ],
-      
-      // 4. Featured Projects
-      projects: [
-        { 
-            title: "'CCF-Online' Academic Conference Portal", 
-            desc: "Independently developed and deployed an online portal that scrapes and integrates data from multiple sources to provide researchers with efficient access to academic conference information.", 
-            tags: ["Independent Project", "Scrapy", "JavaScript"], 
-            links: [{ type: 'live_demo', url: 'https://www.weili.space/ccf/' }] 
-        },
-        { 
-            title: "Cloud-based Automated Course Selection System", 
-            desc: "Led the development of a cloud-hosted system that automates the course selection process, featuring an LLM-based sentiment analysis module for course reviews. Award-winning project.", 
-            tags: ["Project Lead", "Flask", "Playwright", "Cloud Computing"], 
-            links: [] 
-        },
-        { 
-            title: "Cultural Heritage Database System", 
-            desc: "Developed a digital management platform for the University's Key Laboratory of Silicate Cultural Heritage, supporting multi-source data entry, retrieval, and visualization.", 
-            tags: ["Database Design", "MySQL", "Data Visualization"], 
-            links: [] 
-        },
-        { 
-            title: "Smart Parking IoT Platform", 
-            desc: "Designed and built a full-stack IoT parking solution, enabling real-time parking availability queries, reservations, and payments. Awarded Gold Medal at a university innovation competition.", 
-            tags: ["IoT", "Full-Stack", "Python", "Flask"], 
-            links: [] 
-        },
-        { 
-            title: "Research on Product Assembly Strategy Optimization", 
-            desc: "Led a research project applying Bayesian decision networks and genetic algorithms to optimize complex assembly strategies for products with variable components and processes.", 
-            tags: ["Optimization", "Bayesian Networks", "Genetic Algorithms"], 
-            links: [] 
-        }
-      ],
-      
-      // 5. Awards & Honors (sorted automatically by year)
-      honors: [
-        { 
-            year: 2025, month: 8, 
-            name: "Baidu Star Programming Contest - Talent Track", 
-            level: "National First Prize" 
-        },
-        { 
-            year: 2025, month: 8, 
-            name: "MaTiBei Collegiate Programming Contest", 
-            level: "National First Prize" 
-        },
-        { 
-            year: 2025, month: 7, 
-            name: "Information Security and Countermeasures Contest", 
-            level: "National Second Prize" 
-        },
-        { 
-            year: 2025, month: 1,
-            name: "'Jie-Yi' Student Leadership Scholarship", 
-            level: "School of Computer Engineering and Science" 
-        },
-        { 
-            year: 2025, month: 5,
-            name: "Lanqiao Cup Programming Contest", 
-            level: "Provincial Second Prize" 
-        },
-        { 
-            year: 2024, month: 12,
-            name: "Contemporary Undergraduate Mathematical Contest in Modeling", 
-            level: "Provincial Third Prize" 
-        },
-        { 
-            year: 2024, month: 11,
-            name: "'E-Cloud Cup' Shanghai Collegiate Cloud Computing Application Contest", 
-            level: "Second Prize" 
-        },
-        { 
-            year: 2024, month: 10,
-            name: "Special Class Scholarship for Academic Excellence", 
-            level: "Shanghai University (Top-tier)" 
-        },
-        { 
-            year: 2024, month: 7,
-            name: "China 'Internet+' Innovation Competition", 
-            level: "Gold Medal (University Level)" 
-        },
-        { 
-            year: 2024, month: 10,
-            name: "Undergraduate Academic Forum", 
-            level: "Second Prize" 
-        }
-      ],
-
-      // 6. Experience (sorted automatically by date)
-      experience: [
-        {
-          type: 'Research', // The tag that will be displayed
-          title: 'Time Series Forecasting & Deep Learning',
-          affiliation: 'Independent Research | Advisor: <strong>Prof. Fenglei Yang</strong>',
-          year_start: 2024, month_start: 1,
-          year_end: null, month_end: null, // Use null for 'Present'
-          details: [
-            'Focused on multi-scale time series modeling and long-term forecasting challenges.',
-            'Researched and developed novel architectures involving State Space Models (SSM), Transformers, and Diffusion Models.',
-            'Achieved significant performance improvements on various energy and other forecasting benchmarks, leading to multiple publications.'
-          ]
-        },
-        {
-          type: 'Research',
-          title: 'Cultural Heritage Data Management',
-          affiliation: 'Undergraduate Researcher | Key Laboratory of Silicate Cultural Heritage Protection, Shanghai University | Advisor: <strong>Prof. Shunbo Hu</strong>',
-          year_start: 2024, month_start: 3,
-          year_end: null, month_end: null,
-          details: [
-            'Developed a specialized database using MySQL and Streamlit for managing cultural heritage data (Buddhist head sculptures).',
-            'Participated in data analysis and management tasks related to cultural relic preservation.'
-          ]
-        }
-        /*
-        // Future Internship Example:
-        {
-          type: 'Internship',
-          title: 'Software Engineer Intern',
-          affiliation: 'Example Tech Company | Shanghai, China',
-          year_start: 2026, month_start: 6,
-          year_end: 2026, month_end: 8,
-          details: [
-            'Contributed to the development of the company\'s flagship product using Python and Go.',
-            'Designed and implemented a new API endpoint for the user authentication service.',
-            'Wrote unit and integration tests, improving code coverage by 15%.'
-          ]
-        }
-        */
+    }
+  ],
+  engagement: [
+    {
+        type: 'Reviewing',
+        icon: 'review',
+        title: 'Reviewing',
+        items: [
+            { event: 'AAAI Conference on Artificial Intelligence (AAAI 2026)', role: 'Program Committee Member & Reviewer (1 submission)' },
+            { event: 'International Conference on Artificial Neural Networks (ICANN 2025)', role: 'Reviewer (3 submissions)' }
+        ]
+    },
+    {
+        type: 'Leadership',
+        icon: 'leadership', 
+        title: 'Leadership & Service',
+        items: [
+            { event: 'Head of Management Dept., School Youth League Committee', role: 'Shanghai University' },
+            { event: 'Class League Branch Secretary', role: 'Shanghai University' }
+        ]
+    }
+  ],
+  projects: [
+    { title: "'CCF-Online' Academic Conference Portal", desc: "Independently developed and deployed an online portal that scrapes and integrates data from multiple sources to provide researchers with efficient access to academic conference information.", tags: ["Independent Project", "Scrapy", "JavaScript"], links: [{ type: 'live_demo', url: 'https://www.weili.space/ccf/' }] },
+    { title: "Cloud-based Automated Course Selection System", desc: "Led the development of a cloud-hosted system that automates the course selection process, featuring an LLM-based sentiment analysis module for course reviews. Award-winning project.", tags: ["Project Lead", "Flask", "Playwright", "Cloud Computing"], links: [] },
+    { title: "Cultural Heritage Database System", desc: "Developed a digital management platform for the University's Key Laboratory of Silicate Cultural Heritage, supporting multi-source data entry, retrieval, and visualization.", tags: ["Database Design", "MySQL", "Data Visualization"], links: [] },
+    { title: "Smart Parking IoT Platform", desc: "Designed and built a full-stack IoT parking solution, enabling real-time parking availability queries, reservations, and payments. Awarded Gold Medal at a university innovation competition.", tags: ["IoT", "Full-Stack", "Python", "Flask"], links: [] },
+    { title: "Research on Product Assembly Strategy Optimization", desc: "Led a research project applying Bayesian decision networks and genetic algorithms to optimize complex assembly strategies for products with variable components and processes.", tags: ["Optimization", "Bayesian Networks", "Genetic Algorithms"], links: [] }
+  ],
+  honors: [
+    { year: 2025, month: 8, name: "Baidu Star Programming Contest - Talent Track", level: "National First Prize" },
+    { year: 2025, month: 8, name: "MaTiBei Collegiate Programming Contest", level: "National First Prize" },
+    { year: 2025, month: 7, name: "Information Security and Countermeasures Contest", level: "National Second Prize" },
+    { year: 2025, month: 1, name: "'Jie-Yi' Student Leadership Scholarship", level: "School of Computer Engineering and Science" },
+    { year: 2025, month: 5, name: "Lanqiao Cup Programming Contest", level: "Provincial Second Prize" },
+    { year: 2024, month: 12, name: "Contemporary Undergraduate Mathematical Contest in Modeling", level: "Provincial Third Prize" },
+    { year: 2024, month: 11, name: "'E-Cloud Cup' Shanghai Collegiate Cloud Computing Application Contest", level: "Second Prize" },
+    { year: 2024, month: 10, name: "Special Class Scholarship for Academic Excellence", level: "Shanghai University (Top-tier)" },
+    { year: 2024, month: 7, name: "China 'Internet+' Innovation Competition", level: "Gold Medal (University Level)" },
+    { year: 2024, month: 10, name: "Undergraduate Academic Forum", level: "Second Prize" }
+  ],
+  experience: [
+    {
+      type: 'Part-time',
+      title: 'AI Trainer / SFT Specialist',
+      affiliation: 'ByteDance | Xpert Program',
+      year_start: 2025, month_start: 8,
+      year_end: null, month_end: null,
+      details: [
+        'Performed expert-level data annotation and curation for Supervised Fine-Tuning (SFT) of large-scale language models.',
+        'Authored and refined high-quality instruction-following data, focusing on complex reasoning, search query generation, and tool usage.',
+        'Contributed to enhancing the model\'s capabilities in logical deduction, factual accuracy, and safety alignment.'
       ]
-    };
+    },
+    {
+      type: 'Research',
+      title: 'Time Series Forecasting & Deep Learning',
+      affiliation: 'Independent Research | Advisor: <strong>Prof. Fenglei Yang</strong>',
+      year_start: 2024, month_start: 1,
+      year_end: null, month_end: null,
+      details: [
+        'Focused on multi-scale time series modeling and long-term forecasting challenges.',
+        'Researched and developed novel architectures involving State Space Models (SSM), Transformers, and Diffusion Models.',
+        'Achieved significant performance improvements on various energy and other forecasting benchmarks, leading to multiple publications.'
+      ]
+    },
+    {
+      type: 'Research',
+      title: 'Cultural Heritage Data Management',
+      affiliation: 'Undergraduate Researcher | Key Laboratory of Silicate Cultural Heritage Protection, Shanghai University | Advisor: <strong>Prof. Shunbo Hu</strong>',
+      year_start: 2024, month_start: 3,
+      year_end: null, month_end: null,
+      details: [
+        'Developed a specialized database using MySQL and Streamlit for managing cultural heritage data (Buddhist head sculptures).',
+        'Participated in data analysis and management tasks related to cultural relic preservation.'
+      ]
+    }
+  ]
+};
 
-    /****************************************************************
-     *                                                              *
-     *                      RENDERING LOGIC                         *
-     *                  No modifications needed below.              *
-     *                                                              *
-     ****************************************************************/
-    document.addEventListener('DOMContentLoaded', () => {
-      const ICONS = {
-        email: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" /><path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" /></svg>`,
-        github: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 0C4.477 0 0 4.477 0 10c0 4.418 2.865 8.168 6.839 9.492.5.092.682-.217.682-.482 0-.237-.009-.868-.014-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.031-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.03 1.595 1.03 2.688 0 3.848-2.338 4.695-4.566 4.942.359.308.678.92.678 1.852 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.001 10.001 0 0020 10c0-5.523-4.477-10-10-10z" clip-rule="evenodd" /></svg>`,
-        googlescholar: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 10.99l-5 2.73-5-2.73v4.34l5 2.73 5-2.73v-4.34z"></path></svg>`,
-        orcid: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="black"/><text x="12" y="12.5" fill="white" font-size="12" font-weight="bold" font-family="sans-serif" text-anchor="middle" dominant-baseline="middle">iD</text></svg>`,
-        live_demo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.25 5.5a.75.75 0 00-.75.75v8.5c0 .414.336.75.75.75h8.5a.75.75 0 00.75-.75v-4a.75.75 0 011.5 0v4A2.25 2.25 0 0112.75 17H4.25A2.25 2.25 0 012 14.75v-8.5A2.25 2.25 0 014.25 4h5a.75.75 0 010 1.5h-5z" clip-rule="evenodd" /><path fill-rule="evenodd" d="M6.194 12.852a.75.75 0 001.06 0l6.25-6.25a.75.75 0 10-1.06-1.06L6.939 11.06a.75.75 0 000 1.061l-.745.745z" clip-rule="evenodd" /><path d="M12.25 4a.75.75 0 000 1.5h1.5a.75.75 0 000-1.5h-1.5z" /></svg>`,
-        bibtex: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10zm0 5.25a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clip-rule="evenodd" /></svg>`,
-        default_link: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.665l3-3z" /><path d="M8.603 14.328a2.5 2.5 0 01-3.535 0l-1.225-1.225a.75.75 0 00-1.061 1.06l1.225 1.224a4 4 0 005.656 5.656l3-3a4 4 0 00-.225-5.865.75.75 0 00-.977 1.138 2.5 2.5 0 01.142 3.665l-3 3z" /></svg>`
-      };
+/****************************************************************
+ *                                                              *
+ *                      RENDERING LOGIC                         *
+ *                  No modifications needed below.              *
+ *                                                              *
+ *****************************************************************/
+document.addEventListener('DOMContentLoaded', () => {
+  const ICONS = {
+    email: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" /><path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" /></svg>`,
+    github: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 0C4.477 0 0 4.477 0 10c0 4.418 2.865 8.168 6.839 9.492.5.092.682-.217.682-.482 0-.237-.009-.868-.014-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.031-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.03 1.595 1.03 2.688 0 3.848-2.338 4.695-4.566 4.942.359.308.678.92.678 1.852 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.001 10.001 0 0020 10c0-5.523-4.477-10-10-10z" clip-rule="evenodd" /></svg>`,
+    googlescholar: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 10.99l-5 2.73-5-2.73v4.34l5 2.73 5-2.73v-4.34z"></path></svg>`,
+    orcid: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="black"/><text x="12" y="12.5" fill="white" font-size="12" font-weight="bold" font-family="sans-serif" text-anchor="middle" dominant-baseline="middle">iD</text></svg>`,
+    live_demo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.25 5.5a.75.75 0 00-.75.75v8.5c0 .414.336.75.75.75h8.5a.75.75 0 00.75-.75v-4a.75.75 0 011.5 0v4A2.25 2.25 0 0112.75 17H4.25A2.25 2.25 0 012 14.75v-8.5A2.25 2.25 0 014.25 4h5a.75.75 0 010 1.5h-5z" clip-rule="evenodd" /><path fill-rule="evenodd" d="M6.194 12.852a.75.75 0 001.06 0l6.25-6.25a.75.75 0 10-1.06-1.06L6.939 11.06a.75.75 0 000 1.061l-.745.745z" clip-rule="evenodd" /><path d="M12.25 4a.75.75 0 000 1.5h1.5a.75.75 0 000-1.5h-1.5z" /></svg>`,
+    bibtex: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10zm0 5.25a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clip-rule="evenodd" /></svg>`,
+    review: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.5 2A3.5 3.5 0 002 5.5v9A3.5 3.5 0 005.5 18h9a3.5 3.5 0 003.5-3.5V8.25a.75.75 0 00-1.5 0V14.5a2 2 0 01-2 2h-9a2 2 0 01-2-2v-9a2 2 0 012-2h6.25a.75.75 0 000-1.5H5.5z" clip-rule="evenodd" /><path fill-rule="evenodd" d="M15.101 2.99a.75.75 0 01.05.05l1.8 1.8a.75.75 0 010 1.06l-6.75 6.75a.75.75 0 01-.325.201l-2.25.75a.75.75 0 01-.885-.885l.75-2.25a.75.75 0 01.201-.325l6.75-6.75a.75.75 0 011.06-.05zM13.28 4.22a.75.75 0 00-1.06 1.06l-5.22 5.22-1.72 1.72 1.06 1.06 1.72-1.72 5.22-5.22a.75.75 0 00-1.06-1.06z" clip-rule="evenodd" /></svg>`,
+    leadership: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zM1.49 15.326a.75.75 0 01-.318-1.474l3-1.034a.75.75 0 011.02.278l.25.501a.75.75 0 01-.318 1.05l-3.25 1.5c-.244.113-.532.052-.734-.151zM18.51 15.326a.75.75 0 00.318-1.474l-3-1.034a.75.75 0 00-1.02.278l-.25.501a.75.75 0 00.318 1.05l3.25 1.5c.244.113.532.052.734-.151zM14 8a2 2 0 11-4 0 2 2 0 014 0z" /><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.032 14.53a6.5 6.5 0 0111.936 0" clip-rule="evenodd" /></svg>`,
+    default_link: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.665l3-3z" /><path d="M8.603 14.328a2.5 2.5 0 01-3.535 0l-1.225-1.225a.75.75 0 00-1.061 1.06l1.225 1.224a4 4 0 005.656 5.656l3-3a4 4 0 00-.225-5.865.75.75 0 00-.977 1.138 2.5 2.5 0 01.142 3.665l-3 3z" /></svg>`
+  };
 
-      const renderEngine = {
-          init() {
-            this.renderPersonalInfo();
-            this.renderExperience();
-            this.renderNews();
-            this.renderPublications();
-            this.renderProjects();
-            this.renderHonors();
-            this.addEventListeners();
-            document.getElementById('copyright-year').textContent = new Date().getFullYear();
-          },
-          getIcon(type, customText = '') {
-            const cleanType = type.toLowerCase().replace(/[\s_]+/g, '_');
-            const iconHTML = ICONS[cleanType] || ICONS.default_link;
-            return `${iconHTML} ${customText}`.trim();
-          },
-          renderPersonalInfo() {
-              const container = document.getElementById('social-links-container');
-              container.innerHTML = `
-                  <a href="mailto:${DATA.personalInfo.email}">${this.getIcon('email', 'Email')}</a>
-                  <a href="${DATA.personalInfo.github}" target="_blank" rel="noopener noreferrer">${this.getIcon('github', 'GitHub')}</a>
-                  <a href="${DATA.personalInfo.googleScholar}" target="_blank" rel="noopener noreferrer">${this.getIcon('googlescholar', 'Google Scholar')}</a>
-                  <a href="${DATA.personalInfo.orcid}" target="_blank" rel="noopener noreferrer">${this.getIcon('orcid', 'ORCID')}</a>`;
-          },
-          renderExperience() {
-              const container = document.querySelector('#experience .experience-list');
-              const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-              
-              DATA.experience
-                  .sort((a, b) => (b.year_start - a.year_start) || (b.month_start - a.month_start))
-                  .forEach(exp => {
-                      const div = document.createElement('div');
-                      div.className = 'experience-item';
-
-                      // Format the period string
-                      let period = `${MONTHS[exp.month_start - 1]} ${exp.year_start} – `;
-                      if (exp.year_end === null) {
-                          period += 'Present';
-                      } else {
-                          period += `${MONTHS[exp.month_end - 1]} ${exp.year_end}`;
-                      }
-
-                      // Format the details list
-                      const detailsHTML = exp.details.map(d => `<li>${d}</li>`).join('');
-                      
-                      const tagClass = `tag-${exp.type.toLowerCase()}`;
-
-                      div.innerHTML = `
-                          <div class="experience-header">
-                              <h3 class="experience-title">${exp.title}</h3>
-                              <span class="experience-tag ${tagClass}">${exp.type}</span>
-                          </div>
-                          <p class="experience-affiliation">${exp.affiliation}</p>
-                          <p class="experience-period">${period}</p>
-                          <ul class="experience-details">${detailsHTML}</ul>
-                      `;
-                      container.appendChild(div);
-                  });
-          },
-          renderNews() {
-              const container = document.getElementById('news-container');
-              DATA.news
-                  .sort((a, b) => b.year - a.year || b.month - a.month)
-                  .forEach(item => {
-                      const div = document.createElement('div');
-                      div.className = 'news-item';
-                      div.innerHTML = `<div class="news-date">${item.year}.${String(item.month).padStart(2, '0')}</div><div>${item.content}</div>`;
-                      container.appendChild(div);
-                  });
-          },
-          renderPublications() {
-              const container = document.getElementById('publications-container');
-              DATA.publications
-                  .sort((a, b) => b.year - a.year || (b.month - a.month) || a.venue.localeCompare(b.venue))
-                  .forEach((p, index) => {
-                      const div = document.createElement('div');
-                      div.className = 'pub-item';
-                      const badgesHTML = p.badges.map(b => `<span class="badge-${b.type.toLowerCase()}">${b.text}</span>`).join('');
-                      let linksHTML = (p.links || []).map(l => {
-                          const text = l.type.replace('_', ' ').replace(/\b\w/g, char => char.toUpperCase());
-                          return `<a href="${l.url}" target="_blank" rel="noopener noreferrer">${this.getIcon(l.type, text)}</a>`;
-                      }).join('');
-                      if (p.bibtex) {
-                          linksHTML += `<button class="bib-toggle-btn" data-target="bib-${index}">${this.getIcon('bibtex', 'BibTeX')}</button>`;
-                      }
-                      const thumbnailHTML = p.thumbnail ? 
-                        `<a href="${p.thumbnail}" class="thumbnail-link">
-                           <img src="${p.thumbnail}" alt="Thumbnail for ${p.title}" class="pub-thumbnail">
-                         </a>` : '';
-                      div.innerHTML = `
-                          ${thumbnailHTML}
-                          <div class="pub-details">
-                              <div class="pub-title">${p.title}</div>
-                              <div class="pub-authors">${p.authors}</div>
-                              <div class="pub-venue">${p.venue}</div>
-                              <div class="pub-badges">${badgesHTML}</div>
-                              <div class="pub-links">${linksHTML}</div>
-                              ${p.bibtex ? `<div class="bibtex-container" id="bib-${index}"><pre>${p.bibtex}</pre></div>` : ''}
-                          </div>`;
-                      container.appendChild(div);
-                  });
-          },
-          renderProjects() {
-              const container = document.getElementById('projects-container');
-              DATA.projects.forEach(p => {
-                  const div = document.createElement('div');
-                  div.className = 'project-card';
-                  const tagsHTML = p.tags.map(t => `<span class="tag">${t}</span>`).join('');
-                  const linksHTML = (p.links || []).map(l => {
-                      const text = l.type.replace('_', ' ').replace(/\b\w/g, char => char.toUpperCase());
-                      return `<a href="${l.url}" target="_blank" rel="noopener noreferrer">${this.getIcon(l.type, text)}</a>`;
-                  }).join('');
-                  div.innerHTML = `<h4 class="title">${p.title}</h4><p class="desc">${p.desc}</p><div class="tags">${tagsHTML}</div>${linksHTML ? `<div class="links">${linksHTML}</div>` : ''}`;
-                  container.appendChild(div);
-              });
-          },
-          renderHonors() {
-              const container = document.getElementById('honors-container');
-              DATA.honors
-                  .sort((a, b) => b.year - a.year || b.month - a.month || a.name.localeCompare(b.name))
-                  .forEach(h => {
-                      const li = document.createElement('li');
-                      li.className = 'honors-item';
-                      li.innerHTML = `<div class="honors-year">${h.year}.${String(h.month).padStart(2, '0')}</div><div class="honors-name">${h.name}</div><div class="honors-level">${h.level}</div>`;
-                      container.appendChild(li);
-                  });
-          },
-          addEventListeners() {
-              const pubContainer = document.getElementById('publications-container');
-              const lightbox = document.getElementById('lightbox');
-              const lightboxImg = document.getElementById('lightbox-img');
-              const lightboxClose = lightbox.querySelector('.lightbox-close');
-              pubContainer.addEventListener('click', (event) => {
-                  const bibButton = event.target.closest('.bib-toggle-btn');
-                  if (bibButton) {
-                      const targetId = bibButton.dataset.target;
-                      const bibContainer = document.getElementById(targetId);
-                      if (bibContainer) bibContainer.classList.toggle('visible');
-                  }
-                  const thumbnailLink = event.target.closest('.thumbnail-link');
-                  if (thumbnailLink) {
-                      event.preventDefault();
-                      lightboxImg.src = thumbnailLink.href;
-                      lightbox.classList.add('visible');
-                  }
-              });
-              const closeLightbox = () => lightbox.classList.remove('visible');
-              lightboxClose.addEventListener('click', closeLightbox);
-              lightbox.addEventListener('click', (event) => {
-                  if (event.target === lightbox) closeLightbox();
-              });
+  const renderEngine = {
+    init() {
+      this.renderPersonalInfo();
+      this.renderExperience();
+      this.renderNews();
+      this.renderPublications();
+      this.renderEngagement();
+      this.renderProjects();
+      this.renderHonors();
+      this.addEventListeners();
+      document.getElementById('copyright-year').textContent = new Date().getFullYear();
+    },
+    getIcon(type, customText = '') {
+      const cleanType = type.toLowerCase().replace(/[\s_]+/g, '_');
+      const iconHTML = ICONS[cleanType] || ICONS.default_link;
+      return `${iconHTML} ${customText}`.trim();
+    },
+    renderPersonalInfo() {
+      const container = document.getElementById('social-links-container');
+      container.innerHTML = `
+        <a href="mailto:${DATA.personalInfo.email}">${this.getIcon('email', 'Email')}</a>
+        <a href="${DATA.personalInfo.github}" target="_blank" rel="noopener noreferrer">${this.getIcon('github', 'GitHub')}</a>
+        <a href="${DATA.personalInfo.googleScholar}" target="_blank" rel="noopener noreferrer">${this.getIcon('googlescholar', 'Google Scholar')}</a>
+        <a href="${DATA.personalInfo.orcid}" target="_blank" rel="noopener noreferrer">${this.getIcon('orcid', 'ORCID')}</a>`;
+    },
+    renderExperience() {
+      const container = document.getElementById('experience-container');
+      container.innerHTML = '';
+      const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      DATA.experience
+        .sort((a, b) => (b.year_start - a.year_start) || (b.month_start - a.month_start))
+        .forEach(exp => {
+          const div = document.createElement('div');
+          div.className = 'experience-item';
+          let period = `${MONTHS[exp.month_start - 1]} ${exp.year_start} – `;
+          period += (exp.year_end === null) ? 'Present' : `${MONTHS[exp.month_end - 1]} ${exp.year_end}`;
+          const detailsHTML = exp.details.map(d => `<li>${d}</li>`).join('');
+          const tagClass = `tag-${exp.type.toLowerCase().replace(/\s/g, '-')}`;
+          div.innerHTML = `
+            <div class="experience-header">
+              <h3 class="experience-title">${exp.title}</h3>
+              <span class="experience-tag ${tagClass}">${exp.type}</span>
+            </div>
+            <p class="experience-affiliation">${exp.affiliation}</p>
+            <p class="experience-period">${period}</p>
+            <ul class="experience-details">${detailsHTML}</ul>`;
+          container.appendChild(div);
+        });
+    },
+    renderNews() {
+      const container = document.getElementById('news-container');
+      container.innerHTML = '';
+      DATA.news
+        .sort((a, b) => b.year - a.year || b.month - a.month)
+        .forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'news-item';
+          div.innerHTML = `<div class="news-date">${item.year}.${String(item.month).padStart(2, '0')}</div><div>${item.content}</div>`;
+          container.appendChild(div);
+        });
+    },
+    renderPublications() {
+      const container = document.getElementById('publications-container');
+      container.innerHTML = '';
+      DATA.publications
+        .sort((a, b) => b.year - a.year || (b.month - a.month) || a.venue.localeCompare(b.venue))
+        .forEach((p, index) => {
+          const div = document.createElement('div');
+          div.className = 'pub-item';
+          const badgesHTML = p.badges.map(b => `<span class="badge-${b.type.toLowerCase()}">${b.text}</span>`).join('');
+          let linksHTML = (p.links || []).map(l => `<a href="${l.url}" target="_blank" rel="noopener noreferrer">${this.getIcon(l.type, l.type.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase()))}</a>`).join('');
+          if (p.bibtex) {
+            linksHTML += `<button class="bib-toggle-btn" data-target="bib-${index}">${this.getIcon('bibtex', 'BibTeX')}</button>`;
           }
-      };
-      renderEngine.init();
-    });
-  </script>
+          const thumbnailHTML = p.thumbnail ? `<a href="${p.thumbnail}" class="thumbnail-link"><img src="${p.thumbnail}" alt="Thumbnail for ${p.title}" class="pub-thumbnail"></a>` : '';
+          div.innerHTML = `
+            ${thumbnailHTML}
+            <div class="pub-details">
+              <div class="pub-title">${p.title}</div>
+              <div class="pub-authors">${p.authors}</div>
+              <div class="pub-venue">${p.venue}</div>
+              <div class="pub-badges">${badgesHTML}</div>
+              <div class="pub-links">${linksHTML}</div>
+              ${p.bibtex ? `<div class="bibtex-container" id="bib-${index}"><pre>${p.bibtex}</pre></div>` : ''}
+            </div>`;
+          container.appendChild(div);
+        });
+    },
+    renderEngagement() {
+        const container = document.getElementById('engagement-container');
+        container.innerHTML = '';
+        DATA.engagement.forEach(cat => {
+            const itemsHTML = cat.items.map(item => `
+                <li>
+                    <div class="engagement-event">${item.event}</div>
+                    <div class="engagement-role">${item.role}</div>
+                </li>`).join('');
+            const card = document.createElement('div');
+            card.className = 'engagement-card';
+            card.innerHTML = `
+                <div class="engagement-card-header">
+                    <div class="engagement-card-icon">${this.getIcon(cat.icon)}</div>
+                    <h3 class="engagement-card-title">${cat.title}</h3>
+                </div>
+                <ul class="engagement-card-list">${itemsHTML}</ul>`;
+            container.appendChild(card);
+        });
+    },
+    renderProjects() {
+      const container = document.getElementById('projects-container');
+      container.innerHTML = '';
+      DATA.projects.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'project-card';
+        const tagsHTML = p.tags.map(t => `<span class="tag">${t}</span>`).join('');
+        const linksHTML = (p.links || []).map(l => `<a href="${l.url}" target="_blank" rel="noopener noreferrer">${this.getIcon(l.type, l.type.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase()))}</a>`).join('');
+        div.innerHTML = `<h4 class="title">${p.title}</h4><p class="desc">${p.desc}</p><div class="tags">${tagsHTML}</div>${linksHTML ? `<div class="links">${linksHTML}</div>` : ''}`;
+        container.appendChild(div);
+      });
+    },
+    renderHonors() {
+      const container = document.getElementById('honors-container');
+      container.innerHTML = '';
+      DATA.honors
+        .sort((a, b) => b.year - a.year || b.month - a.month || a.name.localeCompare(b.name))
+        .forEach(h => {
+          const li = document.createElement('li');
+          li.className = 'honors-item';
+          li.innerHTML = `<div class="honors-year">${h.year}.${String(h.month).padStart(2, '0')}</div><div class="honors-name">${h.name}</div><div class="honors-level">${h.level}</div>`;
+          container.appendChild(li);
+        });
+    },
+    setupPagination(containerId, toggleBtnId, itemSelector, initialCount) {
+        const container = document.getElementById(containerId);
+        const toggleBtn = document.getElementById(toggleBtnId);
+        if (!container || !toggleBtn) return;
+        
+        const allItems = container.querySelectorAll(itemSelector);
+        
+        if (allItems.length <= initialCount) {
+            toggleBtn.parentElement.style.display = 'none'; // Hide the whole controls container
+            return;
+        }
+        
+        allItems.forEach((item, index) => {
+            if (index >= initialCount) item.classList.add('hidden');
+        });
+        
+        toggleBtn.textContent = 'Show More';
+        
+        toggleBtn.addEventListener('click', () => {
+            const isShowingAll = toggleBtn.textContent === 'Show Less';
+            allItems.forEach((item, index) => {
+                if (index >= initialCount) {
+                    item.classList.toggle('hidden', isShowingAll);
+                }
+            });
+            toggleBtn.textContent = isShowingAll ? 'Show More' : 'Show Less';
+        });
+    },
+    addEventListeners() {
+      this.setupPagination('experience-container', 'experience-toggle-btn', '.experience-item', CONFIG.INITIAL_EXPERIENCE_COUNT);
+      this.setupPagination('news-container', 'news-toggle-btn', '.news-item', CONFIG.INITIAL_NEWS_COUNT);
+      this.setupPagination('publications-container', 'pubs-toggle-btn', '.pub-item', CONFIG.INITIAL_PUBS_COUNT);
+      this.setupPagination('projects-container', 'projects-toggle-btn', '.project-card', CONFIG.INITIAL_PROJECTS_COUNT);
+      this.setupPagination('engagement-container', 'engagement-toggle-btn', '.engagement-card', CONFIG.INITIAL_ENGAGEMENT_COUNT);
+      this.setupPagination('honors-container', 'honors-toggle-btn', '.honors-item', CONFIG.INITIAL_HONORS_COUNT);
+
+      const pubContainer = document.getElementById('publications-container');
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImg = document.getElementById('lightbox-img');
+      const lightboxClose = lightbox.querySelector('.lightbox-close');
+
+      pubContainer.addEventListener('click', (event) => {
+        const bibButton = event.target.closest('.bib-toggle-btn');
+        if (bibButton) {
+          const targetId = bibButton.dataset.target;
+          const bibContainer = document.getElementById(targetId);
+          if (bibContainer) bibContainer.classList.toggle('visible');
+        }
+        
+        const thumbnailLink = event.target.closest('.thumbnail-link');
+        if (thumbnailLink) {
+          event.preventDefault();
+          lightboxImg.src = thumbnailLink.href;
+          lightbox.classList.add('visible');
+        }
+      });
+
+      const closeLightbox = () => lightbox.classList.remove('visible');
+      lightboxClose.addEventListener('click', closeLightbox);
+      lightbox.addEventListener('click', (event) => {
+        if (event.target === lightbox) closeLightbox();
+      });
+    }
+  };
+  
+  renderEngine.init();
+});
+</script>
 </body>
 </html>
