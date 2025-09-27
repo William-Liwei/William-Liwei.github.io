@@ -357,6 +357,7 @@ const DATA = {
     orcid: "https://orcid.org/0009-0008-8108-4854",
   },
   news: [
+    { year: 2025, month: 9, content: "Honored to be awarded the <strong>Shanghai Scholarship</strong> in recognition of a fruitful year, which included ranking <strong>#1 in GPA</strong>, publishing four first-author papers in <strong>CCF-C</strong> ranked conferences, and winning multiple national programming contest awards." },
     { year: 2025, month: 8, content: "Awarded First Prize in the <strong>Baidu Star Programming Contest - Talent Track</strong> and <strong>MaTiBei Collegiate Programming Contest</strong>." },
     { year: 2025, month: 6, content: "Two papers (SWIFT, TimeFlowDiffuser) accepted for <strong>Oral Presentation</strong> at <strong>ICANN 2025 (CCF-C)</strong>." },
     { year: 2025, month: 5, content: "Two papers (LWSpace, EnergyPatchTST) accepted for <strong>Oral Presentation</strong> at <strong>ICIC 2025 (CCF-C)</strong>." },
@@ -374,11 +375,12 @@ const DATA = {
       links: [],
       thumbnail: "images/timeflowdiffuser.png",
       bibtex: `@inproceedings{li2025timeflowdiffuser,
-  title={TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting},
+  title={TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-horizon Time Series Forecasting},
   author={Li, Wei},
-  booktitle={International Conference on Artificial Neural Networks (ICANN 2025)},
+  booktitle={International Conference on Artificial Neural Networks},
+  pages={241--252},
   year={2025},
-  note = {Accepted}
+  organization={Springer}
 }`
     },
     {
@@ -390,11 +392,12 @@ const DATA = {
       links: [{ type: 'github', url: 'https://github.com/William-Liwei/SWIFT' }],
       thumbnail: "images/swift.png",
       bibtex: `@inproceedings{li2025swift,
-  title={SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction},
+  title={SWIFT: State-Space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction},
   author={Li, Wei},
-  booktitle={International Conference on Artificial Neural Networks (ICANN 2025)},
+  booktitle={International Conference on Artificial Neural Networks},
+  pages={29--40},
   year={2025},
-  note = {Accepted}
+  organization={Springer}
 }`
     },
     {
@@ -469,12 +472,14 @@ const DATA = {
   ],
   projects: [
     { title: "'CCF-Online' Academic Conference Portal", desc: "Independently developed and deployed an online portal that scrapes and integrates data from multiple sources to provide researchers with efficient access to academic conference information.", tags: ["Independent Project", "Scrapy", "JavaScript"], links: [{ type: 'live_demo', url: 'https://www.weili.space/ccf/' }] },
+    { title: "SHU Prophet: An Intelligent Time-Series Forecasting & Decision Platform", desc: "Engineered 'SHU Prophet,' a full-stack intelligent platform for advanced time-series analysis. This project integrates a suite of self-developed models with an interactive AI Agent (LangChain & LLM) to automate data analysis, generate insightful reports, and bridge the gap between complex algorithms and intuitive decision-making.", tags: ["Time Series Forecasting", "Full-Stack", "AI Agent", "LangChain", "Vue.js", "Python", "Flask", "ECharts"], links: [{ type: "github", url: "https://github.com/William-Liwei/shuprophet" }]},
     { title: "Cloud-based Automated Course Selection System", desc: "Led the development of a cloud-hosted system that automates the course selection process, featuring an LLM-based sentiment analysis module for course reviews. Award-winning project.", tags: ["Project Lead", "Flask", "Playwright", "Cloud Computing"], links: [] },
     { title: "Cultural Heritage Database System", desc: "Developed a digital management platform for the University's Key Laboratory of Silicate Cultural Heritage, supporting multi-source data entry, retrieval, and visualization.", tags: ["Database Design", "MySQL", "Data Visualization"], links: [] },
     { title: "Smart Parking IoT Platform", desc: "Designed and built a full-stack IoT parking solution, enabling real-time parking availability queries, reservations, and payments. Awarded Gold Medal at a university innovation competition.", tags: ["IoT", "Full-Stack", "Python", "Flask"], links: [] },
     { title: "Research on Product Assembly Strategy Optimization", desc: "Led a research project applying Bayesian decision networks and genetic algorithms to optimize complex assembly strategies for products with variable components and processes.", tags: ["Optimization", "Bayesian Networks", "Genetic Algorithms"], links: [] }
   ],
   honors: [
+    { year: 2025, month: 9, name: "Shanghai Scholarship", level: "Shanghai" },
     { year: 2025, month: 8, name: "Baidu Star Programming Contest - Talent Track", level: "National First Prize" },
     { year: 2025, month: 8, name: "MaTiBei Collegiate Programming Contest", level: "National First Prize" },
     { year: 2025, month: 7, name: "Information Security and Countermeasures Contest", level: "National Second Prize" },
