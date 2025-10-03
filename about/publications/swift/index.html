@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="page-title">Paper Details | Wei Li (William)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Serif+SC:wght@700&display=swap" rel="stylesheet">
+  <style>
+    /**************************************************************
+     *          SHARED STYLES (Copied from your homepage)         *
+     **************************************************************/
+    :root {
+      --bg-color: #f9fafb;
+      --primary-color: #111827;
+      --accent-color: #b48a3a;
+      --text-color: #374151;
+      --light-text: #6b7280;
+      --card-bg: #ffffff;
+      --border-color: #e5e7eb;
+      --header-font: 'Noto Serif SC', serif;
+      --body-font: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--body-font);
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.8;
+      font-size: 16px;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+    a { color: var(--primary-color); text-decoration: none; transition: color 0.3s ease; }
+    a:hover { color: var(--accent-color); }
+    .section-title {
+      font-family: var(--header-font);
+      font-size: 2.5rem;
+      color: var(--primary-color);
+      margin-bottom: 3rem;
+      position: relative;
+    }
+    .section-title::after {
+        content: ''; position: absolute; left: 0; bottom: -10px;
+        width: 50px; height: 4px;
+        background: linear-gradient(90deg, var(--accent-color), var(--primary-color));
+    }
+
+    /**************************************************************
+     *            STYLES SPECIFIC TO PUBLICATION PAGE             *
+     **************************************************************/
+    .page-header {
+        background: var(--card-bg);
+        border-bottom: 1px solid var(--border-color);
+        padding: 4rem 0 3.5rem;
+        text-align: center;
+    }
+    .page-header h1 {
+        font-family: var(--header-font);
+        font-size: 2.8rem;
+        color: var(--primary-color);
+        line-height: 1.3;
+        margin: 0 0 0.5rem;
+    }
+    .page-header .authors {
+        font-size: 1.1rem;
+        font-style: italic;
+        margin-bottom: 1rem;
+    }
+    .page-header .venue {
+        font-size: 1.1rem;
+        color: var(--light-text);
+    }
+    .quick-links {
+        margin-top: 2rem;
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    .quick-links a {
+        font-family: var(--body-font);
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--primary-color);
+        background-color: #f3f4f6;
+        border: 1px solid var(--border-color);
+        padding: 8px 16px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    .quick-links a:hover {
+        background-color: #e5e7eb;
+        color: var(--accent-color);
+    }
+    .breadcrumb {
+      padding-top: 1.5rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .breadcrumb a {
+      color: var(--light-text);
+    }
+    .breadcrumb a:hover {
+      color: var(--primary-color);
+    }
+    .breadcrumb span {
+      margin: 0 0.5rem;
+      color: var(--border-color);
+    }
+    main {
+      padding: 3rem 0;
+    }
+    .paper-section {
+      margin-bottom: 4rem;
+    }
+    .paper-section h2 {
+      font-family: var(--header-font);
+      font-size: 2rem;
+      color: var(--primary-color);
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .visual-abstract {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    .visual-abstract img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+    }
+    .visual-abstract figcaption {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: var(--light-text);
+      font-style: italic;
+    }
+    .contribution-list {
+      list-style: none;
+      padding-left: 0;
+    }
+    .contribution-list li {
+      position: relative;
+      padding-left: 28px;
+      margin-bottom: 1rem;
+    }
+    .contribution-list li::before {
+      content: '✔';
+      position: absolute;
+      left: 0;
+      top: 2px;
+      color: var(--accent-color);
+      font-weight: bold;
+    }
+    .bibtex-box {
+      background-color: #f9fafb;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.85rem;
+      padding: 1rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    footer {
+      text-align: center;
+      padding: 3rem 0;
+      margin-top: 2rem;
+      border-top: 1px solid var(--border-color);
+      color: var(--light-text);
+    }
+
+    @media (max-width: 768px) {
+        .page-header h1 { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="page-header">
+    <div class="container">
+        <h1 id="paper-title-header"></h1>
+        <p class="authors" id="paper-authors"></p>
+        <p class="venue" id="paper-venue"></p>
+        <div class="quick-links" id="quick-links"></div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="breadcrumb">
+        <a href="../../">Home</a> <span>/</span> Publications
+    </div>
+    
+    <section class="paper-section" id="abstract">
+        <h2>Abstract</h2>
+        <p id="paper-abstract"></p>
+    </section>
+    
+    <section class="paper-section" id="visual-abstract-section">
+        <h2>Architecture Overview</h2>
+        <figure class="visual-abstract">
+            <img id="visual-abstract-img" src="" alt="Visual abstract">
+            <figcaption id="visual-abstract-caption"></figcaption>
+        </figure>
+    </section>
+
+    <section class="paper-section" id="contributions">
+        <h2>Key Contributions</h2>
+        <ul class="contribution-list" id="contribution-list"></ul>
+    </section>
+
+    <section class="paper-section" id="results">
+        <h2>Main Results</h2>
+        <p id="results-summary"></p>
+    </section>
+
+    <section class="paper-section" id="citation">
+        <h2>Citation (BibTeX)</h2>
+        <pre class="bibtex-box" id="bibtex-box"></pre>
+    </section>
+  </main>
+  
+  <footer>
+      &copy; <span id="copyright-year"></span> Wei Li (William). All Rights Reserved.
+  </footer>
+
+<script>
+/**************************************************************
+ *                  PAPER DATA & CONFIGURATION                *
+ *      To create a new paper page, copy this entire file,    *
+ *      and ONLY modify the PAPER_DATA object below.          *
+ **************************************************************/
+
+const PAPER_DATA = {
+    short_title: "SWIFT",
+    full_title: "SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction",
+    authors: "<strong>Wei Li</strong>",
+    venue: "Published in International Conference on Artificial Neural Networks (ICANN 2025)",
+    links: {
+        pdf: null,
+        code: "https://github.com/William-Liwei/SWIFT",
+        slides: null
+    },
+    abstract: "Time series forecasting remains a fundamental challenge in data science. We introduce SWIFT, a novel neural architecture that synergistically combines selective state space models (Mamba) with multi-scale dilated convolutions for enhanced time series forecasting. Our approach incorporates: (1) a Selective Temporal State Space module extending Mamba with time series-specific gating; (2) a Multi-Scale Dilated Convolutional Network with adaptive receptive fields; and (3) a Feature Interaction Bridge facilitating cross-pathway information exchange. Experiments on six benchmark datasets demonstrate SWIFT outperforms other common methods, achieving 6.5% average improvement in MSE and 5.8% in MAE across various prediction horizons.",
+    visual_abstract_src: "../../images/swift.png",
+    visual_abstract_caption: "Fig. 1: SWIFT architecture overview. The model combines selective temporal state space (STSS) pathway with multi-scale dilated convolution pathway through a feature interaction bridge (FIB) to effectively capture both long-range dependencies and multi-scale patterns.",
+    contributions: [
+        "A <strong>Selective Temporal State Space (STSS)</strong> module extending Mamba with time series-specific gating mechanisms.",
+        "A <strong>Multi-Scale Dilated Convolutional Network (MSDCN)</strong> employing parallel dilated convolutions with adaptive receptive fields.",
+        "A <strong>Feature Interaction Bridge (FIB)</strong> facilitating bidirectional information exchange between processing pathways.",
+        "A <strong>Dynamic Scale Selection (DSS)</strong> component for adaptive temporal scale weighting based on prediction horizons."
+    ],
+    results_summary: "Results show that SWIFT consistently outperforms baseline methods across different datasets and prediction horizons. Compared to WFTNet, which is the strongest baseline, SWIFT shows consistent improvement across all datasets. This suggests that the combined wavelet-based multi-scale modeling and state space approach provides complementary benefits. The average improvement over WFTNet is approximately 6.5% for MSE and 5.8% for MAE. The performance advantage is particularly significant on certain datasets and prediction horizons, with up to 7.5% MSE improvement on ETTh2 and 7.0% on ILI at the same horizon.",
+    bibtex: `@inproceedings{li2025swift,\n  title={SWIFT: State-Space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction},\n  author={Li, Wei},\n  booktitle={International Conference on Artificial Neural Networks},\n  pages={29--40},\n  year={2025},\n  organization={Springer}\n}`
+};
+
+
+/**************************************************************
+ *                      RENDERING LOGIC                       *
+ *                 No modifications needed below.             *
+ **************************************************************/
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Set Page Title ---
+    document.title = `${PAPER_DATA.short_title} | Wei Li (William)`;
+
+    // --- Populate Header ---
+    document.getElementById('paper-title-header').innerHTML = PAPER_DATA.full_title;
+    document.getElementById('paper-authors').innerHTML = PAPER_DATA.authors;
+    document.getElementById('paper-venue').innerHTML = PAPER_DATA.venue;
+    
+    const quickLinksContainer = document.getElementById('quick-links');
+    if (PAPER_DATA.links.pdf) quickLinksContainer.innerHTML += `<a href="${PAPER_DATA.links.pdf}" target="_blank" rel="noopener noreferrer">PDF</a>`;
+    if (PAPER_DATA.links.code) quickLinksContainer.innerHTML += `<a href="${PAPER_DATA.links.code}" target="_blank" rel="noopener noreferrer">Code</a>`;
+    if (PAPER_DATA.links.slides) quickLinksContainer.innerHTML += `<a href="${PAPER_DATA.links.slides}" target="_blank" rel="noopener noreferrer">Slides</a>`;
+
+    // --- Populate Main Content ---
+    document.getElementById('paper-abstract').innerHTML = PAPER_DATA.abstract;
+    
+    const visualAbstractImg = document.getElementById('visual-abstract-img');
+    visualAbstractImg.src = PAPER_DATA.visual_abstract_src;
+    visualAbstractImg.alt = `Visual abstract for ${PAPER_DATA.short_title}`;
+    document.getElementById('visual-abstract-caption').innerHTML = PAPER_DATA.visual_abstract_caption;
+    
+    const contributionsList = document.getElementById('contribution-list');
+    PAPER_DATA.contributions.forEach(item => {
+        const li = document.createElement('li');
+        li.innerHTML = item;
+        contributionsList.appendChild(li);
+    });
+
+    document.getElementById('results-summary').innerHTML = PAPER_DATA.results_summary;
+    document.getElementById('bibtex-box').textContent = PAPER_DATA.bibtex;
+
+    // --- Populate Footer ---
+    document.getElementById('copyright-year').textContent = new Date().getFullYear();
+});
+</script>
+
+</body>
+</html>
