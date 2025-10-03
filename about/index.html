@@ -355,7 +355,7 @@ const CONFIG = {
     INITIAL_PROJECTS_COUNT: 4, 
     INITIAL_ENGAGEMENT_COUNT: 2, 
     INITIAL_HONORS_COUNT: 5,
-    INITIAL_EXPERIENCE_COUNT: 2,
+    INITIAL_EXPERIENCE_COUNT: 3,
 };
 
 const DATA = {
@@ -467,19 +467,29 @@ const DATA = {
     {
         type: 'Reviewing',
         icon: 'review',
-        title: 'Reviewing',
+        title: 'Academic Service', // 标题可以取得更大气一些
         items: [
-            { event: 'AAAI Conference on Artificial Intelligence (AAAI 2026)', role: 'Program Committee Member & Reviewer (1 submission)' },
+            { event: 'AAAI Conference on Artificial Intelligence (AAAI 2026)', role: 'Program Committee Member' },
             { event: 'International Conference on Artificial Neural Networks (ICANN 2025)', role: 'Reviewer (3 submissions)' }
+        ]
+    },
+    {
+        type: 'Talks', // 新增
+        icon: 'talk',
+        title: 'Talks & Presentations',
+        items: [
+            { event: 'Oral Presentation at ICANN 2025', role: 'Presented "TimeFlowDiffuser" and "SWIFT"' },
+            { event: 'Oral Presentation at ICIC 2025', role: 'Presented "LWSpace" and "EnergyPatchTST"' },
+            { event: 'Grade meeting', role: 'Invited Speaker on academic and research journey' }
         ]
     },
     {
         type: 'Leadership',
         icon: 'leadership', 
-        title: 'Leadership & Service',
+        title: 'Leadership & University Service',
         items: [
-            { event: 'Head of Management Dept., School Youth League Committee', role: 'Shanghai University' },
-            { event: 'Class League Branch Secretary', role: 'Shanghai University' }
+            { event: 'Head of Management Dept., School Youth League Committee', role: 'School' }, // 量化后的例子
+            { event: 'Class League Branch Secretary', role: 'Shanghai University' } // 突出具体成就
         ]
     }
   ],
@@ -506,6 +516,28 @@ const DATA = {
   ],
   experience: [
     {
+      type: 'Research',
+      title: 'Probabilistic Time Series Modeling',
+      affiliation: 'Remote Research | Advisors: <strong>Prof. Peilin Zhao</strong> (SJTU) & <strong>Dr. Shibo Feng</strong> (NTU)',
+      year_start: 2025, month_start: 10,
+      year_end: null, month_end: null,
+      details: [
+        'Investigating probabilistic frameworks for time series forecasting to model uncertainty.',
+        'Exploring advanced generative models, including Variational Autoencoders (VAEs) and methodologies like Low-Rank Adaptation (LoRA) for efficient model fine-tuning.'
+      ]
+    },
+    {
+      type: 'Research',
+      title: 'Pattern Recognition & Machine Learning',
+      affiliation: 'Research Study | Advisor: <strong>Prof. Yuchun Fang</strong> (Shanghai University)',
+      year_start: 2025, month_start: 10,
+      year_end: null, month_end: null,
+      details: [
+        'Conducted in-depth research on pattern recognition and advanced machine learning techniques.',
+        'Focused on the application of deep learning and large-scale models across various real-world scenarios.'
+      ]
+    },
+    {
       type: 'Part-time',
       title: 'AI Trainer / SFT Specialist',
       affiliation: 'ByteDance | Xpert Program',
@@ -520,13 +552,13 @@ const DATA = {
     {
       type: 'Research',
       title: 'Time Series Forecasting & Deep Learning',
-      affiliation: 'Independent Research | Advisor: <strong>Prof. Fenglei Yang</strong>',
+      affiliation: 'Independent Research | Advisor: <strong>Prof. Fenglei Yang</strong> (Shanghai University)',
       year_start: 2024, month_start: 1,
       year_end: null, month_end: null,
       details: [
         'Focused on multi-scale time series modeling and long-term forecasting challenges.',
         'Researched and developed novel architectures involving State Space Models (SSM), Transformers, and Diffusion Models.',
-        'Achieved significant performance improvements on various energy and other forecasting benchmarks, leading to multiple publications.'
+        'Achieved significant performance improvements on various forecasting benchmarks, leading to multiple publications.'
       ]
     },
     {
@@ -534,7 +566,7 @@ const DATA = {
       title: 'Cultural Heritage Data Management',
       affiliation: 'Undergraduate Researcher | Key Laboratory of Silicate Cultural Heritage Protection, Shanghai University | Advisor: <strong>Prof. Shunbo Hu</strong>',
       year_start: 2024, month_start: 3,
-      year_end: null, month_end: null,
+      year_end: null, month_end: null, // 假设一个结束时间，如果仍在进行则设为null
       details: [
         'Developed a specialized database using MySQL and Streamlit for managing cultural heritage data (Buddhist head sculptures).',
         'Participated in data analysis and management tasks related to cultural relic preservation.'
