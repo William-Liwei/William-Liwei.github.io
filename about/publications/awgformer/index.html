@@ -246,15 +246,16 @@ const PAPER_DATA = {
         code: null,
         slides: null
     },
-    abstract: "Coming soon",
+    abstract: "Time series forecasting requires capturing patterns across multiple temporal scales while maintaining computational efficiency. This paper introduces AWGformer, a novel architecture that integrates adaptive wavelet decomposition with cross-scale attention mechanisms for enhanced multi-variate time series prediction. Our approach comprises:(1) an Adaptive Wavelet Decomposition Module(AWDM) that dynamically selects optimal wavelet bases and decomposition levels based on signal characteristics;(2) a Cross-Scale Feature Fusion(CSFF) mechanism that captures interactions between different frequency bands through learnable coupling matrices;(3) a Frequency-Aware Multi-Head Attention(FAMA)module that weights attention heads according to their frequency selectivity;(4) a Hierarchical Prediction Network(HPN) that generates forecasts at multiple resolutions before reconstruction. Extensive experiments on six benchmark datasets demonstrate that AWGformer achieves significant average improvements over state-of-the-art methods, with particular effectiveness on multi-scale and non-stationary time series. Theoretical analysis provides convergence guarantees and establishes the connection between our wavelet-guided attention and classical signal processing principles.",
     visual_abstract_src: "../../images/awgformer.png",
-    visual_abstract_caption: "Fig. 1. Architecture of the AWGFormer.",
+    visual_abstract_caption: "Fig. 1: The AWGformer architecture. The model integrates(1) AWDM for adaptive decomposition,(2) Stacked encoder layers with CSFF and FAMA for cross-scale modeling, and(3) HPN for hierarchical forecasting. Visualizations show learned wavelets and frequency-aware attention maps.",
     contributions: [
-        "Coming soon",
-        "Coming soon",
-        "Coming soon"
+        "An <strong>Adaptive Wavelet Decomposition Module (AWDM)</strong> that dynamically selects optimal wavelet bases and decomposition levels based on signal characteristics.",
+        "A <strong>Cross-Scale Feature Fusion (CSFF)</strong> mechanism that captures interactions between different frequency bands through learnable coupling matrices.",
+        "A <strong>Frequency-Aware Multi-Head Attention (FAMA)</strong> module that weights attention heads according to their frequency selectivity.",
+        "A <strong>Hierarchical Prediction Network (HPN)</strong> that generates forecasts at multiple resolutions before reconstruction."
     ],
-    results_summary: "Coming soon",
+    results_summary: "Extensive experiments on six benchmark datasets (ETT, Traffic, Electricity) demonstrate that AWGformer consistently surpasses state-of-the-art baselines across all prediction horizons. On ETTh1, it achieves an average reduction of 5.2% in MSE and 4.8% in MAE compared to the best baseline (PatchTST/iTransformer), with the performance gap widening for longer horizons (e.g., H=720). The model shows robust generalization on challenging datasets like Traffic and Electricity.",
     bibtex: `@inproceedings{li2026awgformer,
   title={AWGFormer: Adaptive Wavelet-Guided Transformer for Multi-resolution Time Series Forecasting},
   author={Li, Wei},
@@ -262,6 +263,8 @@ const PAPER_DATA = {
   year={2026}
 }`
 };
+
+
 
 
 /**************************************************************

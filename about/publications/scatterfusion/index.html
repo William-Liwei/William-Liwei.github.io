@@ -246,15 +246,16 @@ const PAPER_DATA = {
         code: null,
         slides: null
     },
-    abstract: "Coming soon",
+    abstract: "Time series forecasting presents significant challenges due to the complex temporal dependencies at multiple time scales.This paper introduces ScatterFusion, a novel framework that synergistically integrates scattering transforms with hierarchical attention mechanisms for robust time series forecasting. Our approach comprises four key components:(1) a Hierarchical Scattering Transform Module(HSTM) that extracts multi-scale invariant features capturing both local and global patterns;(2) a Scale-Adaptive Feature Enhancement(SAFE) module that dynamically adjusts feature importance across different scales;(3) a Multi-Resolution Temporal Attention(MRTA) mechanism that learns dependencies at varying time horizons; and(4) a Trend-Seasonal-Residual(TSR) decomposition-guided structure-aware loss function.Extensive experiments on seven benchmark datasets demonstrate that ScatterFusion outperforms other common methods,achieving significant reductions in error metrics across various prediction horizons.",
     visual_abstract_src: "../../images/scatterfusion.png",
-    visual_abstract_caption: "Fig. 1. Architecture of the ScatterFusion.",
+    visual_abstract_caption: "Fig. 1: Overall architecture of the ScatterFusion framework. The model consists of an embedding layer, a Hierarchical Scattering Transform Module(HSTM), a Scale-Adaptive Feature Enhancement(SAFE) module, and a Multi-Resolution Temporal Attention(MRTA) mechanism. Each component is designed to address specific challenges in time series forecasting, such as capturing multi-scale patterns and modeling dependencies at varying time horizons.",
     contributions: [
-        "Coming soon",
-        "Coming soon",
-        "Coming soon"
+        "A <strong>Hierarchical Scattering Transform Module (HSTM)</strong> that extracts multi-scale invariant features with proven mathematical properties.",
+        "A <strong>Scale-Adaptive Feature Enhancement (SAFE)</strong> module that dynamically adjusts feature importance across scales.",
+        "A <strong>Multi-Resolution Temporal Attention (MRTA)</strong> mechanism that models dependencies at varying time horizons.",
+        "A <strong>Trend-Seasonal-Residual (TSR)</strong> decomposition-guided loss function that enhances structural forecasting accuracy."
     ],
-    results_summary: "Coming soon",
+    results_summary: "Experiments on seven benchmark datasets (ETT, Traffic, ECL, Weather) show that ScatterFusion competitively outperforms all baseline methods across different prediction horizons. It achieves substantial improvements in MSE and MAE compared to the strongest baseline (PatchTST), with consistent performance gains in both short and long horizons. The model maintains efficiency with a complexity of O(L·D·logL).",
     bibtex: `@inproceedings{li2026scatterfusion,
   title={ScatterFusion: A Hierarchical Scattering Transform Framework for Enhanced Time Series Forecasting},
   author={Li, Wei},
@@ -262,6 +263,7 @@ const PAPER_DATA = {
   year={2026}
 }`
 };
+
 
 
 /**************************************************************
