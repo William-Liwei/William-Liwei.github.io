@@ -7,7 +7,7 @@
   <base href="/about/">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Serif+SC:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <style>
     /* --- Global Styles --- */
     :root {
@@ -18,7 +18,7 @@
       --light-text: #6b7280;
       --card-bg: #ffffff;
       --border-color: #e5e7eb;
-      --header-font: 'Noto Serif SC', serif;
+      --header-font: 'Playfair Display', 'Noto Serif SC', serif;
       --body-font: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
     html { scroll-behavior: smooth; }
@@ -27,11 +27,11 @@
       font-family: var(--body-font);
       background-color: var(--bg-color);
       color: var(--text-color);
-      line-height: 1.8;
+      line-height: 1.9;
       font-size: 16px;
     }
     .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
-    section { padding: 4.5rem 0; }
+    section { padding: 6rem 0; }
     a { color: var(--primary-color); text-decoration: none; transition: color 0.3s ease; }
     a:hover { color: var(--accent-color); }
 
@@ -44,7 +44,7 @@
       padding: 1rem 0; z-index: 100;
     }
     nav .container { display: flex; justify-content: space-between; align-items: center; }
-    nav .logo { font-weight: 700; font-size: 1.2rem; }
+    nav .logo { font-weight: 700; font-size: 1.2rem; font-family: var(--header-font); letter-spacing: 0.5px; }
     nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 2rem; }
     nav a { font-weight: 500; }
 
@@ -66,13 +66,13 @@
       font-family: var(--header-font);
       font-size: 2.5rem;
       color: var(--primary-color);
-      margin-bottom: 3rem;
+      margin-bottom: 4rem;
       position: relative;
     }
     .section-title::after {
         content: ''; position: absolute; left: 0; bottom: -10px;
-        width: 50px; height: 4px;
-        background: linear-gradient(90deg, var(--accent-color), var(--primary-color));
+        width: 50px; height: 1px;
+        background: var(--accent-color);
     }
     
     /* --- News Section --- */
@@ -83,15 +83,13 @@
     .experience-item {
         background-color: var(--card-bg);
         border: 1px solid var(--border-color);
-        border-left: 5px solid var(--accent-color);
         border-radius: 8px;
-        padding: 1.75rem;
+        padding: 2rem;
         margin-bottom: 2rem;
-        transition: box-shadow 0.3s ease, border-left-color 0.3s ease;
+        transition: box-shadow 0.3s ease;
     }
     .experience-item:hover {
-        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-        border-left-color: var(--primary-color);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
     .experience-header {
         display: flex;
@@ -108,24 +106,14 @@
     .experience-tag {
         flex-shrink: 0;
         font-size: 0.75rem;
-        font-weight: 700;
+        font-weight: 600;
         padding: 4px 10px;
-        border-radius: 99px;
+        border-radius: 8px;
         letter-spacing: 0.5px;
         text-transform: uppercase;
         margin-top: 2px;
-    }
-    .tag-research {
-        background-color: #e0f2fe; /* Light Blue */
-        color: #0c4a6e;
-    }
-    .tag-internship {
-        background-color: #dcfce7; /* Light Green */
-        color: #15803d;
-    }
-    .tag-part-time {
-        background-color: #fef3c7; /* Light Yellow */
-        color: #92400e;
+        background-color: #f3f4f6;
+        color: #4b5563;
     }
     .experience-affiliation {
         font-weight: 500;
@@ -146,79 +134,52 @@
     .experience-details li { margin-bottom: 0.5rem; }
     
     /* --- Publications Section --- */
-    .pub-item { display: flex; gap: 1.5rem; align-items: flex-start; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); }
-    .pub-thumbnail { flex-shrink: 0; width: 160px; height: auto; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 5px; object-fit: cover; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; }
-    .pub-thumbnail:hover { transform: scale(1.05); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+    .pub-item { display: flex; gap: 1rem; align-items: baseline; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); }
+    .pub-year { flex-shrink: 0; width: 50px; font-weight: 600; color: var(--light-text); font-size: 0.95rem; }
     .pub-details { flex-grow: 1; min-width: 0; }
-    .pub-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.25rem; }
-    .pub-authors { font-style: italic; margin-bottom: 0.25rem; }
-    .pub-venue { color: var(--light-text); margin-bottom: 0.75rem; }
-    .pub-badges span { display: inline-block; padding: 4px 10px; font-size: 0.8rem; font-weight: 500; border-radius: 99px; margin-right: 8px; margin-bottom: 8px; }
-    .badge-ccf { background-color: #e0f2fe; color: #0c4a6e; }
-    .badge-oral, .badge-poster { background-color: #ede9fe; color: #5b21b6; }
-    .badge-author { background-color: #dcfce7; color: #15803d; }
-    .badge-review { background-color: #fef3c7; color: #92400e; }
-    .pub-links { margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.75rem; }
-    .pub-links a, .pub-links button { font-family: var(--body-font); font-size: 0.9rem; font-weight: 500; color: var(--primary-color); background-color: #f3f4f6; border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.5rem; }
-    .pub-links a:hover, .pub-links button:hover { background-color: #e5e7eb; color: var(--accent-color); }
-    .pub-links svg { width: 16px; height: 16px; flex-shrink: 0; }
-    .bibtex-container { margin-top: 1rem; background-color: #f9fafb; border: 1px solid var(--border-color); border-radius: 8px; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; color: var(--text-color); box-sizing: border-box; max-height: 0; opacity: 0; overflow: hidden; padding: 0 1rem; transition: max-height 0.5s ease-in-out, opacity 0.4s ease-in-out, padding 0.5s ease-in-out; }
-    .bibtex-container.visible { opacity: 1; max-height: 500px; padding: 1rem; }
-    .bibtex-container pre { margin: 0; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; }
-    .pub-title-link {
-        color: inherit; /* 继承原来的标题颜色 */
-        text-decoration: none; /* 去掉下划线 */
-        transition: color 0.3s ease;
-    }
-    .pub-title-link:hover {
-        color: var(--accent-color); /* 鼠标悬浮时变色 */
-        text-decoration: underline; /* 悬浮时显示下划线，提示可点击 */
-    }
+    .pub-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .pub-title a { color: var(--primary-color); text-decoration: none; transition: color 0.3s ease; }
+    .pub-title a:hover { color: var(--accent-color); }
+    .pub-authors { font-size: 0.95rem; color: var(--text-color); margin-bottom: 0.25rem; }
+    .pub-venue { color: var(--light-text); font-size: 0.9rem; }
 
     /* --- Academic Engagement Section --- */
-    .engagement-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
-    .engagement-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; }
+    .engagement-grid { display: flex; flex-direction: column; gap: 1.5rem; }
+    .engagement-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 2rem; }
     .engagement-card-header { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
-    .engagement-card-icon { flex-shrink: 0; color: var(--accent-color); background-color: #fef3c7; padding: 10px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .engagement-card-icon { flex-shrink: 0; color: var(--accent-color); background-color: #f9fafb; padding: 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
     .engagement-card-icon svg { width: 24px; height: 24px; }
-    .engagement-card-title { font-size: 1.25rem; font-weight: 700; color: var(--primary-color); margin: 0; padding-top: 8px; }
+    .engagement-card-title { font-size: 1.3rem; font-weight: 600; color: var(--primary-color); margin: 0; padding-top: 8px; }
     .engagement-card-list { list-style: none; padding: 0; margin: 0; }
-    .engagement-card-list li { padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); font-size: 0.95rem; }
+    .engagement-card-list li { padding: 0.75rem 0; border-bottom: 1px solid var(--border-color); font-size: 0.95rem; }
     .engagement-card-list li:last-child { border-bottom: none; }
-    .engagement-event { font-weight: 500; }
+    .engagement-event { font-weight: 500; margin-bottom: 0.25rem; }
     .engagement-role { color: var(--light-text); font-size: 0.9rem; }
     
     /* --- Projects & Honors Section --- */
-    .project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
-    .project-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; transition: transform 0.3s ease, box-shadow 0.3s ease; }
-    .project-card:hover { transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0,0,0,0.07); }
-    .project-card .title { font-size: 1.25rem; font-weight: 700; color: var(--primary-color); }
-    .project-card .desc { flex-grow: 1; margin: 0.75rem 0; }
+    .project-grid { display: flex; flex-direction: column; gap: 1.5rem; }
+    .project-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 2rem; transition: box-shadow 0.3s ease; }
+    .project-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .project-card .title { font-size: 1.3rem; font-weight: 600; color: var(--primary-color); margin-bottom: 0.75rem; }
+    .project-card .desc { margin-bottom: 1rem; line-height: 1.8; }
     .project-card .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
-    .project-card .tag { background-color: #f3f4f6; color: #4b5563; padding: 4px 12px; font-size: 0.8rem; border-radius: 99px; }
-    .project-card .links { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+    .project-card .tag { background-color: #f3f4f6; color: #4b5563; padding: 4px 12px; font-size: 0.8rem; border-radius: 8px; }
+    .project-card .links { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
     .project-card .links a { font-weight: 500; display: inline-flex; align-items: center; gap: 0.3rem; }
     .project-card .links svg { width: 16px; height: 16px; }
 
     .honors-list { list-style: none; padding: 0; }
-    .honors-item { display: flex; align-items: center; margin-bottom: 1rem; padding: 0.75rem; border-left: 4px solid var(--accent-color); background-color: var(--card-bg); border-radius: 0 8px 8px 0; }
-    .honors-year { font-weight: 700; margin-right: 1rem; color: var(--primary-color); }
+    .honors-item { display: flex; align-items: center; margin-bottom: 1rem; padding: 1rem; border-left: 1px solid var(--border-color); background-color: var(--card-bg); border-radius: 0 8px 8px 0; transition: box-shadow 0.3s ease; }
+    .honors-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .honors-year { font-weight: 600; margin-right: 1.5rem; color: var(--light-text); min-width: 70px; }
     .honors-name { flex-grow: 1; }
-    .honors-level { font-weight: 500; color: var(--light-text); }
+    .honors-level { font-size: 0.9rem; color: var(--light-text); }
     
     /* --- Pagination/Toggle Controls --- */
     .hidden { display: none; }
     .controls-container { text-align: center; margin-top: 2rem; }
-    .toggle-btn { font-family: var(--body-font); font-weight: 500; font-size: 0.9rem; padding: 8px 20px; border: 1px solid var(--border-color); background-color: var(--card-bg); border-radius: 99px; cursor: pointer; transition: all 0.3s ease; }
+    .toggle-btn { font-family: var(--body-font); font-weight: 500; font-size: 0.9rem; padding: 8px 20px; border: 1px solid var(--border-color); background-color: var(--card-bg); border-radius: 8px; cursor: pointer; transition: all 0.3s ease; }
     .toggle-btn:hover { background-color: #e5e7eb; color: var(--accent-color); }
-
-    /* --- Lightbox Styles --- */
-    .lightbox { position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0.4s; padding: 2.5vw; box-sizing: border-box; }
-    .lightbox.visible { opacity: 1; visibility: visible; }
-    .lightbox-content { max-width: 100%; max-height: 100%; width: 100%; height: 100%; object-fit: contain; border-radius: 8px; transform: scale(0.95); transition: transform 0.4s ease; }
-    .lightbox.visible .lightbox-content { transform: scale(1); }
-    .lightbox-close { position: absolute; top: 20px; right: 35px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; transition: color 0.3s ease; line-height: 1; z-index: 1010; }
-    .lightbox-close:hover { color: var(--border-color); }
 
     /* --- Footer --- */
     footer { text-align: center; padding: 3rem 0; margin-top: 2rem; border-top: 1px solid var(--border-color); color: var(--light-text); }
@@ -254,7 +215,7 @@
       <ul>
         <li><a href="#about">About</a></li>
         <li><a href="#news">News</a></li>
-        <li><a href="#publications">Publications</a></li>
+        <li><a href="/about/publications/">Publications</a></li>
         <li><a href="#experience">Experience</a></li>
         <li><a href="#honors">Honors</a></li>
         <li><a href="#projects">Projects</a></li>
@@ -272,7 +233,7 @@
           I am a Computer Science undergraduate at Shanghai University (Project 211) with a strong focus on deep learning, AI, Time Series and so on. My recent researches center on architecting and implementing deep learning models for time series analysis.
         </p>
         <p>
-          My objective is to develop models that are not only highly accurate but also computationally efficient and interpretable, addressing fundamental challenges in long-term forecasting. This focus has led to multiple <strong>sole-author</strong> and <strong>first-author</strong> publications accepted for <strong>Oral Presentation</strong> at international conferences.
+          My objective is to develop models that are not only highly accurate but also computationally efficient and interpretable, addressing fundamental challenges in long-term forecasting. This focus has led to multiple sole-author and first-author publications accepted at international conferences.
         </p>
         <div class="social-links" id="social-links-container"></div>
       </div>
@@ -336,11 +297,6 @@
   <footer>
       &copy; <span id="copyright-year"></span> Wei Li (William). All Rights Reserved.
   </footer>
-
-  <div id="lightbox" class="lightbox">
-    <span class="lightbox-close">&times;</span>
-    <img class="lightbox-content" id="lightbox-img">
-  </div>
 
 <script>
 /****************************************************************
@@ -699,29 +655,17 @@ document.addEventListener('DOMContentLoaded', () => {
       container.innerHTML = '';
       DATA.publications
         .sort((a, b) => b.year - a.year || (b.month - a.month) || a.venue.localeCompare(b.venue))
-        .forEach((p, index) => {
+        .forEach((p) => {
           const div = document.createElement('div');
           div.className = 'pub-item';
-          const badgesHTML = p.badges.map(b => `<span class="badge-${b.type.toLowerCase()}">${b.text}</span>`).join('');
-          let linksHTML = (p.links || []).map(l => `<a href="${l.url}" target="_blank" rel="noopener noreferrer">${this.getIcon(l.type, l.type.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase()))}</a>`).join('');
-          if (p.bibtex) {
-            linksHTML += `<button class="bib-toggle-btn" data-target="bib-${index}">${this.getIcon('bibtex', 'BibTeX')}</button>`;
-          }
-          const thumbnailHTML = p.thumbnail ? `<a href="${p.thumbnail}" class="thumbnail-link"><img src="${p.thumbnail}" alt="Thumbnail for ${p.title}" class="pub-thumbnail"></a>` : '';
-          let titleHTML = p.title;
-          if (p.details_url) {
-              // 用 <a> 标签包裹标题，并添加一个class方便设置样式
-              titleHTML = `<a href="${p.details_url}" class="pub-title-link">${p.title}</a>`;
-          }
+          const ccfLevel = p.badges.find(b => b.type === 'ccf')?.text || '';
+          const venueWithLevel = ccfLevel ? `${p.venue} (${ccfLevel})` : p.venue;
           div.innerHTML = `
-            ${thumbnailHTML}
+            <div class="pub-year">${p.year}</div>
             <div class="pub-details">
-              <div class="pub-title">${titleHTML}</div>
+              <div class="pub-title"><a href="/about/publications/">${p.title}</a></div>
               <div class="pub-authors">${p.authors}</div>
-              <div class="pub-venue">${p.venue}</div>
-              <div class="pub-badges">${badgesHTML}</div>
-              <div class="pub-links">${linksHTML}</div>
-              ${p.bibtex ? `<div class="bibtex-container" id="bib-${index}"><pre>${p.bibtex}</pre></div>` : ''}
+              <div class="pub-venue">${venueWithLevel}</div>
             </div>`;
           container.appendChild(div);
         });
@@ -807,9 +751,6 @@ document.addEventListener('DOMContentLoaded', () => {
       this.setupPagination('honors-container', 'honors-toggle-btn', '.honors-item', CONFIG.INITIAL_HONORS_COUNT);
 
       const pubContainer = document.getElementById('publications-container');
-      const lightbox = document.getElementById('lightbox');
-      const lightboxImg = document.getElementById('lightbox-img');
-      const lightboxClose = lightbox.querySelector('.lightbox-close');
 
       pubContainer.addEventListener('click', (event) => {
         const bibButton = event.target.closest('.bib-toggle-btn');
@@ -818,19 +759,6 @@ document.addEventListener('DOMContentLoaded', () => {
           const bibContainer = document.getElementById(targetId);
           if (bibContainer) bibContainer.classList.toggle('visible');
         }
-        
-        const thumbnailLink = event.target.closest('.thumbnail-link');
-        if (thumbnailLink) {
-          event.preventDefault();
-          lightboxImg.src = thumbnailLink.href;
-          lightbox.classList.add('visible');
-        }
-      });
-
-      const closeLightbox = () => lightbox.classList.remove('visible');
-      lightboxClose.addEventListener('click', closeLightbox);
-      lightbox.addEventListener('click', (event) => {
-        if (event.target === lightbox) closeLightbox();
       });
     }
   };

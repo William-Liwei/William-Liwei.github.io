@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Publications | Wei Li (William)</title>
+  <base href="/about/publications/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #f9fafb;
+      --primary-color: #111827;
+      --accent-color: #b48a3a;
+      --text-color: #374151;
+      --light-text: #6b7280;
+      --card-bg: #ffffff;
+      --border-color: #e5e7eb;
+      --header-font: 'Playfair Display', 'Noto Serif SC', serif;
+      --body-font: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--body-font);
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.9;
+      font-size: 16px;
+    }
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+    a { color: var(--primary-color); text-decoration: none; transition: color 0.3s ease; }
+    a:hover { color: var(--accent-color); }
+
+    nav {
+      position: sticky; top: 0;
+      background-color: rgba(255, 255, 255, 0.85);
+      backdrop-filter: saturate(180%) blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 0; z-index: 100;
+    }
+    nav .container { display: flex; justify-content: space-between; align-items: center; }
+    nav .logo { font-weight: 700; font-size: 1.2rem; font-family: var(--header-font); letter-spacing: 0.5px; }
+    nav .back-link { font-weight: 500; }
+
+    .page-header {
+      padding: 5rem 0 3rem;
+      text-align: center;
+    }
+    .page-title {
+      font-family: var(--header-font);
+      font-size: 3rem;
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+    }
+    .page-subtitle {
+      color: var(--light-text);
+      font-size: 1.1rem;
+    }
+
+    .pub-list { padding-bottom: 4rem; }
+    .pub-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      transition: box-shadow 0.3s ease;
+    }
+    .pub-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .pub-header { display: flex; gap: 2rem; margin-bottom: 1.5rem; }
+    .pub-thumbnail { flex-shrink: 0; width: 200px; height: auto; border-radius: 8px; border: 1px solid var(--border-color); object-fit: cover; cursor: pointer; transition: transform 0.3s ease; }
+    .pub-thumbnail:hover { transform: scale(1.02); }
+    .pub-info { flex-grow: 1; }
+    .pub-title { font-size: 1.4rem; font-weight: 700; color: var(--primary-color); margin-bottom: 0.5rem; }
+    .pub-authors { font-size: 1rem; margin-bottom: 0.5rem; }
+    .pub-venue { color: var(--light-text); margin-bottom: 1rem; }
+    .pub-badges { margin-bottom: 1rem; }
+    .pub-badges span { display: inline-block; padding: 4px 10px; font-size: 0.8rem; font-weight: 500; border-radius: 8px; margin-right: 8px; margin-bottom: 8px; background-color: #f3f4f6; color: #4b5563; }
+    .pub-links { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .pub-links a, .pub-links button { font-family: var(--body-font); font-size: 0.9rem; font-weight: 500; color: var(--primary-color); background-color: #f3f4f6; border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .pub-links a:hover, .pub-links button:hover { background-color: #e5e7eb; color: var(--accent-color); }
+    .bibtex-container { margin-top: 1rem; background-color: #f9fafb; border: 1px solid var(--border-color); border-radius: 8px; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; color: var(--text-color); max-height: 0; opacity: 0; overflow: hidden; padding: 0 1rem; transition: max-height 0.5s ease, opacity 0.4s ease, padding 0.5s ease; }
+    .bibtex-container.visible { opacity: 1; max-height: 500px; padding: 1rem; }
+    .bibtex-container pre { margin: 0; white-space: pre-wrap; word-wrap: break-word; }
+
+    .lightbox { position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0.4s; padding: 2.5vw; box-sizing: border-box; }
+    .lightbox.visible { opacity: 1; visibility: visible; }
+    .lightbox-content { max-width: 100%; max-height: 100%; width: 100%; height: 100%; object-fit: contain; border-radius: 8px; transform: scale(0.95); transition: transform 0.4s ease; }
+    .lightbox.visible .lightbox-content { transform: scale(1); }
+    .lightbox-close { position: absolute; top: 20px; right: 35px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; transition: color 0.3s ease; line-height: 1; z-index: 1010; }
+    .lightbox-close:hover { color: var(--border-color); }
+
+    footer { text-align: center; padding: 3rem 0; margin-top: 2rem; border-top: 1px solid var(--border-color); color: var(--light-text); }
+
+    @media (max-width: 768px) {
+      body { font-size: 15px; }
+      .container { padding: 0 15px; }
+      .page-title { font-size: 2.5rem; }
+      .pub-header { flex-direction: column; }
+      .pub-thumbnail { width: 100%; max-width: 300px; align-self: center; }
+      .pub-title { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="container">
+      <div class="logo">WEI LI</div>
+      <a href="/about/" class="back-link">← Back to Home</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">Publications</h1>
+      <p class="page-subtitle">Complete list of research publications (* denotes equal contribution)</p>
+    </div>
+
+    <div class="pub-list" id="publications-container"></div>
+  </div>
+
+  <footer>
+    &copy; <span id="copyright-year"></span> Wei Li (William). All Rights Reserved.
+  </footer>
+
+  <div id="lightbox" class="lightbox">
+    <span class="lightbox-close">&times;</span>
+    <img class="lightbox-content" id="lightbox-img">
+  </div>
+
+<script>
+const DATA = {
+  publications: [
+    {
+      title: "ScatterFusion: A Hierarchical Scattering Transform Framework for Enhanced Time Series Forecasting",
+      authors: "<strong>Li, W.</strong>",
+      venue: "IEEE International Conference on Acoustics, Speech, and Signal Processing (ICASSP 2026)",
+      year: 2026,
+      badges: [{ type: 'ccf', text: 'CCF-B' }, { type: 'author', text: 'Sole Author' }],
+      links: [],
+      thumbnail: "../images/scatterfusion.png",
+      abstract: "Time series forecasting faces challenges in capturing multi-scale temporal patterns while maintaining computational efficiency. This paper introduces ScatterFusion, a novel framework that leverages hierarchical scattering transforms for enhanced time series prediction. Our approach integrates wavelet scattering networks with adaptive feature fusion mechanisms to extract robust multi-scale representations.",
+      bibtex: `@inproceedings{li2026scatterfusion,
+  title={ScatterFusion: A Hierarchical Scattering Transform Framework for Enhanced Time Series Forecasting},
+  author={Li, Wei},
+  booktitle={IEEE International Conference on Acoustics, Speech, and Signal Processing},
+  year={2026}
+}`
+    },
+    {
+      title: "AWGFormer: Adaptive Wavelet-Guided Transformer for Multi-resolution Time Series Forecasting",
+      authors: "<strong>Li, W.</strong>",
+      venue: "IEEE International Conference on Acoustics, Speech, and Signal Processing (ICASSP 2026)",
+      year: 2026,
+      badges: [{ type: 'ccf', text: 'CCF-B' }, { type: 'author', text: 'Sole Author' }],
+      links: [],
+      thumbnail: "../images/awgformer.png",
+      abstract: "Time series forecasting requires capturing patterns across multiple temporal scales while maintaining computational efficiency. This paper introduces AWGformer, a novel architecture that integrates adaptive wavelet decomposition with cross-scale attention mechanisms for enhanced multi-variate time series prediction.",
+      bibtex: `@inproceedings{li2026awgformer,
+  title={AWGFormer: Adaptive Wavelet-Guided Transformer for Multi-resolution Time Series Forecasting},
+  author={Li, Wei},
+  booktitle={IEEE International Conference on Acoustics, Speech, and Signal Processing},
+  year={2026}
+}`
+    },
+    {
+      title: "TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting",
+      authors: "<strong>Li, W.</strong>",
+      venue: "International Conference on Artificial Neural Networks (ICANN 2025)",
+      year: 2025,
+      badges: [{ type: 'ccf', text: 'CCF-C' }, { type: 'oral', text: 'Oral' }, { type: 'author', text: 'Sole Author' }],
+      links: [],
+      thumbnail: "../images/timeflowdiffuser.png",
+      abstract: "Diffusion models have shown promise in generative tasks but remain underexplored for time series forecasting. We introduce TimeFlowDiffuser, a hierarchical diffusion framework with adaptive context sampling for multi-horizon forecasting. The model achieves strong performance on benchmark datasets.",
+      bibtex: `@inproceedings{li2025timeflowdiffuser,
+  title={TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-horizon Time Series Forecasting},
+  author={Li, Wei},
+  booktitle={International Conference on Artificial Neural Networks},
+  pages={241--252},
+  year={2025},
+  organization={Springer}
+}`
+    },
+    {
+      title: "SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction",
+      authors: "<strong>Li, W.</strong>",
+      venue: "International Conference on Artificial Neural Networks (ICANN 2025)",
+      year: 2025,
+      badges: [{ type: 'ccf', text: 'CCF-C' }, { type: 'oral', text: 'Oral' }, { type: 'author', text: 'Sole Author' }],
+      links: [{ type: 'github', url: 'https://github.com/William-Liwei/SWIFT' }],
+      thumbnail: "../images/swift.png",
+      abstract: "We introduce SWIFT, a novel architecture that synergistically combines selective state space models (Mamba) with multi-scale dilated convolutions for enhanced time series forecasting. Experiments demonstrate SWIFT outperforms common methods, achieving 6.5% average improvement in MSE.",
+      bibtex: `@inproceedings{li2025swift,
+  title={SWIFT: State-Space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction},
+  author={Li, Wei},
+  booktitle={International Conference on Artificial Neural Networks},
+  pages={29--40},
+  year={2025},
+  organization={Springer}
+}`
+    },
+    {
+      title: "EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting",
+      authors: "<strong>Li, W.</strong>, Wang, Z., Sun, Q., Gao, Q., & Yang, F.",
+      venue: "International Conference on Intelligent Computing (ICIC 2025)",
+      year: 2025,
+      badges: [{ type: 'ccf', text: 'CCF-C' }, { type: 'oral', text: 'Oral' }, { type: 'author', text: 'First Author' }],
+      links: [{ type: 'github', url: 'https://github.com/William-Liwei/EnergyPatchTST' }],
+      thumbnail: "../images/energypatchtst.png",
+      abstract: "Energy forecasting is critical for grid management and renewable integration. We propose EnergyPatchTST, a multi-scale transformer architecture with uncertainty estimation tailored for energy time series. The model demonstrates strong performance on energy forecasting benchmarks.",
+      bibtex: `@inproceedings{li2025energypatchtst,
+  title={EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting},
+  author={Li, Wei and Wang, Zixin and Sun, Qizheng and Gao, Qixiang and Yang, Fenglei},
+  booktitle={International Conference on Intelligent Computing},
+  pages={319--330},
+  year={2025},
+  organization={Springer}
+}`
+    },
+    {
+      title: "LWSpace: Multi-Scale State Space Framework for Time Series Forecasting",
+      authors: "<strong>Li, W.</strong>",
+      venue: "International Conference on Intelligent Computing (ICIC 2025)",
+      year: 2025,
+      badges: [{ type: 'ccf', text: 'CCF-C' }, { type: 'oral', text: 'Oral' }, { type: 'author', text: 'Sole Author' }],
+      links: [],
+      thumbnail: "../images/lwspace.png",
+      abstract: "State space models offer efficient sequence modeling but lack multi-scale capabilities. We introduce LWSpace, a multi-scale state space framework that captures temporal patterns at different resolutions. The model achieves competitive performance with improved efficiency.",
+      bibtex: `@inproceedings{li2025lwspace,
+  title={LWSpace: A Multi-scale State Space Framework for Enhanced Time Series Forecasting},
+  author={Li, Wei},
+  booktitle={International Conference on Intelligent Computing},
+  pages={295--306},
+  year={2025},
+  organization={Springer}
+}`
+    },
+    {
+      title: "Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics",
+      authors: "<strong>Li, W.</strong>, Wang, Z., Gao, Q., & Yang, F.",
+      venue: "International Conference on Applied Mathematics, Modelling and Intelligent Computing (CAMMIC 2025)",
+      year: 2025,
+      badges: [{ type: 'ccf', text: 'EI Index' }, { type: 'poster', text: 'Poster' }, { type: 'author', text: 'First Author' }],
+      links: [],
+      thumbnail: "../images/olympic.png",
+      abstract: "Olympic medal prediction requires modeling complex socio-economic and athletic factors. We propose an adaptive triple-fusion approach combining AAC models with ARIMA and state space dynamics for accurate medal forecasting.",
+      bibtex: `@inproceedings{li2025olympic,
+  title={Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics},
+  author={Li, Wei and Wang, Zixin and Gao, Qixiang and Yang, Fenglei},
+  booktitle={Proceedings of the 2025 5th International Conference on Applied Mathematics, Modelling and Intelligent Computing},
+  pages={699--703},
+  year={2025}
+}`
+    }
+  ]
+};
+
+const ICONS = {
+  github: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M10 0C4.477 0 0 4.477 0 10c0 4.418 2.865 8.168 6.839 9.492.5.092.682-.217.682-.482 0-.237-.009-.868-.014-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.031-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.03 1.595 1.03 2.688 0 3.848-2.338 4.695-4.566 4.942.359.308.678.92.678 1.852 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.001 10.001 0 0020 10c0-5.523-4.477-10-10-10z" clip-rule="evenodd" /></svg>`,
+  bibtex: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10zm0 5.25a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clip-rule="evenodd" /></svg>`
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  const container = document.getElementById('publications-container');
+
+  DATA.publications.forEach((p, index) => {
+    const card = document.createElement('div');
+    card.className = 'pub-card';
+
+    const badgesHTML = p.badges.map(b => `<span>${b.text}</span>`).join('');
+    const linksHTML = (p.links || []).map(l => `<a href="${l.url}" target="_blank" rel="noopener noreferrer">${ICONS[l.type]} ${l.type.toUpperCase()}</a>`).join('');
+    const bibtexBtn = p.bibtex ? `<button class="bib-toggle-btn" data-target="bib-${index}">${ICONS.bibtex} BibTeX</button>` : '';
+
+    card.innerHTML = `
+      <div class="pub-header">
+        ${p.thumbnail ? `<img src="${p.thumbnail}" alt="${p.title}" class="pub-thumbnail" data-src="${p.thumbnail}">` : ''}
+        <div class="pub-info">
+          <h2 class="pub-title">${p.title}</h2>
+          <div class="pub-authors">${p.authors}</div>
+          <div class="pub-venue">${p.venue}</div>
+          <div class="pub-badges">${badgesHTML}</div>
+          <div class="pub-links">${linksHTML}${bibtexBtn}</div>
+        </div>
+      </div>
+      ${p.abstract ? `<div class="pub-abstract" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); color: var(--text-color); line-height: 1.8;"><strong>Abstract:</strong> ${p.abstract}</div>` : ''}
+      ${p.bibtex ? `<div class="bibtex-container" id="bib-${index}"><pre>${p.bibtex}</pre></div>` : ''}
+    `;
+
+    container.appendChild(card);
+  });
+
+  document.getElementById('copyright-year').textContent = new Date().getFullYear();
+
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  const lightboxClose = lightbox.querySelector('.lightbox-close');
+
+  container.addEventListener('click', (e) => {
+    const bibBtn = e.target.closest('.bib-toggle-btn');
+    if (bibBtn) {
+      const target = document.getElementById(bibBtn.dataset.target);
+      if (target) target.classList.toggle('visible');
+    }
+
+    const thumbnail = e.target.closest('.pub-thumbnail');
+    if (thumbnail) {
+      lightboxImg.src = thumbnail.dataset.src;
+      lightbox.classList.add('visible');
+    }
+  });
+
+  const closeLightbox = () => lightbox.classList.remove('visible');
+  lightboxClose.addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', (e) => {
+    if (e.target === lightbox) closeLightbox();
+  });
+});
+</script>
+</body>
+</html>
