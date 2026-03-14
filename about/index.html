@@ -325,7 +325,7 @@ const DATA = {
   news: [
     // { year: 2026, month: 3, content: "One paper accepted at <strong>The Computer Journal (CCF-B)</strong>." },
     // { year: 2026, month: 2, content: "One paper accepted for <strong>Presentation</strong> at <strong>DASFAA 2026 (CCF-B)</strong>." },
-    { year: 2026, month: 1, content: "Two papers (ScatterFusion, AWGFormer) accepted for <strong>Presentation</strong> at <strong>ICASSP 2026 (CCF-B)</strong>." },
+    { year: 2026, month: 1, content: "Two papers (ScatterFusion, AWGFormer) accepted for <strong>Poster Presentation</strong> at <strong>ICASSP 2026 (CCF-B)</strong>." },
     { year: 2026, month: 1, content: "Honored to be awarded the <strong>Xiaomi Scholarship</strong>" },
     { year: 2025, month: 9, content: "Honored to be awarded the <strong>Shanghai Scholarship</strong> in recognition of a fruitful year, which included ranking <strong>#1 in GPA</strong>, publishing four first-author papers in <strong>CCF-C</strong> ranked conferences, and winning multiple national programming contest awards." },
     { year: 2025, month: 8, content: "Awarded First Prize in the <strong>Baidu Star Programming Contest - Talent Track</strong> and <strong>MaTiBei Collegiate Programming Contest</strong>." },
@@ -471,6 +471,7 @@ const DATA = {
         icon: 'talk',
         title: 'Talks & Presentations',
         items: [
+            { event: 'Poster Presentation at ICASSP 2026', role: 'Presented "ScatterFusion" and "AWGformer"' },
             { event: 'Oral Presentation at ICANN 2025', role: 'Presented "TimeFlowDiffuser" and "SWIFT"' },
             { event: 'Oral Presentation at ICIC 2025', role: 'Presented "LWSpace" and "EnergyPatchTST"' },
             { event: 'Grade meeting', role: 'Invited Speaker on academic and research journey' }
@@ -488,7 +489,7 @@ const DATA = {
   ],
   projects: [
     { title: "'CCF-Online' Academic Conference Portal", desc: "Independently developed and deployed an online portal that scrapes and integrates data from multiple sources to provide researchers with efficient access to academic conference information.", tags: ["Independent Project", "Scrapy", "JavaScript"], links: [{ type: 'live_demo', url: 'https://www.weili.space/ccf/' }] },
-    { title: "SHU Prophet: An Intelligent Time-Series Forecasting & Decision Platform", desc: "Engineered 'SHU Prophet,' a full-stack intelligent platform for advanced time-series analysis. This project integrates a suite of self-developed models with an interactive AI Agent (LangChain & LLM) to automate data analysis, generate insightful reports, and bridge the gap between complex algorithms and intuitive decision-making.", tags: ["Time Series Forecasting", "Full-Stack", "AI Agent", "LangChain", "Vue.js", "Python", "Flask", "ECharts"], links: [{ type: "github", url: "https://github.com/William-Liwei/shuprophet" }]},
+    { title: "SHU Prophet: An Intelligent Time-Series Forecasting & Decision Platform", desc: "Engineered 'SHU Prophet,' a full-stack intelligent platform for advanced time-series analysis. This project integrates a suite of self-developed models with an interactive AI Agent (LangChain & LLM) to automate data analysis, generate insightful reports, and bridge the gap between complex algorithms and intuitive decision-making.", tags: ["Time Series Forecasting", "Full-Stack", "AI Agent", "LangChain", "Vue.js", "Python", "Flask", "ECharts"], links: [{ type: "github", url: "https://github.com/William-Liwei/shuprophet" }, { type: "live_demo", url: "https://shuprophet.weili.space" }]},
     { title: "Cloud-based Automated Course Selection System", desc: "Led the development of a cloud-hosted system that automates the course selection process, featuring an LLM-based sentiment analysis module for course reviews. Award-winning project.", tags: ["Project Lead", "Flask", "Playwright", "Cloud Computing"], links: [] },
     { title: "Cultural Heritage Database System", desc: "Developed a digital management platform for the University's Key Laboratory of Silicate Cultural Heritage, supporting multi-source data entry, retrieval, and visualization.", tags: ["Database Design", "MySQL", "Data Visualization"], links: [] },
     { title: "Smart Parking IoT Platform", desc: "Designed and built a full-stack IoT parking solution, enabling real-time parking availability queries, reservations, and payments. Awarded Gold Medal at a university innovation competition.", tags: ["IoT", "Full-Stack", "Python", "Flask"], links: [] },
