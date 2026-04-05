@@ -20,7 +20,7 @@
 <meta property="og:description" content="重识时间序列：算法与前沿版本更新： 2026-04-05：ver-1.0 引言时间序列，本质上是从海量（抑或稀疏）的历史数据中，挖掘世界运转的隐秘规律。 在过去的一年多时间里，我的主要研究方向是时间序列与深度学习的交叉领域。从传统的频域算法（傅里叶、小波变换），到 Transformer（PatchTST、TimesNet），再到如今前沿的状态空间模型（SSM）与无条件时序生成大模型（Flow M">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-04-05T15:10:24.000Z">
-<meta property="article:modified_time" content="2026-04-05T15:12:40.090Z">
+<meta property="article:modified_time" content="2026-04-05T15:30:16.679Z">
 <meta property="article:author" content="Wei Li">
 <meta property="article:tag" content="学术">
 <meta property="article:tag" content="时间序列">
@@ -309,7 +309,7 @@
 
 <p>作者：黎玮 - 上海大学</p>
 <p>时间：2026.04.04</p>
-<p>邮箱：<a href="mailto:&#x6c;&#105;&#119;&#101;&#x69;&#48;&#x30;&#56;&#x30;&#48;&#57;&#64;&#49;&#x36;&#x33;&#x2e;&#x63;&#111;&#109;">&#x6c;&#105;&#119;&#101;&#x69;&#48;&#x30;&#56;&#x30;&#48;&#57;&#64;&#49;&#x36;&#x33;&#x2e;&#x63;&#111;&#109;</a></p>
+<p>邮箱：<a href="mailto:&#108;&#105;&#119;&#x65;&#105;&#x30;&#48;&#56;&#48;&#48;&#57;&#x40;&#49;&#x36;&#x33;&#x2e;&#99;&#x6f;&#x6d;">&#108;&#105;&#119;&#x65;&#105;&#x30;&#48;&#56;&#48;&#48;&#57;&#x40;&#49;&#x36;&#x33;&#x2e;&#99;&#x6f;&#x6d;</a></p>
 <p>个人主页：weili.space&#x2F;about</p>
 <h2 id="第1章-绪论"><a href="#第1章-绪论" class="headerlink" title="第1章 绪论"></a>第1章 绪论</h2><p>时间序列，是一种按照时间轴T组织起来的具有先后顺序的数据串。</p>
 <p>一直以来，无论是在传统教材中，还是在诸如 PatchTST、TimesNet 等前沿的深度学习研究中，往往将时间序列作为一个同质化的整体数据类型加以研究。然而，实践证明，不同领域的时间序列，除了其均是按照时间轴进行组织的这一共同特点之外，从数据分布、变量类型、变量数量、时间轴长度、样本数量、跨变量相关性、平稳性等等方面都有着截然不同的特点。因此，想要找到对世界上所有时间序列都普适的规律，往往是极其困难的，这也是为什么截止到2026年，我们依然很难找到一个真正能够在实际世界上而不是特定数据集上适用的时间序列基础模型（Time Series Foundation Model）。</p>
@@ -352,7 +352,8 @@
 <p><strong>一阶差分</strong>（今天减昨天）：</p>
 <p>$$<br>\Delta Y_t &#x3D; Y_t - Y_{t-1} &#x3D; Y_t - B Y_t &#x3D; (1 - B)Y_t<br>$$<br><strong>d 阶差分</strong>：<br>$$<br>Y’_t &#x3D; (1 - B)^d Y_t<br>$$</p>
 <h4 id="第二步：AR-AutoRegressive-自回归公式"><a href="#第二步：AR-AutoRegressive-自回归公式" class="headerlink" title="第二步：AR (AutoRegressive) 自回归公式"></a>第二步：AR (AutoRegressive) 自回归公式</h4><p>AR(p) 模型假设当前的平稳值 $Y’_t$ 是过去 $p$ 个时刻的线性组合，加上一个白噪声 $\varepsilon_t$。</p>
-<p>$$<br>Y’<em>t &#x3D; c + \phi_1 Y’</em>{t-1} + \phi_2 Y’<em>{t-2} + \dots + \phi_p Y’</em>{t-p} + \varepsilon_t<br>$$<br>其中：</p>
+<p>$$<br>Y’<em>t &#x3D; c + \phi_1 Y’</em>{t-1} + \phi_2 Y’<em>{t-2} + \dots + \phi_p Y’</em>{t-p} + \varepsilon_t<br>$$</p>
+<p>其中：</p>
 <ul>
 <li>$c$ 是常数项（通常代表序列的漂移&#x2F;基准线）。</li>
 <li>$\phi_i$ 是自回归系数，衡量历史记忆的强度。</li>
@@ -362,7 +363,8 @@
 <p>$$<br>Y’_t - \phi_1 B Y’_t - \phi_2 B^2 Y’_t - \dots - \phi_p B^p Y’_t &#x3D; c + \varepsilon_t<br>\<br>(1 - \phi_1 B - \phi_2 B^2 - \dots - \phi_p B^p) Y’_t &#x3D; c + \varepsilon_t<br>$$<br>我们把前面那一长串定义为 **自回归多项式 $\Phi(B)$**：</p>
 <p>$$<br>\Phi(B) &#x3D; 1 - \sum_{i&#x3D;1}^p \phi_i B^i<br>$$<br>所以 AR(p) 可以极简地写为：<br>$$<br>\Phi(B) Y’_t &#x3D; c + \varepsilon_t<br>$$</p>
 <h4 id="第三步：MA-Moving-Average-滑动平均公式"><a href="#第三步：MA-Moving-Average-滑动平均公式" class="headerlink" title="第三步：MA (Moving Average) 滑动平均公式"></a>第三步：MA (Moving Average) 滑动平均公式</h4><p>MA(q) 模型假设当前的平稳值 $Y’_t$ 是过去 $q$ 个时刻的白噪声的线性组合。</p>
-<p>$$<br>Y’<em>t &#x3D; c + \varepsilon_t + \theta_1 \varepsilon</em>{t-1} + \theta_2 \varepsilon_{t-2} + \dots + \theta_q \varepsilon_{t-q}<br>$$<br>其中：</p>
+<p>$$<br>Y’<em>t &#x3D; c + \varepsilon_t + \theta_1 \varepsilon</em>{t-1} + \theta_2 \varepsilon_{t-2} + \dots + \theta_q \varepsilon_{t-q}<br>$$</p>
+<p>其中：</p>
 <ul>
 <li>$\theta_i$ 是滑动平均系数，衡量系统吸收外部冲击的能力。</li>
 </ul>
@@ -371,7 +373,8 @@
 <p>$$<br>\Theta(B) &#x3D; 1 + \sum_{i&#x3D;1}^q \theta_i B^i<br>$$<br>所以 MA(q) 可以极简地写为：<br>$$<br>Y’_t &#x3D; c + \Theta(B) \varepsilon_t<br>$$</p>
 <h4 id="ARIMA-p-d-q-公式"><a href="#ARIMA-p-d-q-公式" class="headerlink" title="ARIMA(p, d, q) 公式"></a>ARIMA(p, d, q) 公式</h4><p>现在，我们将 AR(p) 和 MA(q) 结合，形成 ARMA(p,q) 模型（针对平稳序列 $Y’_t$）：</p>
 <p>$$<br>\Phi(B) Y’_t &#x3D; c + \Theta(B) \varepsilon_t<br>$$<br>最后，把第一步中差分算子的定义 $Y’_t &#x3D; (1 - B)^d Y_t$ 代入上式，我们就得到了 ARIMA(p, d, q)：</p>
-<p>$$<br>\underbrace{\Phi(B)}<em>{\text{AR(p) 记忆多项式}} \underbrace{(1 - B)^d}</em>{\text{I(d) 差分算子}} Y_t &#x3D; c + \underbrace{\Theta(B)}_{\text{MA(q) 冲击多项式}} \varepsilon_t<br>$$<br>上述公式看似复杂，实际上我们并不需要过多深入。在计算机中，真正实现的方法类似于下述内容：</p>
+<p>$$<br>\underbrace{\Phi(B)}<em>{\text{AR(p) 记忆多项式}} \underbrace{(1 - B)^d}</em>{\text{I(d) 差分算子}} Y_t &#x3D; c + \underbrace{\Theta(B)}_{\text{MA(q) 冲击多项式}} \varepsilon_t<br>$$</p>
+<p>上述公式看似复杂，实际上我们并不需要过多深入。在计算机中，真正实现的方法类似于下述内容：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">y[t] = c + AR*y[t-1] + MA*e[t-1] + e[t]</span><br></pre></td></tr></table></figure>
 
 <p>翻译成大白话，<strong>预测今天的d阶增量 &#x3D; 常数 + (AR系数 × 前段时间的d阶增量) + (MA系数 × 前段时间的误差) + 今天的未知误差</strong>。由于今天的数值是未知的，因而今天的未知误差在数学期望上只能被设定为 <strong>0</strong>。这也导致ARIMA在长期预测上存在缺乏波动的问题。</p>
@@ -649,7 +652,7 @@
 <p>独学而无友，则孤陋而寡闻。如果有学者希望与我进一步交流学术问题，或是探讨未来的相关合作，非常欢迎通过邮箱与我联系。再次感谢所有指导过我的恩师，以及每一位读到这里的读者！</p>
 <p>作者：黎玮 - 上海大学</p>
 <p>时间：2026.04.04</p>
-<p>邮箱：<a href="mailto:&#108;&#105;&#x77;&#101;&#x69;&#48;&#x30;&#x38;&#x30;&#48;&#57;&#64;&#49;&#54;&#x33;&#x2e;&#99;&#111;&#109;">&#108;&#105;&#x77;&#101;&#x69;&#48;&#x30;&#x38;&#x30;&#48;&#57;&#64;&#49;&#54;&#x33;&#x2e;&#99;&#111;&#109;</a></p>
+<p>邮箱：<a href="mailto:&#108;&#x69;&#x77;&#x65;&#x69;&#x30;&#48;&#56;&#x30;&#48;&#x39;&#64;&#49;&#x36;&#51;&#46;&#99;&#111;&#109;">&#108;&#x69;&#x77;&#x65;&#x69;&#x30;&#48;&#56;&#x30;&#48;&#x39;&#64;&#49;&#x36;&#51;&#46;&#99;&#111;&#109;</a></p>
 <p>个人主页：weili.space&#x2F;about</p>
 <h2 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h2><p>相关资源可见下述。</p>
 <h3 id="链接"><a href="#链接" class="headerlink" title="链接"></a>链接</h3><ul>
