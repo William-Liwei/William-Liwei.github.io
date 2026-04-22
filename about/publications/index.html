@@ -4,6 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Publications | Wei Li (William)</title>
+  <script>
+    (() => {
+      const segments = window.location.pathname.split('/').filter(Boolean);
+      const aboutIndex = segments.lastIndexOf('about');
+      const baseSegments = aboutIndex >= 0 ? segments.slice(0, aboutIndex + 2) : ['about', 'publications'];
+      const baseHref = `/${baseSegments.join('/')}/`;
+      const baseElement = document.createElement('base');
+      baseElement.href = baseHref;
+      document.head.prepend(baseElement);
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
