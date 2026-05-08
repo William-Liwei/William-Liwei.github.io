@@ -21,6 +21,43 @@ window.ABOUT_DATA = {
   ],
   publications: [
     {
+      title: "SDFlow: Similarity-Driven Flow Matching for Time Series Generation",
+      authors: "<strong>Li, W.*</strong>, Feng, S.*, Wu, P., Gao, X., Wu, M., & Zhao, P.",
+      venue: "Conference on Neural Information Processing Systems (NeurIPS)",
+      year: 2026,
+      month: 5,
+      badges: [{ type: "status", text: "Under Reviewing" }, { type: "author", text: "First Author" }],
+      links: [{ type: "arxiv", url: "https://arxiv.org/abs/2605.05736" }],
+      thumbnail: "sdflow.png",
+      abstract: "Collaborated with SJTU, NTU, Chinese Academy of Sciences, and A*STAR.",
+      bibtex: `@misc{li2026sdflow,
+      title={SDFlow: Similarity-Driven Flow Matching for Time Series Generation}, 
+      author={Li, Wei and Feng, Shibo and Wu, Pengcheng and Gao, Xingyu and Wu, Min and Zhao, Peilin},
+      year={2026},
+      eprint={2605.05736},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2605.05736}, 
+}`
+    },
+    {
+      title: "ClusterPatchTST: Uncertainty-Aware Causal Clustering for Heterogeneous Time Series Forecasting",
+      authors: "<strong>Li, W.</strong>",
+      venue: "International Conference on Database Systems for Advanced Applications (DASFAA 2026)",
+      year: 2026,
+      month: 2,
+      badges: [{ type: "ccf", text: "CCF-B" }, { type: "paper", text: "Full Paper" }, { type: "author", text: "Sole Author" }],
+      links: [],
+      thumbnail: "clusterpatchtst.png",
+      abstract: "Proposed ClusterPatchTST; implemented uncertainty modeling in heterogeneous time series.",
+      bibtex: `@inproceedings{li2026clusterpatchtst,
+  title={ClusterPatchTST: Uncertainty-Aware Causal Clustering for Heterogeneous Time Series Forecasting},
+  author={Li, Wei},
+  booktitle={International Conference on Database Systems for Advanced Applications},
+  year={2026}
+}`
+    },
+    {
       title: "ScatterFusion: A Hierarchical Scattering Transform Framework for Enhanced Time Series Forecasting",
       authors: "<strong>Li, W.</strong>",
       venue: "IEEE International Conference on Acoustics, Speech, and Signal Processing (ICASSP 2026)",

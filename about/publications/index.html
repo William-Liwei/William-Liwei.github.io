@@ -152,6 +152,7 @@ const getAboutImagePath = (filename) => filename ? `../images/${filename}` : '';
 
 
 const ICONS = {
+  arxiv: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M4 2.75A1.75 1.75 0 015.75 1h5.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v11.586A1.75 1.75 0 0114.25 19h-8.5A1.75 1.75 0 014 17.25V2.75zm7 0V6h3.25L11 2.75zM7.25 9a.75.75 0 000 1.5h5.5a.75.75 0 000-1.5h-5.5zm0 3a.75.75 0 000 1.5h5.5a.75.75 0 000-1.5h-5.5zm0 3a.75.75 0 000 1.5h3.5a.75.75 0 000-1.5h-3.5z"/></svg>`,
   github: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M10 0C4.477 0 0 4.477 0 10c0 4.418 2.865 8.168 6.839 9.492.5.092.682-.217.682-.482 0-.237-.009-.868-.014-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.031-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.03 1.595 1.03 2.688 0 3.848-2.338 4.695-4.566 4.942.359.308.678.92.678 1.852 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.001 10.001 0 0020 10c0-5.523-4.477-10-10-10z" clip-rule="evenodd" /></svg>`,
   bibtex: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10zm0 5.25a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clip-rule="evenodd" /></svg>`
 };
@@ -172,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
       card.className = 'pub-card';
 
       const badgesHTML = p.badges.map(b => `<span>${b.text}</span>`).join('');
-      const linksHTML = (p.links || []).map(l => `<a href="${l.url}" target="_blank" rel="noopener noreferrer">${ICONS[l.type]} ${l.type.toUpperCase()}</a>`).join('');
+      const linksHTML = (p.links || []).map(l => `<a href="${l.url}" target="_blank" rel="noopener noreferrer">${ICONS[l.type] || ''} ${l.type.toUpperCase()}</a>`).join('');
       const bibtexBtn = p.bibtex ? `<button class="bib-toggle-btn" data-target="bib-${index}">${ICONS.bibtex} BibTeX</button>` : '';
 
       card.innerHTML = `
