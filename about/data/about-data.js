@@ -23,7 +23,7 @@ window.ABOUT_DATA = {
     {
       title: "SDFlow: Similarity-Driven Flow Matching for Time Series Generation",
       authors: "<strong>Li, W.*</strong>, Feng, S.*, Wu, P., Gao, X., Wu, M., & Zhao, P.",
-      venue: "Conference on Neural Information Processing Systems (NeurIPS)",
+      venue: "arxiv preprint",
       year: 2026,
       month: 5,
       badges: [{ type: "status", text: "Under Reviewing" }, { type: "author", text: "First Author" }],
