@@ -6,6 +6,7 @@ window.ABOUT_DATA = {
     orcid: "https://orcid.org/0009-0008-8108-4854"
   },
   news: [
+    { year: 2026, month: 5, content: "Be invited to serve as a <strong>Reviewer</strong> at <strong>Ain Shams Engineering Journal (IF: 5.9, Q1)</strong>." },
     { year: 2026, month: 3, content: "Be invited to serve as a <strong>Reviewer</strong> at <strong>ICANN 2026 (CCF-C)</strong>." },
     { year: 2026, month: 2, content: "One paper accepted for <strong>Oral Presentation</strong> at <strong>DASFAA 2026 (CCF-B)</strong>." },
     { year: 2026, month: 3, content: "Advanced to the finals of the <strong>ASC Student Supercomputer Challenge</strong>." },
@@ -192,6 +193,7 @@ window.ABOUT_DATA = {
       icon: "review",
       title: "Academic Service",
       items: [
+        { event: "Ain Shams Engineering Journal (IF: 5.9, Q1)", role: "Reviewer" },
         { event: "International Conference on Artificial Neural Networks (ICANN 2026)", role: "Reviewer" },
         { event: "AAAI Conference on Artificial Intelligence (AAAI 2026)", role: "Program Committee Member" },
         { event: "International Conference on Artificial Neural Networks (ICANN 2025)", role: "Reviewer (3 submissions)" }
