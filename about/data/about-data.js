@@ -6,9 +6,10 @@ window.ABOUT_DATA = {
     orcid: "https://orcid.org/0009-0008-8108-4854"
   },
   news: [
+    { year: 2026, month: 5, content: "One paper (APCL) accepted at <strong>KDD 2026 (CCF-A)</strong>." },
     { year: 2026, month: 5, content: "Be invited to serve as a <strong>Reviewer</strong> at <strong>Ain Shams Engineering Journal (IF: 5.9, Q1)</strong>." },
     { year: 2026, month: 3, content: "Be invited to serve as a <strong>Reviewer</strong> at <strong>ICANN 2026 (CCF-C)</strong>." },
-    { year: 2026, month: 2, content: "One paper accepted for <strong>Oral Presentation</strong> at <strong>DASFAA 2026 (CCF-B)</strong>." },
+    { year: 2026, month: 2, content: "One paper (ClusterPatchTST) accepted for <strong>Oral Presentation</strong> at <strong>DASFAA 2026 (CCF-B)</strong>." },
     { year: 2026, month: 3, content: "Advanced to the finals of the <strong>ASC Student Supercomputer Challenge</strong>." },
     { year: 2026, month: 1, content: "Two papers (ScatterFusion, AWGFormer) accepted for <strong>Poster Presentation</strong> at <strong>ICASSP 2026 (CCF-B)</strong>." },
     { year: 2026, month: 1, content: "Honored to be awarded the <strong>Xiaomi Scholarship</strong>" },
@@ -21,6 +22,23 @@ window.ABOUT_DATA = {
     { year: 2024, month: 7, content: "Awarded Gold Medal in the university-level China 'Internet+' Innovation Competition." }
   ],
   publications: [
+    {
+      title: "Adaptive Prototypical Contrastive Learning for Time Series Clustering",
+      authors: "<strong>Li, W.</strong>",
+      venue: "ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD 2026)",
+      year: 2026,
+      month: 8,
+      badges: [{ type: "ccf", text: "CCF-A" }, { type: "paper", text: "Full Paper" }, { type: "author", text: "Sole Author" }],
+      links: [],
+      thumbnail: "apcl.png",
+      abstract: "Proposed adaptive prototypical contrastive learning for time series clustering.",
+      bibtex: `@inproceedings{li2026apcl,
+  title={Adaptive Prototypical Contrastive Learning for Time Series Clustering},
+  author={Li, Wei},
+  booktitle={ACM SIGKDD International Conference on Knowledge Discovery and Data Mining},
+  year={2026}
+}`
+    },
     {
       title: "SDFlow: Similarity-Driven Flow Matching for Time Series Generation",
       authors: "<strong>Li, W.*</strong>, Feng, S.*, Wu, P., Gao, X., Wu, M., & Zhao, P.",
