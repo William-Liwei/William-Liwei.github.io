@@ -222,6 +222,8 @@ window.ABOUT_DATA = {
       icon: "talk",
       title: "Talks & Presentations",
       items: [
+        { event: "KDD 2026", role: 'Presented "APCL"' },
+        { event: "Oral Presentation at DASFAA 2026", role: 'Presented "ClusterPatchTST"' },
         { event: "Poster Presentation at ICASSP 2026", role: 'Presented "ScatterFusion" and "AWGformer"' },
         { event: "Oral Presentation at ICANN 2025", role: 'Presented "TimeFlowDiffuser" and "SWIFT"' },
         { event: "Oral Presentation at ICIC 2025", role: 'Presented "LWSpace" and "EnergyPatchTST"' },
