@@ -250,9 +250,6 @@
         </p>
 
         <div class="social-links" id="social-links-container"></div>
-        <span style="margin-left: 15px; color: var(--accent-color); font-weight: 600; font-size: 0.95rem;">
-          <span id="citation-count">Loading...</span> Citations
-        </span>
       </div>
     </section>
 
@@ -382,7 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
       container.innerHTML = `
         <a href="mailto:${DATA.personalInfo.email}">${this.getIcon('email', 'Email')}</a>
         <a href="${DATA.personalInfo.github}" target="_blank" rel="noopener noreferrer">${this.getIcon('github', 'GitHub')}</a>
-        <a href="${DATA.personalInfo.googleScholar}" target="_blank" rel="noopener noreferrer">${this.getIcon('googlescholar', 'Google Scholar')}</a>
+        <a href="${DATA.personalInfo.googleScholar}" target="_blank" rel="noopener noreferrer">${this.getIcon('googlescholar', 'Google Scholar<span id="citation-count"></span>')}</a>
         <a href="${DATA.personalInfo.orcid}" target="_blank" rel="noopener noreferrer">${this.getIcon('orcid', 'ORCID')}</a>`;
     },
     renderExperience() {
@@ -535,17 +532,19 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   
   renderEngine.init();
-   // 新增：获取实时引用数（不影响原有功能）
+  // 新增：极简版获取实时引用数（完美融合进图标链接）
   fetch('/api/scholar')
     .then(res => res.json())
     .then(data => {
       const el = document.getElementById('citation-count');
-      if (el) el.textContent = data.citations;
+      // 只有拿到数字才显示，比如 "(1234 Citations)"
+      if (el && data.citations !== 'N/A') {
+        el.textContent = ` (${data.citations} Citations)`; 
+      }
     })
     .catch(() => {
-      const el = document.getElementById('citation-count');
-      if (el) el.textContent = 'N/A';
-    });
+      // 失败了就什么都不做，保持原本的 "Google Scholar" 纯净状态
+  });
 });
 </script>
 </body>
