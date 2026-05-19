@@ -250,6 +250,9 @@
         </p>
 
         <div class="social-links" id="social-links-container"></div>
+        <span style="margin-left: 15px; color: var(--accent-color); font-weight: 600; font-size: 0.95rem;">
+          <span id="citation-count">Loading...</span> Citations
+        </span>
       </div>
     </section>
 
@@ -532,6 +535,17 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   
   renderEngine.init();
+   // 新增：获取实时引用数（不影响原有功能）
+  fetch('/api/scholar')
+    .then(res => res.json())
+    .then(data => {
+      const el = document.getElementById('citation-count');
+      if (el) el.textContent = data.citations;
+    })
+    .catch(() => {
+      const el = document.getElementById('citation-count');
+      if (el) el.textContent = 'N/A';
+    });
 });
 </script>
 </body>
