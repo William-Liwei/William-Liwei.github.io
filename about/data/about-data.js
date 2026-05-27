@@ -7,10 +7,12 @@ window.ABOUT_DATA = {
   },
   news: [
     { year: 2026, month: 5, content: "One paper (APCL) accepted at <strong>KDD 2026 (CCF-A)</strong>." },
+    { year: 2026, month: 5, content: "Be invited to serve as a <strong>Ethics Reviewer</strong> at <strong>NeurIPS 2026 (CCF-A)</strong>." },
     { year: 2026, month: 5, content: "Be invited to serve as a <strong>Reviewer</strong> at <strong>Ain Shams Engineering Journal (IF: 5.9, Q1)</strong>." },
+    { year: 2026, month: 5, content: "Awarded <strong>International First Prize</strong> in <strong>ASC26</strong>." },
     { year: 2026, month: 3, content: "Be invited to serve as a <strong>Reviewer</strong> at <strong>ICANN 2026 (CCF-C)</strong>." },
     { year: 2026, month: 2, content: "One paper (ClusterPatchTST) accepted for <strong>Oral Presentation</strong> at <strong>DASFAA 2026 (CCF-B)</strong>." },
-    { year: 2026, month: 3, content: "Advanced to the finals of the <strong>ASC Student Supercomputer Challenge</strong>." },
+    { year: 2026, month: 2, content: "Advanced to the finals of the <strong>ASC Student Supercomputer Challenge</strong>." },
     { year: 2026, month: 1, content: "Two papers (ScatterFusion, AWGFormer) accepted for <strong>Poster Presentation</strong> at <strong>ICASSP 2026 (CCF-B)</strong>." },
     { year: 2026, month: 1, content: "Honored to be awarded the <strong>Xiaomi Scholarship</strong>" },
     { year: 2025, month: 9, content: "Honored to be awarded the <strong>Shanghai Scholarship</strong> in recognition of a fruitful year, which included ranking <strong>#1 in GPA</strong>, publishing four first-author papers in <strong>CCF-C</strong> ranked conferences, and winning multiple national programming contest awards." },
@@ -29,7 +31,7 @@ window.ABOUT_DATA = {
       year: 2026,
       month: 8,
       badges: [{ type: "ccf", text: "CCF-A" }, { type: "paper", text: "Full Paper" }, { type: "author", text: "Sole Author" }],
-      links: [],
+      links: [{ type: "github", url: "https://github.com/William-Liwei/apcl" }],
       thumbnail: "apcl.png",
       abstract: "Proposed adaptive prototypical contrastive learning for time series clustering.",
       bibtex: `@inproceedings{li2026apcl,
@@ -211,9 +213,10 @@ window.ABOUT_DATA = {
       icon: "review",
       title: "Academic Service",
       items: [
-        { event: "Ain Shams Engineering Journal (IF: 5.9, Q1)", role: "Reviewer" },
-        { event: "International Conference on Artificial Neural Networks (ICANN 2026)", role: "Reviewer" },
-        { event: "AAAI Conference on Artificial Intelligence (AAAI 2026)", role: "Program Committee Member" },
+        { event: "Conference on Neural Information Processing Systems (NeurIPS 2026)", role: "Ethics Reviewer (Invited)" },
+        { event: "Ain Shams Engineering Journal (IF: 5.9, Q1)", role: "Reviewer (Invited)" },
+        { event: "International Conference on Artificial Neural Networks (ICANN 2026)", role: "Reviewer (Invited)" },
+        { event: "AAAI Conference on Artificial Intelligence (AAAI 2026)", role: "Reviewer" },
         { event: "International Conference on Artificial Neural Networks (ICANN 2025)", role: "Reviewer (3 submissions)" }
       ]
     },
