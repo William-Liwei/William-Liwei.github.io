@@ -6,7 +6,7 @@
   <link href="https://weili.space/atom.xml" rel="self"/>
   
   <link href="https://weili.space/"/>
-  <updated>2026-04-05T15:50:43.385Z</updated>
+  <updated>2026-05-31T14:14:46.954Z</updated>
   <id>https://weili.space/</id>
   
   <author>
@@ -15,6 +15,36 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>KDD2026-APCL</title>
+    <link href="https://weili.space/2026/05/31/KDD2026-APCL/"/>
+    <id>https://weili.space/2026/05/31/KDD2026-APCL/</id>
+    <published>2026-05-31T14:11:06.000Z</published>
+    <updated>2026-05-31T14:14:46.954Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="告别盲猜K值！KDD-2026：让AI在时间序列里实现“聚类自由”"><a href="#告别盲猜K值！KDD-2026：让AI在时间序列里实现“聚类自由”" class="headerlink" title="告别盲猜K值！KDD 2026：让AI在时间序列里实现“聚类自由”"></a>告别盲猜K值！KDD 2026：让AI在时间序列里实现“聚类自由”</h1><p>面对如山般的IoT或金融数据，没有标签，最头疼的是什么？</p><p>老板问你：“这些数据能分成几类？”你只能看着屏幕盲猜一个K&#x3D;10。</p><p>猜大了，模型过拟合；猜小了，关键模式被掩盖。这就是时间序列聚类里最经典的困境：</p><p>你需要聚类分配来学习特征，但你又需要高质量特征来找聚类边界。</p><p>最近 <strong>KDD 2026</strong> 上的一篇由上海大学Wei Li团队实现的论文 <strong>APCL（Adaptive Prototypical Contrastive Learning）</strong>直接终结了这种“盲猜K值”的苦日子，实现了真正的“冷启动”盲测。</p><hr><h3 id="1-K值选择困难症？交给MDL去动态“进化”吧"><a href="#1-K值选择困难症？交给MDL去动态“进化”吧" class="headerlink" title="1. K值选择困难症？交给MDL去动态“进化”吧"></a>1. K值选择困难症？交给MDL去动态“进化”吧</h3><p><strong>【The Insight：别再迷信固定分班】</strong></p><p>传统的聚类就像是死板的分班制度，你必须开课前就定死分几个班。</p><p>APCL引入了基于MDL（最小描述长度）的准则，让聚类中心像生物一样动态“进化”。</p><p>它不会盲目拆分，而是通过评估主成分方差方向（Principal Variance Direction）：如果数据在某个方向上表现得极度“困惑”，就分裂；如果两个中心靠得太近，就合并。</p><p><strong>【The Analysis：拒绝偷懒式调参 】</strong></p><p>很多“偷懒”的算法工程师习惯默认设置K&#x3D;64，结果在处理只有6类动作的数据时，特征质量烂得一塌糊涂。</p><p>这种动态进化不仅是调参方便了，更意味着AI具备了处理动态分布偏移（如机器新故障、市场新行情）的“生存本能”。</p><p>特别要提一下PCA：虽然它是处理LSA64这种线性可分数据的“老炮”，但面对复杂的非线性IoT数据时，它表现得就像在用算盘算微积分，完全无力。</p><hr><h3 id="2-告别死板分类，给AI一点“犹豫不决”的退火期"><a href="#2-告别死板分类，给AI一点“犹豫不决”的退火期" class="headerlink" title="2. 告别死板分类，给AI一点“犹豫不决”的退火期"></a>2. 告别死板分类，给AI一点“犹豫不决”的退火期</h3><p><strong>【The Insight：模糊边界才是真实世界】</strong></p><p>真实世界的数据从不是非黑即白的，特别是动作切换的瞬间。</p><p>APCL设计了“Soft-to-Hard Annealing”（从软到硬的退火机制）。</p><p>利用Gumbel-Softmax，模型在早期像个“摇摆不定的选民”，允许样本同时参与多个聚类中心的梯度贡献；随着训练推进（温度降低），再最终收敛到确定分类上。</p><p><strong>【The Analysis：拒绝表演型AI 】</strong></p><p>那些脆弱的（Brittle）传统模型都有“表演型人格”，为了快速收敛强行分类，结果导致错误从初期就开始积累。</p><p>APCL这种“先看整体轮廓、再抓细节特征”的策略，有效避免了早期硬分类导致的“锁死”风险。</p><p>在HAR（人类活动识别）实验中，当那些设错K值的基准模型还在原地打转时，APCL的ARI（调整兰德系数）与传统基准模型相比得到了巨大提升。</p><hr><h3 id="3-双层架构：一眼看穿“大趋势”与“小动作”"><a href="#3-双层架构：一眼看穿“大趋势”与“小动作”" class="headerlink" title="3. 双层架构：一眼看穿“大趋势”与“小动作”"></a>3. 双层架构：一眼看穿“大趋势”与“小动作”</h3><p><strong>【The Insight：让AI拥有“语义理解”力】</strong></p><p>它采用了一种高明的双层原型结构：Coarse（粗粒度），Fine（细粒度）。</p><p>以人体动作为例，系统会先在粗粒度层级区分出“静止”与“运动”。</p><p>然后在细分层级里，通过捕捉微小的传感器方向漂移，精准锁定这到底是“坐下”还是“站立”。</p><p><strong>【The Analysis：不仅是区分，更是理解 】</strong></p><p>这对于自动驾驶或医疗设备太关键了。传统对比学习只会机械地“区分个体”，却不知道为什么两个动作相似。</p><p>APCL的分层逻辑弥补了这个硬伤，它能告诉你：这两个动作之所以被归为一类，是因为它们共享了相同的运动模式。</p><hr><h3 id="4-总结与灵魂拷问"><a href="#4-总结与灵魂拷问" class="headerlink" title="4. 总结与灵魂拷问"></a>4. 总结与灵魂拷问</h3><p>APCL最狠的一点，是它彻底撕掉了“先验知识”这层保护色，让AI在没有任何人类提示的情况下，自己去摸索数据的本质结构。</p><p>在简单的线性数据上，它能稳住不跑偏；在复杂的非线性场景下，它直接降维打击。</p><p>最后留个灵魂拷问：</p><p>如果AI不再需要人类告诉它“这个世界由几部分组成”，甚至能比我们更早发现数据中的新物种，那么未来在数据流水线上，人类留下的价值还剩多少？</p><p>欢迎交流你的看法。</p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h1 id=&quot;告别盲猜K值！KDD-2026：让AI在时间序列里实现“聚类自由”&quot;&gt;&lt;a href=&quot;#告别盲猜K值！KDD-2026：让AI在时间序列里实现“聚类自由”&quot; class=&quot;headerlink&quot; title=&quot;告别盲猜K值！KDD 2026：让AI在时间序列里实</summary>
+      
+    
+    
+    
+    
+    <category term="学术" scheme="https://weili.space/tags/%E5%AD%A6%E6%9C%AF/"/>
+    
+    <category term="论文" scheme="https://weili.space/tags/%E8%AE%BA%E6%96%87/"/>
+    
+    <category term="Time Series" scheme="https://weili.space/tags/Time-Series/"/>
+    
+    <category term="KDD" scheme="https://weili.space/tags/KDD/"/>
+    
+    <category term="CCF-A" scheme="https://weili.space/tags/CCF-A/"/>
+    
+  </entry>
   
   <entry>
     <title>重识时间序列：算法与前沿</title>
@@ -484,25 +514,6 @@
     <category term="知识产权" scheme="https://weili.space/tags/%E7%9F%A5%E8%AF%86%E4%BA%A7%E6%9D%83/"/>
     
     <category term="软件著作权" scheme="https://weili.space/tags/%E8%BD%AF%E4%BB%B6%E8%91%97%E4%BD%9C%E6%9D%83/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>上大计院2025认可竞赛列表</title>
-    <link href="https://weili.space/2025/03/05/%E4%B8%8A%E5%A4%A7%E8%AE%A1%E9%99%A22025%E8%AE%A4%E5%8F%AF%E7%AB%9E%E8%B5%9B%E5%88%97%E8%A1%A8/"/>
-    <id>https://weili.space/2025/03/05/%E4%B8%8A%E5%A4%A7%E8%AE%A1%E9%99%A22025%E8%AE%A4%E5%8F%AF%E7%AB%9E%E8%B5%9B%E5%88%97%E8%A1%A8/</id>
-    <published>2025-03-05T12:22:23.000Z</published>
-    <updated>2025-03-27T11:08:20.694Z</updated>
-    
-    <content type="html"><![CDATA[<h2 id="2025-届计算机工程与科学学院推荐免试攻读硕士学位研究生学科竞赛认定目录"><a href="#2025-届计算机工程与科学学院推荐免试攻读硕士学位研究生学科竞赛认定目录" class="headerlink" title="2025 届计算机工程与科学学院推荐免试攻读硕士学位研究生学科竞赛认定目录"></a>2025 届计算机工程与科学学院推荐免试攻读硕士学位研究生学科竞赛认定目录</h2><p>本文内容截止至2025.3.27，如官网更新，请以官网信息为准。</p><span id="more"></span><table><thead><tr><th align="left">序号</th><th align="left">竞赛或活动名称</th><th align="left">认定级别</th><th align="left">类别与分值</th></tr></thead><tbody><tr><td align="left">1</td><td align="left">中国国际“互联网+”大学生创新创业大赛</td><td align="left">国际级</td><td align="left">A（100、100、100）</td></tr><tr><td align="left">2</td><td align="left">“挑战杯”全国大学生课外学术科技作品竞赛</td><td align="left">国家级</td><td align="left">A（100、100、100）</td></tr><tr><td align="left">3</td><td align="left">“挑战杯”中国大学生创业计划大赛</td><td align="left">国家级</td><td align="left">A（100、100、100）</td></tr><tr><td align="left">4</td><td align="left">ICPC 国际大学生程序设计竞赛</td><td align="left">国际级</td><td align="left">A（100、80、60）</td></tr><tr><td align="left">5</td><td align="left">世界大学生超级计算机竞赛</td><td align="left">国家级</td><td align="left">A（100、80、60）</td></tr><tr><td align="left">6</td><td align="left">全国大学生信息安全竞赛</td><td align="left">国家级</td><td align="left">A（100、80、60）</td></tr><tr><td align="left">7</td><td align="left">全国大学生系统能力大赛</td><td align="left">国家级</td><td align="left">A（100、80、60）</td></tr><tr><td align="left">8</td><td align="left">全国大学生智能汽车竞赛</td><td align="left">国家级</td><td align="left">A（100、80、60）</td></tr><tr><td align="left">9</td><td align="left">“蓝桥杯”全国软件和信息技术专业人才大赛</td><td align="left">国家级</td><td align="left">B（80、60、40）</td></tr><tr><td align="left">10</td><td align="left">百度之星·程序设计大赛</td><td align="left">国家级</td><td align="left">B（80、60、40）</td></tr><tr><td align="left">11</td><td align="left">全国高校密码数学挑战赛</td><td align="left">国家级</td><td align="left">B（80、60、40）</td></tr><tr><td align="left">12</td><td align="left">全国大学生信息安全与对抗技术竞赛</td><td align="left">国家级</td><td align="left">B（80、60、40）</td></tr><tr><td align="left">13</td><td align="left">CCF-CCSP 大学生计算机系统与程序设计竞赛</td><td align="left">国家级</td><td align="left">B（80、60、40）</td></tr><tr><td align="left">14</td><td align="left">全国大学生机器人大赛 RoboMaster、RoboCon</td><td align="left">国家级</td><td align="left">B（80、60、40）</td></tr><tr><td align="left">15</td><td align="left">中国大学生计算机设计大赛</td><td align="left">国家级</td><td align="left">B（80、60、40）</td></tr><tr><td align="left">16</td><td align="left">CCPC 中国大学生程序设计竞赛</td><td align="left">国家级</td><td align="left">B（80、60、40）</td></tr><tr><td align="left">17</td><td align="left">CCPC 中国大学生程序设计竞赛女生赛</td><td align="left">国家级</td><td align="left">B（80、60、40）</td></tr><tr><td align="left">18</td><td align="left">中国高校计算机大赛-大数据挑战赛、团体程序设计天梯赛、移动应用创新赛、网络技术挑战赛</td><td align="left">国家级</td><td align="left">B（80、60、40）</td></tr><tr><td align="left">19</td><td align="left">全国大学生嵌入式芯片与系统设计竞赛</td><td align="left">国家级</td><td align="left">B（80、60、40）</td></tr><tr><td align="left">20</td><td align="left">中国机器人大赛暨 RoboCup 机器人世界杯中国赛</td><td align="left">国家级</td><td align="left">B（80、60、40）</td></tr><tr><td align="left">21</td><td align="left">“中国软件杯”大学生软件设计大赛</td><td align="left">国家级</td><td align="left">C（60、40、20）</td></tr><tr><td align="left">22</td><td align="left">中国机器人技能大赛</td><td align="left">国家级</td><td align="left">C（60、40、20）</td></tr><tr><td align="left">23</td><td align="left">全国大学生 FPGA 创新设计竞赛</td><td align="left">国家级</td><td align="left">C（60、40、20）</td></tr><tr><td align="left">24</td><td align="left">全国大学生数学竞赛</td><td align="left">国家级</td><td align="left">C（60、40、20）</td></tr><tr><td align="left">25</td><td align="left">全国大学生软件创新大赛</td><td align="left">国家级</td><td align="left">C（60、40、20）</td></tr><tr><td align="left">26</td><td align="left">全国大学生数学建模竞赛</td><td align="left">国家级</td><td align="left">C（60、40、20）</td></tr><tr><td align="left">27</td><td align="left">美国大学生数学建模竞赛</td><td align="left">国家级</td><td align="left">C（60、40、20）</td></tr><tr><td align="left">28</td><td align="left">全国大学生数字媒体科技作品及创意竞赛</td><td align="left">国家级</td><td align="left">C（60、40、20）</td></tr><tr><td align="left">29</td><td align="left">全国大学生电子设计竞赛</td><td align="left">国家级</td><td align="left">C（60、40、20）</td></tr><tr><td align="left">30</td><td align="left">“工行杯”全国大学生金融科技创新大赛</td><td align="left">国家级</td><td align="left">C（60、40、20）</td></tr><tr><td align="left">31</td><td align="left">全球校园人工智能算法精英大赛</td><td align="left">国家级</td><td align="left">C（60、40、20）</td></tr><tr><td align="left">32</td><td align="left">中国高校计算机大赛-微信小程序应用开发赛</td><td align="left">国家级</td><td align="left">C（60、40、20）</td></tr><tr><td align="left">33</td><td align="left">中国大学生服务外包创新创业大赛</td><td align="left">国家级</td><td align="left">C（60、40、20）</td></tr></tbody></table><h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><ol><li>表中分值由学院教学委员会审定。上述以外的竞赛项目，如涉及项目类别认定，报送学院教学委员会审核。</li><li>随着时间推移和竞赛项目的发展变化，学院教学委员会将对项目进行微调。</li><li>竞赛项目类别如涉及较大争议，由学院教学委员会审议，所有解释权学院教学委员会。</li><li>与计算机专业有关的学科类竞赛国际级（最高奖）&#x2F; 国家级（最高奖）分别按表计算；只取前三个等级奖项。</li><li>团体参赛项目只取前五位主要成员，由指导老师提供主要成员名单。</li></ol>]]></content>
-    
-    
-    <summary type="html">&lt;h2 id=&quot;2025-届计算机工程与科学学院推荐免试攻读硕士学位研究生学科竞赛认定目录&quot;&gt;&lt;a href=&quot;#2025-届计算机工程与科学学院推荐免试攻读硕士学位研究生学科竞赛认定目录&quot; class=&quot;headerlink&quot; title=&quot;2025 届计算机工程与科学学院推荐免试攻读硕士学位研究生学科竞赛认定目录&quot;&gt;&lt;/a&gt;2025 届计算机工程与科学学院推荐免试攻读硕士学位研究生学科竞赛认定目录&lt;/h2&gt;&lt;p&gt;本文内容截止至2025.3.27，如官网更新，请以官网信息为准。&lt;/p&gt;</summary>
-    
-    
-    
-    
-    <category term="竞赛" scheme="https://weili.space/tags/%E7%AB%9E%E8%B5%9B/"/>
     
   </entry>
   

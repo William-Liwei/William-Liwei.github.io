@@ -8,16 +8,25 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="https://weili.space">
-  <title>Tag: 保研 | William-Liwei&#39;s blog</title>
+  <title>KDD2026-APCL | William-Liwei&#39;s blog</title>
   <meta name="generator" content="hexo-theme-yilia-plus">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   
-  <meta property="og:type" content="website">
-<meta property="og:title" content="William-Liwei&#39;s blog">
-<meta property="og:url" content="https://weili.space/tags/%E4%BF%9D%E7%A0%94/">
+  <meta name="description" content="告别盲猜K值！KDD 2026：让AI在时间序列里实现“聚类自由”面对如山般的IoT或金融数据，没有标签，最头疼的是什么？ 老板问你：“这些数据能分成几类？”你只能看着屏幕盲猜一个K&#x3D;10。 猜大了，模型过拟合；猜小了，关键模式被掩盖。这就是时间序列聚类里最经典的困境： 你需要聚类分配来学习特征，但你又需要高质量特征来找聚类边界。 最近 KDD 2026 上的一篇由上海大学Wei Li团">
+<meta property="og:type" content="article">
+<meta property="og:title" content="KDD2026-APCL">
+<meta property="og:url" content="https://weili.space/2026/05/31/KDD2026-APCL/">
 <meta property="og:site_name" content="William-Liwei&#39;s blog">
+<meta property="og:description" content="告别盲猜K值！KDD 2026：让AI在时间序列里实现“聚类自由”面对如山般的IoT或金融数据，没有标签，最头疼的是什么？ 老板问你：“这些数据能分成几类？”你只能看着屏幕盲猜一个K&#x3D;10。 猜大了，模型过拟合；猜小了，关键模式被掩盖。这就是时间序列聚类里最经典的困境： 你需要聚类分配来学习特征，但你又需要高质量特征来找聚类边界。 最近 KDD 2026 上的一篇由上海大学Wei Li团">
 <meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-05-31T14:11:06.000Z">
+<meta property="article:modified_time" content="2026-05-31T14:14:46.954Z">
 <meta property="article:author" content="Wei Li">
+<meta property="article:tag" content="学术">
+<meta property="article:tag" content="论文">
+<meta property="article:tag" content="Time Series">
+<meta property="article:tag" content="KDD">
+<meta property="article:tag" content="CCF-A">
 <meta name="twitter:card" content="summary">
   
     <link rel="alternative" href="/atom.xml" title="William-Liwei&#39;s blog" type="application/atom+xml">
@@ -244,65 +253,290 @@
               class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-KDD2026-APCL" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2025" class="archive-year">2025</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	
-<a href="/2025/04/06/2025%E4%B8%8A%E5%A4%A7%E8%AE%A1%E9%99%A2%E6%8E%A8%E5%85%8D%E8%A7%84%E5%88%99/" class="archive-article-date">
-        <time datetime="2025-04-06T11:44:49.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2025-04-06</time>
-</a>
-
-        </div>
-    	 
+      <header class="article-header">
   
-    <h1 itemprop="name">
-	
-	  <a class="archive-article-title" href="/2025/04/06/2025%E4%B8%8A%E5%A4%A7%E8%AE%A1%E9%99%A2%E6%8E%A8%E5%85%8D%E8%A7%84%E5%88%99/" target="_blank">2025上大计院推免规则</a>
   
+    <h1 class="article-title" itemprop="name">
+      KDD2026-APCL
     </h1>
   
 
 
-        <div class="article-info info-on-right">
+  
+  
+<a href="/2026/05/31/KDD2026-APCL/" class="archive-article-date">
+        <time datetime="2026-05-31T14:11:06.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2026-05-31</time>
+</a>
+
+  
+  
+    
+<div style="margin-top:10px;">
+  <span class="post-time">
+    <span class="post-meta-item-icon">
+      <!-- fonts.scss -->
+      <!-- 百度字体平台:http://fontstore.baidu.com/static/editor/index.html -->
+      <i class="icon-statistics"></i>
+      <span class="post-meta-item-text"> 字数统计:</span>
+      <span class="post-count">1.1k字</span>
+    </span>
+  </span>
+
+  <span class="post-time">
+    &nbsp; | &nbsp;
+    <span class="post-meta-item-icon">
+      <i class="icon-book icon"></i>
+      <span class="post-meta-item-text"> 阅读时长≈</span>
+      <span class="post-count">3分</span>
+    </span>
+  </span>
+</div>
+
+
+  
+  </header>
+  
+  <div class="article-entry" itemprop="articleBody">
+    
+    <h1 id="告别盲猜K值！KDD-2026：让AI在时间序列里实现“聚类自由”"><a href="#告别盲猜K值！KDD-2026：让AI在时间序列里实现“聚类自由”" class="headerlink" title="告别盲猜K值！KDD 2026：让AI在时间序列里实现“聚类自由”"></a>告别盲猜K值！KDD 2026：让AI在时间序列里实现“聚类自由”</h1><p>面对如山般的IoT或金融数据，没有标签，最头疼的是什么？</p>
+<p>老板问你：“这些数据能分成几类？”你只能看着屏幕盲猜一个K&#x3D;10。</p>
+<p>猜大了，模型过拟合；猜小了，关键模式被掩盖。这就是时间序列聚类里最经典的困境：</p>
+<p>你需要聚类分配来学习特征，但你又需要高质量特征来找聚类边界。</p>
+<p>最近 <strong>KDD 2026</strong> 上的一篇由上海大学Wei Li团队实现的论文 <strong>APCL（Adaptive Prototypical Contrastive Learning）</strong>直接终结了这种“盲猜K值”的苦日子，实现了真正的“冷启动”盲测。</p>
+<hr>
+<h3 id="1-K值选择困难症？交给MDL去动态“进化”吧"><a href="#1-K值选择困难症？交给MDL去动态“进化”吧" class="headerlink" title="1. K值选择困难症？交给MDL去动态“进化”吧"></a>1. K值选择困难症？交给MDL去动态“进化”吧</h3><p><strong>【The Insight：别再迷信固定分班】</strong></p>
+<p>传统的聚类就像是死板的分班制度，你必须开课前就定死分几个班。</p>
+<p>APCL引入了基于MDL（最小描述长度）的准则，让聚类中心像生物一样动态“进化”。</p>
+<p>它不会盲目拆分，而是通过评估主成分方差方向（Principal Variance Direction）：如果数据在某个方向上表现得极度“困惑”，就分裂；如果两个中心靠得太近，就合并。</p>
+<p><strong>【The Analysis：拒绝偷懒式调参 】</strong></p>
+<p>很多“偷懒”的算法工程师习惯默认设置K&#x3D;64，结果在处理只有6类动作的数据时，特征质量烂得一塌糊涂。</p>
+<p>这种动态进化不仅是调参方便了，更意味着AI具备了处理动态分布偏移（如机器新故障、市场新行情）的“生存本能”。</p>
+<p>特别要提一下PCA：虽然它是处理LSA64这种线性可分数据的“老炮”，但面对复杂的非线性IoT数据时，它表现得就像在用算盘算微积分，完全无力。</p>
+<hr>
+<h3 id="2-告别死板分类，给AI一点“犹豫不决”的退火期"><a href="#2-告别死板分类，给AI一点“犹豫不决”的退火期" class="headerlink" title="2. 告别死板分类，给AI一点“犹豫不决”的退火期"></a>2. 告别死板分类，给AI一点“犹豫不决”的退火期</h3><p><strong>【The Insight：模糊边界才是真实世界】</strong></p>
+<p>真实世界的数据从不是非黑即白的，特别是动作切换的瞬间。</p>
+<p>APCL设计了“Soft-to-Hard Annealing”（从软到硬的退火机制）。</p>
+<p>利用Gumbel-Softmax，模型在早期像个“摇摆不定的选民”，允许样本同时参与多个聚类中心的梯度贡献；随着训练推进（温度降低），再最终收敛到确定分类上。</p>
+<p><strong>【The Analysis：拒绝表演型AI 】</strong></p>
+<p>那些脆弱的（Brittle）传统模型都有“表演型人格”，为了快速收敛强行分类，结果导致错误从初期就开始积累。</p>
+<p>APCL这种“先看整体轮廓、再抓细节特征”的策略，有效避免了早期硬分类导致的“锁死”风险。</p>
+<p>在HAR（人类活动识别）实验中，当那些设错K值的基准模型还在原地打转时，APCL的ARI（调整兰德系数）与传统基准模型相比得到了巨大提升。</p>
+<hr>
+<h3 id="3-双层架构：一眼看穿“大趋势”与“小动作”"><a href="#3-双层架构：一眼看穿“大趋势”与“小动作”" class="headerlink" title="3. 双层架构：一眼看穿“大趋势”与“小动作”"></a>3. 双层架构：一眼看穿“大趋势”与“小动作”</h3><p><strong>【The Insight：让AI拥有“语义理解”力】</strong></p>
+<p>它采用了一种高明的双层原型结构：Coarse（粗粒度），Fine（细粒度）。</p>
+<p>以人体动作为例，系统会先在粗粒度层级区分出“静止”与“运动”。</p>
+<p>然后在细分层级里，通过捕捉微小的传感器方向漂移，精准锁定这到底是“坐下”还是“站立”。</p>
+<p><strong>【The Analysis：不仅是区分，更是理解 】</strong></p>
+<p>这对于自动驾驶或医疗设备太关键了。传统对比学习只会机械地“区分个体”，却不知道为什么两个动作相似。</p>
+<p>APCL的分层逻辑弥补了这个硬伤，它能告诉你：这两个动作之所以被归为一类，是因为它们共享了相同的运动模式。</p>
+<hr>
+<h3 id="4-总结与灵魂拷问"><a href="#4-总结与灵魂拷问" class="headerlink" title="4. 总结与灵魂拷问"></a>4. 总结与灵魂拷问</h3><p>APCL最狠的一点，是它彻底撕掉了“先验知识”这层保护色，让AI在没有任何人类提示的情况下，自己去摸索数据的本质结构。</p>
+<p>在简单的线性数据上，它能稳住不跑偏；在复杂的非线性场景下，它直接降维打击。</p>
+<p>最后留个灵魂拷问：</p>
+<p>如果AI不再需要人类告诉它“这个世界由几部分组成”，甚至能比我们更早发现数据中的新物种，那么未来在数据流水线上，人类留下的价值还剩多少？</p>
+<p>欢迎交流你的看法。</p>
+
+    
+
+    
+    <div class="page-reward">
+      <a href="javascript:void(0);" class="page-reward-btn tooltip-top" target="_self">
+        <div class="tooltip tooltip-east">
+          <span class="tooltip-item">
+            赏
+          </span>
+          <span class="tooltip-content">
+            <span class="tooltip-text">
+              <span class="tooltip-inner">
+                <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i
+                    class="icon icon-quo-right"></i></p>
+                <div class="reward-box">
+                  
+                  
+                  <div class="reward-box-item">
+                    <img class="reward-img" src="/img/wechat.jpg">
+                    <span class="reward-type">微信</span>
+                  </div>
+                  
+                </div>
+              </span>
+            </span>
+          </span>
+        </div>
+      </a>
+    </div>
+    
+
+    
+    <div class="declare"> 
+      <ul class="post-copyright">
+        <li>
+          <strong>本文作者：</strong>
+          Wei Li
+        </li>
+        <li>
+          <strong>本文链接：</strong>
+          <a href="https://weili.space/2026/05/31/KDD2026-APCL/" title="KDD2026-APCL" target="_blank">https://weili.space/2026/05/31/KDD2026-APCL/</a>
+        </li>
+        
+        <li>
+          <strong>版权声明： </strong>
           
+          © William-Liwei. All rights reserved.
+        </li>
+        
+      </ul>
+    </div>
+    
+
+  </div>
+  <div class="article-info article-info-index">
+    
+    
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">保研</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">学术</a>
+        		</li>
+      		 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">论文</a>
+        		</li>
+      		 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">Time Series</a>
+        		</li>
+      		 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">KDD</a>
+        		</li>
+      		 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color1">CCF-A</a>
         		</li>
       		
 		</ul>
 	</div>
 
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-  
-    </div></section>
-  
+    
 
     
+
+    
+    
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <!-- <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a> -->
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
+        </div>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+     <!-- <img src="//pan.baidu.com/share/qrcode?url=https://weili.space/2026/05/31/KDD2026-APCL/" alt="微信分享二维码"> -->
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
+
+    
+    <div class="clearfix"></div>
+  </div>
+  </div>
+</article>
+
+
+<nav id="article-nav">
+  
+  
+    <a href="/2026/04/05/%E9%87%8D%E8%AF%86%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%EF%BC%9A%E7%AE%97%E6%B3%95%E4%B8%8E%E5%89%8D%E6%B2%BF/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">重识时间序列：算法与前沿</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+        <div class="toc-container tooltip-left">
+            <i class="icon-font icon-category"></i>
+            <div class="tooltip tooltip-east">
+                <span class="tooltip-item">
+                </span>
+                <span class="tooltip-content">
+                    <div class="toc-article">
+                    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%91%8A%E5%88%AB%E7%9B%B2%E7%8C%9CK%E5%80%BC%EF%BC%81KDD-2026%EF%BC%9A%E8%AE%A9AI%E5%9C%A8%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%E9%87%8C%E5%AE%9E%E7%8E%B0%E2%80%9C%E8%81%9A%E7%B1%BB%E8%87%AA%E7%94%B1%E2%80%9D"><span class="toc-number">1.</span> <span class="toc-text">告别盲猜K值！KDD 2026：让AI在时间序列里实现“聚类自由”</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-K%E5%80%BC%E9%80%89%E6%8B%A9%E5%9B%B0%E9%9A%BE%E7%97%87%EF%BC%9F%E4%BA%A4%E7%BB%99MDL%E5%8E%BB%E5%8A%A8%E6%80%81%E2%80%9C%E8%BF%9B%E5%8C%96%E2%80%9D%E5%90%A7"><span class="toc-number">1.0.1.</span> <span class="toc-text">1. K值选择困难症？交给MDL去动态“进化”吧</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%91%8A%E5%88%AB%E6%AD%BB%E6%9D%BF%E5%88%86%E7%B1%BB%EF%BC%8C%E7%BB%99AI%E4%B8%80%E7%82%B9%E2%80%9C%E7%8A%B9%E8%B1%AB%E4%B8%8D%E5%86%B3%E2%80%9D%E7%9A%84%E9%80%80%E7%81%AB%E6%9C%9F"><span class="toc-number">1.0.2.</span> <span class="toc-text">2. 告别死板分类，给AI一点“犹豫不决”的退火期</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%8F%8C%E5%B1%82%E6%9E%B6%E6%9E%84%EF%BC%9A%E4%B8%80%E7%9C%BC%E7%9C%8B%E7%A9%BF%E2%80%9C%E5%A4%A7%E8%B6%8B%E5%8A%BF%E2%80%9D%E4%B8%8E%E2%80%9C%E5%B0%8F%E5%8A%A8%E4%BD%9C%E2%80%9D"><span class="toc-number">1.0.3.</span> <span class="toc-text">3. 双层架构：一眼看穿“大趋势”与“小动作”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E6%80%BB%E7%BB%93%E4%B8%8E%E7%81%B5%E9%AD%82%E6%8B%B7%E9%97%AE"><span class="toc-number">1.0.4.</span> <span class="toc-text">4. 总结与灵魂拷问</span></a></li></ol></li></ol></li></ol>
+                    </div>
+                </span>
+            </div>
+        </div>
+        
+    </div>
+</aside>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
           </div>
@@ -360,9 +594,9 @@
 	var yiliaConfig = {
 		mathjax: true,
 		isHome: false,
-		isPost: false,
+		isPost: true,
 		isArchive: false,
-		isTag: true,
+		isTag: false,
 		isCategory: false,
 		open_in_new: true,
 		toc_hide_index: true,
