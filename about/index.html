@@ -240,13 +240,13 @@
         <h1>Wei Li (William)</h1>
         <p class="affiliation">Undergraduate Researcher, Shanghai University</p>
         <p>
-          I am a Computer Science undergraduate at Shanghai University, with a strong research interest in Deep Learning, Artificial Intelligence, and Time Series Analysis. My current research centers on architecting and implementing deep learning models to extract insights from complex time series data.
+          I am a Computer Science undergraduate at Shanghai University, working on time series representation learning, generation, forecasting, and clustering. My research focuses on building reliable and efficient models for complex temporal data, with particular interest in uncertainty modeling, prototype learning, flow-based generative modeling, and multi-scale sequence architectures.
         </p>
         <p>
-          My objective is to develop Time Series models that are not only highly accurate but also computationally efficient and interpretable, addressing fundamental challenges in long-term tasks. This focus has led to multiple sole-author and first-author publications accepted at international conferences.
+          My recent work includes a sole-author full paper accepted to KDD 2026, a sole-author full paper accepted to DASFAA 2026, and multiple first-author or sole-author publications at ICASSP, ICANN, and ICIC. I also collaborate with researchers from Shanghai Jiao Tong University, Nanyang Technological University, the Chinese Academy of Sciences, and A*STAR on generative modeling for time series.
         </p>
         <p>
-          I am currently actively looking for Master's or Ph.D. opportunities. If our research interests align, please feel free to contact me via email!
+          I am actively looking for Master's or Ph.D. opportunities in machine learning and time series analysis. If our research interests align, please feel free to contact me via email.
         </p>
 
         <div class="social-links" id="social-links-container"></div>
@@ -532,18 +532,17 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   
   renderEngine.init();
-  // 新增：极简版获取实时引用数（完美融合进图标链接）
+  // Optional citation-count enhancement. The page works normally if the API is unavailable.
   fetch('/api/scholar')
     .then(res => res.json())
     .then(data => {
       const el = document.getElementById('citation-count');
-      // 只有拿到数字才显示，比如 "(1234 Citations)"
       if (el && data.citations !== 'N/A') {
         el.textContent = ` (${data.citations} Citations)`; 
       }
     })
     .catch(() => {
-      // 失败了就什么都不做，保持原本的 "Google Scholar" 纯净状态
+      // Keep the plain Google Scholar link when citation data cannot be fetched.
   });
 });
 </script>
