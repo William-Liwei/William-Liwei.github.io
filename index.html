@@ -378,10 +378,10 @@
       font-weight: 700;
     }
 
-    .node.apcl { left: -18px; top: 31%; }
-    .node.sdflow { right: -18px; top: 22%; }
-    .node.cluster { right: 18px; bottom: 15%; }
-    .node.energy { left: 18px; bottom: 13%; }
+    .node:nth-child(1) { left: -18px; top: 31%; }
+    .node:nth-child(2) { right: -18px; top: 22%; }
+    .node:nth-child(3) { right: 18px; bottom: 15%; }
+    .node:nth-child(4) { left: 18px; bottom: 13%; }
 
     .center-chip {
       position: absolute;
@@ -398,8 +398,8 @@
       box-shadow: 0 24px 55px rgba(19, 34, 56, 0.24);
       text-align: center;
       font-family: var(--header-font);
-      font-size: 2.5rem;
-      line-height: 0.9;
+      font-size: 2rem;
+      line-height: 0.86;
     }
 
     .center-chip span {
@@ -803,10 +803,10 @@
         font-size: 0.76rem;
       }
 
-      .node.apcl { left: -8px; top: 26%; }
-      .node.sdflow { right: -8px; top: 28%; }
-      .node.cluster { right: -4px; bottom: 18%; }
-      .node.energy { left: -4px; bottom: 17%; }
+      .node:nth-child(1) { left: -8px; top: 26%; }
+      .node:nth-child(2) { right: -8px; top: 28%; }
+      .node:nth-child(3) { right: -4px; bottom: 18%; }
+      .node:nth-child(4) { left: -4px; bottom: 17%; }
 
       .center-chip {
         width: 128px;
@@ -853,7 +853,6 @@
       <a href="/about/">About</a>
       <a href="/about/publications/">Publications</a>
       <a href="/blog/">Blog</a>
-      <a href="/ccf/">CCF Online</a>
     </div>
   </nav>
 
@@ -864,7 +863,7 @@
           <div class="eyebrow reveal">Shanghai University / Time Series</div>
           <h1 class="reveal delay-1">
             Wei Li
-            <span class="hero-title-accent">Research & Build</span>
+            <span class="hero-title-accent">Time-Series Research</span>
           </h1>
           <p class="hero-copy reveal delay-2" id="hero-copy">
             Loading research profile from the academic data source.
@@ -877,16 +876,16 @@
           <div class="hero-notes reveal delay-4" id="hero-notes" aria-label="Research highlights"></div>
         </div>
 
-        <aside class="research-panel reveal delay-2" aria-label="Research map">
+        <aside class="research-panel reveal delay-2" aria-label="Research focus">
           <div class="portrait-card">
             <img src="/img/Yu.png" alt="Wei Li avatar">
             <div>
               <strong>Wei Li</strong>
-              <span id="profile-tagline">Time Series / Machine Learning / Independent Builder</span>
+              <span id="profile-tagline">Time Series / Machine Learning / Research Systems</span>
             </div>
           </div>
           <div class="orbit" id="research-orbit" aria-hidden="true"></div>
-          <div class="center-chip" aria-hidden="true">TS<span>Research Map</span></div>
+          <div class="center-chip" aria-hidden="true">Time<br>Series<span>Research Focus</span></div>
           <div class="panel-footer" id="panel-stats"></div>
         </aside>
       </div>
@@ -899,7 +898,7 @@
             <div class="section-kicker">Featured Work</div>
             <h2>Selected papers at a glance.</h2>
           </div>
-          <p class="section-lede">The homepage keeps only the four most representative papers; the complete publication list lives in the academic homepage.</p>
+          <p class="section-lede">A compact view of representative work. The full publication archive includes abstracts, BibTeX, figures, and project links.</p>
         </div>
 
         <div class="work-grid" id="featured-work-grid"></div>
@@ -911,18 +910,18 @@
         <div class="section-head reveal">
           <div>
             <div class="section-kicker">Site Portal</div>
-            <h2>Find the right entrance.</h2>
+            <h2>Explore the work.</h2>
           </div>
-          <p class="section-lede">The root page is now a concise personal front page. Writing, tools, and academic details are separated into dedicated spaces.</p>
+          <p class="section-lede">Direct links to the academic profile, publication archive, research notes, and useful tools.</p>
         </div>
 
         <div class="portal-grid">
           <div class="portal-main reveal delay-1">
             <div>
-              <h3>Research profile first, blog second.</h3>
-              <p>The old root blog index is preserved at <strong>/blog/</strong>. The main domain now gives visitors a faster summary of who I am, what I work on, and where to go next.</p>
+              <h3>Academic profile and research notes.</h3>
+              <p>This site collects my research profile, selected publications, technical writing, and small tools for computer science research.</p>
             </div>
-            <a class="btn" href="/blog/">Open the blog archive</a>
+            <a class="btn" href="/about/">View academic profile</a>
           </div>
 
           <div class="portal-list">
@@ -936,14 +935,14 @@
               <span><strong>Publication Archive</strong><span>Complete paper list with abstracts, BibTeX, images, and links.</span></span>
               <span class="portal-arrow">&rarr;</span>
             </a>
-            <a class="reveal delay-3" href="/tais/">
-              <span class="portal-icon">T</span>
-              <span><strong>TAIS</strong><span>Time-series AI system and research-facing tools.</span></span>
-              <span class="portal-arrow">&rarr;</span>
-            </a>
-            <a class="reveal delay-4" href="/ccf/">
+            <a class="reveal delay-3" href="/ccf/">
               <span class="portal-icon">C</span>
               <span><strong>CCF Online</strong><span>Conference and journal lookup platform for CS researchers.</span></span>
+              <span class="portal-arrow">&rarr;</span>
+            </a>
+            <a class="reveal delay-4" href="/blog/">
+              <span class="portal-icon">B</span>
+              <span><strong>Research Notes</strong><span>Blog posts, technical notes, and project records.</span></span>
               <span class="portal-arrow">&rarr;</span>
             </a>
           </div>
@@ -1013,11 +1012,12 @@
       const topicLabel = (publication) => {
         const title = publication.title || '';
         const lower = title.toLowerCase();
-        if (lower.includes('clustering')) return 'Clustering';
-        if (lower.includes('generation') || lower.includes('flow')) return 'Generation';
+        if (lower.includes('generation') || lower.includes('flow')) return 'Generative Modeling';
         if (lower.includes('forecast')) return 'Forecasting';
+        if (lower.includes('clustering')) return 'Clustering';
+        if (lower.includes('uncertainty')) return 'Uncertainty Modeling';
         if (lower.includes('energy')) return 'Energy AI';
-        return 'Time Series';
+        return 'Representation Learning';
       };
 
       const shortTitle = (publication) => {
@@ -1041,15 +1041,14 @@
         const heroCopy = $('#hero-copy');
         const tagline = $('#profile-tagline');
         const topics = [...new Set(publications.map(topicLabel))].slice(0, 3);
-        const topTitles = publications.slice(0, 3).map((publication) => publication.title);
         if (tagline && topics.length) {
-          tagline.textContent = `${topics.join(' / ')} / Independent Builder`;
+          tagline.textContent = `${topics.join(' / ')} / Research Systems`;
         }
         if (heroCopy) {
-          if (topTitles.length) {
-            heroCopy.innerHTML = `Undergraduate researcher with featured work across <strong>${topics.map(escapeHTML).join(', ') || 'time-series research'}</strong>. Current highlighted papers include ${topTitles.map(escapeHTML).join(', ')}.`;
+          if (topics.length) {
+            heroCopy.innerHTML = `Undergraduate researcher at Shanghai University focusing on <strong>${topics.map(escapeHTML).join(', ')}</strong> for time-series data. My work studies representation learning, uncertainty-aware forecasting, clustering, and generative modeling.`;
           } else {
-            heroCopy.textContent = 'Undergraduate researcher working on time-series research and AI systems.';
+            heroCopy.textContent = 'Undergraduate researcher at Shanghai University working on time-series machine learning and AI research systems.';
           }
         }
       };
@@ -1071,9 +1070,8 @@
         const orbit = $('#research-orbit');
         const stats = $('#panel-stats');
         if (orbit) {
-          const classes = ['apcl', 'sdflow', 'cluster', 'energy'];
           orbit.innerHTML = publications.slice(0, 4).map((publication, index) => `
-            <div class="node ${classes[index] || 'energy'}">${escapeHTML(shortTitle(publication))}<small>${escapeHTML(topicLabel(publication))}</small></div>
+            <div class="node">${escapeHTML(topicLabel(publication))}<small>${escapeHTML(venueLabel(publication) || shortTitle(publication))}</small></div>
           `).join('');
         }
 
@@ -1087,7 +1085,7 @@
           stats.innerHTML = [
             { value: ccfA, label: 'CCF-A Papers' },
             { value: ccfB, label: 'CCF-B Papers' },
-            { value: service, label: 'Service Roles' }
+            { value: service, label: 'Academic Service' }
           ].map((item) => `
             <div class="panel-stat">
               <strong>${escapeHTML(item.value)}</strong>
