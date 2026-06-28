@@ -28,6 +28,7 @@ window.ABOUT_DATA = {
   publications: [
     {
       title: "Adaptive Prototypical Contrastive Learning for Time Series Clustering",
+      display_order: 1,
       authors: "<strong>Li, W.</strong>",
       venue: "ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD 2026)",
       year: 2026,
@@ -35,7 +36,7 @@ window.ABOUT_DATA = {
       badges: [{ type: "ccf", text: "CCF-A" }, { type: "paper", text: "Full Paper" }, { type: "poster", text: "Poster" }, { type: "author", text: "Sole Author" }],
       links: [{ type: "github", url: "https://github.com/William-Liwei/apcl" }],
       thumbnail: "apcl.png",
-      abstract: "Proposed adaptive prototypical contrastive learning for time series clustering.",
+      abstract: "This work proposes adaptive prototypical contrastive learning for time series clustering with unknown cluster counts.",
       bibtex: `@inproceedings{li2026apcl,
   title={Adaptive Prototypical Contrastive Learning for Time Series Clustering},
   author={Li, Wei},
@@ -45,6 +46,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "SDFlow: Similarity-Driven Flow Matching for Time Series Generation",
+      display_order: 2,
       authors: "<strong>Li, W.*</strong>, Feng, S.*, Wu, P., Gao, X., Wu, M., & Zhao, P.",
       venue: "arXiv preprint",
       year: 2026,
@@ -52,7 +54,7 @@ window.ABOUT_DATA = {
       badges: [{ type: "status", text: "Under Reviewing" }, { type: "author", text: "First Author" }],
       links: [{ type: "arxiv", url: "https://arxiv.org/abs/2605.05736" }],
       thumbnail: "sdflow.png",
-      abstract: "Collaborated with SJTU, NTU, Chinese Academy of Sciences, and A*STAR.",
+      abstract: "This work develops similarity-driven flow matching for time series generation through collaboration with SJTU, NTU, CAS, and A*STAR.",
       bibtex: `@misc{li2026sdflow,
       title={SDFlow: Similarity-Driven Flow Matching for Time Series Generation}, 
       author={Li, Wei and Feng, Shibo and Wu, Pengcheng and Gao, Xingyu and Wu, Min and Zhao, Peilin},
@@ -65,6 +67,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "ClusterPatchTST: Uncertainty-Aware Causal Clustering for Heterogeneous Time Series Forecasting",
+      display_order: 3,
       authors: "<strong>Li, W.</strong>",
       venue: "International Conference on Database Systems for Advanced Applications (DASFAA 2026)",
       year: 2026,
@@ -72,7 +75,7 @@ window.ABOUT_DATA = {
       badges: [{ type: "ccf", text: "CCF-B" }, { type: "paper", text: "Full Paper" }, { type: "author", text: "Sole Author" }],
       links: [],
       thumbnail: "clusterpatchtst.png",
-      abstract: "Proposed ClusterPatchTST; implemented uncertainty modeling in heterogeneous time series.",
+      abstract: "This work proposes uncertainty-aware causal clustering for heterogeneous time series forecasting.",
       bibtex: `@inproceedings{li2026clusterpatchtst,
   title={ClusterPatchTST: Uncertainty-Aware Causal Clustering for Heterogeneous Time Series Forecasting},
   author={Li, Wei},
@@ -82,6 +85,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "ScatterFusion: A Hierarchical Scattering Transform Framework for Enhanced Time Series Forecasting",
+      display_order: 5,
       authors: "<strong>Li, W.</strong>",
       venue: "IEEE International Conference on Acoustics, Speech, and Signal Processing (ICASSP 2026)",
       year: 2026,
@@ -89,7 +93,7 @@ window.ABOUT_DATA = {
       badges: [{ type: "ccf", text: "CCF-B" }, { type: "author", text: "Sole Author" }],
       links: [],
       thumbnail: "scatterfusion.png",
-      abstract: "Time series forecasting faces challenges in capturing multi-scale temporal patterns while maintaining computational efficiency. This paper introduces ScatterFusion, a novel framework that leverages hierarchical scattering transforms for enhanced time series prediction. Our approach integrates wavelet scattering networks with adaptive feature fusion mechanisms to extract robust multi-scale representations.",
+      abstract: "This work introduces a hierarchical scattering transform framework for multi-scale time series forecasting.",
       bibtex: `@inproceedings{li2026scatterfusion,
   title={ScatterFusion: A Hierarchical Scattering Transform Framework for Enhanced Time Series Forecasting},
   author={Li, Wei},
@@ -99,6 +103,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "AWGFormer: Adaptive Wavelet-Guided Transformer for Multi-resolution Time Series Forecasting",
+      display_order: 6,
       authors: "<strong>Li, W.</strong>",
       venue: "IEEE International Conference on Acoustics, Speech, and Signal Processing (ICASSP 2026)",
       year: 2026,
@@ -106,7 +111,7 @@ window.ABOUT_DATA = {
       badges: [{ type: "ccf", text: "CCF-B" }, { type: "author", text: "Sole Author" }],
       links: [],
       thumbnail: "awgformer.png",
-      abstract: "Time series forecasting requires capturing patterns across multiple temporal scales while maintaining computational efficiency. This paper introduces AWGformer, a novel architecture that integrates adaptive wavelet decomposition with cross-scale attention mechanisms for enhanced multi-variate time series prediction.",
+      abstract: "This work integrates adaptive wavelet guidance with Transformers for multi-resolution time series forecasting.",
       bibtex: `@inproceedings{li2026awgformer,
   title={AWGFormer: Adaptive Wavelet-Guided Transformer for Multi-resolution Time Series Forecasting},
   author={Li, Wei},
@@ -116,6 +121,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting",
+      display_order: 8,
       authors: "<strong>Li, W.</strong>",
       venue: "International Conference on Artificial Neural Networks (ICANN 2025)",
       year: 2025,
@@ -123,7 +129,7 @@ window.ABOUT_DATA = {
       badges: [{ type: "ccf", text: "CCF-C" }, { type: "oral", text: "Oral" }, { type: "author", text: "Sole Author" }],
       links: [],
       thumbnail: "timeflowdiffuser.png",
-      abstract: "Diffusion models have shown promise in generative tasks but remain underexplored for time series forecasting. We introduce TimeFlowDiffuser, a hierarchical diffusion framework with adaptive context sampling for multi-horizon forecasting. The model achieves strong performance on benchmark datasets.",
+      abstract: "This work introduces a hierarchical diffusion framework with adaptive context sampling for multi-horizon time series forecasting.",
       bibtex: `@inproceedings{li2025timeflowdiffuser,
   title={TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-horizon Time Series Forecasting},
   author={Li, Wei},
@@ -135,6 +141,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction",
+      display_order: 7,
       authors: "<strong>Li, W.</strong>",
       venue: "International Conference on Artificial Neural Networks (ICANN 2025)",
       year: 2025,
@@ -142,7 +149,7 @@ window.ABOUT_DATA = {
       badges: [{ type: "ccf", text: "CCF-C" }, { type: "oral", text: "Oral" }, { type: "author", text: "Sole Author" }],
       links: [{ type: "github", url: "https://github.com/William-Liwei/SWIFT" }],
       thumbnail: "swift.png",
-      abstract: "We introduce SWIFT, a novel architecture that synergistically combines selective state space models (Mamba) with multi-scale dilated convolutions for enhanced time series forecasting. Experiments demonstrate SWIFT outperforms common methods, achieving 6.5% average improvement in MSE.",
+      abstract: "This work combines state-space modeling and wavelet-based multi-scale modules for enhanced time series forecasting.",
       bibtex: `@inproceedings{li2025swift,
   title={SWIFT: State-Space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction},
   author={Li, Wei},
@@ -154,6 +161,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting",
+      display_order: 4,
       authors: "<strong>Li, W.</strong>, Wang, Z., Sun, Q., Gao, Q., & Yang, F.",
       venue: "International Conference on Intelligent Computing (ICIC 2025)",
       year: 2025,
@@ -161,7 +169,7 @@ window.ABOUT_DATA = {
       badges: [{ type: "ccf", text: "CCF-C" }, { type: "oral", text: "Oral" }, { type: "author", text: "First Author" }],
       links: [{ type: "github", url: "https://github.com/William-Liwei/EnergyPatchTST" }],
       thumbnail: "energypatchtst.png",
-      abstract: "Energy forecasting is critical for grid management and renewable integration. We propose EnergyPatchTST, a multi-scale transformer architecture with uncertainty estimation tailored for energy time series. The model demonstrates strong performance on energy forecasting benchmarks.",
+      abstract: "This work develops a multi-scale Transformer with uncertainty estimation for energy forecasting.",
       bibtex: `@inproceedings{li2025energypatchtst,
   title={EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting},
   author={Li, Wei and Wang, Zixin and Sun, Qizheng and Gao, Qixiang and Yang, Fenglei},
@@ -173,6 +181,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "LWSpace: Multi-Scale State Space Framework for Time Series Forecasting",
+      display_order: 9,
       authors: "<strong>Li, W.</strong>",
       venue: "International Conference on Intelligent Computing (ICIC 2025)",
       year: 2025,
@@ -180,7 +189,7 @@ window.ABOUT_DATA = {
       badges: [{ type: "ccf", text: "CCF-C" }, { type: "oral", text: "Oral" }, { type: "author", text: "Sole Author" }],
       links: [],
       thumbnail: "lwspace.png",
-      abstract: "State space models offer efficient sequence modeling but lack multi-scale capabilities. We introduce LWSpace, a multi-scale state space framework that captures temporal patterns at different resolutions. The model achieves competitive performance with improved efficiency.",
+      abstract: "This work proposes a multi-scale state space framework for efficient time series forecasting.",
       bibtex: `@inproceedings{li2025lwspace,
   title={LWSpace: A Multi-scale State Space Framework for Enhanced Time Series Forecasting},
   author={Li, Wei},
@@ -192,6 +201,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics",
+      display_order: 10,
       authors: "<strong>Li, W.</strong>, Wang, Z., Gao, Q., & Yang, F.",
       venue: "International Conference on Applied Mathematics, Modelling and Intelligent Computing (CAMMIC 2025)",
       year: 2025,
@@ -199,7 +209,7 @@ window.ABOUT_DATA = {
       badges: [{ type: "ccf", text: "EI Index" }, { type: "poster", text: "Poster" }, { type: "author", text: "First Author" }],
       links: [],
       thumbnail: "olympic.png",
-      abstract: "Olympic medal prediction requires modeling complex socio-economic and athletic factors. We propose an adaptive triple-fusion approach combining AAC models with ARIMA and state space dynamics for accurate medal forecasting.",
+      abstract: "This work combines adaptive triple-fusion modeling with ARIMA-state space dynamics for Olympic medal prediction.",
       bibtex: `@inproceedings{li2025olympic,
   title={Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics},
   author={Li, Wei and Wang, Zixin and Gao, Qixiang and Yang, Fenglei},
@@ -276,6 +286,7 @@ window.ABOUT_DATA = {
       type: "Research",
       title: "Probabilistic Time Series Modeling",
       affiliation: "Remote Research | Advisors: <strong>Prof. Peilin Zhao</strong> (SJTU) & <strong>Dr. Shibo Feng</strong> (NTU)",
+      display_order: 1,
       year_start: 2025,
       month_start: 10,
       year_end: null,
@@ -283,6 +294,20 @@ window.ABOUT_DATA = {
       details: [
         "Investigating probabilistic frameworks for time series forecasting to model uncertainty.",
         "Exploring advanced generative models, including Variational Autoencoders (VAEs) and methodologies like Low-Rank Adaptation (LoRA) for efficient model fine-tuning."
+      ]
+    },
+    {
+      type: "Research",
+      title: "Multimodal Time Series Alignment with Large Language Models",
+      affiliation: "Research Study | Advisors: <strong>Prof. Xiaofan Li</strong> (Nanjing University) & <strong>Dr. Jingge Xiao</strong> (Leibniz University Hannover)",
+      display_order: 2,
+      year_start: 2026,
+      month_start: 2,
+      year_end: null,
+      month_end: null,
+      details: [
+        "Investigating multimodal time series alignment in the context of large language models.",
+        "Exploring representation alignment between temporal signals and multimodal reasoning frameworks."
       ]
     },
     {

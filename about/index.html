@@ -323,7 +323,7 @@
 
 const CONFIG = {
     INITIAL_NEWS_COUNT: 4,
-    INITIAL_PUBS_COUNT: 3,
+    INITIAL_PUBS_COUNT: 4,
     INITIAL_PROJECTS_COUNT: 4, 
     INITIAL_ENGAGEMENT_COUNT: 2, 
     INITIAL_HONORS_COUNT: 5,
@@ -387,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
       container.innerHTML = '';
       const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       DATA.experience
-        .sort((a, b) => (b.year_start - a.year_start) || (b.month_start - a.month_start))
+        .sort((a, b) => (a.display_order ?? 999) - (b.display_order ?? 999) || (b.year_start - a.year_start) || (b.month_start - a.month_start))
         .forEach(exp => {
           const div = document.createElement('div');
           div.className = 'experience-item';
@@ -422,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const container = document.getElementById('publications-container');
       container.innerHTML = '';
       DATA.publications
-        .sort((a, b) => b.year - a.year || (b.month - a.month) || a.venue.localeCompare(b.venue))
+        .sort((a, b) => (a.display_order ?? 999) - (b.display_order ?? 999) || b.year - a.year || (b.month - a.month) || a.venue.localeCompare(b.venue))
         .forEach((p) => {
           const div = document.createElement('div');
           div.className = 'pub-item';

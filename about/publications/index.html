@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   [...DATA.publications]
-    .sort((a, b) => b.year - a.year || (b.month - a.month) || a.venue.localeCompare(b.venue))
+    .sort((a, b) => (a.display_order ?? 999) - (b.display_order ?? 999) || b.year - a.year || (b.month - a.month) || a.venue.localeCompare(b.venue))
     .forEach((p, index) => {
       const card = document.createElement('div');
       card.className = 'pub-card';
