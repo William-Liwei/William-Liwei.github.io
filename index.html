@@ -336,7 +336,7 @@
       position: absolute;
       left: 50%;
       top: 53%;
-      width: min(440px, 84%);
+      width: min(410px, 78%);
       aspect-ratio: 1;
       transform: translate(-50%, -50%);
       border: 1px dashed rgba(19, 34, 56, 0.18);
@@ -360,13 +360,13 @@
 
     .node {
       position: absolute;
-      width: 138px;
-      padding: 0.72rem 0.8rem;
+      width: clamp(118px, 30%, 132px);
+      padding: 0.68rem 0.72rem;
       border: 1px solid rgba(19, 34, 56, 0.13);
       border-radius: 18px;
       background: rgba(255, 255, 255, 0.82);
       box-shadow: 0 14px 34px rgba(31, 25, 16, 0.1);
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       font-weight: 800;
       line-height: 1.28;
     }
@@ -378,19 +378,23 @@
       font-weight: 700;
     }
 
-    .node:nth-child(1) { left: -18px; top: 31%; }
-    .node:nth-child(2) { right: -18px; top: 22%; }
-    .node:nth-child(3) { right: 18px; bottom: 15%; }
-    .node:nth-child(4) { left: 18px; bottom: 13%; }
+    .node:nth-child(1) { left: -8px; top: 31%; }
+    .node:nth-child(2) { right: -8px; top: 22%; }
+    .node:nth-child(3) { right: 12px; bottom: 15%; }
+    .node:nth-child(4) { left: 12px; bottom: 13%; }
 
     .center-chip {
       position: absolute;
       left: 50%;
       top: 54%;
-      width: 150px;
-      height: 150px;
-      display: grid;
-      place-items: center;
+      width: clamp(162px, 35%, 184px);
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 1.25rem;
       transform: translate(-50%, -50%);
       border-radius: 50%;
       color: #fff;
@@ -398,19 +402,23 @@
       box-shadow: 0 24px 55px rgba(19, 34, 56, 0.24);
       text-align: center;
       font-family: var(--header-font);
-      font-size: 2rem;
-      line-height: 0.86;
+      font-size: clamp(1.78rem, 4.4vw, 2.08rem);
+      line-height: 0.88;
+      overflow: hidden;
     }
 
     .center-chip span {
       display: block;
-      margin-top: 0.35rem;
+      max-width: 7.2rem;
+      margin-top: 0;
       color: rgba(255, 255, 255, 0.78);
       font-family: var(--body-font);
-      font-size: 0.72rem;
+      font-size: 0.64rem;
       font-weight: 800;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.1em;
+      line-height: 1.18;
       text-transform: uppercase;
+      overflow-wrap: anywhere;
     }
 
     .panel-footer {
@@ -809,9 +817,9 @@
       .node:nth-child(4) { left: -4px; bottom: 17%; }
 
       .center-chip {
-        width: 128px;
-        height: 128px;
-        font-size: 2rem;
+        width: clamp(148px, 40vw, 164px);
+        height: auto;
+        font-size: clamp(1.65rem, 8vw, 1.9rem);
       }
 
       .panel-footer {
