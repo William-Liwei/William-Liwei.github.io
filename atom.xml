@@ -6,7 +6,7 @@
   <link href="https://weili.space/atom.xml" rel="self"/>
   
   <link href="https://weili.space/"/>
-  <updated>2026-05-31T14:16:45.305Z</updated>
+  <updated>2026-08-09T09:42:26.449Z</updated>
   <id>https://weili.space/</id>
   
   <author>
@@ -15,6 +15,41 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>APCL 上线 Kudos Research Showcase</title>
+    <link href="https://weili.space/2026/08/09/APCL-Kudos-Research-Showcase/"/>
+    <id>https://weili.space/2026/08/09/APCL-Kudos-Research-Showcase/</id>
+    <published>2026-08-09T09:39:38.000Z</published>
+    <updated>2026-08-09T09:42:26.449Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="APCL-上线-Kudos-Research-Showcase"><a href="#APCL-上线-Kudos-Research-Showcase" class="headerlink" title="APCL 上线 Kudos Research Showcase"></a>APCL 上线 Kudos Research Showcase</h1><p>我的 KDD 2026 论文 <strong>Adaptive Prototypical Contrastive Learning for Time Series Clustering</strong> 目前已经上线 <strong>Kudos Research Showcase</strong>。这篇推文整理了论文的基本信息、面向大众读者的解释，以及我对这项工作的简要理解。</p><ul><li><strong>Paper:</strong> Adaptive Prototypical Contrastive Learning for Time Series Clustering</li><li><strong>Author:</strong> Wei Li</li><li><strong>Publisher:</strong> ACM (Association for Computing Machinery)</li><li><strong>Publication Date:</strong> August 2026</li><li><strong>DOI:</strong> <a href="https://dl.acm.org/doi/10.1145/3770855.3817773">10.1145&#x2F;3770855.3817773</a></li><li><strong>Kudos Showcase:</strong> <a href="https://link.growkudos.com/1f16medmg3k">https://link.growkudos.com/1f16medmg3k</a></li></ul><span id="more"></span><h2 id="中文版"><a href="#中文版" class="headerlink" title="中文版"></a>中文版</h2><h3 id="通俗标题-Plain-Language-Title"><a href="#通俗标题-Plain-Language-Title" class="headerlink" title="通俗标题 &#x2F; Plain Language Title"></a>通俗标题 &#x2F; Plain Language Title</h3><p>Automatically finding structural latent clusters in complex time-series data.</p><h3 id="这篇工作在做什么？"><a href="#这篇工作在做什么？" class="headerlink" title="这篇工作在做什么？"></a>这篇工作在做什么？</h3><p>这篇论文提出了 <strong>Adaptive Prototypical Contrastive Learning (APCL)</strong>，一个面向时间序列聚类的自适应原型对比学习框架。</p><p>传统深度聚类方法通常需要提前指定聚类数 K。但在真实场景中，例如 IoT 监测、移动健康、金融市场分析等任务里，数据往往持续产生、标签稀缺，而且潜在类别数通常并不明确。APCL 希望减少这种对人工先验的依赖，让模型在学习时间序列表征的同时，自动发现数据背后的聚类结构。</p><p>具体来说，APCL 通过动态的 split-and-merge 机制调整原型结构，并利用几何一致性准则判断何时拆分或合并聚类中心。这样，模型不再只是围绕一个预设的 K 去优化，而是让数据自身的结构引导聚类数和表征空间共同演化。</p><h3 id="为什么重要？"><a href="#为什么重要？" class="headerlink" title="为什么重要？"></a>为什么重要？</h3><p>无监督时间序列聚类的核心困难在于：好的聚类需要好的表征，而好的表征又依赖可靠的聚类分配。这是一个典型的 chicken-and-egg problem。</p><p>APCL 试图打破这个循环。它把聚类数选择从“经验猜测”转化为一个由数据几何结构驱动的优化过程，使模型在缺少标签和先验类别数的情况下，仍然能够进行稳健的结构发现。</p><p>从应用角度看，这类方法对动态、复杂、非线性的时间序列数据尤其重要。现实系统中经常会出现新的状态、新的行为模式或分布变化，如果模型严重依赖固定类别数，就很容易在环境变化时失效。APCL 的意义在于，它提供了一种更自适应的无监督学习机制。</p><h3 id="一点个人视角"><a href="#一点个人视角" class="headerlink" title="一点个人视角"></a>一点个人视角</h3><p>在之前的时间序列预测、生成和多尺度建模工作基础上，我越来越感受到：对于大量未标注时间序列数据而言，仅仅提升预测精度还不够，如何发现数据中的潜在结构同样关键。</p><p>APCL 的出发点就是希望让模型不再被固定的聚类数束缚，而是根据数据的自然几何形态逐步形成更合适的原型层级。对我来说，这也是从时间序列表征学习走向更一般的无监督结构发现的一次尝试。</p><p>欢迎访问 <a href="https://link.growkudos.com/1f16medmg3k">Kudos Research Showcase</a> 或 <a href="https://dl.acm.org/doi/10.1145/3770855.3817773">ACM Digital Library</a> 查看更多信息。</p><hr><h2 id="English-Version"><a href="#English-Version" class="headerlink" title="English Version"></a>English Version</h2><p>My KDD 2026 paper <strong>Adaptive Prototypical Contrastive Learning for Time Series Clustering</strong> is now included on the <strong>Kudos Research Showcase</strong>.</p><h3 id="Plain-Language-Title"><a href="#Plain-Language-Title" class="headerlink" title="Plain Language Title"></a>Plain Language Title</h3><p>Automatically finding structural latent clusters in complex time-series data.</p><h3 id="What-Is-It-About"><a href="#What-Is-It-About" class="headerlink" title="What Is It About?"></a>What Is It About?</h3><p>This research introduces <strong>Adaptive Prototypical Contrastive Learning (APCL)</strong>, a self-evolving AI framework designed to analyze and group time-series data without human supervision.</p><p>Standard deep clustering methods typically require a pre-defined cluster count, which is rarely known in real-world data streams. APCL eliminates this guesswork by simultaneously learning data representations and discovering the underlying cluster structure. It uses a dynamic split-and-merge process guided by a geometric consistency criterion to automatically identify the optimal number of clusters, achieving strong performance across diverse domains.</p><h3 id="Why-Is-It-Important"><a href="#Why-Is-It-Important" class="headerlink" title="Why Is It Important?"></a>Why Is It Important?</h3><p>In practical domains such as IoT monitoring, mobile health, and financial market analysis, massive amounts of time-series data are generated, but they often lack labeled categories.</p><p>Existing models can be brittle when confronted with dynamic distribution shifts or when the assumed number of categories is misspecified. APCL addresses this problem by providing a domain-agnostic mechanism that adapts to new states without manual retraining. This enables robust unsupervised learning on both simple and complex non-linear datasets, showing that high-quality structure discovery is possible even when prior knowledge is absent.</p><h3 id="Perspective"><a href="#Perspective" class="headerlink" title="Perspective"></a>Perspective</h3><p>Building upon my previous work in time-series forecasting, generation, and multi-scale modeling, I became increasingly convinced that unsupervised structure discovery is a vital next step for unlabeled temporal data.</p><p>Deep clustering often faces a chicken-and-egg problem: accurate assignments require high-quality representations, while learning cluster-aware representations also requires reliable assignments. Developing APCL was an attempt to break this loop. It transforms cluster selection from arbitrary guesswork into an optimization problem, allowing the natural geometry of data to guide the discovery of hierarchical patterns.</p><p>For more details, please visit the <a href="https://link.growkudos.com/1f16medmg3k">Kudos Research Showcase</a> or the <a href="https://dl.acm.org/doi/10.1145/3770855.3817773">ACM Digital Library</a>.</p>]]></content>
+    
+    
+    <summary type="html">&lt;h1 id=&quot;APCL-上线-Kudos-Research-Showcase&quot;&gt;&lt;a href=&quot;#APCL-上线-Kudos-Research-Showcase&quot; class=&quot;headerlink&quot; title=&quot;APCL 上线 Kudos Research Showcase&quot;&gt;&lt;/a&gt;APCL 上线 Kudos Research Showcase&lt;/h1&gt;&lt;p&gt;我的 KDD 2026 论文 &lt;strong&gt;Adaptive Prototypical Contrastive Learning for Time Series Clustering&lt;/strong&gt; 目前已经上线 &lt;strong&gt;Kudos Research Showcase&lt;/strong&gt;。这篇推文整理了论文的基本信息、面向大众读者的解释，以及我对这项工作的简要理解。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Paper:&lt;/strong&gt; Adaptive Prototypical Contrastive Learning for Time Series Clustering&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Author:&lt;/strong&gt; Wei Li&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Publisher:&lt;/strong&gt; ACM (Association for Computing Machinery)&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Publication Date:&lt;/strong&gt; August 2026&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;DOI:&lt;/strong&gt; &lt;a href=&quot;https://dl.acm.org/doi/10.1145/3770855.3817773&quot;&gt;10.1145&amp;#x2F;3770855.3817773&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Kudos Showcase:&lt;/strong&gt; &lt;a href=&quot;https://link.growkudos.com/1f16medmg3k&quot;&gt;https://link.growkudos.com/1f16medmg3k&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</summary>
+    
+    
+    
+    
+    <category term="学术" scheme="https://weili.space/tags/%E5%AD%A6%E6%9C%AF/"/>
+    
+    <category term="论文" scheme="https://weili.space/tags/%E8%AE%BA%E6%96%87/"/>
+    
+    <category term="Time Series" scheme="https://weili.space/tags/Time-Series/"/>
+    
+    <category term="KDD" scheme="https://weili.space/tags/KDD/"/>
+    
+    <category term="APCL" scheme="https://weili.space/tags/APCL/"/>
+    
+  </entry>
   
   <entry>
     <title>KDD2026-APCL</title>
@@ -492,29 +527,6 @@
     
     
     <category term="深度学习" scheme="https://weili.space/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>软著申请记录</title>
-    <link href="https://weili.space/2025/03/27/%E8%BD%AF%E8%91%97%E7%94%B3%E8%AF%B7%E8%AE%B0%E5%BD%95/"/>
-    <id>https://weili.space/2025/03/27/%E8%BD%AF%E8%91%97%E7%94%B3%E8%AF%B7%E8%AE%B0%E5%BD%95/</id>
-    <published>2025-03-27T10:46:26.000Z</published>
-    <updated>2025-03-27T10:51:14.094Z</updated>
-    
-    <content type="html"><![CDATA[<h1 id="从零到软著——我的软件著作权申请全记录"><a href="#从零到软著——我的软件著作权申请全记录" class="headerlink" title="从零到软著——我的软件著作权申请全记录"></a>从零到软著——我的软件著作权申请全记录</h1><h2 id="💡-为什么需要申请软著？"><a href="#💡-为什么需要申请软著？" class="headerlink" title="💡 为什么需要申请软著？"></a>💡 为什么需要申请软著？</h2><p>最近我开发的「课程翼选通」智能选课系统成功获得软件著作权，这个基于Playwright+Flask的选课系统从立项到上线历时半年。申请软著不仅是知识产权的保护，更是对团队成果的官方认证，后续申报项目&#x2F;评奖都有重要作用。</p> <span id="more"></span><h2 id="📦-准备材料清单（关键！）"><a href="#📦-准备材料清单（关键！）" class="headerlink" title="📦 准备材料清单（关键！）"></a>📦 准备材料清单（关键！）</h2><ol><li><strong>源代码</strong></li></ol><ul><li>需提交前30页+后30页（共60页）</li><li>每页50行代码，必须包含核心模块</li><li>我们提交了智能选课<code>rob_course()</code>和用户管理<code>User类</code>的核心逻辑</li></ul><ol start="2"><li><strong>用户手册</strong></li></ol><ul><li>包含系统架构图（2.1前端&#x2F;2.2后端架构）</li><li>核心功能说明（4.1智能选课&#x2F;4.3评论AI分析）</li><li>安装部署指南（3.2系统安装）</li></ul><ol start="3"><li><strong>合作开发协议</strong></li></ol><ul><li>明确约定三方著作权归属（一.2条款）</li><li>包含违约责任（四条款）和变更机制（五条款）</li><li>需所有开发者签字扫描</li></ul><h2 id="🚀-申请流程时间线"><a href="#🚀-申请流程时间线" class="headerlink" title="🚀 申请流程时间线"></a>🚀 申请流程时间线</h2><ol><li><strong>中国版权保护中心官网注册</strong>（1工作日）</li></ol><ul><li>需准备身份证正反面扫描件</li></ul><ol start="2"><li><strong>在线填报</strong>（3小时）</li></ol><ul><li>重点填写：<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">-</span> 软件全称：《课程翼选通智能选课与学生互动社区系统V1.0》</span><br><span class="line"><span class="bullet">-</span> 开发方式</span><br><span class="line"><span class="bullet">-</span> 编程语言</span><br><span class="line"><span class="bullet">-</span> 硬件环境</span><br></pre></td></tr></table></figure></li></ul><ol><li><strong>材料上传</strong>（特别注意！）</li></ol><ul><li>源代码文档需添加页眉：软件名称+版本号</li><li>用户手册需含目录（文档2的1-6章结构）</li><li>所有PDF文件必须&lt;100MB</li></ul><ol><li><strong>受理审查</strong>（约30工作日）</li></ol><ul><li>期间可能收到补正通知</li></ul><h2 id="💡-经验总结"><a href="#💡-经验总结" class="headerlink" title="💡 经验总结"></a>💡 经验总结</h2><ol><li><strong>版本号一致性</strong><br>所有材料中的<code>V1.0</code>必须完全统一，连标点都不能有差异</li><li><strong>手册编写技巧</strong><br>技术文档中穿插功能截图（如图3&#x2F;图4选课流程），我们补充了：</li></ol><figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">img</span> <span class="attr">src</span>=<span class="string">&quot;/static/images/result-popup.png&quot;</span> </span></span><br><span class="line"><span class="tag">     <span class="attr">alt</span>=<span class="string">&quot;选课成功弹窗提示&quot;</span>&gt;</span></span><br></pre></td></tr></table></figure><h2 id="📮-常见问题"><a href="#📮-常见问题" class="headerlink" title="📮 常见问题"></a>📮 常见问题</h2><p>Q：需要实物邮寄吗？<br>A：2023年起全面电子化，但需保留纸质材料5年备查</p><p>Q：学生可以申请吗？<br>A：完全可以！我们团队就是在校生，用身份证即可申请</p><p>目前已下证，整个流程从准备到拿证约2个月。建议开发者都在项目初期就做好文档规范化管理，这会大幅减少后期申请工作量。完整材料模板可联系我获取~</p>]]></content>
-    
-    
-    <summary type="html">&lt;h1 id=&quot;从零到软著——我的软件著作权申请全记录&quot;&gt;&lt;a href=&quot;#从零到软著——我的软件著作权申请全记录&quot; class=&quot;headerlink&quot; title=&quot;从零到软著——我的软件著作权申请全记录&quot;&gt;&lt;/a&gt;从零到软著——我的软件著作权申请全记录&lt;/h1&gt;&lt;h2 id=&quot;💡-为什么需要申请软著？&quot;&gt;&lt;a href=&quot;#💡-为什么需要申请软著？&quot; class=&quot;headerlink&quot; title=&quot;💡 为什么需要申请软著？&quot;&gt;&lt;/a&gt;💡 为什么需要申请软著？&lt;/h2&gt;&lt;p&gt;最近我开发的「课程翼选通」智能选课系统成功获得软件著作权，这个基于Playwright+Flask的选课系统从立项到上线历时半年。申请软著不仅是知识产权的保护，更是对团队成果的官方认证，后续申报项目&amp;#x2F;评奖都有重要作用。&lt;/p&gt;</summary>
-    
-    
-    
-    
-    <category term="软件开发" scheme="https://weili.space/tags/%E8%BD%AF%E4%BB%B6%E5%BC%80%E5%8F%91/"/>
-    
-    <category term="知识产权" scheme="https://weili.space/tags/%E7%9F%A5%E8%AF%86%E4%BA%A7%E6%9D%83/"/>
-    
-    <category term="软件著作权" scheme="https://weili.space/tags/%E8%BD%AF%E4%BB%B6%E8%91%97%E4%BD%9C%E6%9D%83/"/>
     
   </entry>
   
