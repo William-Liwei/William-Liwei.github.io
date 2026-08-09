@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wei Li | Time-Series Research</title>
-  <meta name="description" content="Wei Li (William) — undergraduate researcher at Shanghai University working on time-series representation learning, forecasting, generation, and clustering. Author of papers at KDD, DASFAA, ICASSP, ICANN, and ICIC.">
+  <title>Wei Li | Machine Learning Research</title>
+  <meta name="description" content="Wei Li (William) - undergraduate researcher at Shanghai University working on machine learning for structured and temporal data, including representation learning, forecasting, generation, and clustering. Author of papers at KDD, DASFAA, ICASSP, ICANN, and ICIC.">
   <meta name="author" content="Wei Li">
-  <meta name="keywords" content="Wei Li, William Li, Shanghai University, time series, machine learning, forecasting, representation learning, generative modeling, KDD, DASFAA, ICASSP, deep learning">
+  <meta name="keywords" content="Wei Li, William Li, Shanghai University, machine learning, data mining, forecasting, representation learning, generative modeling, KDD, DASFAA, ICASSP, deep learning">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#f6f0e6" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0f151d" media="(prefers-color-scheme: dark)">
   <link rel="canonical" href="https://weili.space/">
   <link rel="icon" href="/img/Yu.ico">
-  <link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="/atom.xml">
+  <link rel="alternate" type="application/atom+xml" title="Wei Li - Blog" href="/atom.xml">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="Wei Li | Time-Series Research">
-  <meta property="og:description" content="Undergraduate researcher working on time-series representation, forecasting, generation, and AI research systems.">
+  <meta property="og:title" content="Wei Li | Machine Learning Research">
+  <meta property="og:description" content="Undergraduate researcher working on machine learning, representation learning, forecasting, generative modeling, and AI research systems.">
   <meta property="og:type" content="profile">
   <meta property="og:url" content="https://weili.space/">
   <meta property="og:image" content="https://weili.space/img/Yu.png">
@@ -26,8 +26,8 @@
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Wei Li | Time-Series Research">
-  <meta name="twitter:description" content="Undergraduate researcher working on time-series representation, forecasting, generation, and AI research systems.">
+  <meta name="twitter:title" content="Wei Li | Machine Learning Research">
+  <meta name="twitter:description" content="Undergraduate researcher working on machine learning, representation learning, forecasting, generative modeling, and AI research systems.">
   <meta name="twitter:image" content="https://weili.space/img/Yu.png">
 
   <!-- Display + body fonts. The hero declared Cormorant Garamond but never loaded it; load it here.
@@ -287,44 +287,6 @@
       background: var(--gold);
     }
 
-    .availability {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.55rem;
-      margin: 0 0 1.4rem;
-      padding: 0.45rem 0.95rem 0.45rem 0.8rem;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: var(--card);
-      color: var(--ink-soft);
-      font-size: 0.82rem;
-      font-weight: 700;
-      letter-spacing: 0.01em;
-    }
-
-    .availability .pulse {
-      position: relative;
-      display: inline-block;
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: var(--sage);
-    }
-
-    .availability .pulse::after {
-      content: "";
-      position: absolute;
-      inset: -4px;
-      border-radius: 50%;
-      border: 1px solid var(--sage);
-      animation: pulseRing 2.4s ease-out infinite;
-    }
-
-    @keyframes pulseRing {
-      0% { transform: scale(0.6); opacity: 0.9; }
-      100% { transform: scale(1.8); opacity: 0; }
-    }
-
     h1 {
       max-width: 790px;
       margin: 0;
@@ -337,8 +299,7 @@
 
     .hero-title-accent {
       display: block;
-      color: transparent;
-      -webkit-text-stroke: 1.2px var(--ink-soft);
+      color: var(--clay);
     }
 
     .hero-copy {
@@ -426,7 +387,10 @@
 
     .research-panel {
       position: relative;
-      min-height: 620px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 34px;
       border: 1px solid var(--line);
       border-radius: 38px;
       background:
@@ -434,7 +398,6 @@
         radial-gradient(circle at 74% 17%, rgba(180, 138, 58, 0.18), transparent 17rem);
       box-shadow: var(--shadow);
       overflow: hidden;
-      animation: panelFloat 7s ease-in-out infinite;
     }
 
     .research-panel::before {
@@ -447,10 +410,7 @@
     }
 
     .portrait-card {
-      position: absolute;
-      top: 34px;
-      left: 34px;
-      right: 34px;
+      position: relative;
       display: flex;
       align-items: center;
       gap: 1rem;
@@ -484,115 +444,148 @@
       font-size: 0.9rem;
     }
 
-    .orbit {
-      position: absolute;
-      left: 50%;
-      top: 53%;
-      width: min(410px, 78%);
-      aspect-ratio: 1;
-      transform: translate(-50%, -50%);
-      border: 1px dashed var(--line);
-      border-radius: 50%;
-      animation: orbitSpin 48s linear infinite;
-    }
-
-    .orbit::before,
-    .orbit::after {
-      content: "";
-      position: absolute;
-      inset: 16%;
-      border: 1px dashed var(--line);
-      border-radius: 50%;
-    }
-
-    .orbit::after {
-      inset: 32%;
-      background: radial-gradient(circle, rgba(180, 138, 58, 0.22), transparent 58%);
-      border-style: solid;
-    }
-
-    @keyframes orbitSpin {
-      to { transform: translate(-50%, -50%) rotate(360deg); }
-    }
-
-    .node {
-      position: absolute;
-      width: clamp(118px, 30%, 132px);
-      padding: 0.68rem 0.72rem;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      background: var(--card-strong);
-      box-shadow: 0 14px 34px rgba(31, 25, 16, 0.1);
-      font-size: 0.78rem;
-      font-weight: 800;
-      line-height: 1.28;
-      animation: nodeCounter 48s linear infinite;
-    }
-
-    @keyframes nodeCounter {
-      to { transform: rotate(-360deg); }
-    }
-
-    .node small {
-      display: block;
-      margin-top: 0.32rem;
-      color: var(--muted);
-      font-weight: 700;
-    }
-
-    .node:nth-child(1) { left: -8px; top: 31%; }
-    .node:nth-child(2) { right: -8px; top: 22%; }
-    .node:nth-child(3) { right: 12px; bottom: 15%; }
-    .node:nth-child(4) { left: 12px; bottom: 13%; }
-
-    .center-chip {
-      position: absolute;
-      left: 50%;
-      top: 54%;
-      width: clamp(162px, 35%, 184px);
-      aspect-ratio: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 1.25rem;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-      color: var(--chip-text);
-      background: var(--chip-ink);
-      box-shadow: 0 24px 55px rgba(19, 34, 56, 0.24);
-      text-align: center;
-      font-family: var(--header-font);
-      font-size: clamp(1.78rem, 4.4vw, 2.08rem);
-      line-height: 0.88;
-      overflow: hidden;
+    .research-summary,
+    .focus-stack {
+      position: relative;
       z-index: 2;
     }
 
-    .center-chip span {
-      display: block;
-      max-width: 7.2rem;
-      margin-top: 0;
-      color: var(--chip-text);
-      opacity: 0.78;
-      font-family: var(--body-font);
-      font-size: 0.64rem;
+    .summary-label {
+      color: var(--gold);
+      font-size: 0.76rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .research-summary h2 {
+      max-width: 460px;
+      margin: 0.42rem 0 0;
+      font-family: var(--header-font);
+      font-size: clamp(2.25rem, 4.4vw, 4.1rem);
+      line-height: 0.95;
+      letter-spacing: -0.045em;
+    }
+
+    .research-summary p {
+      max-width: 450px;
+      margin: 0.85rem 0 0;
+      color: var(--ink-soft);
+      font-weight: 600;
+      line-height: 1.55;
+    }
+
+    .focus-label {
+      margin-top: 0.05rem;
+      color: var(--gold);
+      font-size: 0.74rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .cite-pill {
+      position: relative;
+      z-index: 3;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      width: fit-content;
+      margin-top: -0.3rem;
+      padding: 0.4rem 0.8rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--card-strong);
+      backdrop-filter: blur(10px);
+      color: var(--ink-soft);
+      font-size: 0.74rem;
       font-weight: 800;
-      letter-spacing: 0.1em;
-      line-height: 1.18;
+      letter-spacing: 0.04em;
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity 400ms ease, transform 400ms ease;
+    }
+
+    .cite-pill.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .cite-pill .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--gold);
+    }
+
+    .focus-stack {
+      display: grid;
+      gap: 0.72rem;
+      margin-top: 0.15rem;
+    }
+
+    .focus-item {
+      display: grid;
+      grid-template-columns: 2.8rem minmax(0, 1fr);
+      gap: 0.8rem;
+      align-items: center;
+      padding: 0.88rem;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--card-strong);
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+
+    .focus-item:hover {
+      transform: translateY(-2px);
+      border-color: var(--gold);
+    }
+
+    .focus-rank {
+      display: grid;
+      place-items: center;
+      width: 2.8rem;
+      height: 2.8rem;
+      border-radius: 16px;
+      color: var(--chip-text);
+      background: var(--chip-ink);
+      font-family: var(--header-font);
+      font-size: 1.18rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .focus-item a {
+      display: block;
+      min-width: 0;
+    }
+
+    .focus-item h3 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 1rem;
+      line-height: 1.2;
+      letter-spacing: -0.015em;
+    }
+
+    .focus-item small {
+      display: block;
+      margin-top: 0.34rem;
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      line-height: 1.35;
       text-transform: uppercase;
       overflow-wrap: anywhere;
     }
 
     .panel-footer {
-      position: absolute;
-      left: 34px;
-      right: 34px;
-      bottom: 34px;
+      position: relative;
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 0.75rem;
+      margin-top: auto;
       z-index: 3;
     }
 
@@ -619,40 +612,6 @@
 
     .panel-stat strong[data-count] {
       font-variant-numeric: tabular-nums;
-    }
-
-    .cite-pill {
-      position: absolute;
-      top: 158px;
-      left: 34px;
-      z-index: 3;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      padding: 0.4rem 0.8rem;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: var(--card-strong);
-      backdrop-filter: blur(10px);
-      color: var(--ink-soft);
-      font-size: 0.74rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      opacity: 0;
-      transform: translateY(-6px);
-      transition: opacity 400ms ease, transform 400ms ease;
-    }
-
-    .cite-pill.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .cite-pill .dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--gold);
     }
 
     section {
@@ -847,7 +806,7 @@
 
     .portal-list a {
       display: grid;
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: 1fr auto;
       align-items: center;
       gap: 1rem;
       padding: 1.1rem;
@@ -858,17 +817,6 @@
       transform: translateX(4px);
       background: var(--card-strong);
       border-color: var(--gold);
-    }
-
-    .portal-icon {
-      display: grid;
-      place-items: center;
-      width: 44px;
-      height: 44px;
-      border-radius: 16px;
-      color: #fff;
-      background: var(--sage);
-      font-weight: 900;
     }
 
     .portal-list strong {
@@ -930,19 +878,10 @@
       }
     }
 
-    @keyframes panelFloat {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
-
     @media (max-width: 1060px) {
       .hero-grid,
       .portal-grid {
         grid-template-columns: 1fr;
-      }
-
-      .research-panel {
-        min-height: 560px;
       }
 
       .hero-notes,
@@ -991,55 +930,17 @@
       }
 
       .research-panel {
-        min-height: 620px;
         border-radius: 28px;
+        padding: 20px;
       }
 
       .research-panel::before {
         inset: 18px;
       }
 
-      .portrait-card {
-        left: 20px;
-        right: 20px;
-        top: 20px;
-      }
-
-      .cite-pill {
-        left: 20px;
-        top: 150px;
-      }
-
       .theme-toggle {
         width: 34px;
         height: 34px;
-      }
-
-      .orbit {
-        top: 50%;
-        width: 88%;
-      }
-
-      .node {
-        width: 124px;
-        font-size: 0.76rem;
-      }
-
-      .node:nth-child(1) { left: -8px; top: 26%; }
-      .node:nth-child(2) { right: -8px; top: 28%; }
-      .node:nth-child(3) { right: -4px; bottom: 18%; }
-      .node:nth-child(4) { left: -4px; bottom: 17%; }
-
-      .center-chip {
-        width: clamp(148px, 40vw, 164px);
-        height: auto;
-        font-size: clamp(1.65rem, 8vw, 1.9rem);
-      }
-
-      .panel-footer {
-        left: 20px;
-        right: 20px;
-        bottom: 20px;
       }
 
       .section-head,
@@ -1091,18 +992,14 @@
     <section class="hero">
       <div class="shell hero-grid">
         <div>
-          <div class="eyebrow reveal">Shanghai University / Time Series</div>
+          <div class="eyebrow reveal">Shanghai University / Machine Learning</div>
           <h1 class="reveal delay-1">
             Wei Li
-            <span class="hero-title-accent">Time-Series Research</span>
+            <span class="hero-title-accent">Machine Learning Research</span>
           </h1>
           <p class="hero-copy reveal delay-2" id="hero-copy">
             Loading research profile from the academic data source.
           </p>
-          <div class="availability reveal delay-2">
-            <span class="pulse" aria-hidden="true"></span>
-            Open to Master's / Ph.D. opportunities, 2026
-          </div>
           <div class="cta-row reveal delay-3">
             <a class="btn primary" href="/about/">Academic Homepage</a>
             <a class="btn" href="/about/publications/">Publications</a>
@@ -1116,12 +1013,17 @@
             <img src="/img/Yu.png" alt="Wei Li avatar">
             <div>
               <strong>Wei Li</strong>
-              <span id="profile-tagline">Time Series / Machine Learning / Research Systems</span>
+              <span id="profile-tagline">Machine Learning / Data Mining / Research Systems</span>
             </div>
           </div>
-          <div class="orbit" id="research-orbit" aria-hidden="true"></div>
+          <div class="research-summary">
+            <div class="summary-label">Research Profile</div>
+            <h2>Machine learning for data mining, forecasting, and generative modeling.</h2>
+            <p>Representative work across clustering, uncertainty-aware learning, forecasting, and AI research systems.</p>
+          </div>
           <div class="cite-pill" id="cite-pill" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="cite-pill-text">Google Scholar</span></div>
-          <div class="center-chip" aria-hidden="true">Time<br>Series<span>Research Focus</span></div>
+          <div class="focus-label">Representative Work</div>
+          <div class="focus-stack" id="research-focus-list" aria-label="Representative research work"></div>
           <div class="panel-footer" id="panel-stats"></div>
         </aside>
       </div>
@@ -1148,36 +1050,32 @@
             <div class="section-kicker">Site Portal</div>
             <h2>Explore the work.</h2>
           </div>
-          <p class="section-lede">Direct links to the academic profile, publication archive, research notes, and useful tools.</p>
+          <p class="section-lede">Quick routes to research profile, publications, tools, and technical writing.</p>
         </div>
 
         <div class="portal-grid">
           <div class="portal-main reveal delay-1">
             <div>
-              <h3>Academic profile and research notes.</h3>
-              <p>This site collects my research profile, selected publications, technical writing, and small tools for computer science research.</p>
+              <h3>Research profile, selected work, and notes.</h3>
+              <p>This site collects selected papers, current research activity, technical writing, and lightweight tools for computer science research.</p>
             </div>
             <a class="btn" href="/about/">View academic profile</a>
           </div>
 
           <div class="portal-list">
             <a class="reveal delay-1" href="/about/">
-              <span class="portal-icon">A</span>
               <span><strong>Academic Homepage</strong><span>Bio, news, experience, honors, and selected publications.</span></span>
               <span class="portal-arrow">&rarr;</span>
             </a>
             <a class="reveal delay-2" href="/about/publications/">
-              <span class="portal-icon">P</span>
               <span><strong>Publication Archive</strong><span>Complete paper list with abstracts, BibTeX, images, and links.</span></span>
               <span class="portal-arrow">&rarr;</span>
             </a>
             <a class="reveal delay-3" href="/ccf/">
-              <span class="portal-icon">C</span>
               <span><strong>CCF Online</strong><span>Conference and journal lookup platform for CS researchers.</span></span>
               <span class="portal-arrow">&rarr;</span>
             </a>
             <a class="reveal delay-4" href="/blog/">
-              <span class="portal-icon">B</span>
               <span><strong>Research Notes</strong><span>Blog posts, technical notes, and project records.</span></span>
               <span class="portal-arrow">&rarr;</span>
             </a>
@@ -1278,13 +1176,13 @@
         const tagline = $('#profile-tagline');
         const topics = [...new Set(publications.map(topicLabel))].slice(0, 3);
         if (tagline && topics.length) {
-          tagline.textContent = `${topics.join(' / ')} / Research Systems`;
+          tagline.textContent = `Machine Learning / ${topics.slice(0, 2).join(' / ')} / Research Systems`;
         }
         if (heroCopy) {
           if (topics.length) {
-            heroCopy.innerHTML = `Undergraduate researcher at Shanghai University focusing on <strong>${topics.map(escapeHTML).join(', ')}</strong> for time-series data. My work studies representation learning, uncertainty-aware forecasting, clustering, and generative modeling.`;
+            heroCopy.innerHTML = `Researcher at Shanghai University working on <strong>machine learning for structured and temporal data</strong>. Current work spans ${topics.map(escapeHTML).join(', ')}, representation learning, and uncertainty-aware modeling.`;
           } else {
-            heroCopy.textContent = 'Undergraduate researcher at Shanghai University working on time-series machine learning and AI research systems.';
+            heroCopy.textContent = 'Researcher at Shanghai University working on machine learning and AI research systems.';
           }
         }
       };
@@ -1303,12 +1201,21 @@
       };
 
       const renderResearchPanel = (publications) => {
-        const orbit = $('#research-orbit');
+        const focus = $('#research-focus-list');
         const stats = $('#panel-stats');
-        if (orbit) {
-          orbit.innerHTML = publications.slice(0, 4).map((publication, index) => `
-            <div class="node">${escapeHTML(topicLabel(publication))}<small>${escapeHTML(venueLabel(publication) || shortTitle(publication))}</small></div>
-          `).join('');
+        if (focus) {
+          focus.innerHTML = publications.slice(0, 4).map((publication, index) => {
+            const href = primaryLink(publication);
+            return `
+            <article class="focus-item">
+              <div class="focus-rank">${String(index + 1).padStart(2, '0')}</div>
+              <a href="${escapeHTML(href)}"${setExternalAttrs(href)} aria-label="${escapeHTML(publication.title)}">
+                <h3>${escapeHTML(shortTitle(publication))}</h3>
+                <small>${escapeHTML(venueLabel(publication) || publication.venue || '')}</small>
+              </a>
+            </article>
+          `;
+          }).join('');
         }
 
         if (stats) {

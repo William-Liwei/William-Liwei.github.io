@@ -34,14 +34,19 @@ window.ABOUT_DATA = {
       year: 2026,
       month: 8,
       badges: [{ type: "ccf", text: "CCF-A" }, { type: "paper", text: "Full Paper" }, { type: "poster", text: "Poster" }, { type: "author", text: "Sole Author" }],
-      links: [{ type: "github", url: "https://github.com/William-Liwei/apcl" }],
+      links: [
+        { type: "doi", url: "https://dl.acm.org/doi/10.1145/3770855.3817773" },
+        { type: "github", url: "https://github.com/William-Liwei/apcl" }
+      ],
       thumbnail: "apcl.png",
       abstract: "This work proposes adaptive prototypical contrastive learning for time series clustering with unknown cluster counts.",
       bibtex: `@inproceedings{li2026apcl,
   title={Adaptive Prototypical Contrastive Learning for Time Series Clustering},
   author={Li, Wei},
   booktitle={ACM SIGKDD International Conference on Knowledge Discovery and Data Mining},
-  year={2026}
+  year={2026},
+  doi={10.1145/3770855.3817773},
+  url={https://dl.acm.org/doi/10.1145/3770855.3817773}
 }`
     },
     {
