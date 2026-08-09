@@ -35,7 +35,7 @@ window.ABOUT_DATA = {
       month: 8,
       badges: [{ type: "ccf", text: "CCF-A" }, { type: "paper", text: "Full Paper" }, { type: "poster", text: "Poster" }, { type: "author", text: "Sole Author" }],
       links: [
-        { type: "doi", url: "https://dl.acm.org/doi/10.1145/3770855.3817773" },
+        { type: "link", label: "ACM DL", url: "https://dl.acm.org/doi/10.1145/3770855.3817773" },
         { type: "github", url: "https://github.com/William-Liwei/apcl" }
       ],
       thumbnail: "apcl.png",

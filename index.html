@@ -1165,7 +1165,7 @@
       };
 
       const primaryLink = (publication) => {
-        const link = (publication.links || []).find((item) => ['arxiv', 'doi', 'paper'].includes(item.type)) || (publication.links || [])[0];
+        const link = (publication.links || []).find((item) => ['arxiv', 'doi', 'paper', 'link'].includes(item.type)) || (publication.links || [])[0];
         return link?.url || '/about/publications/';
       };
 
