@@ -6,6 +6,8 @@ window.ABOUT_DATA = {
     orcid: "https://orcid.org/0009-0008-8108-4854"
   },
   news: [
+    { year: 2026, month: 8, content: "Completed a review for Frontiers in Physics (Interdisciplinary Physics)." },
+    { year: 2026, month: 8, content: "Received a new reviewer invitation from Ain Shams Engineering Journal." },
     { year: 2026, month: 6, content: "Invited to serve as a <strong>Program Committee Member (Reviewer)</strong> for <strong>AAAI 2027 (CCF-A)</strong>." },
     { year: 2026, month: 6, content: "APCL scheduled for <strong>Poster Presentation</strong> at <strong>KDD 2026 (CCF-A)</strong>." },
     { year: 2026, month: 5, content: "One full paper (APCL) accepted to <strong>KDD 2026 (CCF-A)</strong>." },
@@ -230,6 +232,7 @@ window.ABOUT_DATA = {
       icon: "review",
       title: "Academic Service",
       items: [
+        { event: "Frontiers in Physics (Interdisciplinary Physics)", role: "Reviewer" },
         { event: "Conference on Neural Information Processing Systems (NeurIPS 2026)", role: "Ethics Reviewer (Invited)" },
         { event: "AAAI Conference on Artificial Intelligence (AAAI 2027)", role: "Program Committee Member / Reviewer (Invited)" },
         { event: "Ain Shams Engineering Journal (IF: 5.9, Q1)", role: "Reviewer (Invited)" },
