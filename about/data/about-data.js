@@ -6,7 +6,7 @@ window.ABOUT_DATA = {
     orcid: "https://orcid.org/0009-0008-8108-4854"
   },
   news: [
-    { year: 2026, month: 8, content: "The APCL (<strong>KDD 2026, CCF-A</strong>) blog post is now live." },
+    { year: 2026, month: 8, content: "The APCL <strong>(KDD 2026, CCF-A)</strong> blog post is now live." },
     { year: 2026, month: 8, content: "Invited to serve as a <strong>Reviewer</strong> for <strong>Frontiers in Physics (IF: 2.2, Q2)</strong>." },
     { year: 2026, month: 6, content: "Invited to serve as a <strong>Program Committee Member (Reviewer)</strong> for <strong>AAAI 2027 (CCF-A)</strong>." },
     { year: 2026, month: 6, content: "APCL scheduled for <strong>Poster Presentation</strong> at <strong>KDD 2026 (CCF-A)</strong>." },

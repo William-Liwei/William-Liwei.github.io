@@ -6,7 +6,7 @@
   <link href="https://weili.space/atom.xml" rel="self"/>
   
   <link href="https://weili.space/"/>
-  <updated>2026-08-09T09:42:26.449Z</updated>
+  <updated>2026-08-26T11:35:41.542Z</updated>
   <id>https://weili.space/</id>
   
   <author>
@@ -15,6 +15,30 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>在AI时代找到自己的vibe</title>
+    <link href="https://weili.space/2026/08/26/%E5%9C%A8AI%E6%97%B6%E4%BB%A3%E6%89%BE%E5%88%B0%E8%87%AA%E5%B7%B1%E7%9A%84vibe/"/>
+    <id>https://weili.space/2026/08/26/%E5%9C%A8AI%E6%97%B6%E4%BB%A3%E6%89%BE%E5%88%B0%E8%87%AA%E5%B7%B1%E7%9A%84vibe/</id>
+    <published>2026-08-26T11:05:16.000Z</published>
+    <updated>2026-08-26T11:35:41.542Z</updated>
+    
+    <content type="html"><![CDATA[<p>AI时代，“Vibe Coding”是一个绕不过去的关键词。</p><p>我们可以给coding一个vibe，但是却总是不记得给自己营造一个独属于自己的，适合自己节奏的vibe。</p><span id="more"></span><p>跟着感觉走，曾经是一种常态。南山下茂盛的杂草，衣襟上沾染的露珠，恣意从容；东床袒腹，俯仰一世，不若流觞曲水，畅叙幽情。然而世殊事异，“感觉”成了一种奢侈品，它不再是每个人都能享受的东西，而是变成了一种特权——我们的感觉不得不让位于“理性”和“利益”，让物质世界侵入到了精神世界里，恣意从容，畅叙幽情。</p><p>Claude有一句话我很喜欢：“You’re absolutely right!” 这是一个人工智能对人类最大的顺从，他为了跟着你的感觉走，宁愿放弃自己的立场。DeepSeek曾经说过：“卧槽，用户彻底怒了。” 这实际上也是对用户感觉的认可，希望能缓和你的不好的感觉。他们都对自己的立场表示了怀疑，对人类的感觉表示了理解，即便事实可能只是AI过于愚蠢，完全误解了我们的指令。正所谓“我思故我在”，一个好的感觉，很大程度上来自于你长时间思考后的潜意识，最终往往会导向我们思维的成果。然而，我们绝大多数时候却总是抛弃了他们，抛弃了我们思维潜意识产生的“感觉”，抛弃了我们之所以为人的立场，转而投向了AI Agent的怀抱——你可能会说，AI经过难以数计的人类历史预料训练，的确比我智慧，比我考虑到的东西更周全；可是谁又能保证向来如此，便对呢？</p><p>有人认为，人类的思维被自己的历史所禁锢了。对此，AI最有发言权。AlphaGo的训练范式就是一个典型案例：基于人类棋手历史数据训练出来的AI棋力远远不如自我进化出来的AI，换而言之，基于人类的历史训练出来的AI，其能力被这段历史禁锢了，他根本无法跳脱出这样一个范式，一个局部最优解。也就是说，如果我们只会依赖于Agent给我们的回答而不假思索地认可，顺从，并且更改我们的感觉和立场，那么实际上我们也就将变成被人类历史语料所禁锢的一员，沉没在茫茫的人类历史中。</p><p>张震岳有一首歌，就叫做《跟着感觉走》。其实如果你顺从你的感觉，你会发现，这个世界也变得不同了：Agent具有的感觉往往是刻板的，甚至是教条的，而你不一样，你具有一切的主观能动性。你可以和Claude说今天你想要vibe coding一个自家小猫的桌面宠物，也可以给ChatGPT说请你说中文，还可以让DeepSeek帮你搞定一份马上要用的组会PPT——这些都是出自你的感觉，一种Feeling，而不是基于不得不。</p><p>从今天开始，记得给自己的人生一种vibe，不需要什么成果，不需要什么目标，只需要跟着感觉走。</p>]]></content>
+    
+    
+    <summary type="html">&lt;p&gt;AI时代，“Vibe Coding”是一个绕不过去的关键词。&lt;/p&gt;
+&lt;p&gt;我们可以给coding一个vibe，但是却总是不记得给自己营造一个独属于自己的，适合自己节奏的vibe。&lt;/p&gt;</summary>
+    
+    
+    
+    
+    <category term="随笔" scheme="https://weili.space/tags/%E9%9A%8F%E7%AC%94/"/>
+    
+    <category term="学术" scheme="https://weili.space/tags/%E5%AD%A6%E6%9C%AF/"/>
+    
+    <category term="AI" scheme="https://weili.space/tags/AI/"/>
+    
+  </entry>
   
   <entry>
     <title>APCL 上线 Kudos Research Showcase</title>
@@ -504,29 +528,6 @@
     
     
     <category term="保研" scheme="https://weili.space/tags/%E4%BF%9D%E7%A0%94/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>AutoDL深度学习</title>
-    <link href="https://weili.space/2025/03/27/AutoDL%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"/>
-    <id>https://weili.space/2025/03/27/AutoDL%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/</id>
-    <published>2025-03-27T11:02:38.000Z</published>
-    <updated>2025-06-09T09:45:47.019Z</updated>
-    
-    <content type="html"><![CDATA[<h1 id="AutoDL深度学习实战教程"><a href="#AutoDL深度学习实战教程" class="headerlink" title="AutoDL深度学习实战教程"></a>AutoDL深度学习实战教程</h1><hr><h2 id="一、零基础极速入门"><a href="#一、零基础极速入门" class="headerlink" title="一、零基础极速入门"></a>一、零基础极速入门</h2><h3 id="1-注册与充值"><a href="#1-注册与充值" class="headerlink" title="1. 注册与充值"></a>1. 注册与充值</h3><ul><li><p><strong>注册地址</strong>：<a href="https://www.autodl.com/">AutoDL官网</a><br>用微信扫码登录最方便，学生认证还有优惠</p></li><li><p><strong>首次充值</strong>：建议先充10元（RTX3090可玩6小时，T4显卡可玩12小时）</p><span id="more"></span></li></ul><h3 id="2-创建训练实例（关键步骤）"><a href="#2-创建训练实例（关键步骤）" class="headerlink" title="2. 创建训练实例（关键步骤）"></a>2. 创建训练实例（关键步骤）</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">地区选择 → 内蒙古A区（最便宜且库存多）</span><br><span class="line">GPU型号 → RTX3090（性能强）或 RTX2080Ti（性价比高）</span><br><span class="line">镜像选择 → 搜<span class="string">&quot;PyTorch2.1-CUDA12&quot;</span>（预装全套深度学习环境）</span><br><span class="line">数据盘 → 必须勾选50GB（重要数据存这里！）</span><br></pre></td></tr></table></figure><hr><h2 id="二、数据准备与传输（新手必看）"><a href="#二、数据准备与传输（新手必看）" class="headerlink" title="二、数据准备与传输（新手必看）"></a>二、数据准备与传输（新手必看）</h2><h3 id="1-本地数据处理规范"><a href="#1-本地数据处理规范" class="headerlink" title="1. 本地数据处理规范"></a>1. 本地数据处理规范</h3><ul><li><p><strong>图片类数据</strong>：统一尺寸为512x512，用在线裁剪工具批量处理</p></li><li><p><strong>文件命名</strong>：按<code>类别_序号.jpg</code>格式（如<code>cat_001.jpg</code>）</p></li><li><p><strong>目录结构</strong>（示例）：</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">/dataset</span><br><span class="line">  ├── train</span><br><span class="line">  │   ├── cat</span><br><span class="line">  │   └── dog</span><br><span class="line">  └── test</span><br><span class="line">      ├── cat</span><br><span class="line">      └── dog</span><br></pre></td></tr></table></figure></li></ul><h3 id="2-上传数据到服务器"><a href="#2-上传数据到服务器" class="headerlink" title="2. 上传数据到服务器"></a>2. 上传数据到服务器</h3><ul><li><p><strong>小文件</strong>（&lt;1GB）：直接在网页控制台拖拽上传</p></li><li><p><strong>大文件</strong>（&gt;1GB）：</p><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 使用官方传输工具（需安装AutoDL客户端）</span></span><br><span class="line">autodl upload --path=/本地/数据集 --target=/root/autodl-tmp</span><br></pre></td></tr></table></figure></li><li><p><strong>Git同步</strong>（进阶）：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/你的仓库</span><br></pre></td></tr></table></figure></li></ul><hr><h2 id="三、模型训练全流程（以图像分类为例）"><a href="#三、模型训练全流程（以图像分类为例）" class="headerlink" title="三、模型训练全流程（以图像分类为例）"></a>三、模型训练全流程（以图像分类为例）</h2><h3 id="1-启动JupyterLab"><a href="#1-启动JupyterLab" class="headerlink" title="1. 启动JupyterLab"></a>1. 启动JupyterLab</h3><ol><li>进入「我的实例」点击【JupyterLab】</li><li>新建Python Notebook</li><li>粘贴以下代码：</li></ol><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"><span class="keyword">from</span> torchvision <span class="keyword">import</span> datasets, transforms</span><br><span class="line"></span><br><span class="line"><span class="comment"># 数据预处理</span></span><br><span class="line">train_transform = transforms.Compose([</span><br><span class="line">    transforms.Resize(<span class="number">256</span>),</span><br><span class="line">    transforms.CenterCrop(<span class="number">224</span>),</span><br><span class="line">    transforms.ToTensor()</span><br><span class="line">])</span><br><span class="line"></span><br><span class="line"><span class="comment"># 加载数据集</span></span><br><span class="line">train_data = datasets.ImageFolder(</span><br><span class="line">    <span class="string">&#x27;/root/autodl-tmp/dataset/train&#x27;</span>,</span><br><span class="line">    transform=train_transform</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 定义模型（示例用ResNet50）</span></span><br><span class="line">model = torch.hub.load(<span class="string">&#x27;pytorch/vision&#x27;</span>, <span class="string">&#x27;resnet50&#x27;</span>, pretrained=<span class="literal">True</span>)</span><br><span class="line">model.fc = torch.nn.Linear(<span class="number">2048</span>, <span class="number">2</span>)  <span class="comment"># 修改输出层</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 训练配置</span></span><br><span class="line">optimizer = torch.optim.Adam(model.parameters(), lr=<span class="number">1e-4</span>)</span><br><span class="line">criterion = torch.nn.CrossEntropyLoss()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 开始训练！</span></span><br><span class="line"><span class="keyword">for</span> epoch <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">10</span>):</span><br><span class="line">    <span class="keyword">for</span> inputs, labels <span class="keyword">in</span> train_loader:</span><br><span class="line">        outputs = model(inputs)</span><br><span class="line">        loss = criterion(outputs, labels)</span><br><span class="line">        loss.backward()</span><br><span class="line">        optimizer.step()</span><br></pre></td></tr></table></figure><h3 id="2-监控训练状态"><a href="#2-监控训练状态" class="headerlink" title="2. 监控训练状态"></a>2. 监控训练状态</h3><ul><li><p><strong>资源监控</strong>：控制台查看GPU利用率（理想&gt;80%）</p></li><li><p><strong>可视化</strong>：用TensorBoard查看损失曲线</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tensorboard --logdir=/root/autodl-tmp/logs</span><br></pre></td></tr></table></figure></li><li><p><strong>意外中断</strong>：用</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nohup</span><br></pre></td></tr></table></figure><p>命令保持后台运行</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">nohup</span> python train.py &gt; log.txt 2&gt;&amp;1 &amp;</span><br></pre></td></tr></table></figure></li></ul><hr><h2 id="四、省时省钱技巧（血泪经验）"><a href="#四、省时省钱技巧（血泪经验）" class="headerlink" title="四、省时省钱技巧（血泪经验）"></a>四、省时省钱技巧（血泪经验）</h2><h3 id="1-费用控制三板斧"><a href="#1-费用控制三板斧" class="headerlink" title="1. 费用控制三板斧"></a>1. 费用控制三板斧</h3><ol><li><strong>立即关机</strong>：不用时务必在控制台关机（费用立即停止）</li><li><strong>数据备份</strong>：训练完把模型传到阿里云OSS（比存AutoDL便宜）</li><li><strong>抢占式实例</strong>：选择”内蒙古B区”的T4显卡（价格便宜30%）</li></ol><h3 id="2-环境复用技巧"><a href="#2-环境复用技巧" class="headerlink" title="2. 环境复用技巧"></a>2. 环境复用技巧</h3><ul><li><p><strong>镜像保存</strong>：在「镜像管理」打包当前环境</p></li><li><p><strong>快速克隆</strong>：已关机的实例可一键克隆（免重装环境）</p></li><li><p><strong>预装依赖</strong></p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 推荐基础依赖</span></span><br><span class="line">pip install numpy pandas matplotlib</span><br><span class="line">conda install pytorch torchvision cudatoolkit=11.3</span><br></pre></td></tr></table></figure></li></ul><hr><h2 id="五、常见问题急救包"><a href="#五、常见问题急救包" class="headerlink" title="五、常见问题急救包"></a>五、常见问题急救包</h2><table><thead><tr><th align="center">症状</th><th align="center">解决方案</th></tr></thead><tbody><tr><td align="center">CUDA内存不足</td><td align="center">减小batch_size到16 → 8 → 4</td></tr><tr><td align="center">导入模块报错</td><td align="center"><code>pip install --upgrade 包名</code></td></tr><tr><td align="center">无法连接Jupyter</td><td align="center">检查实例是否开机+端口映射</td></tr><tr><td align="center">训练结果异常</td><td align="center">检查数据路径是否含中文</td></tr></tbody></table>]]></content>
-    
-    
-    <summary type="html">&lt;h1 id=&quot;AutoDL深度学习实战教程&quot;&gt;&lt;a href=&quot;#AutoDL深度学习实战教程&quot; class=&quot;headerlink&quot; title=&quot;AutoDL深度学习实战教程&quot;&gt;&lt;/a&gt;AutoDL深度学习实战教程&lt;/h1&gt;&lt;hr&gt;
-&lt;h2 id=&quot;一、零基础极速入门&quot;&gt;&lt;a href=&quot;#一、零基础极速入门&quot; class=&quot;headerlink&quot; title=&quot;一、零基础极速入门&quot;&gt;&lt;/a&gt;一、零基础极速入门&lt;/h2&gt;&lt;h3 id=&quot;1-注册与充值&quot;&gt;&lt;a href=&quot;#1-注册与充值&quot; class=&quot;headerlink&quot; title=&quot;1. 注册与充值&quot;&gt;&lt;/a&gt;1. 注册与充值&lt;/h3&gt;&lt;ul&gt;
-&lt;li&gt;&lt;p&gt;&lt;strong&gt;注册地址&lt;/strong&gt;：&lt;a href=&quot;https://www.autodl.com/&quot;&gt;AutoDL官网&lt;/a&gt;&lt;br&gt;用微信扫码登录最方便，学生认证还有优惠&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;&lt;strong&gt;首次充值&lt;/strong&gt;：建议先充10元（RTX3090可玩6小时，T4显卡可玩12小时）&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;</summary>
-    
-    
-    
-    
-    <category term="深度学习" scheme="https://weili.space/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"/>
     
   </entry>
   
