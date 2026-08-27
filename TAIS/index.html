@@ -82,12 +82,43 @@
         .diagram-step b { width: 25px; height: 25px; display: grid; place-items: center; background: var(--teal); color: var(--white); font: 11px var(--mono); }
         .research-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 35px; border-top: 1px solid var(--line); }
         .research-item { padding: 25px 0 28px; border-bottom: 1px solid var(--line); }
-        .research-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; color: var(--teal); font: 11px var(--mono); text-transform: uppercase; }
+        .research-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; font: 10px var(--mono); text-transform: uppercase; }
+        .meta-chip { display: inline-flex; align-items: center; min-height: 25px; padding: 4px 7px; border: 1px solid #cbd7dc; background: var(--white); color: var(--muted); }
+        .ccf-badge { border-color: transparent; font-weight: 500; }
+        .ccf-a { background: var(--yellow); color: #49360b; }
+        .ccf-b { background: var(--teal); color: var(--white); }
+        .ccf-c { background: #dce4e8; color: var(--ink); }
         .research-item h3 { margin-bottom: 8px; font-size: 20px; line-height: 1.3; letter-spacing: -.02em; }
         .research-item p { margin-bottom: 0; color: var(--muted); font-size: 14px; }
         .research-note { margin-top: 30px; padding: 16px 18px; border-left: 3px solid var(--yellow); background: #fffaf0; color: var(--muted); font-size: 13px; }
-        .team-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+        .program-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+        .program { min-height: 330px; display: flex; flex-direction: column; padding: 28px; border: 1px solid var(--line); background: var(--white); }
+        .program.featured { background: var(--ink); color: var(--white); border-color: var(--ink); }
+        .program-status { width: fit-content; padding: 5px 8px; color: var(--teal-dark); background: #dff1f0; font: 11px var(--mono); text-transform: uppercase; }
+        .program.featured .program-status { color: var(--ink); background: var(--yellow); }
+        .program h3 { margin: 24px 0 12px; font-size: 24px; line-height: 1.2; letter-spacing: -.025em; }
+        .program p { color: var(--muted); font-size: 14px; }
+        .program.featured p { color: #bdd0d4; }
+        .program-target { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--line); color: var(--teal); font: 11px var(--mono); line-height: 1.7; text-transform: uppercase; }
+        .program.featured .program-target { border-color: #31464d; color: var(--yellow); }
+        .open-call { margin-top: 24px; display: flex; align-items: center; justify-content: space-between; gap: 25px; padding: 23px 26px; background: #dceeed; border: 1px solid #b7d7d5; }
+        .open-call h3 { margin-bottom: 4px; color: var(--teal-dark); font-size: 18px; }
+        .open-call p { margin-bottom: 0; color: var(--teal-dark); font-size: 13px; }
+        .open-call a { flex-shrink: 0; color: var(--teal-dark); font-weight: 800; font-size: 13px; text-decoration: none; }
+        .network-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px; border: 1px solid var(--line); background: var(--line); }
+        .network-mark { min-height: 132px; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; padding: 17px; background: var(--white); }
+        .network-symbol { width: 46px; height: 46px; display: grid; place-items: center; border: 1px solid #a8c3c6; color: var(--teal-dark); background: #eaf4f3; font: 500 10px var(--mono); text-align: center; object-fit: contain; padding: 6px; }
+        .network-symbol.wide { font-size: 8px; }
+        .network-name { color: var(--ink); font-size: 11px; font-weight: 700; line-height: 1.35; }
+        .team-group + .team-group { margin-top: 38px; }
+        .team-group-heading { display: flex; align-items: center; gap: 14px; margin-bottom: 13px; color: var(--teal); font: 11px var(--mono); text-transform: uppercase; }
+        .team-group-heading::after { content: ''; height: 1px; flex: 1; background: var(--line); }
+        .team-grid { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+        .founder-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .core-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         .member { min-height: 190px; padding: 24px; background: var(--white); }
+        .founder-grid .member { border-top: 3px solid var(--teal); }
+        .core-grid .member { min-height: 170px; }
         .member h3 { margin-bottom: 5px; font-size: 19px; }
         .member .role { margin-bottom: 12px; color: var(--teal); font: 11px var(--mono); text-transform: uppercase; }
         .member p { margin-bottom: 0; color: var(--muted); font-size: 13px; }
@@ -116,7 +147,11 @@
             .section-heading { display: block; }
             .section-heading p { margin-top: 18px; }
             .research-grid { grid-template-columns: 1fr; }
-            .team-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .founder-grid, .core-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .program-grid { grid-template-columns: 1fr; }
+            .program { min-height: 0; }
+            .open-call { align-items: flex-start; flex-direction: column; }
+            .network-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
             .roadmap { grid-template-columns: 1fr; gap: 28px; }
         }
         @media (max-width: 480px) {
@@ -124,7 +159,8 @@
             h1 { font-size: 44px; }
             .hero-lede { font-size: 17px; }
             .product-copy { padding: 25px; }
-            .team-grid { grid-template-columns: 1fr; }
+            .founder-grid, .core-grid { grid-template-columns: 1fr; }
+            .network-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
     </style>
 </head>
@@ -139,6 +175,8 @@
                 <a href="#manifesto">Manifesto</a>
                 <a href="#product">Product</a>
                 <a href="#research">Research</a>
+                <a href="#programs">Programs</a>
+                <a href="#network">Network</a>
                 <a href="#team">Team</a>
                 <a href="#roadmap">Roadmap</a>
             </nav>
@@ -162,7 +200,7 @@
             <div class="shell signals">
                 <div class="signal"><strong>12</strong><span>Research works by members</span></div>
                 <div class="signal"><strong>01</strong><span>Interactive time-series Agent product</span></div>
-                <div class="signal"><strong>10</strong><span>Core members across disciplines</span></div>
+                <div class="signal"><strong>11</strong><span>Members across disciplines</span></div>
             </div>
         </div>
 
@@ -213,28 +251,78 @@
         <section class="section" id="research">
             <div class="shell">
                 <div class="section-heading">
-                    <div><div class="eyebrow">03 / Research backing</div><h2>Research by the TAIS founding team.</h2></div>
-                    <p>These works are the members' existing research credentials supporting TAIS. They are not publications issued by TAIS.</p>
+                    <div><div class="eyebrow">03 / Research portfolio</div><h2>Research across TAIS.</h2></div>
+                    <p>Our publication portfolio spans representation learning, forecasting, generation, uncertainty, and adaptive systems.</p>
                 </div>
                 <div class="research-grid" id="research-list"></div>
-                <div class="research-note">TAIS presents the team’s real research record as technical backing for the collective. Publication status and authorship are shown as they are, without creating a separate TAIS journal or submission venue.</div>
+                <div class="research-note">Together, these works establish TAIS's technical foundation in representation learning, forecasting, generative modeling, uncertainty, and adaptive systems.</div>
+            </div>
+        </section>
+
+        <section class="section" id="programs">
+            <div class="shell">
+                <div class="section-heading">
+                    <div><div class="eyebrow">04 / Programs</div><h2>Research, venture, and build under one name.</h2></div>
+                    <p>TAIS is designed to travel: from a reproducible result, to a workshop submission, to a working product, to the room where people test it.</p>
+                </div>
+                <div class="program-grid">
+                    <article class="program featured">
+                        <div class="program-status">Research · Planned</div>
+                        <h3>TAIS Workshop Program</h3>
+                        <p>Develop a defensible sequence-intelligence research contribution around Agent trajectories, evaluation, prediction, and adaptive memory, supported by open experiments and a reproducible toolkit.</p>
+                        <div class="program-target">Focus: workshop-ready research with open experiments and reproducible artifacts</div>
+                    </article>
+                    <article class="program">
+                        <div class="program-status">Venture · In development</div>
+                        <h3>TAIS Agent Venture</h3>
+                        <p>Turn SHUProphet from a research prototype into a credible Agent product with real users, measurable workflows, privacy-conscious deployment, and a clear product story.</p>
+                        <div class="program-target">Focus: product validation, external showcases, and venture-ready delivery</div>
+                    </article>
+                    <article class="program">
+                        <div class="program-status">Build · Open</div>
+                        <h3>TAIS Hack Lab</h3>
+                        <p>Ship focused prototypes in short cycles: Agent trace analysis, time-series copilots, model diagnostics, tool-use evaluation, and interactive demos that can survive real judging.</p>
+                        <div class="program-target">Target: hackathons, open-source sprints, and technical showcases</div>
+                    </article>
+                </div>
+                <div class="open-call">
+                    <div><h3>Build with TAIS</h3><p>We welcome serious collaborators in time-series modeling, Agent systems, product engineering, security, design, and applied research.</p></div>
+                    <a href="mailto:taiseditorial@163.com?subject=Collaborate%20with%20TAIS">Start a conversation &rarr;</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="network">
+            <div class="shell">
+                <div class="section-heading">
+                    <div><div class="eyebrow">05 / Academic network</div><h2>Connected across disciplines and institutions.</h2></div>
+                    <p>Institutions represented through TAIS members, co-authored research, and our wider academic network.</p>
+                </div>
+                <div class="network-grid" id="network-list"></div>
             </div>
         </section>
 
         <section class="section" id="team">
             <div class="shell">
                 <div class="section-heading">
-                    <div><div class="eyebrow">04 / Team</div><h2>One project, several ways of thinking.</h2></div>
+                    <div><div class="eyebrow">06 / Team</div><h2>One project, several ways of thinking.</h2></div>
                     <p>TAIS brings together machine learning, product building, economics, interdisciplinary research, and security.</p>
                 </div>
-                <div class="team-grid" id="team-list"></div>
+                <div class="team-group">
+                    <div class="team-group-heading">Founders</div>
+                    <div class="team-grid founder-grid" id="founder-list"></div>
+                </div>
+                <div class="team-group">
+                    <div class="team-group-heading">Core Members</div>
+                    <div class="team-grid core-grid" id="core-member-list"></div>
+                </div>
             </div>
         </section>
 
         <section class="section" id="roadmap">
             <div class="shell">
                 <div class="section-heading">
-                    <div><div class="eyebrow">05 / Roadmap</div><h2>Build something people can use, then study what it reveals.</h2></div>
+                    <div><div class="eyebrow">07 / Roadmap</div><h2>Build something people can use, then study what it reveals.</h2></div>
                     <p>Our next research layer extends the same sequence-first perspective to Agent trajectories and adaptive systems.</p>
                 </div>
                 <div class="roadmap">
@@ -253,24 +341,24 @@
                 <div><div class="footer-label">Explore</div><p><a href="#product">SHUProphet</a><br><a href="#research">Research backing</a><br><a href="#roadmap">Roadmap</a></p></div>
                 <div><div class="footer-label">Contact</div><p><a href="mailto:taiseditorial@163.com">taiseditorial@163.com</a><br><a href="https://github.com/William-Liwei" target="_blank" rel="noopener">GitHub</a></p></div>
             </div>
-            <div class="copyright">&copy; 2026 TAIS Project Collective. TAIS is a team and project brand, not a journal or publication venue.</div>
+            <div class="copyright">&copy; 2026 TAIS Project Collective. Research, products, and open collaboration around sequence intelligence.</div>
         </div>
     </footer>
 
     <script>
         const research = [
-            { title: 'Adaptive Prototypical Contrastive Learning for Time Series Clustering', meta: 'KDD 2026 · CCF-A · Accepted · Sole author', text: 'Adaptive representation and prototype learning for time-series clustering when the number of clusters is unknown.' },
-            { title: 'ProtoFlowTS: Retrieval-Grounded Residual Flow for Text-Conditioned Time-Series Generation', meta: 'Under review · First-listed co-first author', text: 'Semantic prototype retrieval and residual Flow Matching for text-aligned time-series generation.' },
-            { title: 'UniFlow: Unified Multi-Scale Flow Matching for Time Series Generation', meta: 'Under review · First-listed co-first author', text: 'Shared-ID alignment across multiscale discrete code spaces with non-autoregressive Categorical Flow Matching.' },
-            { title: 'SDFlow: Similarity-Driven Flow Matching for Time Series Generation', meta: 'arXiv preprint · Under review · First-listed co-first author', text: 'Low-rank decomposition, similarity anchors, and non-autoregressive Flow Matching for long time-series generation.' },
-            { title: 'ClusterPatchTST: Uncertainty-Aware Causal Clustering for Heterogeneous Time Series Forecasting', meta: 'DASFAA 2026 · CCF-B · Accepted · Sole author', text: 'Causal clustering and uncertainty-aware forecasting for heterogeneous temporal data.' },
-            { title: 'ScatterFusion: A Hierarchical Scattering Transform Framework for Enhanced Time Series Forecasting', meta: 'ICASSP 2026 · CCF-B · Accepted · Sole author', text: 'A hierarchical scattering-transform framework for multi-scale time-series forecasting.' },
-            { title: 'AWGFormer: Adaptive Wavelet-Guided Transformer for Multi-resolution Time Series Forecasting', meta: 'ICASSP 2026 · CCF-B · Accepted · Sole author', text: 'Wavelet guidance and Transformer modeling for multi-resolution temporal prediction.' },
-            { title: 'TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting', meta: 'ICANN 2025 · CCF-C · Accepted · Sole author', text: 'Hierarchical diffusion and adaptive context sampling for multi-horizon forecasting.' },
-            { title: 'SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction', meta: 'ICANN 2025 · CCF-C · Accepted · Sole author', text: 'State-space and wavelet modeling for efficient time-series prediction.' },
-            { title: 'EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting', meta: 'ICIC 2025 · CCF-C · Accepted · First author', text: 'Multi-scale Transformer forecasting with uncertainty estimation for energy data.' },
-            { title: 'LWSpace: Multi-Scale State Space Framework for Time Series Forecasting', meta: 'ICIC 2025 · CCF-C · Accepted · Sole author', text: 'A multi-scale state-space framework for efficient temporal forecasting.' },
-            { title: 'Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics', meta: 'CAMMIC 2025 · EI indexed · First author', text: 'Adaptive fusion of statistical and state-space dynamics for medal prediction.' }
+            { title: 'Adaptive Prototypical Contrastive Learning for Time Series Clustering', meta: 'KDD 2026 · CCF-A · Research Track', text: 'Adaptive representation and prototype learning for time-series clustering when the number of clusters is unknown.' },
+            { title: 'ProtoFlowTS: Retrieval-Grounded Residual Flow for Text-Conditioned Time-Series Generation', meta: 'Under review', text: 'Semantic prototype retrieval and residual Flow Matching for text-aligned time-series generation.' },
+            { title: 'UniFlow: Unified Multi-Scale Flow Matching for Time Series Generation', meta: 'Under review', text: 'Shared-ID alignment across multiscale discrete code spaces with non-autoregressive Categorical Flow Matching.' },
+            { title: 'SDFlow: Similarity-Driven Flow Matching for Time Series Generation', meta: 'arXiv preprint · Under review', text: 'Low-rank decomposition, similarity anchors, and non-autoregressive Flow Matching for long time-series generation.' },
+            { title: 'ClusterPatchTST: Uncertainty-Aware Causal Clustering for Heterogeneous Time Series Forecasting', meta: 'DASFAA 2026 · CCF-B · Full paper', text: 'Causal clustering and uncertainty-aware forecasting for heterogeneous temporal data.' },
+            { title: 'ScatterFusion: A Hierarchical Scattering Transform Framework for Enhanced Time Series Forecasting', meta: 'ICASSP 2026 · CCF-B', text: 'A hierarchical scattering-transform framework for multi-scale time-series forecasting.' },
+            { title: 'AWGFormer: Adaptive Wavelet-Guided Transformer for Multi-resolution Time Series Forecasting', meta: 'ICASSP 2026 · CCF-B', text: 'Wavelet guidance and Transformer modeling for multi-resolution temporal prediction.' },
+            { title: 'TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting', meta: 'ICANN 2025 · CCF-C · Oral', text: 'Hierarchical diffusion and adaptive context sampling for multi-horizon forecasting.' },
+            { title: 'SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction', meta: 'ICANN 2025 · CCF-C · Oral', text: 'State-space and wavelet modeling for efficient time-series prediction.' },
+            { title: 'EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting', meta: 'ICIC 2025 · CCF-C · Oral', text: 'Multi-scale Transformer forecasting with uncertainty estimation for energy data.' },
+            { title: 'LWSpace: Multi-Scale State Space Framework for Time Series Forecasting', meta: 'ICIC 2025 · CCF-C · Oral', text: 'A multi-scale state-space framework for efficient temporal forecasting.' },
+            { title: 'Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics', meta: 'CAMMIC 2025 · EI indexed', text: 'Adaptive fusion of statistical and state-space dynamics for medal prediction.' }
         ];
 
         const team = [
@@ -283,14 +371,51 @@
             { name: 'Junnuo Ye', role: 'Core Member', affiliation: 'Communication University of China · Cybersecurity', bio: 'Cybersecurity, privacy, trustworthy systems, and risk analysis.' },
             { name: 'Minghao Lu', role: 'Core Member', affiliation: 'Shanghai University', bio: 'Research prototyping and engineering development.' },
             { name: 'Zhehan Yang', role: 'Core Member', affiliation: 'Shanghai University', bio: 'Research prototyping and engineering development.' },
-            { name: 'Ruoxuan Xu', role: 'Core Member', affiliation: 'Shanghai University', bio: 'Research prototyping and engineering development.' }
+            { name: 'Ruoxuan Xu', role: 'Core Member', affiliation: 'Shanghai University', bio: 'Research prototyping and engineering development.' },
+            { name: 'Rongshen Hu', role: 'Core Member', affiliation: 'Shanghai University', bio: 'Research prototyping and engineering development.' }
         ];
 
+        const network = [
+            { code: 'SHU', name: 'Shanghai University', domain: 'shu.edu.cn' },
+            { code: 'FDU', name: 'Fudan University', domain: 'fudan.edu.cn' },
+            { code: 'TONGJI', name: 'Tongji University', domain: 'tongji.edu.cn' },
+            { code: 'ECUPL', name: 'East China University of Political Science and Law', domain: 'ecupl.edu.cn' },
+            { code: 'CUC', name: 'Communication University of China', domain: 'cuc.edu.cn' },
+            { code: 'SJTU', name: 'Shanghai Jiao Tong University', domain: 'sjtu.edu.cn' },
+            { code: 'BZA', name: 'Beijing Zhongguancun Academy', domain: 'bza.edu.cn' },
+            { code: 'NTU', name: 'Nanyang Technological University', domain: 'ntu.edu.sg' },
+            { code: 'HKU', name: 'The University of Hong Kong', domain: 'hku.hk' },
+            { code: 'NU', name: 'Nagoya University', domain: 'nagoya-u.ac.jp' },
+            { code: 'NJU', name: 'Nanjing University', domain: 'nju.edu.cn' },
+            { code: 'LUH', name: 'Leibniz University Hannover', domain: 'uni-hannover.de' },
+            { code: 'CAS', name: 'Chinese Academy of Sciences', domain: 'cas.cn' },
+            { code: 'A*STAR', name: 'Agency for Science, Technology and Research, Singapore', domain: 'a-star.edu.sg' }
+        ];
+
+        function formatResearchMeta(meta) {
+            return meta.split(' · ').map(part => {
+                const match = part.match(/^CCF-([ABC])$/);
+                const classes = match ? `meta-chip ccf-badge ccf-${match[1].toLowerCase()}` : 'meta-chip';
+                return `<span class="${classes}">${part}</span>`;
+            }).join('');
+        }
+
         document.getElementById('research-list').innerHTML = research.map(item => `
-            <article class="research-item"><div class="research-meta">${item.meta}</div><h3>${item.title}</h3><p>${item.text}</p></article>
+            <article class="research-item"><div class="research-meta">${formatResearchMeta(item.meta)}</div><h3>${item.title}</h3><p>${item.text}</p></article>
         `).join('');
 
-        document.getElementById('team-list').innerHTML = team.map(member => `
+        document.getElementById('network-list').innerHTML = network.map(institution => `
+            <article class="network-mark"><img class="network-symbol ${institution.code.length > 4 ? 'wide' : ''}" src="https://www.google.com/s2/favicons?domain=${institution.domain}&sz=128" alt="${institution.name} logo" loading="lazy" onerror="this.remove();"><div class="network-name">${institution.name}</div></article>
+        `).join('');
+
+        const founders = team.filter(member => member.role.includes('Founder'));
+        const coreMembers = team.filter(member => member.role === 'Core Member');
+
+        document.getElementById('founder-list').innerHTML = founders.map(member => `
+            <article class="member"><h3>${member.name}</h3><div class="role">${member.role}</div><p><strong>${member.affiliation}</strong><br>${member.bio}</p></article>
+        `).join('');
+
+        document.getElementById('core-member-list').innerHTML = coreMembers.map(member => `
             <article class="member"><h3>${member.name}</h3><div class="role">${member.role}</div><p><strong>${member.affiliation}</strong><br>${member.bio}</p></article>
         `).join('');
     </script>
