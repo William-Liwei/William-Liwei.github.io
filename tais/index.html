@@ -304,9 +304,33 @@
         .open-call h3 { margin-bottom: 4px; color: var(--teal-dark); font-size: 18px; }
         .open-call p { margin-bottom: 0; color: var(--teal-dark); font-size: 13px; }
         .open-call a { flex-shrink: 0; color: var(--teal-dark); font-weight: 800; font-size: 13px; text-decoration: none; }
-        .network-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 14px; }
+        .network-marquee {
+            position: relative;
+            overflow: hidden;
+            padding: 10px;
+            border: 1px solid rgba(16, 32, 45, .1);
+            border-radius: 32px;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.58)),
+                radial-gradient(circle at 12% 0, rgba(111, 214, 220, .22), transparent 18rem);
+            box-shadow: var(--shadow);
+            -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 7%, #000 93%, transparent 100%);
+            mask-image: linear-gradient(90deg, transparent 0, #000 7%, #000 93%, transparent 100%);
+        }
+        .network-track {
+            display: flex;
+            width: max-content;
+            animation: network-scroll 58s linear infinite;
+        }
+        .network-marquee:hover .network-track { animation-play-state: paused; }
+        .network-set {
+            display: flex;
+            gap: 14px;
+            padding-right: 14px;
+        }
         .network-mark {
             min-height: 142px;
+            flex: 0 0 178px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -316,6 +340,14 @@
             border-radius: 24px;
             background: rgba(255,255,255,.86);
             box-shadow: 0 14px 34px rgba(8, 26, 34, .06);
+            color: inherit;
+            text-decoration: none;
+            transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+        }
+        .network-mark:hover, .network-mark:focus {
+            transform: translateY(-2px);
+            border-color: rgba(0, 124, 131, .26);
+            box-shadow: 0 18px 42px rgba(8, 26, 34, .1);
         }
         .network-logo {
             position: relative;
@@ -332,8 +364,14 @@
             text-align: center;
         }
         .network-logo img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; padding: 8px; background: #f8fbfb; }
+        .network-logo img { opacity: 0; transition: opacity .18s ease; }
+        .network-logo img.is-loaded { opacity: 1; }
         .network-logo span { position: absolute; inset: 0; z-index: 0; display: grid; place-items: center; padding: 6px; }
         .network-name { color: var(--ink); font-size: 11px; font-weight: 700; line-height: 1.35; }
+        @keyframes network-scroll {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
         .team-group + .team-group { margin-top: 38px; }
         .team-group-heading { display: flex; align-items: center; gap: 14px; margin-bottom: 13px; color: var(--teal); font: 11px var(--mono); text-transform: uppercase; }
         .team-group-heading::after { content: ''; height: 1px; flex: 1; background: var(--line); }
@@ -438,15 +476,25 @@
             .product-diagram { min-height: 0; gap: 24px; }
             .research-item { min-height: 0; }
             .founder-grid, .core-grid { grid-template-columns: 1fr; }
-            .network-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-            .network-mark { min-height: 132px; padding: 15px; border-radius: 20px; }
+            .network-marquee { margin-inline: -4px; padding: 8px; border-radius: 24px; }
+            .network-track { animation-duration: 46s; }
+            .network-set { gap: 10px; padding-right: 10px; }
+            .network-mark { min-height: 132px; flex-basis: 158px; padding: 15px; border-radius: 20px; }
             .network-logo { width: 46px; height: 46px; border-radius: 15px; }
             .open-call { padding: 22px; }
             .site-footer { padding: 48px 0; }
         }
         @media (max-width: 380px) {
-            .network-grid { grid-template-columns: 1fr; }
             .signal strong { font-size: 24px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            .network-marquee {
+                overflow-x: auto;
+                -webkit-mask-image: none;
+                mask-image: none;
+            }
+            .network-track { animation: none; }
         }
     </style>
 </head>
@@ -584,7 +632,9 @@
                     <div><div class="eyebrow">05 / Academic network</div><h2>Connected across disciplines and institutions.</h2></div>
                     <p>Institutions represented through TAIS members, co-authored research, and our wider academic network.</p>
                 </div>
-                <div class="network-grid" id="network-list"></div>
+                <div class="network-marquee" aria-label="TAIS academic network">
+                    <div class="network-track" id="network-list"></div>
+                </div>
             </div>
         </section>
 
@@ -649,7 +699,7 @@
 
         const team = [
             { name: 'Wei Li', role: 'Founder &middot; Project Lead', affiliation: 'Shanghai University', bio: 'Leads TAIS across research direction, product strategy, time-series intelligence, and Agent interaction.' },
-            { name: 'Luc (Zixin Wang)', role: 'Founder', affiliation: 'Shanghai University', bio: 'Machine learning, human-computer interaction, and community development.' },
+            { name: 'Zixin Wang', role: 'Founder', affiliation: 'Shanghai University', bio: 'Machine learning, human-computer interaction, and community development.' },
             { name: 'Chi-Hsiang Kao (Qixiang Gao)', role: 'Founder', affiliation: 'Fudan University', bio: 'Mathematics, data science, and interdisciplinary research.' },
             { name: 'Qizheng Sun', role: 'Core Member', affiliation: 'Shanghai University', bio: 'Electronic information, machine learning, and technical development.' },
             { name: 'Haowen Zheng', role: 'Core Member', affiliation: 'East China University of Political Science and Law', bio: 'AI for law, interdisciplinary research, and social science.' },
@@ -662,20 +712,20 @@
         ];
 
         const network = [
-            { code: 'SHU', name: 'Shanghai University', domain: 'shu.edu.cn' },
-            { code: 'FDU', name: 'Fudan University', domain: 'fudan.edu.cn' },
-            { code: 'TONGJI', name: 'Tongji University', domain: 'tongji.edu.cn' },
-            { code: 'ECUPL', name: 'East China University of Political Science and Law', domain: 'ecupl.edu.cn' },
-            { code: 'CUC', name: 'Communication University of China', domain: 'cuc.edu.cn' },
-            { code: 'SJTU', name: 'Shanghai Jiao Tong University', domain: 'sjtu.edu.cn' },
-            { code: 'BZA', name: 'Beijing Zhongguancun Academy', domain: 'bza.edu.cn' },
-            { code: 'NTU', name: 'Nanyang Technological University', domain: 'ntu.edu.sg' },
-            { code: 'HKU', name: 'The University of Hong Kong', domain: 'hku.hk' },
-            { code: 'NU', name: 'Nagoya University', domain: 'nagoya-u.ac.jp' },
-            { code: 'NJU', name: 'Nanjing University', domain: 'nju.edu.cn' },
-            { code: 'LUH', name: 'Leibniz University Hannover', domain: 'uni-hannover.de' },
-            { code: 'CAS', name: 'Chinese Academy of Sciences', domain: 'cas.cn' },
-            { code: 'A*STAR', name: 'Agency for Science, Technology and Research, Singapore', domain: 'a-star.edu.sg' }
+            { code: 'SHU', name: 'Shanghai University', url: 'https://www.shu.edu.cn/', logo: 'https://www.shu.edu.cn/favicon.ico' },
+            { code: 'FDU', name: 'Fudan University', url: 'https://www.fudan.edu.cn/', logo: 'https://www.fudan.edu.cn/favicon.ico' },
+            { code: 'TONGJI', name: 'Tongji University', url: 'https://www.tongji.edu.cn/', logo: 'https://www.tongji.edu.cn/favicon.ico' },
+            { code: 'ECUPL', name: 'East China University of Political Science and Law', url: 'https://www.ecupl.edu.cn/', logo: 'https://www.ecupl.edu.cn/favicon.ico' },
+            { code: 'CUC', name: 'Communication University of China', url: 'https://www.cuc.edu.cn/', logo: 'https://www.cuc.edu.cn/favicon.ico' },
+            { code: 'SJTU', name: 'Shanghai Jiao Tong University', url: 'https://www.sjtu.edu.cn/', logo: 'https://www.sjtu.edu.cn/favicon.ico' },
+            { code: 'BZA', name: 'Beijing Zhongguancun Academy', url: 'https://www.bza.edu.cn/', logo: 'https://www.bza.edu.cn/favicon.ico' },
+            { code: 'NTU', name: 'Nanyang Technological University', url: 'https://www.ntu.edu.sg/', logo: 'https://www.ntu.edu.sg/favicon.ico' },
+            { code: 'HKU', name: 'The University of Hong Kong', url: 'https://www.hku.hk/', logo: 'https://www.hku.hk/favicon.ico' },
+            { code: 'NU', name: 'Nagoya University', url: 'https://www.nagoya-u.ac.jp/', logo: 'https://www.nagoya-u.ac.jp/favicon.ico' },
+            { code: 'NJU', name: 'Nanjing University', url: 'https://www.nju.edu.cn/', logo: 'https://www.nju.edu.cn/favicon.ico' },
+            { code: 'LUH', name: 'Leibniz University Hannover', url: 'https://www.uni-hannover.de/', logo: 'https://www.uni-hannover.de/favicon.ico' },
+            { code: 'CAS', name: 'Chinese Academy of Sciences', url: 'https://www.cas.cn/', logo: 'https://www.cas.cn/favicon.ico' },
+            { code: 'A*STAR', name: 'Agency for Science, Technology and Research, Singapore', url: 'https://www.a-star.edu.sg/', logo: 'https://www.a-star.edu.sg/favicon.ico' }
         ];
 
         function formatResearchMeta(meta) {
@@ -691,9 +741,23 @@
             <article class="research-item"><div class="research-meta">${formatResearchMeta(item.meta)}</div><h3>${item.title}</h3><p>${item.text}</p></article>
         `).join('');
 
-        document.getElementById('network-list').innerHTML = network.map(institution => `
-            <article class="network-mark"><div class="network-logo"><span>${institution.code}</span><img src="https://www.google.com/s2/favicons?domain=${institution.domain}&sz=128" alt="${institution.name} logo" loading="lazy" onerror="this.remove();"></div><div class="network-name">${institution.name}</div></article>
-        `).join('');
+        function renderNetworkCards(items) {
+            return items.map(institution => `
+                <a class="network-mark" href="${institution.url}" target="_blank" rel="noopener" aria-label="${institution.name}">
+                    <div class="network-logo">
+                        <span>${institution.code}</span>
+                        <img src="${institution.logo}" alt="${institution.name} logo" loading="lazy" decoding="async" onload="this.classList.add('is-loaded')" onerror="this.remove();">
+                    </div>
+                    <div class="network-name">${institution.name}</div>
+                </a>
+            `).join('');
+        }
+
+        const networkCards = renderNetworkCards(network);
+        document.getElementById('network-list').innerHTML = `
+            <div class="network-set">${networkCards}</div>
+            <div class="network-set" aria-hidden="true">${networkCards}</div>
+        `;
 
         const founders = team.filter(member => member.role.includes('Founder'));
         const coreMembers = team.filter(member => member.role === 'Core Member');
