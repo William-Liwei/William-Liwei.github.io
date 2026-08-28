@@ -3,131 +3,385 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="TAIS - Time-Series, Agents & Intelligent Systems. A sequence-first research and product collective.">
-    <title>TAIS | Time-Series, Agents &amp; Intelligent Systems</title>
+    <meta name="description" content="TAIS - Time-Series, Agents & Intelligent Systems. A sequence-first research collective for temporal modeling, agent systems, and applied intelligence.">
+    <title>TAIS | Research Collective for Intelligent Systems</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --ink: #10202d;
+            --ink-deep: #07171d;
             --muted: #526573;
             --line: #d8e1e6;
             --paper: #f4f7f8;
             --white: #ffffff;
             --teal: #007c83;
             --teal-dark: #00585e;
+            --cyan: #6fd6dc;
+            --mist: #e8f4f3;
             --yellow: #f3c969;
+            --panel: rgba(255, 255, 255, .76);
+            --panel-strong: rgba(255, 255, 255, .93);
+            --shadow: 0 24px 70px rgba(8, 26, 34, .12);
             --mono: 'DM Mono', monospace;
             --sans: 'Manrope', system-ui, sans-serif;
         }
         * { box-sizing: border-box; }
         html { scroll-behavior: smooth; }
-        body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); line-height: 1.65; }
+        body {
+            margin: 0;
+            background:
+                radial-gradient(circle at 6% 8%, rgba(111, 214, 220, .23), transparent 28rem),
+                radial-gradient(circle at 92% 4%, rgba(243, 201, 105, .22), transparent 24rem),
+                linear-gradient(135deg, #f8fbfb 0%, var(--paper) 48%, #e8f0f1 100%);
+            color: var(--ink);
+            font-family: var(--sans);
+            line-height: 1.65;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(16, 32, 45, .045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16, 32, 45, .045) 1px, transparent 1px);
+            background-size: 56px 56px;
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,.85), transparent 82%);
+        }
         a { color: inherit; }
         .shell { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
-        .site-header { position: sticky; top: 0; z-index: 10; background: rgba(244, 247, 248, .94); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
-        .header-inner { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+        .site-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: rgba(248, 251, 251, .82);
+            backdrop-filter: blur(18px) saturate(150%);
+            border-bottom: 1px solid rgba(16, 32, 45, .11);
+            box-shadow: 0 12px 42px rgba(8, 26, 34, .055);
+        }
+        .header-inner { min-height: 74px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
         .brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
-        .brand-mark { width: 34px; height: 34px; display: grid; place-items: center; color: var(--white); background: var(--teal); font: 700 13px var(--mono); letter-spacing: 0; }
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+            display: grid;
+            place-items: center;
+            color: var(--white);
+            background: linear-gradient(135deg, var(--teal), #11353d);
+            border-radius: 13px;
+            font: 700 12px var(--mono);
+            letter-spacing: 0;
+            box-shadow: 0 10px 26px rgba(0, 124, 131, .25);
+        }
         .brand-name { font-weight: 800; letter-spacing: .02em; }
         .brand-type { color: var(--muted); font: 11px var(--mono); margin-left: 4px; }
-        nav { display: flex; flex-wrap: wrap; gap: 20px; }
-        nav a { color: var(--muted); font-size: 13px; font-weight: 700; text-decoration: none; }
-        nav a:hover, nav a:focus { color: var(--teal); }
-        .hero { position: relative; min-height: 630px; display: flex; align-items: flex-end; overflow: hidden; color: var(--white); background: #11353d url('fig/hero-background.png') center / cover no-repeat; }
-        .hero::before { content: ''; position: absolute; inset: 0; background: rgba(7, 35, 43, .72); }
-        .hero-content { position: relative; width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 90px 0 92px; }
+        nav { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+        nav a {
+            color: var(--muted);
+            padding: 8px 10px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 800;
+            text-decoration: none;
+            transition: color .18s ease, background .18s ease, transform .18s ease;
+        }
+        nav a:hover, nav a:focus { color: var(--teal); background: rgba(0, 124, 131, .08); transform: translateY(-1px); }
+        .hero {
+            position: relative;
+            min-height: 700px;
+            display: flex;
+            align-items: flex-end;
+            overflow: hidden;
+            color: var(--white);
+            background:
+                linear-gradient(135deg, rgba(7, 23, 29, .93), rgba(8, 60, 68, .72)),
+                url('fig/hero-background.png') center / cover no-repeat;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 18% 28%, rgba(111, 214, 220, .22), transparent 25rem),
+                radial-gradient(circle at 82% 30%, rgba(243, 201, 105, .20), transparent 24rem),
+                linear-gradient(to top, rgba(7, 23, 29, .96), rgba(7, 23, 29, .16));
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px);
+            background-size: 72px 72px;
+            opacity: .5;
+        }
+        .hero-content { position: relative; z-index: 1; width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 120px 0 118px; }
         .eyebrow { color: var(--yellow); font: 500 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
         h1, h2, h3, p { margin-top: 0; }
-        h1 { max-width: 850px; margin: 18px 0 22px; font-size: clamp(42px, 7vw, 86px); line-height: 1.02; letter-spacing: -.045em; }
-        .hero-lede { max-width: 650px; margin-bottom: 32px; color: #d8e9eb; font-size: 19px; }
+        h1 { max-width: 890px; margin: 18px 0 22px; font-size: clamp(46px, 7vw, 92px); line-height: .98; letter-spacing: -.055em; }
+        .hero-lede { max-width: 680px; margin-bottom: 34px; color: #d8e9eb; font-size: clamp(18px, 2vw, 21px); }
         .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-        .button { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border: 1px solid var(--white); color: var(--white); font-weight: 800; font-size: 13px; text-decoration: none; }
+        .button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 46px;
+            padding: 12px 18px;
+            border: 1px solid rgba(255,255,255,.62);
+            border-radius: 999px;
+            color: var(--white);
+            font-weight: 800;
+            font-size: 13px;
+            text-decoration: none;
+            transition: transform .18s ease, border-color .18s ease, background .18s ease;
+        }
         .button.primary { border-color: var(--yellow); background: var(--yellow); color: var(--ink); }
-        .button:hover, .button:focus { transform: translateY(-1px); }
-        .signal-strip { border-bottom: 1px solid var(--line); background: var(--white); }
-        .signals { display: grid; grid-template-columns: repeat(3, 1fr); }
-        .signal { padding: 23px 25px; border-right: 1px solid var(--line); }
+        .button:hover, .button:focus { transform: translateY(-2px); background: rgba(255,255,255,.1); }
+        .button.primary:hover, .button.primary:focus { background: #ffd978; }
+        .signal-strip { position: relative; z-index: 2; margin-top: -54px; border-bottom: 0; background: transparent; }
+        .signals { display: grid; grid-template-columns: repeat(3, 1fr); overflow: hidden; border: 1px solid rgba(16, 32, 45, .12); border-radius: 30px; background: var(--panel-strong); box-shadow: var(--shadow); backdrop-filter: blur(16px); }
+        .signal { padding: 25px 28px; border-right: 1px solid var(--line); }
         .signal:last-child { border-right: 0; }
         .signal strong { display: block; color: var(--teal); font-size: 28px; line-height: 1.1; }
         .signal span { color: var(--muted); font: 11px var(--mono); text-transform: uppercase; }
-        .section { padding: 92px 0; border-bottom: 1px solid var(--line); }
+        .section { position: relative; padding: 104px 0; border-bottom: 1px solid rgba(16, 32, 45, .09); }
+        .section:nth-of-type(even) {
+            background: linear-gradient(180deg, rgba(255,255,255,.34), rgba(232,244,243,.28));
+        }
         .section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 30px; margin-bottom: 44px; }
         .section-heading h2 { max-width: 640px; margin: 8px 0 0; font-size: clamp(30px, 4vw, 52px); line-height: 1.08; letter-spacing: -.035em; }
         .section-heading p { max-width: 370px; color: var(--muted); margin-bottom: 0; }
-        .manifesto { display: grid; grid-template-columns: 1.1fr .9fr; gap: 60px; align-items: start; }
-        .manifesto-copy { font-size: 22px; line-height: 1.45; }
+        .manifesto { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr); gap: 24px; align-items: stretch; }
+        .manifesto-copy {
+            margin: 0;
+            padding: 38px;
+            border: 1px solid rgba(16, 32, 45, .1);
+            border-radius: 30px;
+            background: var(--panel-strong);
+            box-shadow: 0 18px 55px rgba(8, 26, 34, .08);
+            font-size: clamp(20px, 2.1vw, 27px);
+            line-height: 1.45;
+        }
         .manifesto-copy em { color: var(--teal); font-style: normal; }
-        .sequence { padding: 25px; background: var(--ink); color: var(--white); }
+        .sequence {
+            position: relative;
+            overflow: hidden;
+            padding: 34px;
+            border: 1px solid rgba(111, 214, 220, .23);
+            border-radius: 30px;
+            background:
+                radial-gradient(circle at 82% 10%, rgba(111, 214, 220, .24), transparent 15rem),
+                linear-gradient(145deg, var(--ink-deep), #0d333a 58%, #112a32);
+            color: var(--white);
+            box-shadow: var(--shadow);
+        }
+        .sequence::after {
+            content: '';
+            position: absolute;
+            inset: auto -20% -45% 20%;
+            height: 190px;
+            background: radial-gradient(circle, rgba(243, 201, 105, .3), transparent 64%);
+        }
         .sequence-label { color: var(--yellow); font: 11px var(--mono); letter-spacing: .05em; text-transform: uppercase; }
         .sequence-flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 28px 0 22px; font: 14px var(--mono); }
-        .sequence-flow span { padding: 8px 9px; border: 1px solid rgba(255,255,255,.35); }
+        .sequence-flow span { padding: 8px 10px; border: 1px solid rgba(255,255,255,.28); border-radius: 999px; background: rgba(255,255,255,.07); }
         .sequence-flow b { color: var(--yellow); font-weight: 400; }
-        .sequence small { color: #bcd0d4; }
+        .sequence small { position: relative; z-index: 1; color: #bcd0d4; }
         .product { display: grid; grid-template-columns: 1.15fr .85fr; gap: 45px; align-items: stretch; }
-        .product-copy { padding: 38px; background: var(--white); border: 1px solid var(--line); }
+        .product-copy {
+            padding: 40px;
+            border: 1px solid rgba(16, 32, 45, .1);
+            border-radius: 32px;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.82)),
+                radial-gradient(circle at 0 0, rgba(111, 214, 220, .22), transparent 18rem);
+            box-shadow: var(--shadow);
+        }
         .product-copy h3 { margin: 10px 0 14px; font-size: 34px; letter-spacing: -.03em; }
         .product-copy p { color: var(--muted); }
-        .product-badge { display: inline-flex; padding: 5px 9px; background: #dff1f0; color: var(--teal-dark); font: 11px var(--mono); text-transform: uppercase; }
+        .product-badge { display: inline-flex; padding: 6px 10px; border-radius: 999px; background: #dff1f0; color: var(--teal-dark); font: 11px var(--mono); text-transform: uppercase; }
         .tag-row { display: flex; flex-wrap: wrap; gap: 7px; margin: 22px 0 28px; }
-        .tag { padding: 5px 8px; border: 1px solid var(--line); color: var(--muted); font: 11px var(--mono); }
+        .tag { padding: 6px 10px; border: 1px solid rgba(16, 32, 45, .1); border-radius: 999px; background: rgba(255,255,255,.72); color: var(--muted); font: 11px var(--mono); }
         .product-links { display: flex; flex-wrap: wrap; gap: 18px; }
         .text-link { color: var(--teal); font-size: 13px; font-weight: 800; text-decoration: none; }
         .text-link:hover { text-decoration: underline; }
-        .product-diagram { min-height: 320px; display: flex; flex-direction: column; justify-content: space-between; padding: 30px; background: #dceeed; border: 1px solid #b7d7d5; }
+        .product-diagram {
+            min-height: 320px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 34px;
+            border: 1px solid #b7d7d5;
+            border-radius: 32px;
+            background:
+                linear-gradient(145deg, rgba(220,238,237,.96), rgba(247,251,251,.92)),
+                radial-gradient(circle at 100% 0, rgba(243, 201, 105, .3), transparent 14rem);
+            box-shadow: 0 18px 55px rgba(0, 88, 94, .1);
+        }
         .product-diagram h4 { margin: 0; color: var(--teal-dark); font-size: 18px; }
         .diagram-step { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid rgba(0, 88, 94, .2); color: var(--teal-dark); font-size: 14px; }
         .diagram-step:last-child { border-bottom: 0; }
-        .diagram-step b { width: 25px; height: 25px; display: grid; place-items: center; background: var(--teal); color: var(--white); font: 11px var(--mono); }
-        .research-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 35px; border-top: 1px solid var(--line); }
-        .research-item { padding: 25px 0 28px; border-bottom: 1px solid var(--line); }
+        .diagram-step b { width: 27px; height: 27px; flex: 0 0 27px; display: grid; place-items: center; border-radius: 9px; background: var(--teal); color: var(--white); font: 11px var(--mono); }
+        .research-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+        .research-item {
+            position: relative;
+            overflow: hidden;
+            min-height: 208px;
+            padding: 27px;
+            border: 1px solid rgba(16, 32, 45, .1);
+            border-radius: 28px;
+            background: rgba(255,255,255,.86);
+            box-shadow: 0 16px 42px rgba(8, 26, 34, .07);
+        }
+        .research-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--teal), var(--cyan), var(--yellow));
+        }
         .research-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; font: 10px var(--mono); text-transform: uppercase; }
-        .meta-chip { display: inline-flex; align-items: center; min-height: 25px; padding: 4px 7px; border: 1px solid #cbd7dc; background: var(--white); color: var(--muted); }
+        .meta-chip { display: inline-flex; align-items: center; min-height: 25px; padding: 4px 8px; border: 1px solid #cbd7dc; border-radius: 999px; background: var(--white); color: var(--muted); }
         .ccf-badge { border-color: transparent; font-weight: 500; }
         .ccf-a { background: var(--yellow); color: #49360b; }
         .ccf-b { background: var(--teal); color: var(--white); }
         .ccf-c { background: #dce4e8; color: var(--ink); }
         .research-item h3 { margin-bottom: 8px; font-size: 20px; line-height: 1.3; letter-spacing: -.02em; }
         .research-item p { margin-bottom: 0; color: var(--muted); font-size: 14px; }
-        .research-note { margin-top: 30px; padding: 16px 18px; border-left: 3px solid var(--yellow); background: #fffaf0; color: var(--muted); font-size: 13px; }
+        .research-note {
+            margin-top: 22px;
+            padding: 18px 20px;
+            border: 1px solid rgba(243, 201, 105, .42);
+            border-radius: 22px;
+            background: #fffaf0;
+            color: var(--muted);
+            font-size: 13px;
+        }
         .program-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-        .program { min-height: 330px; display: flex; flex-direction: column; padding: 28px; border: 1px solid var(--line); background: var(--white); }
-        .program.featured { background: var(--ink); color: var(--white); border-color: var(--ink); }
-        .program-status { width: fit-content; padding: 5px 8px; color: var(--teal-dark); background: #dff1f0; font: 11px var(--mono); text-transform: uppercase; }
+        .program {
+            min-height: 330px;
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            border: 1px solid rgba(16, 32, 45, .1);
+            border-radius: 30px;
+            background: rgba(255,255,255,.88);
+            box-shadow: 0 16px 42px rgba(8, 26, 34, .065);
+        }
+        .program.featured {
+            background:
+                radial-gradient(circle at 86% 8%, rgba(111, 214, 220, .22), transparent 13rem),
+                linear-gradient(145deg, var(--ink-deep), #102f37);
+            color: var(--white);
+            border-color: rgba(111, 214, 220, .2);
+        }
+        .program-status { width: fit-content; padding: 6px 10px; border-radius: 999px; color: var(--teal-dark); background: #dff1f0; font: 11px var(--mono); text-transform: uppercase; }
         .program.featured .program-status { color: var(--ink); background: var(--yellow); }
         .program h3 { margin: 24px 0 12px; font-size: 24px; line-height: 1.2; letter-spacing: -.025em; }
         .program p { color: var(--muted); font-size: 14px; }
         .program.featured p { color: #bdd0d4; }
         .program-target { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--line); color: var(--teal); font: 11px var(--mono); line-height: 1.7; text-transform: uppercase; }
         .program.featured .program-target { border-color: #31464d; color: var(--yellow); }
-        .open-call { margin-top: 24px; display: flex; align-items: center; justify-content: space-between; gap: 25px; padding: 23px 26px; background: #dceeed; border: 1px solid #b7d7d5; }
+        .open-call {
+            margin-top: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 25px;
+            padding: 24px 28px;
+            border: 1px solid #b7d7d5;
+            border-radius: 26px;
+            background: linear-gradient(135deg, #dceeed, #f8fbfb);
+            box-shadow: 0 16px 42px rgba(0, 88, 94, .09);
+        }
         .open-call h3 { margin-bottom: 4px; color: var(--teal-dark); font-size: 18px; }
         .open-call p { margin-bottom: 0; color: var(--teal-dark); font-size: 13px; }
         .open-call a { flex-shrink: 0; color: var(--teal-dark); font-weight: 800; font-size: 13px; text-decoration: none; }
-        .network-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px; border: 1px solid var(--line); background: var(--line); }
-        .network-mark { min-height: 132px; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; padding: 17px; background: var(--white); }
-        .network-symbol { width: 46px; height: 46px; display: grid; place-items: center; border: 1px solid #a8c3c6; color: var(--teal-dark); background: #eaf4f3; font: 500 10px var(--mono); text-align: center; object-fit: contain; padding: 6px; }
-        .network-symbol.wide { font-size: 8px; }
+        .network-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 14px; }
+        .network-mark {
+            min-height: 142px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 18px;
+            border: 1px solid rgba(16, 32, 45, .1);
+            border-radius: 24px;
+            background: rgba(255,255,255,.86);
+            box-shadow: 0 14px 34px rgba(8, 26, 34, .06);
+        }
+        .network-logo {
+            position: relative;
+            width: 52px;
+            height: 52px;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            border: 1px solid #a8c3c6;
+            border-radius: 17px;
+            background: #eaf4f3;
+            color: var(--teal-dark);
+            font: 600 10px var(--mono);
+            text-align: center;
+        }
+        .network-logo img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; padding: 8px; background: #f8fbfb; }
+        .network-logo span { position: absolute; inset: 0; z-index: 0; display: grid; place-items: center; padding: 6px; }
         .network-name { color: var(--ink); font-size: 11px; font-weight: 700; line-height: 1.35; }
         .team-group + .team-group { margin-top: 38px; }
         .team-group-heading { display: flex; align-items: center; gap: 14px; margin-bottom: 13px; color: var(--teal); font: 11px var(--mono); text-transform: uppercase; }
         .team-group-heading::after { content: ''; height: 1px; flex: 1; background: var(--line); }
-        .team-grid { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+        .team-grid { display: grid; gap: 16px; }
         .founder-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         .core-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-        .member { min-height: 190px; padding: 24px; background: var(--white); }
-        .founder-grid .member { border-top: 3px solid var(--teal); }
+        .member {
+            position: relative;
+            overflow: hidden;
+            min-height: 190px;
+            padding: 24px;
+            border: 1px solid rgba(16, 32, 45, .1);
+            border-radius: 26px;
+            background: rgba(255,255,255,.88);
+            box-shadow: 0 14px 36px rgba(8, 26, 34, .06);
+        }
+        .member::before {
+            content: '';
+            position: absolute;
+            inset: 0 0 auto;
+            height: 4px;
+            background: linear-gradient(90deg, var(--teal), var(--cyan));
+        }
+        .founder-grid .member::before { background: linear-gradient(90deg, var(--yellow), var(--teal), var(--cyan)); }
         .core-grid .member { min-height: 170px; }
         .member h3 { margin-bottom: 5px; font-size: 19px; }
         .member .role { margin-bottom: 12px; color: var(--teal); font: 11px var(--mono); text-transform: uppercase; }
+        .member .affiliation { color: var(--ink); font-weight: 800; }
         .member p { margin-bottom: 0; color: var(--muted); font-size: 13px; }
         .roadmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
-        .roadmap-item { padding-top: 17px; border-top: 3px solid var(--teal); }
+        .roadmap-item {
+            min-height: 230px;
+            padding: 26px;
+            border: 1px solid rgba(16, 32, 45, .1);
+            border-radius: 28px;
+            background: rgba(255,255,255,.86);
+            box-shadow: 0 14px 36px rgba(8, 26, 34, .06);
+        }
         .roadmap-item .number { color: var(--teal); font: 12px var(--mono); }
         .roadmap-item h3 { margin: 10px 0 8px; font-size: 21px; }
         .roadmap-item p { color: var(--muted); font-size: 14px; }
-        .site-footer { padding: 55px 0; background: var(--ink); color: var(--white); }
+        .site-footer {
+            padding: 60px 0;
+            background:
+                radial-gradient(circle at 16% 18%, rgba(111, 214, 220, .16), transparent 18rem),
+                linear-gradient(145deg, var(--ink-deep), var(--ink));
+            color: var(--white);
+        }
         .footer-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 40px; }
         .site-footer h2 { margin: 0 0 13px; font-size: 25px; }
         .site-footer p, .site-footer a { color: #bdd0d4; font-size: 13px; }
@@ -135,32 +389,64 @@
         .site-footer a:hover { color: var(--yellow); }
         .footer-label { margin-bottom: 10px; color: var(--yellow); font: 11px var(--mono); text-transform: uppercase; }
         .copyright { margin-top: 42px; padding-top: 18px; border-top: 1px solid #31464d; color: #8da5aa; font: 11px var(--mono); }
-        @media (max-width: 800px) {
-            .header-inner { min-height: 64px; align-items: flex-start; padding: 14px 0; flex-direction: column; }
-            nav { gap: 12px 18px; }
-            .hero { min-height: 570px; }
-            .hero-content { padding: 65px 0 70px; }
-            .section { padding: 65px 0; }
+        @media (max-width: 900px) {
+            .header-inner { min-height: 64px; align-items: flex-start; padding: 14px 0; flex-direction: column; gap: 10px; }
+            nav {
+                width: 100%;
+                flex-wrap: nowrap;
+                justify-content: flex-start;
+                gap: 8px;
+                overflow-x: auto;
+                padding: 0 0 4px;
+                scrollbar-width: none;
+            }
+            nav::-webkit-scrollbar { display: none; }
+            nav a { flex: 0 0 auto; white-space: nowrap; }
+            .hero { min-height: 590px; background-position: center; }
+            .hero-content { padding: 76px 0 88px; }
+            .signal-strip { margin-top: -36px; }
             .signals, .manifesto, .product, .footer-grid { grid-template-columns: 1fr; }
-            .signal { border-right: 0; border-bottom: 1px solid var(--line); }
+            .signals { border-radius: 24px; }
+            .signal { padding: 22px 24px; border-right: 0; border-bottom: 1px solid var(--line); }
             .signal:last-child { border-bottom: 0; }
-            .section-heading { display: block; }
-            .section-heading p { margin-top: 18px; }
+            .section { padding: 72px 0; }
+            .section-heading { display: block; margin-bottom: 30px; }
+            .section-heading p { max-width: 620px; margin-top: 18px; }
             .research-grid { grid-template-columns: 1fr; }
             .founder-grid, .core-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .program-grid { grid-template-columns: 1fr; }
             .program { min-height: 0; }
             .open-call { align-items: flex-start; flex-direction: column; }
-            .network-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-            .roadmap { grid-template-columns: 1fr; gap: 28px; }
+            .roadmap { grid-template-columns: 1fr; gap: 18px; }
         }
-        @media (max-width: 480px) {
+        @media (max-width: 600px) {
             .shell, .hero-content { width: min(100% - 28px, 1180px); }
-            h1 { font-size: 44px; }
-            .hero-lede { font-size: 17px; }
-            .product-copy { padding: 25px; }
+            .brand-name { display: flex; flex-direction: column; gap: 2px; line-height: 1.1; }
+            .brand-type { margin-left: 0; }
+            .hero { min-height: 520px; align-items: center; }
+            .hero-content { padding: 56px 0 72px; }
+            h1 { font-size: clamp(42px, 12.5vw, 58px); letter-spacing: -.045em; }
+            .hero-lede { font-size: 16px; }
+            .hero-actions { display: grid; gap: 10px; }
+            .button { justify-content: center; width: 100%; }
+            .signal-strip { margin-top: -24px; }
+            .section { padding: 58px 0; }
+            .manifesto-copy, .sequence, .product-copy, .product-diagram, .program, .research-item, .member, .roadmap-item { padding: 22px; border-radius: 22px; }
+            .sequence-flow { gap: 6px; font-size: 12px; }
+            .sequence-flow span { padding: 7px 8px; }
+            .product-copy h3 { font-size: 30px; }
+            .product-diagram { min-height: 0; gap: 24px; }
+            .research-item { min-height: 0; }
             .founder-grid, .core-grid { grid-template-columns: 1fr; }
-            .network-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .network-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+            .network-mark { min-height: 132px; padding: 15px; border-radius: 20px; }
+            .network-logo { width: 46px; height: 46px; border-radius: 15px; }
+            .open-call { padding: 22px; }
+            .site-footer { padding: 48px 0; }
+        }
+        @media (max-width: 380px) {
+            .network-grid { grid-template-columns: 1fr; }
+            .signal strong { font-size: 24px; }
         }
     </style>
 </head>
@@ -169,7 +455,7 @@
         <div class="shell header-inner">
             <a class="brand" href="#top" aria-label="TAIS home">
                 <span class="brand-mark">TAIS</span>
-                <span class="brand-name">TAIS <span class="brand-type">PROJECT COLLECTIVE</span></span>
+                <span class="brand-name">TAIS <span class="brand-type">RESEARCH COLLECTIVE</span></span>
             </a>
             <nav aria-label="Primary navigation">
                 <a href="#manifesto">Manifesto</a>
@@ -188,7 +474,7 @@
             <div class="hero-content">
                 <div class="eyebrow">Time-Series, Agents &amp; Intelligent Systems</div>
                 <h1>Sequence is a lens for intelligence.</h1>
-                <p class="hero-lede">TAIS is a research and product collective studying how systems learn, act, and adapt through evolving sequences.</p>
+                <p class="hero-lede">TAIS is a research collective studying temporal modeling, agent systems, and applied intelligence through reproducible papers, prototypes, and datasets.</p>
                 <div class="hero-actions">
                     <a class="button primary" href="#product">Explore SHUProphet <span aria-hidden="true">&rarr;</span></a>
                     <a class="button" href="#research">View research <span aria-hidden="true">&darr;</span></a>
@@ -198,9 +484,9 @@
 
         <div class="signal-strip">
             <div class="shell signals">
-                <div class="signal"><strong>12</strong><span>Research works by members</span></div>
-                <div class="signal"><strong>01</strong><span>Interactive time-series Agent product</span></div>
-                <div class="signal"><strong>11</strong><span>Members across disciplines</span></div>
+                <div class="signal"><strong>12</strong><span>Representative research works</span></div>
+                <div class="signal"><strong>01</strong><span>Interactive research prototype</span></div>
+                <div class="signal"><strong>11</strong><span>Members and collaborators</span></div>
             </div>
         </div>
 
@@ -262,24 +548,24 @@
         <section class="section" id="programs">
             <div class="shell">
                 <div class="section-heading">
-                    <div><div class="eyebrow">04 / Programs</div><h2>Research, venture, and build under one name.</h2></div>
-                    <p>TAIS is designed to travel: from a reproducible result, to a workshop submission, to a working product, to the room where people test it.</p>
+                    <div><div class="eyebrow">04 / Programs</div><h2>Research programs and working systems.</h2></div>
+                    <p>TAIS is designed around a clear loop: research questions, reproducible experiments, working prototypes, and feedback from real users.</p>
                 </div>
                 <div class="program-grid">
                     <article class="program featured">
-                        <div class="program-status">Research · Planned</div>
+                        <div class="program-status">Research &middot; Planned</div>
                         <h3>TAIS Workshop Program</h3>
                         <p>Develop a defensible sequence-intelligence research contribution around Agent trajectories, evaluation, prediction, and adaptive memory, supported by open experiments and a reproducible toolkit.</p>
                         <div class="program-target">Focus: workshop-ready research with open experiments and reproducible artifacts</div>
                     </article>
                     <article class="program">
-                        <div class="program-status">Venture · In development</div>
-                        <h3>TAIS Agent Venture</h3>
-                        <p>Turn SHUProphet from a research prototype into a credible Agent product with real users, measurable workflows, privacy-conscious deployment, and a clear product story.</p>
-                        <div class="program-target">Focus: product validation, external showcases, and venture-ready delivery</div>
+                        <div class="program-status">Systems &middot; In development</div>
+                        <h3>TAIS Applied Systems</h3>
+                        <p>Turn SHUProphet from a research prototype into a reliable analysis system with measurable workflows, privacy-conscious deployment, and clear evaluation criteria.</p>
+                        <div class="program-target">Focus: product validation, external showcases, and maintainable delivery</div>
                     </article>
                     <article class="program">
-                        <div class="program-status">Build · Open</div>
+                        <div class="program-status">Build &middot; Open</div>
                         <h3>TAIS Hack Lab</h3>
                         <p>Ship focused prototypes in short cycles: Agent trace analysis, time-series copilots, model diagnostics, tool-use evaluation, and interactive demos that can survive real judging.</p>
                         <div class="program-target">Target: hackathons, open-source sprints, and technical showcases</div>
@@ -337,38 +623,38 @@
     <footer class="site-footer">
         <div class="shell">
             <div class="footer-grid">
-                <div><div class="footer-label">TAIS</div><h2>Time-Series, Agents &amp; Intelligent Systems</h2><p>A sequence-first research and product collective.</p></div>
+                <div><div class="footer-label">TAIS</div><h2>Time-Series, Agents &amp; Intelligent Systems</h2><p>A sequence-first research collective for temporal modeling, Agent systems, and applied intelligence.</p></div>
                 <div><div class="footer-label">Explore</div><p><a href="#product">SHUProphet</a><br><a href="#research">Research backing</a><br><a href="#roadmap">Roadmap</a></p></div>
                 <div><div class="footer-label">Contact</div><p><a href="mailto:taiseditorial@163.com">taiseditorial@163.com</a><br><a href="https://github.com/William-Liwei" target="_blank" rel="noopener">GitHub</a></p></div>
             </div>
-            <div class="copyright">&copy; 2026 TAIS Project Collective. Research, products, and open collaboration around sequence intelligence.</div>
+            <div class="copyright">&copy; 2026 TAIS Research Collective. Research, prototypes, and open collaboration around sequence intelligence.</div>
         </div>
     </footer>
 
     <script>
         const research = [
-            { title: 'Adaptive Prototypical Contrastive Learning for Time Series Clustering', meta: 'KDD 2026 · CCF-A · Research Track', text: 'Adaptive representation and prototype learning for time-series clustering when the number of clusters is unknown.' },
-            { title: 'ProtoFlowTS: Retrieval-Grounded Residual Flow for Text-Conditioned Time-Series Generation', meta: 'Under review', text: 'Semantic prototype retrieval and residual Flow Matching for text-aligned time-series generation.' },
-            { title: 'UniFlow: Unified Multi-Scale Flow Matching for Time Series Generation', meta: 'Under review', text: 'Shared-ID alignment across multiscale discrete code spaces with non-autoregressive Categorical Flow Matching.' },
-            { title: 'SDFlow: Similarity-Driven Flow Matching for Time Series Generation', meta: 'arXiv preprint · Under review', text: 'Low-rank decomposition, similarity anchors, and non-autoregressive Flow Matching for long time-series generation.' },
-            { title: 'ClusterPatchTST: Uncertainty-Aware Causal Clustering for Heterogeneous Time Series Forecasting', meta: 'DASFAA 2026 · CCF-B · Full paper', text: 'Causal clustering and uncertainty-aware forecasting for heterogeneous temporal data.' },
-            { title: 'ScatterFusion: A Hierarchical Scattering Transform Framework for Enhanced Time Series Forecasting', meta: 'ICASSP 2026 · CCF-B', text: 'A hierarchical scattering-transform framework for multi-scale time-series forecasting.' },
-            { title: 'AWGFormer: Adaptive Wavelet-Guided Transformer for Multi-resolution Time Series Forecasting', meta: 'ICASSP 2026 · CCF-B', text: 'Wavelet guidance and Transformer modeling for multi-resolution temporal prediction.' },
-            { title: 'TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting', meta: 'ICANN 2025 · CCF-C · Oral', text: 'Hierarchical diffusion and adaptive context sampling for multi-horizon forecasting.' },
-            { title: 'SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction', meta: 'ICANN 2025 · CCF-C · Oral', text: 'State-space and wavelet modeling for efficient time-series prediction.' },
-            { title: 'EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting', meta: 'ICIC 2025 · CCF-C · Oral', text: 'Multi-scale Transformer forecasting with uncertainty estimation for energy data.' },
-            { title: 'LWSpace: Multi-Scale State Space Framework for Time Series Forecasting', meta: 'ICIC 2025 · CCF-C · Oral', text: 'A multi-scale state-space framework for efficient temporal forecasting.' },
-            { title: 'Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics', meta: 'CAMMIC 2025 · EI indexed', text: 'Adaptive fusion of statistical and state-space dynamics for medal prediction.' }
+            { title: 'Adaptive Prototypical Contrastive Learning for Time Series Clustering', meta: ['KDD 2026', 'CCF-A', 'Research Track'], text: 'Adaptive representation and prototype learning for time-series clustering when the number of clusters is unknown.' },
+            { title: 'ProtoFlowTS: Retrieval-Grounded Residual Flow for Text-Conditioned Time-Series Generation', meta: ['Under review'], text: 'Semantic prototype retrieval and residual Flow Matching for text-aligned time-series generation.' },
+            { title: 'UniFlow: Unified Multi-Scale Flow Matching for Time Series Generation', meta: ['Under review'], text: 'Shared-ID alignment across multiscale discrete code spaces with non-autoregressive Categorical Flow Matching.' },
+            { title: 'SDFlow: Similarity-Driven Flow Matching for Time Series Generation', meta: ['arXiv preprint', 'Under review'], text: 'Low-rank decomposition, similarity anchors, and non-autoregressive Flow Matching for long time-series generation.' },
+            { title: 'ClusterPatchTST: Uncertainty-Aware Causal Clustering for Heterogeneous Time Series Forecasting', meta: ['DASFAA 2026', 'CCF-B', 'Full paper'], text: 'Causal clustering and uncertainty-aware forecasting for heterogeneous temporal data.' },
+            { title: 'ScatterFusion: A Hierarchical Scattering Transform Framework for Enhanced Time Series Forecasting', meta: ['ICASSP 2026', 'CCF-B'], text: 'A hierarchical scattering-transform framework for multi-scale time-series forecasting.' },
+            { title: 'AWGFormer: Adaptive Wavelet-Guided Transformer for Multi-resolution Time Series Forecasting', meta: ['ICASSP 2026', 'CCF-B'], text: 'Wavelet guidance and Transformer modeling for multi-resolution temporal prediction.' },
+            { title: 'TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting', meta: ['ICANN 2025', 'CCF-C', 'Oral'], text: 'Hierarchical diffusion and adaptive context sampling for multi-horizon forecasting.' },
+            { title: 'SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction', meta: ['ICANN 2025', 'CCF-C', 'Oral'], text: 'State-space and wavelet modeling for efficient time-series prediction.' },
+            { title: 'EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting', meta: ['ICIC 2025', 'CCF-C', 'Oral'], text: 'Multi-scale Transformer forecasting with uncertainty estimation for energy data.' },
+            { title: 'LWSpace: Multi-Scale State Space Framework for Time Series Forecasting', meta: ['ICIC 2025', 'CCF-C', 'Oral'], text: 'A multi-scale state-space framework for efficient temporal forecasting.' },
+            { title: 'Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics', meta: ['CAMMIC 2025', 'EI indexed'], text: 'Adaptive fusion of statistical and state-space dynamics for medal prediction.' }
         ];
 
         const team = [
-            { name: 'Wei Li', role: 'Founder · Project Lead', affiliation: 'Shanghai University · Incoming PhD researcher, SJTU × BZA', bio: 'Leads TAIS across research direction, product strategy, time-series intelligence, and Agent interaction.' },
+            { name: 'Wei Li', role: 'Founder &middot; Project Lead', affiliation: 'Shanghai University', bio: 'Leads TAIS across research direction, product strategy, time-series intelligence, and Agent interaction.' },
             { name: 'Luc (Zixin Wang)', role: 'Founder', affiliation: 'Shanghai University', bio: 'Machine learning, human-computer interaction, and community development.' },
             { name: 'Chi-Hsiang Kao (Qixiang Gao)', role: 'Founder', affiliation: 'Fudan University', bio: 'Mathematics, data science, and interdisciplinary research.' },
             { name: 'Qizheng Sun', role: 'Core Member', affiliation: 'Shanghai University', bio: 'Electronic information, machine learning, and technical development.' },
             { name: 'Haowen Zheng', role: 'Core Member', affiliation: 'East China University of Political Science and Law', bio: 'AI for law, interdisciplinary research, and social science.' },
-            { name: 'Yiheng Yao', role: 'Core Member', affiliation: 'Tongji University · Incoming Economics MSc, The University of Hong Kong', bio: 'Market analysis, product strategy, economics, and sustainable project development.' },
-            { name: 'Junnuo Ye', role: 'Core Member', affiliation: 'Communication University of China · Cybersecurity', bio: 'Cybersecurity, privacy, trustworthy systems, and risk analysis.' },
+            { name: 'Yiheng Yao', role: 'Core Member', affiliation: 'Tongji University', bio: 'Market analysis, product strategy, economics, and sustainable project development.' },
+            { name: 'Junnuo Ye', role: 'Core Member', affiliation: 'Communication University of China &middot; Cybersecurity', bio: 'Cybersecurity, privacy, trustworthy systems, and risk analysis.' },
             { name: 'Minghao Lu', role: 'Core Member', affiliation: 'Shanghai University', bio: 'Research prototyping and engineering development.' },
             { name: 'Zhehan Yang', role: 'Core Member', affiliation: 'Shanghai University', bio: 'Research prototyping and engineering development.' },
             { name: 'Ruoxuan Xu', role: 'Core Member', affiliation: 'Shanghai University', bio: 'Research prototyping and engineering development.' },
@@ -393,7 +679,8 @@
         ];
 
         function formatResearchMeta(meta) {
-            return meta.split(' · ').map(part => {
+            const parts = Array.isArray(meta) ? meta : [meta];
+            return parts.map(part => {
                 const match = part.match(/^CCF-([ABC])$/);
                 const classes = match ? `meta-chip ccf-badge ccf-${match[1].toLowerCase()}` : 'meta-chip';
                 return `<span class="${classes}">${part}</span>`;
@@ -405,18 +692,18 @@
         `).join('');
 
         document.getElementById('network-list').innerHTML = network.map(institution => `
-            <article class="network-mark"><img class="network-symbol ${institution.code.length > 4 ? 'wide' : ''}" src="https://www.google.com/s2/favicons?domain=${institution.domain}&sz=128" alt="${institution.name} logo" loading="lazy" onerror="this.remove();"><div class="network-name">${institution.name}</div></article>
+            <article class="network-mark"><div class="network-logo"><span>${institution.code}</span><img src="https://www.google.com/s2/favicons?domain=${institution.domain}&sz=128" alt="${institution.name} logo" loading="lazy" onerror="this.remove();"></div><div class="network-name">${institution.name}</div></article>
         `).join('');
 
         const founders = team.filter(member => member.role.includes('Founder'));
         const coreMembers = team.filter(member => member.role === 'Core Member');
 
         document.getElementById('founder-list').innerHTML = founders.map(member => `
-            <article class="member"><h3>${member.name}</h3><div class="role">${member.role}</div><p><strong>${member.affiliation}</strong><br>${member.bio}</p></article>
+            <article class="member"><h3>${member.name}</h3><div class="role">${member.role}</div><p><strong class="affiliation">${member.affiliation}</strong><br>${member.bio}</p></article>
         `).join('');
 
         document.getElementById('core-member-list').innerHTML = coreMembers.map(member => `
-            <article class="member"><h3>${member.name}</h3><div class="role">${member.role}</div><p><strong>${member.affiliation}</strong><br>${member.bio}</p></article>
+            <article class="member"><h3>${member.name}</h3><div class="role">${member.role}</div><p><strong class="affiliation">${member.affiliation}</strong><br>${member.bio}</p></article>
         `).join('');
     </script>
 </body>
