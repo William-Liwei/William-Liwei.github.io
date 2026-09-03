@@ -7,6 +7,7 @@ window.ABOUT_DATA = {
   },
   news: [
     { year: 2026, month: 8, content: "The APCL <strong>(KDD 2026, CCF-A)</strong> blog post is now live." },
+    { year: 2026, month: 9, content: "Invited to serve as a <strong>Reviewer</strong> for <strong>Neural Networks (IF: 7.2, Q1, CCF-B)</strong>." },
     { year: 2026, month: 8, content: "Invited to serve as a <strong>Reviewer</strong> for <strong>Frontiers in Physics (IF: 2.2, Q2)</strong>." },
     { year: 2026, month: 6, content: "Invited to serve as a <strong>Program Committee Member (Reviewer)</strong> for <strong>AAAI 2027 (CCF-A)</strong>." },
     { year: 2026, month: 6, content: "APCL scheduled for <strong>Poster Presentation</strong> at <strong>KDD 2026 (CCF-A)</strong>." },
@@ -235,6 +236,7 @@ window.ABOUT_DATA = {
         { event: "Frontiers in Physics (Interdisciplinary Physics)", role: "Reviewer" },
         { event: "Conference on Neural Information Processing Systems (NeurIPS 2026)", role: "Ethics Reviewer (Invited)" },
         { event: "AAAI Conference on Artificial Intelligence (AAAI 2027)", role: "Program Committee Member / Reviewer (Invited)" },
+        { event: "Neural Networks (IF: 7.2, Q1, CCF-B)", role: "Reviewer (Invited)" },
         { event: "Ain Shams Engineering Journal (IF: 5.9, Q1)", role: "Reviewer (Invited)" },
         { event: "International Conference on Artificial Neural Networks (ICANN 2026)", role: "Reviewer (Invited)" },
         { event: "AAAI Conference on Artificial Intelligence (AAAI 2026)", role: "Reviewer" },
