@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wei Li | Machine Learning Research</title>
-  <meta name="description" content="Wei Li (William) - undergraduate researcher at Shanghai University working on machine learning for structured and temporal data, including representation learning, forecasting, generation, and clustering. Author of papers at KDD, DASFAA, ICASSP, ICANN, and ICIC.">
+  <title>Wei Li | Computer Science Research</title>
+  <meta name="description" content="Wei Li (William) - PhD student in Computer Science at Shanghai Jiao Tong University × Beijing Zhongguancun Academy (2027-2032), working on machine learning for structured and temporal data, including representation learning, forecasting, generation, and clustering.">
   <meta name="author" content="Wei Li">
-  <meta name="keywords" content="Wei Li, William Li, Shanghai University, machine learning, data mining, forecasting, representation learning, generative modeling, KDD, DASFAA, ICASSP, deep learning">
+  <meta name="keywords" content="Wei Li, William Li, Shanghai Jiao Tong University, Beijing Zhongguancun Academy, Shanghai University, PhD student, machine learning, data mining, forecasting, representation learning, generative modeling, KDD, NeurIPS, DASFAA, ICASSP, deep learning">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#f6f0e6" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0f151d" media="(prefers-color-scheme: dark)">
@@ -15,8 +15,8 @@
   <link rel="alternate" type="application/atom+xml" title="Wei Li - Blog" href="/atom.xml">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="Wei Li | Machine Learning Research">
-  <meta property="og:description" content="Undergraduate researcher working on machine learning, representation learning, forecasting, generative modeling, and AI research systems.">
+  <meta property="og:title" content="Wei Li | Computer Science Research">
+  <meta property="og:description" content="PhD student in Computer Science at Shanghai Jiao Tong University × Beijing Zhongguancun Academy (2027-2032), working on machine learning, representation learning, forecasting, generative modeling, and AI research systems.">
   <meta property="og:type" content="profile">
   <meta property="og:url" content="https://weili.space/">
   <meta property="og:image" content="https://weili.space/img/Yu.png">
@@ -26,8 +26,8 @@
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Wei Li | Machine Learning Research">
-  <meta name="twitter:description" content="Undergraduate researcher working on machine learning, representation learning, forecasting, generative modeling, and AI research systems.">
+  <meta name="twitter:title" content="Wei Li | Computer Science Research">
+  <meta name="twitter:description" content="PhD student in Computer Science at Shanghai Jiao Tong University × Beijing Zhongguancun Academy (2027-2032), working on machine learning, representation learning, forecasting, generative modeling, and AI research systems.">
   <meta name="twitter:image" content="https://weili.space/img/Yu.png">
 
   <!-- Display + body fonts. The hero declared Cormorant Garamond but never loaded it; load it here.
@@ -992,10 +992,10 @@
     <section class="hero">
       <div class="shell hero-grid">
         <div>
-          <div class="eyebrow reveal">Shanghai University / Machine Learning</div>
+          <div class="eyebrow reveal">SJTU × Beijing Zhongguancun Academy / Computer Science</div>
           <h1 class="reveal delay-1">
             Wei Li
-            <span class="hero-title-accent">Machine Learning Research</span>
+            <span class="hero-title-accent">Computer Science Research</span>
           </h1>
           <p class="hero-copy reveal delay-2" id="hero-copy">
             Loading research profile from the academic data source.
@@ -1013,7 +1013,7 @@
             <img src="/img/Yu.png" alt="Wei Li avatar">
             <div>
               <strong>Wei Li</strong>
-              <span id="profile-tagline">Machine Learning / Data Mining / Research Systems</span>
+              <span id="profile-tagline">PhD Student / Machine Learning / Research Systems</span>
             </div>
           </div>
           <div class="research-summary">
@@ -1174,15 +1174,19 @@
       const renderHero = (publications) => {
         const heroCopy = $('#hero-copy');
         const tagline = $('#profile-tagline');
+        const profile = DATA.profile || {};
         const topics = [...new Set(publications.map(topicLabel))].slice(0, 3);
         if (tagline && topics.length) {
-          tagline.textContent = `Machine Learning / ${topics.slice(0, 2).join(' / ')} / Research Systems`;
+          tagline.textContent = `${profile.role || 'PhD Student'} / ${topics.slice(0, 2).join(' / ')} / Research Systems`;
         }
         if (heroCopy) {
           if (topics.length) {
-            heroCopy.innerHTML = `Researcher at Shanghai University working on <strong>machine learning for structured and temporal data</strong>. Current work spans ${topics.map(escapeHTML).join(', ')}, representation learning, and uncertainty-aware modeling.`;
+            const role = escapeHTML(profile.role || 'PhD Student in Computer Science');
+            const affiliation = escapeHTML(profile.affiliation || 'Shanghai Jiao Tong University × Beijing Zhongguancun Academy');
+            const period = escapeHTML(profile.period || '2027-2032');
+            heroCopy.innerHTML = `${role} at <strong>${affiliation}</strong> (${period}), working on <strong>machine learning for structured and temporal data</strong>. Current work spans ${topics.map(escapeHTML).join(', ')}, representation learning, and uncertainty-aware modeling.`;
           } else {
-            heroCopy.textContent = 'Researcher at Shanghai University working on machine learning and AI research systems.';
+            heroCopy.textContent = `${profile.role || 'PhD Student in Computer Science'} at ${profile.affiliation || 'Shanghai Jiao Tong University × Beijing Zhongguancun Academy'} (${profile.period || '2027-2032'}), working on machine learning and AI research systems.`;
           }
         }
       };
@@ -1336,8 +1340,11 @@
           url,
           image: 'https://weili.space/img/Yu.png',
           email: DATA.personalInfo?.email ? `mailto:${DATA.personalInfo.email}` : undefined,
-          jobTitle: 'Undergraduate Researcher',
-          affiliation: { '@type': 'CollegeOrUniversity', name: 'Shanghai University' },
+          jobTitle: DATA.profile?.role || 'PhD Student in Computer Science',
+          affiliation: [
+            { '@type': 'CollegeOrUniversity', name: 'Shanghai Jiao Tong University' },
+            { '@type': 'Organization', name: 'Beijing Zhongguancun Academy' }
+          ],
           alumniOf: { '@type': 'CollegeOrUniversity', name: 'Shanghai University' },
           knowsAbout: [
             'Time Series Analysis',

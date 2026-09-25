@@ -238,10 +238,9 @@
     <section id="about">
       <div class="bio">
         <h1>Wei Li (William)</h1>
-        <p class="affiliation">Undergraduate Researcher, Shanghai University</p>
-        <p>
-          I am an undergraduate student at Shanghai University.
-          My research interests include embodied intelligence, temporal intelligence, generative models, and representation learning. I have published first-author papers at top international conferences such as KDD, DASFAA, and ICASSP, and maintain close collaborations with scholars and laboratories from Shanghai Jiao Tong University, Nanyang Technological University, Tsinghua University, Nanjing University, Leibniz University Hannover, Shanghai University, and other renowned universities worldwide. I warmly welcome scholars in related fields to connect and collaborate with me.
+        <p class="affiliation" id="profile-affiliation">PhD Student in Computer Science (2027-2032), Shanghai Jiao Tong University × Beijing Zhongguancun Academy</p>
+        <p id="profile-bio">
+          I am a PhD student in Computer Science at Shanghai Jiao Tong University × Beijing Zhongguancun Academy (2027-2032). My research focuses on machine learning for structured and temporal data, including representation learning, forecasting, generative modeling, clustering, and AI research systems.
         </p>
         <div class="social-links" id="social-links-container"></div>
       </div>
@@ -328,6 +327,16 @@ const DATA = window.ABOUT_DATA;
 
 if (!DATA) {
   throw new Error('ABOUT_DATA failed to load.');
+}
+
+const profile = DATA.profile || {};
+const profileAffiliation = document.getElementById('profile-affiliation');
+const profileBio = document.getElementById('profile-bio');
+if (profileAffiliation) {
+  profileAffiliation.textContent = `${profile.role || 'PhD Student in Computer Science'} (${profile.period || '2027-2032'}), ${profile.affiliation || 'Shanghai Jiao Tong University × Beijing Zhongguancun Academy'}`;
+}
+if (profileBio && profile.bio) {
+  profileBio.textContent = profile.bio;
 }
 
 

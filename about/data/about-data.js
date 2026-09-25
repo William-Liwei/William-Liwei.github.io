@@ -1,4 +1,10 @@
 window.ABOUT_DATA = {
+  profile: {
+    role: "PhD Student in Computer Science",
+    affiliation: "Shanghai Jiao Tong University × Beijing Zhongguancun Academy",
+    period: "2027-2032",
+    bio: "I am a PhD student in Computer Science at Shanghai Jiao Tong University × Beijing Zhongguancun Academy (2027-2032). My research focuses on machine learning for structured and temporal data, including representation learning, forecasting, generative modeling, clustering, and AI research systems."
+  },
   personalInfo: {
     email: "liwei008009@163.com",
     github: "https://github.com/William-Liwei",
@@ -6,8 +12,9 @@ window.ABOUT_DATA = {
     orcid: "https://orcid.org/0009-0008-8108-4854"
   },
   news: [
-    { year: 2026, month: 8, content: "The APCL <strong>(KDD 2026, CCF-A)</strong> blog post is now live." },
+    { year: 2026, month: 9, content: "SDFlow accepted to <strong>NeurIPS 2026 (CCF-A)</strong>." },
     { year: 2026, month: 9, content: "Invited to serve as a <strong>Reviewer</strong> for <strong>Neural Networks (IF: 7.2, Q1, CCF-B)</strong>." },
+    { year: 2026, month: 8, content: "The APCL <strong>(KDD 2026, CCF-A)</strong> blog post is now live." },
     { year: 2026, month: 8, content: "Invited to serve as a <strong>Reviewer</strong> for <strong>Frontiers in Physics (IF: 2.2, Q2)</strong>." },
     { year: 2026, month: 6, content: "Invited to serve as a <strong>Program Committee Member (Reviewer)</strong> for <strong>AAAI 2027 (CCF-A)</strong>." },
     { year: 2026, month: 6, content: "APCL scheduled for <strong>Poster Presentation</strong> at <strong>KDD 2026 (CCF-A)</strong>." },
@@ -56,10 +63,10 @@ window.ABOUT_DATA = {
       title: "SDFlow: Similarity-Driven Flow Matching for Time Series Generation",
       display_order: 2,
       authors: "<strong>Li, W.*</strong>, Feng, S.*, Wu, P., Gao, X., Wu, M., & Zhao, P.",
-      venue: "arXiv preprint",
+      venue: "Conference on Neural Information Processing Systems (NeurIPS 2026)",
       year: 2026,
-      month: 5,
-      badges: [{ type: "status", text: "Under Reviewing" }, { type: "author", text: "First Author" }],
+      month: 9,
+      badges: [{ type: "ccf", text: "CCF-A" }, { type: "status", text: "Accepted" }, { type: "author", text: "First Author" }],
       links: [{ type: "arxiv", url: "https://arxiv.org/abs/2605.05736" }],
       thumbnail: "sdflow.png",
       abstract: "This work develops similarity-driven flow matching for time series generation through collaboration with SJTU, NTU, CAS, and A*STAR.",
