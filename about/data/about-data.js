@@ -2,8 +2,8 @@ window.ABOUT_DATA = {
   profile: {
     role: "PhD Student in Computer Science",
     affiliation: "Shanghai Jiao Tong University × Beijing Zhongguancun Academy",
-    period: "2027-2032",
-    bio: "I am a PhD student in Computer Science at Shanghai Jiao Tong University × Beijing Zhongguancun Academy (2027-2032). My research focuses on machine learning for structured and temporal data, including representation learning, forecasting, generative modeling, clustering, and AI research systems."
+    advisors: "Prof. Guanjie Zheng (郑冠杰, Shanghai Jiao Tong University) and Prof. Jie Feng (冯杰, Beijing Zhongguancun Academy)",
+    bio: "I am a PhD student in Computer Science at Shanghai Jiao Tong University × Beijing Zhongguancun Academy, advised by Prof. Guanjie Zheng (郑冠杰) and Prof. Jie Feng (冯杰). My research focuses on machine learning for structured and temporal data, including representation learning, forecasting, generative modeling, clustering, and AI research systems."
   },
   personalInfo: {
     email: "liwei008009@163.com",

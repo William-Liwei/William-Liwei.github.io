@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Wei Li | Computer Science Research</title>
-  <meta name="description" content="Wei Li (William) - PhD student in Computer Science at Shanghai Jiao Tong University × Beijing Zhongguancun Academy (2027-2032), working on machine learning for structured and temporal data, including representation learning, forecasting, generation, and clustering.">
+  <meta name="description" content="Wei Li (William) - PhD student in Computer Science at Shanghai Jiao Tong University × Beijing Zhongguancun Academy, advised by Prof. Guanjie Zheng and Prof. Jie Feng, working on machine learning for structured and temporal data.">
   <meta name="author" content="Wei Li">
   <meta name="keywords" content="Wei Li, William Li, Shanghai Jiao Tong University, Beijing Zhongguancun Academy, Shanghai University, PhD student, machine learning, data mining, forecasting, representation learning, generative modeling, KDD, NeurIPS, DASFAA, ICASSP, deep learning">
   <meta name="robots" content="index, follow">
@@ -16,7 +16,7 @@
 
   <!-- Open Graph -->
   <meta property="og:title" content="Wei Li | Computer Science Research">
-  <meta property="og:description" content="PhD student in Computer Science at Shanghai Jiao Tong University × Beijing Zhongguancun Academy (2027-2032), working on machine learning, representation learning, forecasting, generative modeling, and AI research systems.">
+  <meta property="og:description" content="PhD student in Computer Science at Shanghai Jiao Tong University × Beijing Zhongguancun Academy, advised by Prof. Guanjie Zheng and Prof. Jie Feng, working on machine learning, representation learning, forecasting, generative modeling, and AI research systems.">
   <meta property="og:type" content="profile">
   <meta property="og:url" content="https://weili.space/">
   <meta property="og:image" content="https://weili.space/img/Yu.png">
@@ -27,7 +27,7 @@
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Wei Li | Computer Science Research">
-  <meta name="twitter:description" content="PhD student in Computer Science at Shanghai Jiao Tong University × Beijing Zhongguancun Academy (2027-2032), working on machine learning, representation learning, forecasting, generative modeling, and AI research systems.">
+  <meta name="twitter:description" content="PhD student in Computer Science at Shanghai Jiao Tong University × Beijing Zhongguancun Academy, advised by Prof. Guanjie Zheng and Prof. Jie Feng, working on machine learning, representation learning, forecasting, generative modeling, and AI research systems.">
   <meta name="twitter:image" content="https://weili.space/img/Yu.png">
 
   <!-- Display + body fonts. The hero declared Cormorant Garamond but never loaded it; load it here.
@@ -1183,10 +1183,11 @@
           if (topics.length) {
             const role = escapeHTML(profile.role || 'PhD Student in Computer Science');
             const affiliation = escapeHTML(profile.affiliation || 'Shanghai Jiao Tong University × Beijing Zhongguancun Academy');
-            const period = escapeHTML(profile.period || '2027-2032');
-            heroCopy.innerHTML = `${role} at <strong>${affiliation}</strong> (${period}), working on <strong>machine learning for structured and temporal data</strong>. Current work spans ${topics.map(escapeHTML).join(', ')}, representation learning, and uncertainty-aware modeling.`;
+            const advisors = profile.advisors ? ` My advisors are ${escapeHTML(profile.advisors)}.` : '';
+            heroCopy.innerHTML = `${role} at <strong>${affiliation}</strong>, working on <strong>machine learning for structured and temporal data</strong>. Current work spans ${topics.map(escapeHTML).join(', ')}, representation learning, and uncertainty-aware modeling.${advisors}`;
           } else {
-            heroCopy.textContent = `${profile.role || 'PhD Student in Computer Science'} at ${profile.affiliation || 'Shanghai Jiao Tong University × Beijing Zhongguancun Academy'} (${profile.period || '2027-2032'}), working on machine learning and AI research systems.`;
+            const advisors = profile.advisors ? ` My advisors are ${profile.advisors}.` : '';
+            heroCopy.textContent = `${profile.role || 'PhD Student in Computer Science'} at ${profile.affiliation || 'Shanghai Jiao Tong University × Beijing Zhongguancun Academy'}, working on machine learning and AI research systems.${advisors}`;
           }
         }
       };
