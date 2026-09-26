@@ -306,8 +306,8 @@ window.ABOUT_DATA = {
       display_order: 1,
       year_start: 2025,
       month_start: 10,
-      year_end: null,
-      month_end: null,
+      year_end: 2026,
+      month_end: 9,
       details: [
         "Investigating probabilistic frameworks for time series forecasting to model uncertainty.",
         "Exploring advanced generative models, including Variational Autoencoders (VAEs) and methodologies like Low-Rank Adaptation (LoRA) for efficient model fine-tuning."
@@ -320,8 +320,8 @@ window.ABOUT_DATA = {
       display_order: 2,
       year_start: 2026,
       month_start: 2,
-      year_end: null,
-      month_end: null,
+      year_end: 2026,
+      month_end: 9,
       details: [
         "Investigating multimodal time series alignment in the context of large language models.",
         "Exploring representation alignment between temporal signals and multimodal reasoning frameworks."
@@ -333,8 +333,8 @@ window.ABOUT_DATA = {
       affiliation: "Research Study | Advisor: <strong>Prof. Yuchun Fang</strong> (Shanghai University)",
       year_start: 2025,
       month_start: 10,
-      year_end: null,
-      month_end: null,
+      year_end: 2026,
+      month_end: 9,
       details: [
         "Conducted in-depth research on pattern recognition and advanced machine learning techniques.",
         "Focused on the application of deep learning and large-scale models across various real-world scenarios."
