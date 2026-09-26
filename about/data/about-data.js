@@ -360,8 +360,8 @@ window.ABOUT_DATA = {
       affiliation: "Independent Research | Advisor: <strong>Prof. Fenglei Yang</strong> (Shanghai University)",
       year_start: 2024,
       month_start: 1,
-      year_end: null,
-      month_end: null,
+      year_end: 2026,
+      month_end: 9,
       details: [
         "Focused on multi-scale time series modeling and long-term forecasting challenges.",
         "Researched and developed novel architectures involving State Space Models (SSM), Transformers, and Diffusion Models.",
@@ -374,8 +374,8 @@ window.ABOUT_DATA = {
       affiliation: "Undergraduate Researcher | Key Laboratory of Silicate Cultural Heritage Protection, Shanghai University | Advisor: <strong>Prof. Shunbo Hu</strong>",
       year_start: 2024,
       month_start: 3,
-      year_end: null,
-      month_end: null,
+      year_end: 2026,
+      month_end: 9,
       details: [
         "Developed a specialized database using MySQL and Streamlit for managing cultural heritage data (Buddhist head sculptures).",
         "Participated in data analysis and management tasks related to cultural relic preservation."
