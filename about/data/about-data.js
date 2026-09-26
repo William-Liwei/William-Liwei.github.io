@@ -12,7 +12,7 @@ window.ABOUT_DATA = {
     orcid: "https://orcid.org/0009-0008-8108-4854"
   },
   news: [
-    { year: 2026, month: 9, content: "SDFlow accepted to <strong>NeurIPS 2026 (CCF-A)</strong>." },
+    { year: 2026, month: 9, content: "SDFlow accepted for <strong>Poster Presentation</strong> at <strong>NeurIPS 2026 (CCF-A)</strong>." },
     { year: 2026, month: 9, content: "Invited to serve as a <strong>Reviewer</strong> for <strong>Neural Networks (IF: 7.2, Q1, CCF-B)</strong>." },
     { year: 2026, month: 8, content: "The APCL <strong>(KDD 2026, CCF-A)</strong> blog post is now live." },
     { year: 2026, month: 8, content: "Invited to serve as a <strong>Reviewer</strong> for <strong>Frontiers in Physics (IF: 2.2, Q2)</strong>." },
@@ -38,7 +38,7 @@ window.ABOUT_DATA = {
   publications: [
     {
       title: "Adaptive Prototypical Contrastive Learning for Time Series Clustering",
-      display_order: 1,
+      display_order: 2,
       authors: "<strong>Li, W.</strong>",
       venue: "ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD 2026)",
       year: 2026,
@@ -61,15 +61,15 @@ window.ABOUT_DATA = {
     },
     {
       title: "SDFlow: Similarity-Driven Flow Matching for Time Series Generation",
-      display_order: 2,
+      display_order: 1,
       authors: "<strong>Li, W.*</strong>, Feng, S.*, Wu, P., Gao, X., Wu, M., & Zhao, P.",
       venue: "Conference on Neural Information Processing Systems (NeurIPS 2026)",
       year: 2026,
       month: 9,
-      badges: [{ type: "ccf", text: "CCF-A" }, { type: "status", text: "Accepted" }, { type: "author", text: "First Author" }],
+      badges: [{ type: "ccf", text: "CCF-A" }, { type: "paper", text: "Full Paper" }, { type: "poster", text: "Poster" }, { type: "author", text: "First Author" }],
       links: [{ type: "arxiv", url: "https://arxiv.org/abs/2605.05736" }],
       thumbnail: "sdflow.png",
-      abstract: "This work develops similarity-driven flow matching for time series generation through collaboration with SJTU, NTU, CAS, and A*STAR.",
+      abstract: "SDFlow introduces a similarity-driven, non-autoregressive flow-matching framework for time-series generation in high-dimensional discrete latent spaces. By learning a low-rank subspace and initializing generation with similarity-guided manifold anchors, it aligns the generative process with the geometry of real temporal data and supports parallel synthesis.",
       bibtex: `@misc{li2026sdflow,
       title={SDFlow: Similarity-Driven Flow Matching for Time Series Generation}, 
       author={Li, Wei and Feng, Shibo and Wu, Pengcheng and Gao, Xingyu and Wu, Min and Zhao, Peilin},
