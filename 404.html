@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page not found | Wei Li</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/img/Yu.ico">
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem('wl-theme');
+        var theme = stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
+  <style>
+    :root {
+      --paper: #f6f0e6;
+      --paper-deep: #ebe0cf;
+      --ink: #132238;
+      --muted: #667085;
+      --line: rgba(19, 34, 56, 0.14);
+      --gold: #b48a3a;
+      --card: rgba(255, 255, 255, 0.47);
+      --bg:
+        radial-gradient(circle at 8% 12%, rgba(180, 138, 58, 0.22), transparent 28rem),
+        radial-gradient(circle at 88% 8%, rgba(94, 119, 102, 0.18), transparent 26rem),
+        linear-gradient(135deg, var(--paper) 0%, #fbf8f0 46%, var(--paper-deep) 100%);
+    }
+
+    [data-theme="dark"] {
+      --paper: #11181f;
+      --paper-deep: #0c1117;
+      --ink: #eef2f6;
+      --muted: #93a1b1;
+      --line: rgba(238, 242, 246, 0.16);
+      --gold: #d8b266;
+      --card: rgba(238, 242, 246, 0.05);
+      --bg:
+        radial-gradient(circle at 8% 12%, rgba(216, 178, 102, 0.14), transparent 28rem),
+        radial-gradient(circle at 88% 8%, rgba(127, 160, 137, 0.12), transparent 26rem),
+        linear-gradient(135deg, var(--paper) 0%, #0e141b 46%, var(--paper-deep) 100%);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 2rem;
+      color: var(--ink);
+      background: var(--bg);
+      background-attachment: fixed;
+      font-family: "Inter", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    }
+
+    main {
+      max-width: 34rem;
+      text-align: center;
+      padding: 3rem 2.5rem;
+      border: 1px solid var(--line);
+      border-radius: 1.5rem;
+      background: var(--card);
+      backdrop-filter: blur(12px);
+    }
+
+    .code {
+      margin: 0;
+      font-family: "Cormorant Garamond", "Times New Roman", "Songti SC", serif;
+      font-size: clamp(4.5rem, 16vw, 7rem);
+      font-weight: 600;
+      line-height: 1;
+      color: var(--gold);
+    }
+
+    h1 {
+      margin: 0.75rem 0 0.5rem;
+      font-size: 1.35rem;
+    }
+
+    p {
+      margin: 0 0 2rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    a {
+      padding: 0.6rem 1.25rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--ink);
+      font-weight: 600;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    a:hover,
+    a:focus-visible {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    a:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="code" aria-hidden="true">404</p>
+    <h1>Page not found</h1>
+    <p>页面不存在或已被移动。The page you are looking for doesn't exist or has moved.</p>
+    <nav aria-label="Helpful links">
+      <a href="/">Home</a>
+      <a href="/blog/">Blog</a>
+      <a href="/about/">About</a>
+    </nav>
+  </main>
+</body>
+</html>
