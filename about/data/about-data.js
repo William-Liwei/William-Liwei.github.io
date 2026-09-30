@@ -15,17 +15,12 @@ window.ABOUT_DATA = {
     orcid: "https://orcid.org/0009-0008-8108-4854"
   },
   news: [
+    { year: 2026, month: 10, content: "Awarded the <strong>National Scholarship</strong>." },
     { year: 2026, month: 9, content: "SDFlow accepted for <strong>Poster Presentation</strong> at <strong>NeurIPS 2026 (CCF-A)</strong>." },
-    { year: 2026, month: 9, content: "Invited to serve as a <strong>Reviewer</strong> for <strong>Neural Networks (IF: 7.2, Q1, CCF-B)</strong>." },
     { year: 2026, month: 8, content: "The APCL <strong>(KDD 2026, CCF-A)</strong> blog post is now live." },
-    { year: 2026, month: 8, content: "Invited to serve as a <strong>Reviewer</strong> for <strong>Frontiers in Physics (IF: 2.2, Q2)</strong>." },
-    { year: 2026, month: 6, content: "Invited to serve as a <strong>Program Committee Member (Reviewer)</strong> for <strong>AAAI 2027 (CCF-A)</strong>." },
     { year: 2026, month: 6, content: "APCL scheduled for <strong>Poster Presentation</strong> at <strong>KDD 2026 (CCF-A)</strong>." },
     { year: 2026, month: 5, content: "One full paper (APCL) accepted to <strong>KDD 2026 (CCF-A)</strong>." },
-    { year: 2026, month: 5, content: "Invited to serve as an <strong>Ethics Reviewer</strong> for <strong>NeurIPS 2026 (CCF-A)</strong>." },
-    { year: 2026, month: 5, content: "Invited to serve as a <strong>Reviewer</strong> for <strong>Ain Shams Engineering Journal (IF: 5.9, Q1)</strong>." },
     { year: 2026, month: 5, content: "Won <strong>International First Prize</strong> at <strong>ASC26</strong>." },
-    { year: 2026, month: 3, content: "Invited to serve as a <strong>Reviewer</strong> for <strong>ICANN 2026 (CCF-C)</strong>." },
     { year: 2026, month: 2, content: "One full paper (ClusterPatchTST) accepted for <strong>Oral Presentation</strong> at <strong>DASFAA 2026 (CCF-B)</strong>." },
     { year: 2026, month: 2, content: "Advanced to the finals of the <strong>ASC Student Supercomputer Challenge</strong>." },
     { year: 2026, month: 1, content: "Two papers (ScatterFusion, AWGFormer) accepted for <strong>Poster Presentation</strong> at <strong>ICASSP 2026 (CCF-B)</strong>." },
@@ -52,7 +47,7 @@ window.ABOUT_DATA = {
         { type: "github", url: "https://github.com/William-Liwei/apcl" }
       ],
       thumbnail: "apcl.png",
-      abstract: "This work proposes adaptive prototypical contrastive learning for time series clustering with unknown cluster counts.",
+      abstract: "Addresses time-series clustering with an unknown number of clusters by combining hierarchical prototypes, contrastive learning, and the MDL principle to jointly learn representations and cluster cardinality.",
       bibtex: `@inproceedings{li2026apcl,
   title={Adaptive Prototypical Contrastive Learning for Time Series Clustering},
   author={Li, Wei},
@@ -91,9 +86,9 @@ window.ABOUT_DATA = {
       year: 2026,
       month: 2,
       badges: [{ type: "ccf", text: "CCF-B" }, { type: "paper", text: "Full Paper" }, { type: "author", text: "Sole Author" }],
-      links: [],
+      links: [{ type: "doi", label: "DOI", url: "https://doi.org/10.1007/978-981-92-0372-7_31" }],
       thumbnail: "clusterpatchtst.png",
-      abstract: "This work proposes uncertainty-aware causal clustering for heterogeneous time series forecasting.",
+      abstract: "Uses causal clustering to capture cross-series structural heterogeneity and uncertainty modeling to improve robust and reliable forecasting.",
       bibtex: `@inproceedings{li2026clusterpatchtst,
   title={ClusterPatchTST: Uncertainty-Aware Causal Clustering for Heterogeneous Time Series Forecasting},
   author={Li, Wei},
@@ -109,9 +104,9 @@ window.ABOUT_DATA = {
       year: 2026,
       month: 1,
       badges: [{ type: "ccf", text: "CCF-B" }, { type: "author", text: "Sole Author" }],
-      links: [],
+      links: [{ type: "doi", label: "DOI", url: "https://doi.org/10.1109/ICASSP55912.2026.11462616" }],
       thumbnail: "scatterfusion.png",
-      abstract: "This work introduces a hierarchical scattering transform framework for multi-scale time series forecasting.",
+      abstract: "Combines hierarchical scattering transforms with multiscale fusion to extract stable time-frequency representations under noise and scale variation.",
       bibtex: `@inproceedings{li2026scatterfusion,
   title={ScatterFusion: A Hierarchical Scattering Transform Framework for Enhanced Time Series Forecasting},
   author={Li, Wei},
@@ -127,7 +122,7 @@ window.ABOUT_DATA = {
       year: 2026,
       month: 1,
       badges: [{ type: "ccf", text: "CCF-B" }, { type: "author", text: "Sole Author" }],
-      links: [],
+      links: [{ type: "doi", label: "DOI", url: "https://doi.org/10.1109/ICASSP55912.2026.11461228" }],
       thumbnail: "awgformer.png",
       abstract: "This work integrates adaptive wavelet guidance with Transformers for multi-resolution time series forecasting.",
       bibtex: `@inproceedings{li2026awgformer,
@@ -145,7 +140,7 @@ window.ABOUT_DATA = {
       year: 2025,
       month: 6,
       badges: [{ type: "ccf", text: "CCF-C" }, { type: "oral", text: "Oral" }, { type: "author", text: "Sole Author" }],
-      links: [],
+      links: [{ type: "doi", label: "DOI", url: "https://doi.org/10.1007/978-3-032-04549-2_20" }],
       thumbnail: "timeflowdiffuser.png",
       abstract: "This work introduces a hierarchical diffusion framework with adaptive context sampling for multi-horizon time series forecasting.",
       bibtex: `@inproceedings{li2025timeflowdiffuser,
@@ -165,7 +160,7 @@ window.ABOUT_DATA = {
       year: 2025,
       month: 6,
       badges: [{ type: "ccf", text: "CCF-C" }, { type: "oral", text: "Oral" }, { type: "author", text: "Sole Author" }],
-      links: [{ type: "github", url: "https://github.com/William-Liwei/SWIFT" }],
+      links: [{ type: "doi", label: "DOI", url: "https://doi.org/10.1007/978-3-032-04549-2_3" }, { type: "github", url: "https://github.com/William-Liwei/SWIFT" }],
       thumbnail: "swift.png",
       abstract: "This work combines state-space modeling and wavelet-based multi-scale modules for enhanced time series forecasting.",
       bibtex: `@inproceedings{li2025swift,
@@ -185,9 +180,9 @@ window.ABOUT_DATA = {
       year: 2025,
       month: 5,
       badges: [{ type: "ccf", text: "CCF-C" }, { type: "oral", text: "Oral" }, { type: "author", text: "First Author" }],
-      links: [{ type: "github", url: "https://github.com/William-Liwei/EnergyPatchTST" }],
+      links: [{ type: "doi", label: "DOI", url: "https://doi.org/10.1007/978-981-96-9815-8_27" }, { type: "github", url: "https://github.com/William-Liwei/EnergyPatchTST" }],
       thumbnail: "energypatchtst.png",
-      abstract: "This work develops a multi-scale Transformer with uncertainty estimation for energy forecasting.",
+      abstract: "Combines multiscale Patch Transformers with uncertainty estimation for energy forecasting; the platform received a software copyright and 300+ GitHub stars.",
       bibtex: `@inproceedings{li2025energypatchtst,
   title={EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting},
   author={Li, Wei and Wang, Zixin and Sun, Qizheng and Gao, Qixiang and Yang, Fenglei},
@@ -205,7 +200,7 @@ window.ABOUT_DATA = {
       year: 2025,
       month: 5,
       badges: [{ type: "ccf", text: "CCF-C" }, { type: "oral", text: "Oral" }, { type: "author", text: "Sole Author" }],
-      links: [],
+      links: [{ type: "doi", label: "DOI", url: "https://doi.org/10.1007/978-981-96-9815-8_25" }],
       thumbnail: "lwspace.png",
       abstract: "This work proposes a multi-scale state space framework for efficient time series forecasting.",
       bibtex: `@inproceedings{li2025lwspace,
@@ -225,7 +220,7 @@ window.ABOUT_DATA = {
       year: 2025,
       month: 3,
       badges: [{ type: "ccf", text: "EI Index" }, { type: "poster", text: "Poster" }, { type: "author", text: "First Author" }],
-      links: [],
+      links: [{ type: "doi", label: "DOI", url: "https://doi.org/10.1145/3745533.3745645" }],
       thumbnail: "olympic.png",
       abstract: "This work combines adaptive triple-fusion modeling with ARIMA-state space dynamics for Olympic medal prediction.",
       bibtex: `@inproceedings{li2025olympic,
@@ -246,8 +241,8 @@ window.ABOUT_DATA = {
         { event: "Frontiers in Physics (Interdisciplinary Physics)", role: "Reviewer" },
         { event: "Conference on Neural Information Processing Systems (NeurIPS 2026)", role: "Ethics Reviewer (Invited)" },
         { event: "AAAI Conference on Artificial Intelligence (AAAI 2027)", role: "Program Committee Member / Reviewer (Invited)" },
-        { event: "Neural Networks (IF: 7.2, Q1, CCF-B)", role: "Reviewer (Invited)" },
-        { event: "Ain Shams Engineering Journal (IF: 5.9, Q1)", role: "Reviewer (Invited)" },
+        { event: "Neural Networks (Q1, CCF-B)", role: "Reviewer (Invited)" },
+        { event: "Ain Shams Engineering Journal (Q1)", role: "Reviewer (Invited)" },
         { event: "International Conference on Artificial Neural Networks (ICANN 2026)", role: "Reviewer (Invited)" },
         { event: "AAAI Conference on Artificial Intelligence (AAAI 2026)", role: "Reviewer" },
         { event: "International Conference on Artificial Neural Networks (ICANN 2025)", role: "Reviewer (3 submissions)" }
@@ -285,6 +280,7 @@ window.ABOUT_DATA = {
     { title: "Research on Product Assembly Strategy Optimization", desc: "Led a research project applying Bayesian decision networks and genetic algorithms to optimize complex assembly strategies for products with variable components and processes.", tags: ["Optimization", "Bayesian Networks", "Genetic Algorithms"], links: [] }
   ],
   honors: [
+    { year: 2026, month: 10, name: "National Scholarship", level: "Ministry of Education of China" },
     { year: 2026, month: 5, name: "ASC Student Supercomputer Challenge", level: "International First Prize" },
     { year: 2026, month: 1, name: "Xiaomi Scholarship", level: "Xiaomi" },
     { year: 2025, month: 12, name: "Baidu Star Programming Contest", level: "Finalist" },
@@ -294,8 +290,6 @@ window.ABOUT_DATA = {
     { year: 2025, month: 8, name: "MaTiBei Collegiate Programming Contest", level: "National First Prize" },
     { year: 2025, month: 7, name: "Information Security and Countermeasures Contest", level: "National Second Prize" },
     { year: 2025, month: 1, name: "'Jie-Yi' Student Leadership Scholarship", level: "School of Computer Engineering and Science" },
-    { year: 2025, month: 5, name: "Lanqiao Cup Programming Contest", level: "Provincial Second Prize" },
-    { year: 2024, month: 12, name: "Contemporary Undergraduate Mathematical Contest in Modeling", level: "Provincial Third Prize" },
     { year: 2024, month: 11, name: "'E-Cloud Cup' Shanghai Collegiate Cloud Computing Application Contest", level: "Second Prize" },
     { year: 2024, month: 10, name: "Special Class Scholarship for Academic Excellence", level: "Shanghai University (Top-tier)" },
     { year: 2024, month: 7, name: "China 'Internet+' Innovation Competition", level: "Gold Medal (University Level)" },
@@ -304,77 +298,75 @@ window.ABOUT_DATA = {
   experience: [
     {
       type: "Research",
-      title: "Probabilistic Time Series Modeling",
-      affiliation: "Remote Research | Advisors: <strong>Prof. Peilin Zhao</strong> (SJTU) & <strong>Dr. Shibo Feng</strong> (NTU)",
+      title: "Long Time-Series Generation",
+      affiliation: "Research Collaboration | Advisors: <strong>Prof. Peilin Zhao</strong> (SJTU) & <strong>Dr. Shibo Feng</strong> (NTU)",
       display_order: 1,
       year_start: 2025,
       month_start: 10,
       year_end: 2026,
       month_end: 9,
       details: [
-        "Investigating probabilistic frameworks for time series forecasting to model uncertainty.",
-        "Exploring advanced generative models, including Variational Autoencoders (VAEs) and methodologies like Low-Rank Adaptation (LoRA) for efficient model fine-tuning."
+        "Co-led <strong>SDFlow (NeurIPS 2026)</strong> as first-listed co-first author: similarity-driven, non-autoregressive Flow Matching in a low-rank VQ latent space for long-horizon generation.",
+        "Extending the line to multiscale discrete representations and long-sequence generation, covering method design, implementation, and evaluation."
       ]
     },
     {
       type: "Research",
-      title: "Multimodal Time Series Alignment with Large Language Models",
-      affiliation: "Research Study | Advisors: <strong>Prof. Xiaofan Li</strong> (Nanjing University) & <strong>Dr. Jingge Xiao</strong> (Leibniz University Hannover)",
+      title: "LLM-Based Multimodal Time-Series Alignment",
+      affiliation: "Research Collaboration | Advisors: <strong>Prof. Xiaofan Li</strong> (Nanjing University) & <strong>Dr. Jingge Xiao</strong> (Leibniz University Hannover)",
       display_order: 2,
       year_start: 2026,
       month_start: 2,
       year_end: 2026,
       month_end: 9,
       details: [
-        "Investigating multimodal time series alignment in the context of large language models.",
-        "Exploring representation alignment between temporal signals and multimodal reasoning frameworks."
+        "Co-leading work on text-conditioned time-series generation: semantic prototype retrieval, latent-space localization, and residual Flow Matching (manuscript under review)."
       ]
     },
     {
       type: "Research",
       title: "Pattern Recognition & Machine Learning",
-      affiliation: "Research Study | Advisor: <strong>Prof. Yuchun Fang</strong> (Shanghai University)",
+      affiliation: "Research Study | Mentor: <strong>Prof. Yuchun Fang</strong> (Shanghai University)",
+      display_order: 3,
       year_start: 2025,
       month_start: 10,
       year_end: 2026,
       month_end: 9,
       details: [
-        "Conducted in-depth research on pattern recognition and advanced machine learning techniques.",
-        "Focused on the application of deep learning and large-scale models across various real-world scenarios."
+        "Studying pattern recognition and machine learning, with a focus on sign-language recognition, sequence modeling, and transferring time-series methods."
+      ]
+    },
+    {
+      type: "Research",
+      title: "Time-Series Forecasting & Deep Learning",
+      affiliation: "Research Study | Mentor: <strong>Prof. Fenglei Yang</strong> (Shanghai University)",
+      display_order: 4,
+      year_start: 2024,
+      month_start: 1,
+      year_end: 2024,
+      month_end: 8,
+      details: [
+        "Worked on multiscale forecasting with SSM and Transformer architectures, building the modeling, experimentation, and writing foundation for later work such as EnergyPatchTST (ICIC 2025)."
       ]
     },
     {
       type: "Part-time",
-      title: "AI Trainer / SFT Specialist",
+      title: "LLM Capability Enhancement & Alignment",
       affiliation: "ByteDance | Xpert Program",
+      display_order: 6,
       year_start: 2025,
       month_start: 8,
       year_end: null,
       month_end: null,
       details: [
-        "Performed expert-level data annotation and curation for Supervised Fine-Tuning (SFT) of large-scale language models.",
-        "Authored and refined high-quality instruction-following data, focusing on complex reasoning, search query generation, and tool usage.",
-        "Contributed to enhancing the model's capabilities in logical deduction, factual accuracy, and safety alignment."
-      ]
-    },
-    {
-      type: "Research",
-      title: "Time Series Forecasting & Deep Learning",
-      affiliation: "Independent Research | Advisor: <strong>Prof. Fenglei Yang</strong> (Shanghai University)",
-      year_start: 2024,
-      month_start: 1,
-      year_end: 2026,
-      month_end: 9,
-      details: [
-        "Focused on multi-scale time series modeling and long-term forecasting challenges.",
-        "Researched and developed novel architectures involving State Space Models (SSM), Transformers, and Diffusion Models.",
-        "Achieved significant performance improvements on various forecasting benchmarks, leading to multiple publications."
+        "Contribute to supervised fine-tuning and model evaluation for reasoning, search, tool use, and safety alignment."
       ]
     },
     {
       type: "Research",
       title: "Cultural Heritage Data Management",
       affiliation: "Undergraduate Researcher | Key Laboratory of Silicate Cultural Heritage Protection, Shanghai University | Advisor: <strong>Prof. Shunbo Hu</strong>",
+      display_order: 5,
       year_start: 2024,
       month_start: 3,
       year_end: 2026,

@@ -443,10 +443,6 @@
     }
 
     .research-summary,
-    .focus-stack {
-      position: relative;
-      z-index: 2;
-    }
 
     .summary-label {
       color: var(--gold);
@@ -473,14 +469,6 @@
       line-height: 1.55;
     }
 
-    .focus-label {
-      margin-top: 0.05rem;
-      color: var(--gold);
-      font-size: 0.74rem;
-      font-weight: 900;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-    }
 
     .cite-pill {
       position: relative;
@@ -516,67 +504,12 @@
       background: var(--gold);
     }
 
-    .focus-stack {
-      display: grid;
-      gap: 0.72rem;
-      margin-top: 0.15rem;
-    }
 
-    .focus-item {
-      display: grid;
-      grid-template-columns: 2.8rem minmax(0, 1fr);
-      gap: 0.8rem;
-      align-items: center;
-      padding: 0.88rem;
-      border: 1px solid var(--line);
-      border-radius: 22px;
-      background: var(--card-strong);
-      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
-    }
 
-    .focus-item:hover {
-      transform: translateY(-2px);
-      border-color: var(--gold);
-    }
 
-    .focus-rank {
-      display: grid;
-      place-items: center;
-      width: 2.8rem;
-      height: 2.8rem;
-      border-radius: 16px;
-      color: var(--chip-text);
-      background: var(--chip-ink);
-      font-family: var(--header-font);
-      font-size: 1.18rem;
-      font-weight: 700;
-      line-height: 1;
-    }
 
-    .focus-item a {
-      display: block;
-      min-width: 0;
-    }
 
-    .focus-item h3 {
-      margin: 0;
-      color: var(--ink);
-      font-size: 1rem;
-      line-height: 1.2;
-      letter-spacing: -0.015em;
-    }
 
-    .focus-item small {
-      display: block;
-      margin-top: 0.34rem;
-      color: var(--muted);
-      font-size: 0.76rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      line-height: 1.35;
-      text-transform: uppercase;
-      overflow-wrap: anywhere;
-    }
 
     .panel-footer {
       position: relative;
@@ -727,113 +660,18 @@
       font-size: 0.88rem;
     }
 
-    .portal-grid {
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 1rem;
-      align-items: stretch;
-    }
 
-    .portal-main,
-    .portal-list a {
-      border: 1px solid var(--line);
-      border-radius: 30px;
-      background: var(--card);
-      box-shadow: 0 18px 46px rgba(31, 25, 16, 0.07);
-    }
 
-    .portal-main {
-      min-height: 360px;
-      padding: clamp(1.5rem, 4vw, 2.4rem);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      background:
-        linear-gradient(135deg, rgba(19, 34, 56, 0.95), rgba(45, 58, 76, 0.88)),
-        radial-gradient(circle at top right, rgba(180, 138, 58, 0.42), transparent 18rem);
-      color: #fff;
-      overflow: hidden;
-      position: relative;
-    }
 
-    .portal-main::after {
-      content: "WL";
-      position: absolute;
-      right: -0.5rem;
-      bottom: -3.3rem;
-      color: rgba(255, 255, 255, 0.055);
-      font-family: var(--header-font);
-      font-size: clamp(10rem, 22vw, 18rem);
-      line-height: 1;
-      letter-spacing: -0.08em;
-    }
 
-    .portal-main h3 {
-      max-width: 660px;
-      margin: 0;
-      font-family: var(--header-font);
-      font-size: clamp(2.35rem, 5vw, 4.2rem);
-      line-height: 0.98;
-      letter-spacing: -0.045em;
-      position: relative;
-      z-index: 1;
-    }
 
-    .portal-main p {
-      max-width: 600px;
-      margin: 1.1rem 0 0;
-      color: rgba(255, 255, 255, 0.78);
-      position: relative;
-      z-index: 1;
-    }
 
-    .portal-main .btn {
-      width: fit-content;
-      margin-top: 2rem;
-      color: #132238;
-      background: #fff;
-      border-color: #fff;
-      position: relative;
-      z-index: 1;
-    }
 
-    .portal-list {
-      display: grid;
-      gap: 1rem;
-    }
 
-    .portal-list a {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: center;
-      gap: 1rem;
-      padding: 1.1rem;
-      transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
-    }
 
-    .portal-list a:hover {
-      transform: translateX(4px);
-      background: var(--card-strong);
-      border-color: var(--gold);
-    }
 
-    .portal-list strong {
-      display: block;
-      line-height: 1.2;
-    }
 
-    .portal-list span {
-      display: block;
-      margin-top: 0.22rem;
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
 
-    .portal-arrow {
-      color: var(--gold);
-      font-size: 1.4rem;
-      line-height: 1;
-    }
 
     footer {
       padding: 2.4rem 0 3.4rem;
@@ -877,8 +715,7 @@
     }
 
     @media (max-width: 1060px) {
-      .hero-grid,
-      .portal-grid {
+      .hero-grid {
         grid-template-columns: 1fr;
       }
 
@@ -996,7 +833,7 @@
             <span class="hero-title-accent">Computer Science Research</span>
           </h1>
           <p class="hero-copy reveal delay-2" id="hero-copy">
-            Loading research profile from the academic data source.
+            PhD Student in Computer Science at <strong>Shanghai Jiao Tong University × Beijing Zhongguancun Academy</strong> (2027-), working on <strong>machine learning for structured and temporal data</strong>. Current work spans generative modeling, forecasting, clustering, representation learning, and uncertainty-aware modeling. Undergraduate education: <strong>Computer Science and Technology, Shanghai University</strong> (2023-2027).
           </p>
           <div class="cta-row reveal delay-3">
             <a class="btn primary" href="/about/">Academic Homepage</a>
@@ -1008,10 +845,10 @@
 
         <aside class="research-panel reveal delay-2" aria-label="Research focus">
           <div class="portrait-card">
-            <img src="/img/Yu.png" alt="Wei Li avatar">
+            <img src="/img/avatar.webp" width="74" height="74" alt="Wei Li avatar">
             <div>
               <strong>Wei Li</strong>
-              <span id="profile-tagline">PhD Student / Machine Learning / Research Systems</span>
+              <span id="profile-tagline">PhD Student / Machine Learning</span>
             </div>
           </div>
           <div class="research-summary">
@@ -1020,8 +857,6 @@
             <p>Representative work across clustering, uncertainty-aware learning, forecasting, and AI research systems.</p>
           </div>
           <div class="cite-pill" id="cite-pill" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="cite-pill-text">Google Scholar</span></div>
-          <div class="focus-label">Representative Work</div>
-          <div class="focus-stack" id="research-focus-list" aria-label="Representative research work"></div>
           <div class="panel-footer" id="panel-stats"></div>
         </aside>
       </div>
@@ -1041,46 +876,6 @@
       </div>
     </section>
 
-    <section id="portal">
-      <div class="shell">
-        <div class="section-head reveal">
-          <div>
-            <div class="section-kicker">Site Portal</div>
-            <h2>Explore the work.</h2>
-          </div>
-          <p class="section-lede">Quick routes to research profile, publications, tools, and technical writing.</p>
-        </div>
-
-        <div class="portal-grid">
-          <div class="portal-main reveal delay-1">
-            <div>
-              <h3>Research profile, selected work, and notes.</h3>
-              <p>This site collects selected papers, current research activity, technical writing, and lightweight tools for computer science research.</p>
-            </div>
-            <a class="btn" href="/about/">View academic profile</a>
-          </div>
-
-          <div class="portal-list">
-            <a class="reveal delay-1" href="/about/">
-              <span><strong>Academic Homepage</strong><span>Bio, news, experience, honors, and selected publications.</span></span>
-              <span class="portal-arrow">&rarr;</span>
-            </a>
-            <a class="reveal delay-2" href="/about/publications/">
-              <span><strong>Publication Archive</strong><span>Complete paper list with abstracts, BibTeX, images, and links.</span></span>
-              <span class="portal-arrow">&rarr;</span>
-            </a>
-            <a class="reveal delay-3" href="/ccf/">
-              <span><strong>CCF Online</strong><span>Conference and journal lookup platform for CS researchers.</span></span>
-              <span class="portal-arrow">&rarr;</span>
-            </a>
-            <a class="reveal delay-4" href="/blog/">
-              <span><strong>Research Notes</strong><span>Blog posts, technical notes, and project records.</span></span>
-              <span class="portal-arrow">&rarr;</span>
-            </a>
-          </div>
-        </div>
-      </div>
-    </section>
   </main>
 
   <footer>
@@ -1089,6 +884,7 @@
       <div class="footer-links">
         <a id="footer-email" href="mailto:liwei008009@163.com">Email</a>
         <a id="footer-github" href="https://github.com/William-Liwei" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://scholar.google.com/citations?user=jLPVuhoAAAAJ" target="_blank" rel="noopener">Scholar</a>
         <a href="/atom.xml">RSS</a>
       </div>
     </div>
@@ -1175,7 +971,7 @@
         const profile = DATA.profile || {};
         const topics = [...new Set(publications.map(topicLabel))].slice(0, 3);
         if (tagline && topics.length) {
-          tagline.textContent = `${profile.role || 'PhD Student'} / ${topics.slice(0, 2).join(' / ')} / Research Systems`;
+          tagline.textContent = `PhD Student / ${topics.slice(0, 2).join(' / ')}`;
         }
         if (heroCopy) {
           if (topics.length) {
@@ -1205,42 +1001,32 @@
         `).join('');
       };
 
-      const renderResearchPanel = (publications) => {
-        const focus = $('#research-focus-list');
+      // Stats: Scholar numbers come from /data/scholar.json; paper counts from ABOUT_DATA.
+      const renderResearchPanel = (publications, scholar) => {
         const stats = $('#panel-stats');
-        if (focus) {
-          focus.innerHTML = publications.slice(0, 4).map((publication, index) => {
-            const href = primaryLink(publication);
-            return `
-            <article class="focus-item">
-              <div class="focus-rank">${String(index + 1).padStart(2, '0')}</div>
-              <a href="${escapeHTML(href)}"${setExternalAttrs(href)} aria-label="${escapeHTML(publication.title)}">
-                <h3>${escapeHTML(shortTitle(publication))}</h3>
-                <small>${escapeHTML(venueLabel(publication) || publication.venue || '')}</small>
-              </a>
-            </article>
-          `;
-          }).join('');
-        }
+        if (!stats) return;
 
-        if (stats) {
-          const ccfA = publications.filter((publication) => findBadge(publication, 'ccf') === 'CCF-A').length;
-          const ccfB = publications.filter((publication) => findBadge(publication, 'ccf') === 'CCF-B').length;
-          const service = (DATA.engagement || [])
-            .filter((item) => /service|review/i.test(`${item.title || ''} ${item.type || ''}`))
-            .reduce((sum, item) => sum + (item.items || []).length, 0);
+        const ccfA = publications.filter((publication) => findBadge(publication, 'ccf') === 'CCF-A').length;
+        const ccfB = publications.filter((publication) => findBadge(publication, 'ccf') === 'CCF-B').length;
+        const items = Number.isFinite(scholar?.citations)
+          ? [
+              { value: scholar.citations, label: 'Citations' },
+              { value: scholar.hIndex, label: 'h-index' },
+              { value: ccfA, label: 'CCF-A Papers' }
+            ]
+          : [
+              { value: ccfA, label: 'CCF-A Papers' },
+              { value: ccfB, label: 'CCF-B Papers' },
+              { value: publications.length, label: 'Publications' }
+            ];
 
-          stats.innerHTML = [
-            { value: ccfA, label: 'CCF-A Papers' },
-            { value: ccfB, label: 'CCF-B Papers' },
-            { value: service, label: 'Academic Service' }
-          ].map((item) => `
-            <div class="panel-stat">
-              <strong data-count="${escapeHTML(item.value)}">0</strong>
-              <span>${escapeHTML(item.label)}</span>
-            </div>
-          `).join('');
-        }
+        stats.innerHTML = items.map((item) => `
+          <div class="panel-stat">
+            <strong data-count="${escapeHTML(item.value)}">0</strong>
+            <span>${escapeHTML(item.label)}</span>
+          </div>
+        `).join('');
+        animateCounts();
       };
 
       const animateCounts = () => {
@@ -1270,7 +1056,7 @@
         container.innerHTML = publications.slice(0, 4).map((publication, index) => {
           const href = primaryLink(publication);
           const image = publication.thumbnail
-            ? `<img src="/about/images/${escapeHTML(publication.thumbnail)}" alt="${escapeHTML(shortTitle(publication))} research figure">`
+            ? `<img src="/about/images/${escapeHTML(publication.thumbnail)}" loading="lazy" decoding="async" alt="${escapeHTML(shortTitle(publication))} research figure">`
             : '';
           const linkText = href === '/about/publications/' ? 'View details' : 'Open link';
 
@@ -1310,21 +1096,17 @@
         });
       };
 
-      const loadCitations = () => {
+      // Static snapshot refreshed by `npm run scholar` before each deploy.
+      const loadScholar = () => fetch('/data/scholar.json')
+        .then((res) => (res.ok ? res.json() : null))
+        .catch(() => null);
+
+      const renderCitePill = (scholar) => {
         const pill = $('#cite-pill');
         const text = $('#cite-pill-text');
-        if (!pill || !text) return;
-        // Static snapshot refreshed by `npm run scholar` before each deploy.
-        fetch('/data/scholar.json')
-          .then((res) => res.json())
-          .then((data) => {
-            if (data && Number.isFinite(data.citations)) {
-              text.textContent = `${data.citations} citations on Scholar`;
-              if (data.updated) pill.title = `Google Scholar, as of ${data.updated}`;
-              pill.classList.add('visible');
-            }
-          })
-          .catch(() => { /* keep the pill hidden when the data is unavailable */ });
+        if (!pill || !text || !Number.isFinite(scholar?.citations)) return;
+        text.textContent = `Google Scholar · as of ${scholar.updated || 'recent'}`;
+        pill.classList.add('visible');
       };
 
       const injectStructuredData = (publications) => {
@@ -1397,12 +1179,15 @@
         const publications = sortedPublications();
         renderHero(publications);
         renderNews();
-        renderResearchPanel(publications);
+        renderResearchPanel(publications, null);
         renderFeaturedWork(publications);
         renderFooterLinks();
-        animateCounts();
-        loadCitations();
         injectStructuredData(publications);
+        loadScholar().then((scholar) => {
+          if (!scholar) return;
+          renderResearchPanel(publications, scholar);
+          renderCitePill(scholar);
+        });
       };
 
       if (document.readyState === 'loading') {
