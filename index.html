@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wei Li | Computer Science Research</title>
+  <title>Wei Li (William) | PhD Student in Machine Learning, SJTU × BJZGCA</title>
   <meta name="description" content="Wei Li (William) - PhD student in Computer Science at Shanghai Jiao Tong University × Beijing Zhongguancun Academy, working on machine learning for structured and temporal data.">
   <meta name="author" content="Wei Li">
   <meta name="keywords" content="Wei Li, William Li, Shanghai Jiao Tong University, Beijing Zhongguancun Academy, Shanghai University, PhD student, machine learning, data mining, forecasting, representation learning, generative modeling, KDD, NeurIPS, DASFAA, ICASSP, deep learning">
@@ -11,24 +11,28 @@
   <meta name="theme-color" content="#f6f0e6" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0f151d" media="(prefers-color-scheme: dark)">
   <link rel="canonical" href="https://www.weili.space/">
-  <link rel="icon" href="/img/Yu.ico">
+  <link rel="icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/img/avatar.webp">
   <link rel="alternate" type="application/atom+xml" title="Wei Li - Blog" href="/atom.xml">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="Wei Li | Computer Science Research">
+  <meta property="og:title" content="Wei Li (William) | Machine Learning Research">
   <meta property="og:description" content="PhD student in Computer Science at Shanghai Jiao Tong University × Beijing Zhongguancun Academy, working on machine learning, representation learning, forecasting, generative modeling, and AI research systems.">
   <meta property="og:type" content="profile">
   <meta property="og:url" content="https://www.weili.space/">
-  <meta property="og:image" content="https://www.weili.space/img/Yu.png">
+  <meta property="og:image" content="https://www.weili.space/img/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Wei Li, PhD student in Computer Science">
   <meta property="og:site_name" content="weili.space">
   <meta property="profile:first_name" content="Wei">
   <meta property="profile:last_name" content="Li">
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Wei Li | Computer Science Research">
+  <meta name="twitter:title" content="Wei Li (William) | Machine Learning Research">
   <meta name="twitter:description" content="PhD student in Computer Science at Shanghai Jiao Tong University × Beijing Zhongguancun Academy, working on machine learning, representation learning, forecasting, generative modeling, and AI research systems.">
-  <meta name="twitter:image" content="https://www.weili.space/img/Yu.png">
+  <meta name="twitter:image" content="https://www.weili.space/img/og.jpg">
 
   <!-- Display + body fonts, self-hosted (Google Fonts is unreliable in mainland China).
        Body uses Inter to match the academic homepage at /about/. -->
@@ -660,6 +664,70 @@
       font-size: 0.88rem;
     }
 
+    .work-card h3 a:hover,
+    .work-link:hover,
+    .inline-link {
+      color: var(--clay);
+    }
+
+    .inline-link {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    a:focus-visible,
+    button:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 3px;
+      border-radius: 8px;
+    }
+
+    .tools-section {
+      padding-top: 0;
+    }
+
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .tool-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      padding: 1.25rem;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--card);
+      transition: transform 200ms ease, border-color 200ms ease;
+    }
+
+    .tool-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--gold);
+    }
+
+    .tool-card strong {
+      font-family: var(--header-font);
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+
+    .tool-card span:last-child {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .tool-kicker {
+      color: var(--gold);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
 
 
 
@@ -720,7 +788,8 @@
       }
 
       .hero-notes,
-      .work-grid {
+      .work-grid,
+      .tool-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
@@ -787,6 +856,10 @@
       section {
         padding: 4rem 0;
       }
+
+      .tool-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -830,9 +903,9 @@
           <div class="eyebrow reveal">SJTU × Beijing Zhongguancun Academy / Computer Science</div>
           <h1 class="reveal delay-1">
             Wei Li
-            <span class="hero-title-accent">Computer Science Research</span>
+            <span class="hero-title-accent">Machine Learning Research</span>
           </h1>
-          <p class="hero-copy reveal delay-2" id="hero-copy">
+          <p class="hero-copy reveal delay-2">
             PhD Student in Computer Science at <strong>Shanghai Jiao Tong University × Beijing Zhongguancun Academy</strong> (2027-), working on <strong>machine learning for structured and temporal data</strong>. Current work spans generative modeling, forecasting, clustering, representation learning, and uncertainty-aware modeling. Undergraduate education: <strong>Computer Science and Technology, Shanghai University</strong> (2023-2027).
           </p>
           <div class="cta-row reveal delay-3">
@@ -840,7 +913,10 @@
             <a class="btn" href="/about/publications/">Publications</a>
             <a class="btn" href="/blog/">Enter Blog</a>
           </div>
-          <div class="hero-notes reveal delay-4" id="hero-notes" aria-label="Research highlights"></div>
+          <div class="hero-notes reveal delay-4" id="hero-notes" aria-label="Latest news"><!--@home-news--><article class="note"><div class="kicker">2026.10</div><p>Awarded the National Scholarship.</p></article>
+<article class="note"><div class="kicker">2026.09</div><p>SDFlow accepted for Poster Presentation at NeurIPS 2026 (CCF-A).</p></article>
+<article class="note"><div class="kicker">2026.08</div><p>The APCL (KDD 2026, CCF-A) blog post is now live.</p></article>
+<article class="note"><div class="kicker">2026.06</div><p>APCL scheduled for Poster Presentation at KDD 2026 (CCF-A).</p></article><!--/@home-news--></div>
         </div>
 
         <aside class="research-panel reveal delay-2" aria-label="Research focus">
@@ -848,7 +924,7 @@
             <img src="/img/avatar.webp" width="74" height="74" alt="Wei Li avatar">
             <div>
               <strong>Wei Li</strong>
-              <span id="profile-tagline">PhD Student / Machine Learning</span>
+              <span>PhD Student / Machine Learning</span>
             </div>
           </div>
           <div class="research-summary">
@@ -856,8 +932,8 @@
             <h2>Machine learning for data mining, forecasting, and generative modeling.</h2>
             <p>Representative work across clustering, uncertainty-aware learning, forecasting, and AI research systems.</p>
           </div>
-          <div class="cite-pill" id="cite-pill" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="cite-pill-text">Google Scholar</span></div>
-          <div class="panel-footer" id="panel-stats"></div>
+          <!--@home-cite--><div class="cite-pill visible"><span class="dot" aria-hidden="true"></span><span>Google Scholar · as of 2026-10-01</span></div><!--/@home-cite-->
+          <div class="panel-footer" id="panel-stats"><!--@home-stats--><div class="panel-stat"><strong>27</strong><span>Citations</span></div><div class="panel-stat"><strong>3</strong><span>h-index</span></div><div class="panel-stat"><strong>2</strong><span>CCF-A Papers</span></div><!--/@home-stats--></div>
         </aside>
       </div>
     </section>
@@ -869,10 +945,78 @@
             <div class="section-kicker">Featured Work</div>
             <h2>Selected papers at a glance.</h2>
           </div>
-          <p class="section-lede">A compact view of representative work. The full publication archive includes abstracts, BibTeX, figures, and project links.</p>
+          <p class="section-lede">A compact view of representative work. The <a class="inline-link" href="/about/publications/">full publication list</a> includes abstracts, BibTeX, figures, and code.</p>
         </div>
 
-        <div class="work-grid" id="featured-work-grid"></div>
+        <div class="work-grid" id="featured-work-grid"><!--@home-work--><article class="work-card reveal delay-1">
+  <a class="work-image" href="https://arxiv.org/abs/2605.05736" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true"><img src="/about/images/web/sdflow.webp" loading="lazy" decoding="async" alt="" width="600" height="300"></a>
+  <div class="work-body">
+    <div class="work-meta">NeurIPS 2026 / CCF-A</div>
+    <h3><a href="https://arxiv.org/abs/2605.05736" target="_blank" rel="noopener">SDFlow: Similarity-Driven Flow Matching for Time Series Generation</a></h3>
+    <p>SDFlow introduces a similarity-driven, non-autoregressive flow-matching framework for time-series generation in high-dimensional discrete latent spaces. By learning a low-rank subspace and initializing generation with similarity-guided manifold anchors, it aligns the generative process with the geometry of real temporal data and supports parallel synthesis.</p>
+    <a class="work-link" href="/about/publications/">Details &amp; BibTeX →</a>
+  </div>
+</article>
+<article class="work-card reveal delay-2">
+  <a class="work-image" href="https://dl.acm.org/doi/10.1145/3770855.3817773" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true"><img src="/about/images/web/apcl.webp" loading="lazy" decoding="async" alt="" width="600" height="300"></a>
+  <div class="work-body">
+    <div class="work-meta">KDD 2026 / CCF-A</div>
+    <h3><a href="https://dl.acm.org/doi/10.1145/3770855.3817773" target="_blank" rel="noopener">Adaptive Prototypical Contrastive Learning for Time Series Clustering</a></h3>
+    <p>Addresses time-series clustering with an unknown number of clusters by combining hierarchical prototypes, contrastive learning, and the MDL principle to jointly learn representations and cluster cardinality.</p>
+    <a class="work-link" href="/about/publications/">Details &amp; BibTeX →</a>
+  </div>
+</article>
+<article class="work-card reveal delay-3">
+  <a class="work-image" href="https://doi.org/10.1007/978-981-92-0372-7_31" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true"><img src="/about/images/web/clusterpatchtst.webp" loading="lazy" decoding="async" alt="" width="600" height="300"></a>
+  <div class="work-body">
+    <div class="work-meta">DASFAA 2026 / CCF-B</div>
+    <h3><a href="https://doi.org/10.1007/978-981-92-0372-7_31" target="_blank" rel="noopener">ClusterPatchTST: Uncertainty-Aware Causal Clustering for Heterogeneous Time Series Forecasting</a></h3>
+    <p>Uses causal clustering to capture cross-series structural heterogeneity and uncertainty modeling to improve robust and reliable forecasting.</p>
+    <a class="work-link" href="/about/publications/">Details &amp; BibTeX →</a>
+  </div>
+</article>
+<article class="work-card reveal delay-4">
+  <a class="work-image" href="https://doi.org/10.1007/978-981-96-9815-8_27" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true"><img src="/about/images/web/energypatchtst.webp" loading="lazy" decoding="async" alt="" width="600" height="300"></a>
+  <div class="work-body">
+    <div class="work-meta">ICIC 2025 / CCF-C</div>
+    <h3><a href="https://doi.org/10.1007/978-981-96-9815-8_27" target="_blank" rel="noopener">EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting</a></h3>
+    <p>Combines multiscale Patch Transformers with uncertainty estimation for energy forecasting; the platform received a software copyright and 300+ GitHub stars.</p>
+    <a class="work-link" href="/about/publications/">Details &amp; BibTeX →</a>
+  </div>
+</article><!--/@home-work--></div>
+      </div>
+    </section>
+
+    <section id="tools" class="tools-section">
+      <div class="shell">
+        <div class="section-head reveal">
+          <div>
+            <div class="section-kicker">Tools &amp; Projects</div>
+            <h2>Things I built and maintain.</h2>
+          </div>
+        </div>
+        <div class="tool-grid">
+          <a class="tool-card" href="/ccf/">
+            <span class="tool-kicker">Live tool</span>
+            <strong>CCF Online</strong>
+            <span>Conference deadlines in Beijing time, the CCF 2026 list, and JCR / CAS journal partitions in one place.</span>
+          </a>
+          <a class="tool-card" href="/tais/">
+            <span class="tool-kicker">Research collective</span>
+            <strong>TAIS</strong>
+            <span>Time-Series, Agents &amp; Intelligent Systems: a group for temporal modeling and agent systems.</span>
+          </a>
+          <a class="tool-card" href="https://github.com/William-Liwei/EnergyPatchTST" target="_blank" rel="noopener">
+            <span class="tool-kicker">Open source</span>
+            <strong>EnergyPatchTST</strong>
+            <span>Multi-scale Transformer for energy forecasting with uncertainty estimation (ICIC 2025).</span>
+          </a>
+          <a class="tool-card" href="/blog/">
+            <span class="tool-kicker">Writing</span>
+            <strong>Blog</strong>
+            <span>Paper notes, research write-ups, and course material.</span>
+          </a>
+        </div>
       </div>
     </section>
 
@@ -889,312 +1033,20 @@
       </div>
     </div>
   </footer>
-  <script src="/about/data/about-data.js"></script>
+  <!--@jsonld--><script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Wei Li","alternateName":"William Li","url":"https://www.weili.space/","image":"https://www.weili.space/img/og.jpg","email":"mailto:liwei008009@163.com","jobTitle":"PhD Student in Computer Science","affiliation":[{"@type":"CollegeOrUniversity","name":"Shanghai Jiao Tong University"},{"@type":"Organization","name":"Beijing Zhongguancun Academy"}],"alumniOf":{"@type":"CollegeOrUniversity","name":"Shanghai University"},"knowsAbout":["Machine Learning","Data Mining","Representation Learning","Generative Modeling","Forecasting","Time Series Analysis"],"sameAs":["https://github.com/William-Liwei","https://scholar.google.com/citations?user=jLPVuhoAAAAJ","https://orcid.org/0009-0008-8108-4854"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"Publications of Wei Li","itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"ScholarlyArticle","headline":"SDFlow: Similarity-Driven Flow Matching for Time Series Generation","datePublished":"2026","author":{"@type":"Person","name":"Wei Li"},"isPartOf":"Conference on Neural Information Processing Systems (NeurIPS 2026)","url":"https://arxiv.org/abs/2605.05736"}},{"@type":"ListItem","position":2,"item":{"@type":"ScholarlyArticle","headline":"Adaptive Prototypical Contrastive Learning for Time Series Clustering","datePublished":"2026","author":{"@type":"Person","name":"Wei Li"},"isPartOf":"ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD 2026)","url":"https://dl.acm.org/doi/10.1145/3770855.3817773"}},{"@type":"ListItem","position":3,"item":{"@type":"ScholarlyArticle","headline":"ClusterPatchTST: Uncertainty-Aware Causal Clustering for Heterogeneous Time Series Forecasting","datePublished":"2026","author":{"@type":"Person","name":"Wei Li"},"isPartOf":"International Conference on Database Systems for Advanced Applications (DASFAA 2026)","url":"https://doi.org/10.1007/978-981-92-0372-7_31"}},{"@type":"ListItem","position":4,"item":{"@type":"ScholarlyArticle","headline":"EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting","datePublished":"2025","author":{"@type":"Person","name":"Wei Li"},"isPartOf":"International Conference on Intelligent Computing (ICIC 2025)","url":"https://doi.org/10.1007/978-981-96-9815-8_27"}},{"@type":"ListItem","position":5,"item":{"@type":"ScholarlyArticle","headline":"ScatterFusion: A Hierarchical Scattering Transform Framework for Enhanced Time Series Forecasting","datePublished":"2026","author":{"@type":"Person","name":"Wei Li"},"isPartOf":"IEEE International Conference on Acoustics, Speech, and Signal Processing (ICASSP 2026)","url":"https://doi.org/10.1109/ICASSP55912.2026.11462616"}},{"@type":"ListItem","position":6,"item":{"@type":"ScholarlyArticle","headline":"AWGFormer: Adaptive Wavelet-Guided Transformer for Multi-resolution Time Series Forecasting","datePublished":"2026","author":{"@type":"Person","name":"Wei Li"},"isPartOf":"IEEE International Conference on Acoustics, Speech, and Signal Processing (ICASSP 2026)","url":"https://doi.org/10.1109/ICASSP55912.2026.11461228"}},{"@type":"ListItem","position":7,"item":{"@type":"ScholarlyArticle","headline":"SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction","datePublished":"2025","author":{"@type":"Person","name":"Wei Li"},"isPartOf":"International Conference on Artificial Neural Networks (ICANN 2025)","url":"https://doi.org/10.1007/978-3-032-04549-2_3"}},{"@type":"ListItem","position":8,"item":{"@type":"ScholarlyArticle","headline":"TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting","datePublished":"2025","author":{"@type":"Person","name":"Wei Li"},"isPartOf":"International Conference on Artificial Neural Networks (ICANN 2025)","url":"https://doi.org/10.1007/978-3-032-04549-2_20"}},{"@type":"ListItem","position":9,"item":{"@type":"ScholarlyArticle","headline":"LWSpace: Multi-Scale State Space Framework for Time Series Forecasting","datePublished":"2025","author":{"@type":"Person","name":"Wei Li"},"isPartOf":"International Conference on Intelligent Computing (ICIC 2025)","url":"https://doi.org/10.1007/978-981-96-9815-8_25"}},{"@type":"ListItem","position":10,"item":{"@type":"ScholarlyArticle","headline":"Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics","datePublished":"2025","author":{"@type":"Person","name":"Wei Li"},"isPartOf":"International Conference on Applied Mathematics, Modelling and Intelligent Computing (CAMMIC 2025)","url":"https://doi.org/10.1145/3745533.3745645"}}]}</script><!--/@jsonld-->
   <script>
-    (function() {
-      const DATA = window.ABOUT_DATA;
-
-      const $ = (selector) => document.querySelector(selector);
-      const escapeHTML = (value) => String(value || '').replace(/[&<>"']/g, (char) => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-      }[char]));
-
-      const stripHTML = (value) => {
-        const div = document.createElement('div');
-        div.innerHTML = value || '';
-        return div.textContent || div.innerText || '';
-      };
-
-      const truncate = (value, maxLength) => {
-        const text = String(value || '').trim();
-        if (text.length <= maxLength) return text;
-        return `${text.slice(0, maxLength - 1).trim()}...`;
-      };
-
-      const sortedPublications = () => [...(DATA.publications || [])].sort((a, b) => (
-        (a.display_order ?? 999) - (b.display_order ?? 999)
-        || (b.year || 0) - (a.year || 0)
-        || (b.month || 0) - (a.month || 0)
-        || String(a.title || '').localeCompare(String(b.title || ''))
-      ));
-
-      const sortedNews = () => [...(DATA.news || [])].sort((a, b) => (
-        (b.year || 0) - (a.year || 0)
-        || (b.month || 0) - (a.month || 0)
-      ));
-
-      const findBadge = (publication, type) => (publication.badges || []).find((badge) => badge.type === type)?.text || '';
-
-      const venueLabel = (publication) => {
-        const venue = publication.venue || '';
-        const acronym = venue.match(/\(([^)]+)\)/)?.[1] || venue.match(/\b(NeurIPS|KDD|DASFAA|ICASSP|ICIC|ICANN|CAMMIC|arXiv)\b/i)?.[1] || venue;
-        const ccf = findBadge(publication, 'ccf');
-        const status = findBadge(publication, 'status');
-        return [acronym, ccf, status].filter(Boolean).join(' / ');
-      };
-
-      const topicLabel = (publication) => {
-        const title = publication.title || '';
-        const lower = title.toLowerCase();
-        if (lower.includes('generation') || lower.includes('flow')) return 'Generative Modeling';
-        if (lower.includes('forecast')) return 'Forecasting';
-        if (lower.includes('clustering')) return 'Clustering';
-        if (lower.includes('uncertainty')) return 'Uncertainty Modeling';
-        if (lower.includes('energy')) return 'Energy AI';
-        return 'Representation Learning';
-      };
-
-      const shortTitle = (publication) => {
-        const title = publication.title || '';
-        const beforeColon = title.split(':')[0].trim();
-        if (beforeColon && beforeColon.length <= 28) return beforeColon;
-        const thumbnailBase = String(publication.thumbnail || '').replace(/\.[^.]+$/, '');
-        if (/^[a-z0-9]{2,6}$/.test(thumbnailBase)) return thumbnailBase.toUpperCase();
-        if (thumbnailBase && thumbnailBase.length <= 18) return thumbnailBase.replace(/patchtst/i, 'PatchTST').replace(/flow/i, 'Flow').replace(/^./, (c) => c.toUpperCase());
-        return title.split(/\s+/).slice(0, 2).join(' ');
-      };
-
-      const primaryLink = (publication) => {
-        const link = (publication.links || []).find((item) => ['arxiv', 'doi', 'paper', 'link'].includes(item.type)) || (publication.links || [])[0];
-        return link?.url || '/about/publications/';
-      };
-
-      const setExternalAttrs = (href) => href.startsWith('http') ? ' target="_blank" rel="noopener"' : '';
-
-      const renderHero = (publications) => {
-        const heroCopy = $('#hero-copy');
-        const tagline = $('#profile-tagline');
-        const profile = DATA.profile || {};
-        const topics = [...new Set(publications.map(topicLabel))].slice(0, 3);
-        if (tagline && topics.length) {
-          tagline.textContent = `PhD Student / ${topics.slice(0, 2).join(' / ')}`;
-        }
-        if (heroCopy) {
-          if (topics.length) {
-            const role = escapeHTML(profile.role || 'PhD Student in Computer Science');
-            const affiliation = escapeHTML(profile.affiliation || 'Shanghai Jiao Tong University × Beijing Zhongguancun Academy');
-            const phdPeriod = profile.phdPeriod ? ` (${escapeHTML(profile.phdPeriod)})` : '';
-            const undergraduate = profile.undergraduate ? ` Undergraduate education: <strong>${escapeHTML(profile.undergraduate)}</strong> (${escapeHTML(profile.undergraduatePeriod || '')}).` : '';
-            heroCopy.innerHTML = `${role} at <strong>${affiliation}</strong>${phdPeriod}, working on <strong>machine learning for structured and temporal data</strong>. Current work spans ${topics.map(escapeHTML).join(', ')}, representation learning, and uncertainty-aware modeling.${undergraduate}`;
-          } else {
-            const phdPeriod = profile.phdPeriod ? ` (${profile.phdPeriod})` : '';
-            const undergraduate = profile.undergraduate ? ` Undergraduate education: ${profile.undergraduate} (${profile.undergraduatePeriod || ''}).` : '';
-            heroCopy.textContent = `${profile.role || 'PhD Student in Computer Science'} at ${profile.affiliation || 'Shanghai Jiao Tong University × Beijing Zhongguancun Academy'}${phdPeriod}, working on machine learning and AI research systems.${undergraduate}`;
-          }
-        }
-      };
-
-      const renderNews = () => {
-        const container = $('#hero-notes');
-        if (!container) return;
-
-        const items = sortedNews().slice(0, 4);
-        container.innerHTML = items.map((item) => `
-          <article class="note">
-            <div class="kicker">${escapeHTML(item.year)}.${String(item.month || '').padStart(2, '0')}</div>
-            <p>${escapeHTML(truncate(stripHTML(item.content), 112))}</p>
-          </article>
-        `).join('');
-      };
-
-      // Stats: Scholar numbers come from /data/scholar.json; paper counts from ABOUT_DATA.
-      const renderResearchPanel = (publications, scholar) => {
-        const stats = $('#panel-stats');
-        if (!stats) return;
-
-        const ccfA = publications.filter((publication) => findBadge(publication, 'ccf') === 'CCF-A').length;
-        const ccfB = publications.filter((publication) => findBadge(publication, 'ccf') === 'CCF-B').length;
-        const items = Number.isFinite(scholar?.citations)
-          ? [
-              { value: scholar.citations, label: 'Citations' },
-              { value: scholar.hIndex, label: 'h-index' },
-              { value: ccfA, label: 'CCF-A Papers' }
-            ]
-          : [
-              { value: ccfA, label: 'CCF-A Papers' },
-              { value: ccfB, label: 'CCF-B Papers' },
-              { value: publications.length, label: 'Publications' }
-            ];
-
-        stats.innerHTML = items.map((item) => `
-          <div class="panel-stat">
-            <strong data-count="${escapeHTML(item.value)}">0</strong>
-            <span>${escapeHTML(item.label)}</span>
-          </div>
-        `).join('');
-        animateCounts();
-      };
-
-      const animateCounts = () => {
-        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        document.querySelectorAll('[data-count]').forEach((el) => {
-          const target = Number(el.getAttribute('data-count')) || 0;
-          if (reduceMotion || target <= 0) {
-            el.textContent = String(target);
-            return;
-          }
-          const duration = 900;
-          const start = performance.now();
-          const step = (now) => {
-            const progress = Math.min((now - start) / duration, 1);
-            const eased = 1 - Math.pow(1 - progress, 3);
-            el.textContent = String(Math.round(target * eased));
-            if (progress < 1) requestAnimationFrame(step);
-          };
-          requestAnimationFrame(step);
-        });
-      };
-
-      const renderFeaturedWork = (publications) => {
-        const container = $('#featured-work-grid');
-        if (!container) return;
-
-        container.innerHTML = publications.slice(0, 4).map((publication, index) => {
-          const href = primaryLink(publication);
-          const image = publication.thumbnail
-            ? `<img src="/about/images/${escapeHTML(publication.thumbnail)}" loading="lazy" decoding="async" alt="${escapeHTML(shortTitle(publication))} research figure">`
-            : '';
-          const linkText = href === '/about/publications/' ? 'View details' : 'Open link';
-
-          return `
-            <article class="work-card reveal delay-${Math.min(index + 1, 4)}">
-              <a class="work-image" href="${escapeHTML(href)}"${setExternalAttrs(href)} aria-label="${escapeHTML(publication.title)} details">
-                ${image}
-              </a>
-              <div class="work-body">
-                <div class="work-meta">${escapeHTML(venueLabel(publication))}</div>
-                <h3>${escapeHTML(publication.title)}</h3>
-                <p>${escapeHTML(publication.abstract || '')}</p>
-                <a class="work-link" href="${escapeHTML(href)}"${setExternalAttrs(href)}>${linkText}</a>
-              </div>
-            </article>
-          `;
-        }).join('');
-      };
-
-      const renderFooterLinks = () => {
-        const email = DATA.personalInfo?.email;
-        const github = DATA.personalInfo?.github;
-        if (email && $('#footer-email')) $('#footer-email').href = `mailto:${email}`;
-        if (github && $('#footer-github')) $('#footer-github').href = github;
-      };
-
-      const setupThemeToggle = () => {
-        const button = $('#theme-toggle');
-        if (!button) return;
-        const root = document.documentElement;
-        button.addEventListener('click', () => {
-          const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-          root.setAttribute('data-theme', next);
-          try { localStorage.setItem('wl-theme', next); } catch (e) { /* storage unavailable */ }
-          const meta = document.querySelector('meta[name="theme-color"]:not([media])') || null;
-          if (meta) meta.setAttribute('content', next === 'dark' ? '#0f151d' : '#f6f0e6');
-        });
-      };
-
-      // Static snapshot refreshed by `npm run scholar` before each deploy.
-      const loadScholar = () => fetch('/data/scholar.json')
-        .then((res) => (res.ok ? res.json() : null))
-        .catch(() => null);
-
-      const renderCitePill = (scholar) => {
-        const pill = $('#cite-pill');
-        const text = $('#cite-pill-text');
-        if (!pill || !text || !Number.isFinite(scholar?.citations)) return;
-        text.textContent = `Google Scholar · as of ${scholar.updated || 'recent'}`;
-        pill.classList.add('visible');
-      };
-
-      const injectStructuredData = (publications) => {
-        const url = 'https://www.weili.space/';
-        const sameAs = [
-          DATA.personalInfo?.github,
-          DATA.personalInfo?.googleScholar,
-          DATA.personalInfo?.orcid
-        ].filter(Boolean);
-
-        const person = {
-          '@context': 'https://schema.org',
-          '@type': 'Person',
-          name: 'Wei Li',
-          alternateName: 'William Li',
-          url,
-          image: 'https://www.weili.space/img/Yu.png',
-          email: DATA.personalInfo?.email ? `mailto:${DATA.personalInfo.email}` : undefined,
-          jobTitle: DATA.profile?.role || 'PhD Student in Computer Science',
-          affiliation: [
-            { '@type': 'CollegeOrUniversity', name: 'Shanghai Jiao Tong University' },
-            { '@type': 'Organization', name: 'Beijing Zhongguancun Academy' }
-          ],
-          alumniOf: { '@type': 'CollegeOrUniversity', name: 'Shanghai University' },
-          knowsAbout: [
-            'Time Series Analysis',
-            'Machine Learning',
-            'Time Series Forecasting',
-            'Representation Learning',
-            'Generative Modeling',
-            'Deep Learning'
-          ],
-          sameAs
-        };
-
-        const itemList = {
-          '@context': 'https://schema.org',
-          '@type': 'ItemList',
-          name: 'Selected Publications of Wei Li',
-          itemListElement: publications.slice(0, 10).map((publication, index) => ({
-            '@type': 'ListItem',
-            position: index + 1,
-            item: {
-              '@type': 'ScholarlyArticle',
-              headline: publication.title,
-              datePublished: String(publication.year || ''),
-              author: { '@type': 'Person', name: 'Wei Li' },
-              isPartOf: publication.venue || undefined,
-              url: primaryLink(publication).startsWith('http') ? primaryLink(publication) : url + 'about/publications/'
-            }
-          }))
-        };
-
-        [person, itemList].forEach((payload) => {
-          const script = document.createElement('script');
-          script.type = 'application/ld+json';
-          script.textContent = JSON.stringify(payload);
-          document.head.appendChild(script);
-        });
-      };
-
-      const renderDataDrivenHomepage = () => {
-        setupThemeToggle();
-
-        if (!DATA) {
-          $('#hero-copy').textContent = 'Academic data failed to load. Please visit the academic homepage for the latest profile.';
-          return;
-        }
-
-        const publications = sortedPublications();
-        renderHero(publications);
-        renderNews();
-        renderResearchPanel(publications, null);
-        renderFeaturedWork(publications);
-        renderFooterLinks();
-        injectStructuredData(publications);
-        loadScholar().then((scholar) => {
-          if (!scholar) return;
-          renderResearchPanel(publications, scholar);
-          renderCitePill(scholar);
-        });
-      };
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', renderDataDrivenHomepage);
-      } else {
-        renderDataDrivenHomepage();
-      }
+    // Content is pre-rendered at build time (scripts/prerender-profile.js);
+    // this only wires up the theme toggle.
+    (function () {
+      var button = document.getElementById('theme-toggle');
+      if (!button) return;
+      button.addEventListener('click', function () {
+        var root = document.documentElement;
+        var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        try { localStorage.setItem('wl-theme', next); } catch (e) { /* storage unavailable */ }
+      });
     })();
   </script>
 </body>
