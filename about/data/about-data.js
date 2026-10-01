@@ -98,7 +98,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "ScatterFusion: A Hierarchical Scattering Transform Framework for Enhanced Time Series Forecasting",
-      display_order: 4,
+      display_order: 5,
       authors: "<strong>Li, W.</strong>",
       venue: "IEEE International Conference on Acoustics, Speech, and Signal Processing (ICASSP 2026)",
       year: 2026,
@@ -174,7 +174,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting",
-      display_order: 5,
+      display_order: 4,
       authors: "<strong>Li, W.</strong>, Wang, Z., Sun, Q., Gao, Q., & Yang, F.",
       venue: "International Conference on Intelligent Computing (ICIC 2025)",
       year: 2025,
