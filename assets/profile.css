@@ -278,3 +278,6 @@ section { padding: 4.5rem 0 0; }
   body { background: #fff; }
   .card { box-shadow: none; }
 }
+
+/* "More" on /about/ publications: same look as the show-more buttons, links to the full list. */
+.more-btn { width: fit-content; text-align: center; }
