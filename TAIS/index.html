@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="TAIS - Time-Series, Agents & Intelligent Systems. A sequence-first research collective for temporal modeling, agent systems, and applied intelligence.">
+    <meta name="description" content="TAIS is a research and product team building practical AI systems for temporal data, time-series modeling, and intelligent analysis workflows.">
     <title>TAIS | Research Collective for Intelligent Systems</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -212,8 +212,6 @@
         .text-link:hover { text-decoration: underline; }
         .product-diagram {
             min-height: 320px;
-            display: flex;
-            flex-direction: column;
             justify-content: space-between;
             padding: 34px;
             border: 1px solid #b7d7d5;
@@ -230,8 +228,10 @@
         .research-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
         .research-item {
             position: relative;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
-            min-height: 260px;
+            min-height: 0;
             padding: 27px;
             border: 1px solid rgba(16, 32, 45, .1);
             border-radius: 28px;
@@ -254,12 +254,6 @@
         .ccf-b { background: var(--teal); color: var(--white); }
         .ccf-c { background: #dce4e8; color: var(--ink); }
         .research-item h3 { margin-bottom: 8px; font-size: 20px; line-height: 1.3; overflow-wrap: anywhere; }
-        .research-venue { margin-bottom: 7px; color: var(--teal-dark); font: 11px var(--mono); text-transform: uppercase; }
-        .research-authors { margin-bottom: 12px; color: var(--ink); font-size: 12px; line-height: 1.5; }
-        .research-item p { margin-bottom: 0; color: var(--muted); font-size: 14px; }
-        .research-links { display: flex; flex-wrap: wrap; gap: 14px; margin-top: auto; padding-top: 16px; }
-        .research-links a { color: var(--teal-dark); font: 11px var(--mono); text-decoration: none; }
-        .research-links a:hover { color: var(--ink); text-decoration: underline; }
         .research-note {
             margin-top: 22px;
             padding: 18px 20px;
@@ -518,6 +512,7 @@
                 <a href="#network">Network</a>
                 <a href="#team">Team</a>
                 <a href="#roadmap">Roadmap</a>
+                <a href="#partner">Partner</a>
             </nav>
         </div>
     </header>
@@ -525,12 +520,13 @@
     <main id="top">
         <section class="hero">
             <div class="hero-content">
-                <div class="eyebrow">Time-Series, Agents &amp; Intelligent Systems</div>
-                <h1>Sequence is a lens for intelligence.</h1>
-                <p class="hero-lede">TAIS is a research collective working on temporal modeling, agent systems, and applied intelligence. Its project lead, Wei Li, studies Computer Science at Shanghai Jiao Tong University &times; Beijing Zhongguancun Academy (2027-) and is an undergraduate in Computer Science and Technology at Shanghai University (2023-2027).</p>
+                <div class="eyebrow">Temporal Data &middot; Intelligent Systems</div>
+                <h1>Intelligence for data that changes over time.</h1>
+                <p class="hero-lede">TAIS is a research and product team building practical AI systems for temporal data. We combine forecasting and generative modeling with agent workflows, visualization, and reporting to turn complex data streams into usable insights.</p>
                 <div class="hero-actions">
                     <a class="button primary" href="#product">Explore SHUProphet <span aria-hidden="true">&rarr;</span></a>
-                    <a class="button" href="#research">View research <span aria-hidden="true">&darr;</span></a>
+                    <a class="button" href="#research">Team research <span aria-hidden="true">&darr;</span></a>
+                    <a class="button" href="#partner">Partner with TAIS <span aria-hidden="true">&rarr;</span></a>
                 </div>
             </div>
         </section>
@@ -546,15 +542,15 @@
         <section class="section" id="manifesto">
             <div class="shell">
                 <div class="section-heading">
-                    <div><div class="eyebrow">01 / Manifesto</div><h2>From temporal signals to adaptive systems.</h2></div>
-                    <p>We use sequence as a common language across forecasting, generative modeling, Agent trajectories, and embodied interaction.</p>
+                    <div><div class="eyebrow">01 / The Opportunity</div><h2>From fragmented analysis to usable workflows.</h2></div>
+                    <p>Working with sequential data takes more than a forecasting model: teams need to inspect patterns, compare methods, diagnose anomalies, and communicate results.</p>
                 </div>
                 <div class="manifesto">
-                    <p class="manifesto-copy">A time series, a tool-using Agent, and a robot in an environment all evolve through <em>state, observation, action, and feedback</em>. TAIS turns that shared structure into models, experiments, and products.</p>
+                    <p class="manifesto-copy">TAIS connects temporal models with agent-driven analysis so that data, models, diagnostics, and reports can work as <em>one coherent workflow</em>.</p>
                     <div class="sequence">
-                        <div class="sequence-label">A shared representation</div>
-                        <div class="sequence-flow"><span>State</span><b>&rarr;</b><span>Observation</span><b>&rarr;</b><span>Action</span><b>&rarr;</b><span>Feedback</span></div>
-                        <small>We ask what can be predicted, generated, evaluated, and improved at every step.</small>
+                        <div class="sequence-label">A practical analysis workflow</div>
+                        <div class="sequence-flow"><span>Data</span><b>&rarr;</b><span>Models</span><b>&rarr;</b><span>Diagnostics</span><b>&rarr;</b><span>Reports</span></div>
+                        <small>Our focus is making temporal analysis easier to run, inspect, and communicate.</small>
                     </div>
                 </div>
             </div>
@@ -563,14 +559,14 @@
         <section class="section" id="product">
             <div class="shell">
                 <div class="section-heading">
-                    <div><div class="eyebrow">02 / Product</div><h2>SHUProphet makes time-series models interactive.</h2></div>
-                    <p>Our first product turns natural-language questions into time-series analysis workflows, so users can work with models instead of wiring every experiment by hand.</p>
+                    <div><div class="eyebrow">02 / Product</div><h2>SHUProphet brings time-series analysis into one workflow.</h2></div>
+                    <p>Research and operations teams often rely on separate tools for forecasting, anomaly analysis, visualization, and reporting. SHUProphet explores an agent-driven workflow that connects these tasks from a natural-language request.</p>
                 </div>
                 <div class="product">
                     <div class="product-copy">
                         <span class="product-badge">TAIS product 01</span>
                         <h3>SHUProphet</h3>
-                        <p>SHUProphet is an interactive time-series Agent. Users describe an analysis task in natural language; the Agent connects the request to forecasting, anomaly analysis, visualization, and reporting modules, then explains the result in a usable workflow.</p>
+                        <p>SHUProphet is a research prototype for agent-assisted time-series analysis. A user describes a task in natural language; the system routes it to forecasting, anomaly analysis, visualization, and reporting modules, then presents the results in a single workflow.</p>
                         <div class="tag-row"><span class="tag">Time-series</span><span class="tag">Agent</span><span class="tag">LangChain + LLM</span><span class="tag">Python</span><span class="tag">Vue</span><span class="tag">Flask</span></div>
                         <div class="product-links"><a class="text-link" href="https://github.com/William-Liwei/shuprophet" target="_blank" rel="noopener">GitHub &rarr;</a></div>
                     </div>
@@ -590,8 +586,8 @@
         <section class="section" id="research">
             <div class="shell">
                 <div class="section-heading">
-                    <div><div class="eyebrow">03 / Research portfolio</div><h2>Selected publications by Wei Li.</h2></div>
-                    <p>Research in time-series generation, clustering, forecasting, and uncertainty-aware learning.</p>
+                    <div><div class="eyebrow">03 / Research portfolio</div><h2>Selected publications by our team.</h2></div>
+                    <p>Our research spans time-series generation, clustering, forecasting, and uncertainty-aware learning.</p>
                 </div>
                 <div class="research-grid" id="research-list"></div>
             </div>
@@ -600,32 +596,32 @@
         <section class="section" id="programs">
             <div class="shell">
                 <div class="section-heading">
-                    <div><div class="eyebrow">04 / Programs</div><h2>Research programs and working systems.</h2></div>
-                    <p>TAIS is designed around a clear loop: research questions, reproducible experiments, working prototypes, and feedback from real users.</p>
+                    <div><div class="eyebrow">04 / Operating Model</div><h2>From research foundations to applied pilots.</h2></div>
+                    <p>Our team connects original model research, an agent-assisted analysis platform, and problem-led collaboration to move temporal AI toward practical use.</p>
                 </div>
                 <div class="program-grid">
                     <article class="program featured">
-                        <div class="program-status">Research &middot; Planned</div>
-                        <h3>TAIS Workshop Program</h3>
-                        <p>Develop a defensible sequence-intelligence research contribution around Agent trajectories, evaluation, prediction, and adaptive memory, supported by open experiments and a reproducible toolkit.</p>
-                        <div class="program-target">Focus: workshop-ready research with open experiments and reproducible artifacts</div>
+                        <div class="program-status">Research Foundation</div>
+                        <h3>Temporal AI</h3>
+                        <p>Our work covers forecasting, clustering, generative modeling, and uncertainty estimation for complex temporal data.</p>
+                        <div class="program-target">Focus: methods, evaluation, and reproducibility</div>
                     </article>
                     <article class="program">
-                        <div class="program-status">Systems &middot; In development</div>
-                        <h3>TAIS Applied Systems</h3>
-                        <p>Turn SHUProphet from a research prototype into a reliable analysis system with measurable workflows, privacy-conscious deployment, and clear evaluation criteria.</p>
-                        <div class="program-target">Focus: product validation, external showcases, and maintainable delivery</div>
+                        <div class="program-status">Working Prototype</div>
+                        <h3>SHUProphet</h3>
+                        <p>We are building an agent-assisted workspace that connects natural-language requests to time-series models, diagnostics, visualization, and reports.</p>
+                        <div class="program-target">Focus: an end-to-end analysis workflow</div>
                     </article>
                     <article class="program">
-                        <div class="program-status">Build &middot; Open</div>
-                        <h3>TAIS Hack Lab</h3>
-                        <p>Ship focused prototypes in short cycles: Agent trace analysis, time-series copilots, model diagnostics, tool-use evaluation, and interactive demos that can survive real judging.</p>
-                        <div class="program-target">Target: hackathons, open-source sprints, and technical showcases</div>
+                        <div class="program-status">Next: Design Partners</div>
+                        <h3>Applied Pilots</h3>
+                        <p>We aim to work with research labs and data-intensive teams to identify high-value workflows and test them against real operational requirements.</p>
+                        <div class="program-target">Target: validate utility, performance, and deployment needs</div>
                     </article>
                 </div>
-                <div class="open-call">
-                    <div><h3>Build with TAIS</h3><p>We welcome serious collaborators in time-series modeling, Agent systems, product engineering, security, design, and applied research.</p></div>
-                    <a href="mailto:taiseditorial@163.com?subject=Collaborate%20with%20TAIS">Start a conversation &rarr;</a>
+                <div class="open-call" id="partner">
+                    <div><h3>Investment &amp; Strategic Partnerships</h3><p>TAIS welcomes conversations with potential investors, pilot partners, and research collaborators as we validate product needs and deployment opportunities.</p></div>
+                    <a href="mailto:taiseditorial@163.com?subject=TAIS%20Investment%20and%20Partnership">Investment &amp; partnership inquiry &rarr;</a>
                 </div>
             </div>
         </section>
@@ -645,8 +641,8 @@
         <section class="section" id="team">
             <div class="shell">
                 <div class="section-heading">
-                    <div><div class="eyebrow">06 / Team</div><h2>One project, several ways of thinking.</h2></div>
-                    <p>TAIS brings together machine learning, product building, economics, interdisciplinary research, and security.</p>
+                    <div><div class="eyebrow">06 / Team</div><h2>An interdisciplinary team for temporal AI.</h2></div>
+                    <p>Our team brings together machine learning research, product engineering, economics, applied security, and domain perspectives.</p>
                 </div>
                 <div class="team-group">
                     <div class="team-group-heading">Founders</div>
@@ -662,13 +658,13 @@
         <section class="section" id="roadmap">
             <div class="shell">
                 <div class="section-heading">
-                    <div><div class="eyebrow">07 / Roadmap</div><h2>Build something people can use, then study what it reveals.</h2></div>
-                    <p>Our next research layer extends the same sequence-first perspective to Agent trajectories and adaptive systems.</p>
+                    <div><div class="eyebrow">07 / Roadmap</div><h2>A focused path from research to adoption.</h2></div>
+                    <p>Our priorities are to strengthen the prototype, validate real workflows with partners, and make deployment repeatable.</p>
                 </div>
                 <div class="roadmap">
-                    <div class="roadmap-item"><div class="number">01 / NOW</div><h3>Make SHUProphet useful</h3><p>Improve data import, forecasting comparison, anomaly diagnostics, natural-language interaction, and exportable reports for researchers and small teams.</p></div>
-                    <div class="roadmap-item"><div class="number">02 / NEXT</div><h3>TAIS-Trace</h3><p>Define a transparent format for Agent trajectories and study clustering, failure detection, state prediction, and evaluation on public or synthetic traces.</p></div>
-                    <div class="roadmap-item"><div class="number">03 / LATER</div><h3>Open challenges and services</h3><p>Release reproducible benchmarks, run community challenges, and offer privacy-conscious analysis or private deployment for labs and AI teams.</p></div>
+                    <div class="roadmap-item"><div class="number">01 / NOW</div><h3>Strengthen SHUProphet</h3><p>Improve data import, model comparison, anomaly diagnostics, natural-language interaction, and report quality.</p><div class="program-target">Milestone: a reliable end-to-end prototype</div></div>
+                    <div class="roadmap-item"><div class="number">02 / NEXT</div><h3>Run design-partner pilots</h3><p>Co-design focused workflows with research labs and data-intensive teams; assess utility, performance, and deployment constraints.</p><div class="program-target">Milestone: evidence from real workflows</div></div>
+                    <div class="roadmap-item"><div class="number">03 / LATER</div><h3>Package for deployment</h3><p>Prioritize integrations, privacy controls, and deployment options based on partner requirements and pilot results.</p><div class="program-target">Milestone: repeatable product delivery</div></div>
                 </div>
             </div>
         </section>
@@ -677,9 +673,9 @@
     <footer class="site-footer">
         <div class="shell">
             <div class="footer-grid">
-                <div><div class="footer-label">TAIS</div><h2>Time-Series, Agents &amp; Intelligent Systems</h2><p>A sequence-first research collective for temporal modeling, Agent systems, and applied intelligence.</p></div>
-                <div><div class="footer-label">Explore</div><p><a href="#product">SHUProphet</a><br><a href="#research">Research backing</a><br><a href="#roadmap">Roadmap</a></p></div>
-                <div><div class="footer-label">Contact</div><p><a href="mailto:taiseditorial@163.com">taiseditorial@163.com</a><br><a href="https://github.com/William-Liwei" target="_blank" rel="noopener">GitHub</a></p></div>
+                <div><div class="footer-label">TAIS</div><h2>Time-Series, Agents &amp; Intelligent Systems</h2><p>A team building practical AI systems for temporal data through research, products, and collaboration.</p></div>
+                <div><div class="footer-label">Explore</div><p><a href="#product">SHUProphet</a><br><a href="#research">Team publications</a><br><a href="#roadmap">Roadmap</a></p></div>
+                <div><div class="footer-label">Investors &amp; Partners</div><p><a href="mailto:taiseditorial@163.com?subject=TAIS%20Investment%20and%20Partnership">taiseditorial@163.com</a><br><a href="https://github.com/William-Liwei" target="_blank" rel="noopener">GitHub</a></p></div>
             </div>
             <div class="copyright">&copy; 2026 TAIS Research Collective. Research, prototypes, and open collaboration around sequence intelligence.</div>
         </div>
@@ -687,27 +683,27 @@
 
     <script>
         const research = [
-            { title: 'SDFlow: Similarity-Driven Flow Matching for Time Series Generation', venue: 'NeurIPS 2026', authors: 'Wei Li*, Shibo Feng*, Pengcheng Wu, Xingyu Gao, Min Wu, and Peilin Zhao', meta: ['CCF-A', 'Full Paper', 'Poster', 'Co-first Authors'], text: 'A similarity-driven, non-autoregressive flow-matching framework that uses a learned low-rank latent subspace and manifold anchors for time-series generation.', links: [{ label: 'arXiv', url: 'https://arxiv.org/abs/2605.05736' }] },
-            { title: 'Adaptive Prototypical Contrastive Learning for Time Series Clustering', venue: 'ACM SIGKDD 2026', authors: 'Wei Li (sole author)', meta: ['CCF-A', 'Full Paper', 'Poster'], text: 'Combines hierarchical prototypes, contrastive learning, and the MDL principle to learn time-series representations while inferring an unknown number of clusters.', links: [{ label: 'ACM DL', url: 'https://dl.acm.org/doi/10.1145/3770855.3817773' }, { label: 'Code', url: 'https://github.com/William-Liwei/apcl' }] },
-            { title: 'ClusterPatchTST: Uncertainty-Aware Causal Clustering for Heterogeneous Time Series Forecasting', venue: 'DASFAA 2026', authors: 'Wei Li (sole author)', meta: ['CCF-B', 'Full Paper', 'Oral'], text: 'Uses causal clustering to capture cross-series structural heterogeneity and uncertainty modeling to improve robust forecasting.', links: [{ label: 'DOI', url: 'https://doi.org/10.1007/978-981-92-0372-7_31' }] },
-            { title: 'EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting', venue: 'ICIC 2025', authors: 'Wei Li, Zixin Wang, Qizheng Sun, Qixiang Gao, and Fenglei Yang', meta: ['CCF-C', 'Oral', 'First Author'], text: 'Combines multiscale Patch Transformers with uncertainty estimation for energy forecasting.', links: [{ label: 'DOI', url: 'https://doi.org/10.1007/978-981-96-9815-8_27' }, { label: 'Code', url: 'https://github.com/William-Liwei/EnergyPatchTST' }] },
-            { title: 'ScatterFusion: A Hierarchical Scattering Transform Framework for Enhanced Time Series Forecasting', venue: 'ICASSP 2026', authors: 'Wei Li (sole author)', meta: ['CCF-B', 'Poster'], text: 'Combines hierarchical scattering transforms with multiscale fusion to extract stable time-frequency representations under noise and scale variation.', links: [{ label: 'DOI', url: 'https://doi.org/10.1109/ICASSP55912.2026.11462616' }] },
-            { title: 'AWGFormer: Adaptive Wavelet-Guided Transformer for Multi-resolution Time Series Forecasting', venue: 'ICASSP 2026', authors: 'Wei Li (sole author)', meta: ['CCF-B', 'Poster'], text: 'Integrates adaptive wavelet guidance with Transformer modeling for multi-resolution time-series forecasting.', links: [{ label: 'DOI', url: 'https://doi.org/10.1109/ICASSP55912.2026.11461228' }] },
-            { title: 'TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting', venue: 'ICANN 2025', authors: 'Wei Li (sole author)', meta: ['CCF-C', 'Oral'], text: 'Introduces hierarchical diffusion with adaptive context sampling for multi-horizon time-series forecasting.', links: [{ label: 'DOI', url: 'https://doi.org/10.1007/978-3-032-04549-2_20' }] },
-            { title: 'SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction', venue: 'ICANN 2025', authors: 'Wei Li (sole author)', meta: ['CCF-C', 'Oral'], text: 'Combines state-space modeling with wavelet-based multi-scale modules for time-series forecasting.', links: [{ label: 'DOI', url: 'https://doi.org/10.1007/978-3-032-04549-2_3' }, { label: 'Code', url: 'https://github.com/William-Liwei/SWIFT' }] },
-            { title: 'LWSpace: Multi-Scale State Space Framework for Time Series Forecasting', venue: 'ICIC 2025', authors: 'Wei Li (sole author)', meta: ['CCF-C', 'Oral'], text: 'Proposes a multi-scale state-space framework for efficient time-series forecasting.', links: [{ label: 'DOI', url: 'https://doi.org/10.1007/978-981-96-9815-8_25' }] },
-            { title: 'Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics', venue: 'CAMMIC 2025', authors: 'Wei Li, Zixin Wang, Qixiang Gao, and Fenglei Yang', meta: ['EI Indexed', 'Poster', 'First Author'], text: 'Combines adaptive triple-fusion modeling with ARIMA-state-space dynamics for Olympic medal prediction.', links: [{ label: 'DOI', url: 'https://doi.org/10.1145/3745533.3745645' }] }
+            { title: 'SDFlow: Similarity-Driven Flow Matching for Time Series Generation', meta: ['NeurIPS 2026', 'CCF-A'] },
+            { title: 'Adaptive Prototypical Contrastive Learning for Time Series Clustering', meta: ['KDD 2026', 'CCF-A'] },
+            { title: 'ClusterPatchTST: Uncertainty-Aware Causal Clustering for Heterogeneous Time Series Forecasting', meta: ['DASFAA 2026', 'CCF-B'] },
+            { title: 'EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting', meta: ['ICIC 2025', 'CCF-C'] },
+            { title: 'ScatterFusion: A Hierarchical Scattering Transform Framework for Enhanced Time Series Forecasting', meta: ['ICASSP 2026', 'CCF-B'] },
+            { title: 'AWGFormer: Adaptive Wavelet-Guided Transformer for Multi-resolution Time Series Forecasting', meta: ['ICASSP 2026', 'CCF-B'] },
+            { title: 'TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting', meta: ['ICANN 2025', 'CCF-C'] },
+            { title: 'SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction', meta: ['ICANN 2025', 'CCF-C'] },
+            { title: 'LWSpace: Multi-Scale State Space Framework for Time Series Forecasting', meta: ['ICIC 2025', 'CCF-C'] },
+            { title: 'Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics', meta: ['CAMMIC 2025', 'EI'] }
         ];
 
         const team = [
-            { name: 'Wei Li', role: 'Founder &middot; Project Lead', affiliation: 'Shanghai Jiao Tong University &times; Beijing Zhongguancun Academy (2027-)', bio: 'Computer Science PhD student; undergraduate in Computer Science and Technology at Shanghai University (2023-2027). Advisors: Prof. Guanjie Zheng and Prof. Jie Feng.' },
+            { name: 'Wei Li', role: 'Founder &middot; Project Lead', affiliation: 'Shanghai Jiao Tong University &times; Beijing Zhongguancun Academy (2027-) &middot; Shanghai University (2023-2027)', bio: 'Research direction: temporal modeling, forecasting, generation, and intelligent data systems.' },
             { name: 'Zixin Wang', role: 'Founder', affiliation: 'Shanghai University', bio: 'Machine learning, human-computer interaction, and community development.' },
             { name: 'Chi-Hsiang Kao (Qixiang Gao)', role: 'Founder', affiliation: 'Fudan University', bio: 'Mathematics, data science, and interdisciplinary research.' },
             { name: 'Qizheng Sun', role: 'Core Member', affiliation: 'Shanghai University', bio: 'Electronic information, machine learning, and technical development.' },
             { name: 'Haowen Zheng', role: 'Core Member', affiliation: 'East China University of Political Science and Law', bio: 'AI for law, interdisciplinary research, and social science.' },
-            { name: 'Yiheng Yao', role: 'Core Member', affiliation: 'Tongji University', bio: 'Market analysis, product strategy, economics, and sustainable project development.' },
+            { name: 'Yiheng Yao', role: 'Core Member', affiliation: 'Tongji University &middot; Incoming: The University of Hong Kong (2027)', bio: 'Market analysis, product strategy, economics, and sustainable project development.' },
             { name: 'Junnuo Ye', role: 'Core Member', affiliation: 'Communication University of China &middot; Cybersecurity', bio: 'Cybersecurity, privacy, trustworthy systems, and risk analysis.' },
-            { name: 'Minghao Lu', role: 'Core Member', affiliation: 'Shanghai University', bio: 'Research prototyping and engineering development.' },
+            { name: 'Minghao Lu', role: 'Core Member', affiliation: 'Shanghai University &middot; Incoming: ByteDance', bio: 'Research prototyping and engineering development.' },
             { name: 'Zhehan Yang', role: 'Core Member', affiliation: 'Shanghai University', bio: 'Research prototyping and engineering development.' },
             { name: 'Ruoxuan Xu', role: 'Core Member', affiliation: 'Shanghai University', bio: 'Research prototyping and engineering development.' },
             { name: 'Rongshen Hu', role: 'Core Member', affiliation: 'Shanghai University', bio: 'Research prototyping and engineering development.' }
@@ -740,14 +736,7 @@
         }
 
         document.getElementById('research-list').innerHTML = research.map(item => `
-            <article class="research-item">
-                <div class="research-meta">${formatResearchMeta(item.meta)}</div>
-                <h3>${item.title}</h3>
-                <div class="research-venue">${item.venue}</div>
-                <div class="research-authors">${item.authors}</div>
-                <p>${item.text}</p>
-                <div class="research-links">${item.links.map(link => `<a href="${link.url}" target="_blank" rel="noopener">${link.label} &rarr;</a>`).join('')}</div>
-            </article>
+            <article class="research-item"><div class="research-meta">${formatResearchMeta(item.meta)}</div><h3>${item.title}</h3></article>
         `).join('');
 
         function renderNetworkCards(items) {
