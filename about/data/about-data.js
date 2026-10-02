@@ -15,7 +15,7 @@ window.ABOUT_DATA = {
     orcid: "https://orcid.org/0009-0008-8108-4854"
   },
   news: [
-    { year: 2026, month: 10, content: "Awarded the <strong>National Scholarship</strong>." },
+    { year: 2026, month: 10, content: "Awarded the <strong>National Scholarship</strong> and the <strong>Baosteel Scholarship</strong>." },
     { year: 2026, month: 9, content: "SDFlow accepted for <strong>Poster Presentation</strong> at <strong>NeurIPS 2026 (CCF-A)</strong>." },
     { year: 2026, month: 8, content: "The APCL <strong>(KDD 2026, CCF-A)</strong> blog post is now live." },
     { year: 2026, month: 6, content: "APCL scheduled for <strong>Poster Presentation</strong> at <strong>KDD 2026 (CCF-A)</strong>." },
@@ -281,6 +281,7 @@ window.ABOUT_DATA = {
   ],
   honors: [
     { year: 2026, month: 10, name: "National Scholarship", level: "Ministry of Education of China" },
+    { year: 2026, month: 10, name: "Baosteel Scholarship", level: "Shanghai University" },
     { year: 2026, month: 5, name: "ASC Student Supercomputer Challenge", level: "International First Prize" },
     { year: 2026, month: 1, name: "Xiaomi Scholarship", level: "Xiaomi" },
     { year: 2025, month: 12, name: "Baidu Star Programming Contest", level: "Finalist" },
