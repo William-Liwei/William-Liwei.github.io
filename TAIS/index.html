@@ -77,8 +77,8 @@
             letter-spacing: 0;
             box-shadow: 0 10px 26px rgba(0, 124, 131, .25);
         }
-        .brand-name { font-weight: 800; letter-spacing: .02em; }
-        .brand-type { color: var(--muted); font: 11px var(--mono); margin-left: 4px; }
+        .brand-name { display: flex; flex-direction: column; gap: 3px; font-weight: 800; line-height: 1.1; }
+        .brand-type { color: var(--muted); font: 9px var(--mono); margin-left: 0; line-height: 1.25; }
         nav { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
         nav a {
             color: var(--muted);
@@ -192,7 +192,7 @@
         .sequence-flow span { padding: 8px 10px; border: 1px solid rgba(255,255,255,.28); border-radius: 999px; background: rgba(255,255,255,.07); }
         .sequence-flow b { color: var(--yellow); font-weight: 400; }
         .sequence small { position: relative; z-index: 1; color: #bcd0d4; }
-        .product { display: grid; grid-template-columns: 1.15fr .85fr; gap: 45px; align-items: stretch; }
+        .product { display: grid; grid-template-columns: minmax(0, .78fr) minmax(0, 1.22fr); gap: 26px; align-items: stretch; }
         .product-copy {
             padding: 40px;
             border: 1px solid rgba(16, 32, 45, .1);
@@ -210,21 +210,53 @@
         .product-links { display: flex; flex-wrap: wrap; gap: 18px; }
         .text-link { color: var(--teal); font-size: 13px; font-weight: 800; text-decoration: none; }
         .text-link:hover { text-decoration: underline; }
-        .product-diagram {
-            min-height: 320px;
-            justify-content: space-between;
-            padding: 34px;
-            border: 1px solid #b7d7d5;
-            border-radius: 32px;
+        .product-preview {
+            min-width: 0;
+            padding: 16px;
+            border: 1px solid rgba(111, 214, 220, .24);
+            border-radius: 28px;
             background:
-                linear-gradient(145deg, rgba(220,238,237,.96), rgba(247,251,251,.92)),
-                radial-gradient(circle at 100% 0, rgba(243, 201, 105, .3), transparent 14rem);
-            box-shadow: 0 18px 55px rgba(0, 88, 94, .1);
+                radial-gradient(ellipse at 92% 0, rgba(111, 214, 220, .2), transparent 18rem),
+                linear-gradient(145deg, #102832, #123d43 68%, #102630);
+            box-shadow: 0 24px 60px rgba(8, 26, 34, .2);
         }
-        .product-diagram h4 { margin: 0; color: var(--teal-dark); font-size: 18px; }
-        .diagram-step { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid rgba(0, 88, 94, .2); color: var(--teal-dark); font-size: 14px; }
-        .diagram-step:last-child { border-bottom: 0; }
-        .diagram-step b { width: 27px; height: 27px; flex: 0 0 27px; display: grid; place-items: center; border-radius: 9px; background: var(--teal); color: var(--white); font: 11px var(--mono); }
+        .preview-app { overflow: hidden; border: 1px solid rgba(16, 32, 45, .1); border-radius: 17px; background: #f6f8f7; }
+        .preview-topbar { min-height: 54px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 16px; background: #fff; border-bottom: 1px solid #e3e9e8; }
+        .preview-brand { display: flex; align-items: center; gap: 9px; color: #172d35; font-size: 12px; font-weight: 800; }
+        .preview-brand-mark { width: 27px; height: 27px; display: grid; place-items: center; border-radius: 8px; background: #0e7778; color: #fff; font: 700 13px var(--mono); }
+        .preview-brand small { display: block; margin-top: 2px; color: #6a7a7d; font: 9px var(--mono); letter-spacing: .04em; }
+        .preview-state { padding: 5px 8px; border: 1px solid #ebdcae; border-radius: 5px; background: #fff8df; color: #715714; font: 9px var(--mono); text-transform: uppercase; }
+        .preview-content { padding: 18px; }
+        .preview-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+        .preview-kicker { color: #718083; font: 9px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+        .preview-heading h4 { margin: 4px 0 0; color: #19343b; font-size: 19px; }
+        .preview-series { color: #607174; font: 10px var(--mono); }
+        .preview-prompt { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #dce5e3; border-radius: 8px; background: #fff; color: #34484c; }
+        .preview-prompt-mark { width: 22px; height: 22px; flex: 0 0 22px; display: grid; place-items: center; border-radius: 6px; background: #e0f0ed; color: #087779; font: 700 11px var(--mono); }
+        .preview-prompt p { flex: 1; margin: 0; font-size: 11px; line-height: 1.45; }
+        .preview-prompt-label { color: #718083; font: 9px var(--mono); white-space: nowrap; }
+        .preview-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 15px 0 10px; }
+        .preview-tabs { display: flex; gap: 3px; padding: 3px; border: 1px solid #dde5e3; border-radius: 7px; background: #edf1f0; }
+        .preview-tab { min-height: 29px; padding: 5px 9px; border: 0; border-radius: 5px; background: transparent; color: #5c6d70; font: 10px var(--mono); cursor: pointer; }
+        .preview-tab[aria-pressed="true"] { background: #fff; color: #116f71; box-shadow: 0 1px 4px rgba(16, 32, 45, .12); }
+        .preview-tab:focus-visible { outline: 2px solid #16888a; outline-offset: 2px; }
+        .preview-result-state { color: #758386; font: 9px var(--mono); text-align: right; }
+        .preview-result { display: grid; grid-template-columns: minmax(0, 1fr) 158px; gap: 10px; align-items: stretch; }
+        .preview-chart-card, .preview-insight-card { min-width: 0; border: 1px solid #e0e7e5; border-radius: 8px; background: #fff; }
+        .preview-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 11px 0; color: #31474b; font-size: 10px; font-weight: 700; }
+        .preview-chart-head span:last-child { color: #7c8a8c; font: 9px var(--mono); }
+        #tais-preview-chart { display: block; width: 100%; height: 158px; }
+        .preview-legend { display: flex; flex-wrap: wrap; gap: 11px; padding: 0 11px 10px; color: #647477; font: 9px var(--mono); }
+        .preview-legend span { display: inline-flex; align-items: center; gap: 5px; }
+        .legend-dot { width: 7px; height: 7px; border-radius: 50%; background: #118184; }
+        .legend-dot.forecast { background: #dfad39; }
+        .legend-dot.anomaly { background: #d96c55; }
+        .preview-insight-card { display: flex; flex-direction: column; padding: 12px; }
+        .preview-insight-label { color: #718083; font: 9px var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+        .preview-insight-card h5 { margin: 10px 0 6px; color: #19343b; font-size: 14px; line-height: 1.25; }
+        .preview-insight-card p { margin: 0; color: #607174; font-size: 10px; line-height: 1.55; }
+        .preview-insight-foot { margin-top: auto; padding-top: 12px; color: #0a7476; font: 9px var(--mono); line-height: 1.5; }
+        .preview-disclaimer { margin: 10px 2px 0; color: #bdd0d4; font: 9px var(--mono); line-height: 1.5; text-align: center; }
         .research-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
         .research-item {
             position: relative;
@@ -328,12 +360,11 @@
             padding-right: 14px;
         }
         .network-mark {
-            min-height: 142px;
-            flex: 0 0 178px;
+            min-height: 104px;
+            flex: 0 0 210px;
             display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            gap: 18px;
+            align-items: center;
+            justify-content: center;
             padding: 18px;
             border: 1px solid rgba(16, 32, 45, .1);
             border-radius: 24px;
@@ -348,25 +379,7 @@
             border-color: rgba(0, 124, 131, .26);
             box-shadow: 0 18px 42px rgba(8, 26, 34, .1);
         }
-        .network-logo {
-            position: relative;
-            width: 52px;
-            height: 52px;
-            display: grid;
-            place-items: center;
-            overflow: hidden;
-            border: 1px solid #a8c3c6;
-            border-radius: 17px;
-            background: #eaf4f3;
-            color: var(--teal-dark);
-            font: 600 10px var(--mono);
-            text-align: center;
-        }
-        .network-logo img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; padding: 8px; background: #f8fbfb; }
-        .network-logo img { opacity: 0; transition: opacity .18s ease; }
-        .network-logo img.is-loaded { opacity: 1; }
-        .network-logo span { position: absolute; inset: 0; z-index: 0; display: grid; place-items: center; padding: 6px; }
-        .network-name { color: var(--ink); font-size: 11px; font-weight: 700; line-height: 1.35; }
+        .network-name { color: var(--ink); font-size: 13px; font-weight: 750; line-height: 1.4; text-align: center; }
         @keyframes network-scroll {
             from { transform: translateX(0); }
             to { transform: translateX(-50%); }
@@ -468,18 +481,23 @@
             .button { justify-content: center; width: 100%; }
             .signal-strip { margin-top: -24px; }
             .section { padding: 58px 0; }
-            .manifesto-copy, .sequence, .product-copy, .product-diagram, .program, .research-item, .member, .roadmap-item { padding: 22px; border-radius: 22px; }
+            .manifesto-copy, .sequence, .product-copy, .program, .research-item, .member, .roadmap-item { padding: 22px; border-radius: 22px; }
             .sequence-flow { gap: 6px; font-size: 12px; }
             .sequence-flow span { padding: 7px 8px; }
             .product-copy h3 { font-size: 30px; }
-            .product-diagram { min-height: 0; gap: 24px; }
+            .product-preview { padding: 10px; border-radius: 22px; }
             .research-item { min-height: 0; }
             .founder-grid, .core-grid { grid-template-columns: 1fr; }
             .network-marquee { margin-inline: -4px; padding: 8px; border-radius: 24px; }
             .network-track { animation-duration: 46s; }
             .network-set { gap: 10px; padding-right: 10px; }
-            .network-mark { min-height: 132px; flex-basis: 158px; padding: 15px; border-radius: 20px; }
-            .network-logo { width: 46px; height: 46px; border-radius: 15px; }
+            .network-mark { min-height: 92px; flex-basis: 190px; padding: 14px; border-radius: 16px; }
+            .network-name { font-size: 12px; }
+            .preview-content { padding: 12px; }
+            .preview-result { grid-template-columns: 1fr; }
+            .preview-insight-card { min-height: 112px; }
+            .preview-insight-foot { margin-top: 14px; }
+            #tais-preview-chart { height: 142px; }
             .open-call { padding: 22px; }
             .site-footer { padding: 48px 0; }
         }
@@ -502,7 +520,7 @@
         <div class="shell header-inner">
             <a class="brand" href="#top" aria-label="TAIS home">
                 <span class="brand-mark">TAIS</span>
-                <span class="brand-name">TAIS <span class="brand-type">RESEARCH COLLECTIVE</span></span>
+                <span class="brand-name"><span>TAIS</span><span class="brand-type">Time-Series, Agents &amp; Intelligent Systems</span></span>
             </a>
             <nav aria-label="Primary navigation">
                 <a href="#manifesto">Manifesto</a>
@@ -570,14 +588,42 @@
                         <div class="tag-row"><span class="tag">Time-series</span><span class="tag">Agent</span><span class="tag">LangChain + LLM</span><span class="tag">Python</span><span class="tag">Vue</span><span class="tag">Flask</span></div>
                         <div class="product-links"><a class="text-link" href="https://github.com/William-Liwei/shuprophet" target="_blank" rel="noopener">GitHub &rarr;</a></div>
                     </div>
-                    <div class="product-diagram">
-                        <h4>Natural language to analysis</h4>
-                        <div>
-                            <div class="diagram-step"><b>01</b><span>User describes a temporal question</span></div>
-                            <div class="diagram-step"><b>02</b><span>Agent selects models and tools</span></div>
-                            <div class="diagram-step"><b>03</b><span>Models produce forecasts and diagnostics</span></div>
-                            <div class="diagram-step"><b>04</b><span>Agent explains and reports the result</span></div>
+                    <div class="product-preview" aria-label="SHUProphet illustrative interface">
+                        <div class="preview-app">
+                            <div class="preview-topbar">
+                                <div class="preview-brand"><span class="preview-brand-mark">S</span><span>SHUProphet<small>ANALYSIS WORKSPACE</small></span></div>
+                                <span class="preview-state">Concept preview</span>
+                            </div>
+                            <div class="preview-content">
+                                <div class="preview-heading">
+                                    <div><div class="preview-kicker">Workspace / Energy series</div><h4>Load forecast</h4></div>
+                                    <span class="preview-series">SERIES 04 / 12</span>
+                                </div>
+                                <div class="preview-prompt"><span class="preview-prompt-mark">?</span><p id="preview-prompt-text">Forecast the next 24 periods and show the expected range.</p><span class="preview-prompt-label">ANALYSIS REQUEST</span></div>
+                                <div class="preview-toolbar">
+                                    <div class="preview-tabs" role="group" aria-label="Illustrative analysis views">
+                                        <button class="preview-tab" type="button" data-preview-mode="forecast" aria-pressed="true">Forecast</button>
+                                        <button class="preview-tab" type="button" data-preview-mode="anomaly" aria-pressed="false">Anomalies</button>
+                                        <button class="preview-tab" type="button" data-preview-mode="report" aria-pressed="false">Report</button>
+                                    </div>
+                                    <span class="preview-result-state" id="preview-result-state">ILLUSTRATIVE OUTPUT</span>
+                                </div>
+                                <div class="preview-result">
+                                    <div class="preview-chart-card">
+                                        <div class="preview-chart-head"><span id="preview-chart-title">Observed + forecast</span><span>HOURLY LOAD</span></div>
+                                        <canvas id="tais-preview-chart" role="img" aria-label="Illustrative time-series chart using synthetic data">Illustrative synthetic time-series chart.</canvas>
+                                        <div class="preview-legend" id="preview-legend"><span><i class="legend-dot"></i>Observed</span><span><i class="legend-dot forecast"></i>Forecast range</span></div>
+                                    </div>
+                                    <aside class="preview-insight-card" aria-live="polite">
+                                        <div class="preview-insight-label" id="preview-insight-label">Model view</div>
+                                        <h5 id="preview-insight-title">Stable upward trend</h5>
+                                        <p id="preview-insight-copy">The illustrative forecast follows the recent level while showing a plausible range for future values.</p>
+                                        <div class="preview-insight-foot" id="preview-insight-foot">Forecast horizon<br>Next 24 periods</div>
+                                    </aside>
+                                </div>
+                            </div>
                         </div>
+                        <p class="preview-disclaimer">Illustrative interface &middot; synthetic sample data &middot; not connected to live models</p>
                     </div>
                 </div>
             </div>
@@ -710,20 +756,20 @@
         ];
 
         const network = [
-            { code: 'SHU', name: 'Shanghai University', url: 'https://www.shu.edu.cn/', logo: 'https://www.shu.edu.cn/favicon.ico' },
-            { code: 'FDU', name: 'Fudan University', url: 'https://www.fudan.edu.cn/', logo: 'https://www.fudan.edu.cn/favicon.ico' },
-            { code: 'TONGJI', name: 'Tongji University', url: 'https://www.tongji.edu.cn/', logo: 'https://www.tongji.edu.cn/favicon.ico' },
-            { code: 'ECUPL', name: 'East China University of Political Science and Law', url: 'https://www.ecupl.edu.cn/', logo: 'https://www.ecupl.edu.cn/favicon.ico' },
-            { code: 'CUC', name: 'Communication University of China', url: 'https://www.cuc.edu.cn/', logo: 'https://www.cuc.edu.cn/favicon.ico' },
-            { code: 'SJTU', name: 'Shanghai Jiao Tong University', url: 'https://www.sjtu.edu.cn/', logo: 'https://www.sjtu.edu.cn/favicon.ico' },
-            { code: 'BZA', name: 'Beijing Zhongguancun Academy', url: 'https://www.bza.edu.cn/', logo: 'https://www.bza.edu.cn/favicon.ico' },
-            { code: 'NTU', name: 'Nanyang Technological University', url: 'https://www.ntu.edu.sg/', logo: 'https://www.ntu.edu.sg/favicon.ico' },
-            { code: 'HKU', name: 'The University of Hong Kong', url: 'https://www.hku.hk/', logo: 'https://www.hku.hk/favicon.ico' },
-            { code: 'NU', name: 'Nagoya University', url: 'https://www.nagoya-u.ac.jp/', logo: 'https://www.nagoya-u.ac.jp/favicon.ico' },
-            { code: 'NJU', name: 'Nanjing University', url: 'https://www.nju.edu.cn/', logo: 'https://www.nju.edu.cn/favicon.ico' },
-            { code: 'LUH', name: 'Leibniz University Hannover', url: 'https://www.uni-hannover.de/', logo: 'https://www.uni-hannover.de/favicon.ico' },
-            { code: 'CAS', name: 'Chinese Academy of Sciences', url: 'https://www.cas.cn/', logo: 'https://www.cas.cn/favicon.ico' },
-            { code: 'A*STAR', name: 'Agency for Science, Technology and Research, Singapore', url: 'https://www.a-star.edu.sg/', logo: 'https://www.a-star.edu.sg/favicon.ico' }
+            { name: 'Shanghai University', url: 'https://www.shu.edu.cn/' },
+            { name: 'Fudan University', url: 'https://www.fudan.edu.cn/' },
+            { name: 'Tongji University', url: 'https://www.tongji.edu.cn/' },
+            { name: 'East China University of Political Science and Law', url: 'https://www.ecupl.edu.cn/' },
+            { name: 'Communication University of China', url: 'https://www.cuc.edu.cn/' },
+            { name: 'Shanghai Jiao Tong University', url: 'https://www.sjtu.edu.cn/' },
+            { name: 'Beijing Zhongguancun Academy', url: 'https://www.bza.edu.cn/' },
+            { name: 'Nanyang Technological University', url: 'https://www.ntu.edu.sg/' },
+            { name: 'The University of Hong Kong', url: 'https://www.hku.hk/' },
+            { name: 'Nagoya University', url: 'https://www.nagoya-u.ac.jp/' },
+            { name: 'Nanjing University', url: 'https://www.nju.edu.cn/' },
+            { name: 'Leibniz University Hannover', url: 'https://www.uni-hannover.de/' },
+            { name: 'Chinese Academy of Sciences', url: 'https://www.cas.cn/' },
+            { name: 'Agency for Science, Technology and Research', url: 'https://www.a-star.edu.sg/' }
         ];
 
         function formatResearchMeta(meta) {
@@ -741,12 +787,8 @@
 
         function renderNetworkCards(items) {
             return items.map(institution => `
-                <a class="network-mark" href="${institution.url}" target="_blank" rel="noopener" aria-label="${institution.name}">
-                    <div class="network-logo">
-                        <span>${institution.code}</span>
-                        <img src="${institution.logo}" alt="${institution.name} logo" loading="lazy" decoding="async" onload="this.classList.add('is-loaded')" onerror="this.remove();">
-                    </div>
-                    <div class="network-name">${institution.name}</div>
+                <a class="network-mark" href="${institution.url}" target="_blank" rel="noopener">
+                    <span class="network-name">${institution.name}</span>
                 </a>
             `).join('');
         }
@@ -767,6 +809,161 @@
         document.getElementById('core-member-list').innerHTML = coreMembers.map(member => `
             <article class="member"><h3>${member.name}</h3><div class="role">${member.role}</div><p><strong class="affiliation">${member.affiliation}</strong><br>${member.bio}</p></article>
         `).join('');
+
+        const previewCanvas = document.getElementById('tais-preview-chart');
+        const previewContext = previewCanvas.getContext('2d');
+        const previewValues = Array.from({ length: 56 }, (_, index) =>
+            0.49 + 0.14 * Math.sin(index * 0.2) + 0.055 * Math.sin(index * 0.67) + (index > 42 ? (index - 42) * 0.004 : 0)
+        );
+        const previewModes = {
+            forecast: {
+                prompt: 'Forecast the next 24 periods and show the expected range.',
+                chart: 'Observed + forecast',
+                label: 'Model view',
+                title: 'Stable upward trend',
+                copy: 'The illustrative forecast follows the recent level while showing a plausible range for future values.',
+                foot: 'Forecast horizon<br>Next 24 periods',
+                legend: '<span><i class="legend-dot"></i>Observed</span><span><i class="legend-dot forecast"></i>Forecast range</span>'
+            },
+            anomaly: {
+                prompt: 'Find unusual changes and show where they occur.',
+                chart: 'Observed + flagged points',
+                label: 'Diagnostic view',
+                title: 'Three unusual points',
+                copy: 'A sample diagnostic highlights abrupt deviations for closer review by an analyst.',
+                foot: 'Review queue<br>Illustrative flags',
+                legend: '<span><i class="legend-dot"></i>Observed</span><span><i class="legend-dot anomaly"></i>Flagged point</span>'
+            },
+            report: {
+                prompt: 'Summarize the series behavior for a weekly report.',
+                chart: 'Observed + trend',
+                label: 'Report view',
+                title: 'Demand is gradually rising',
+                copy: 'A concise narrative pairs the overall trend with notable changes and context for the reporting period.',
+                foot: 'Output<br>Analyst-ready summary',
+                legend: '<span><i class="legend-dot"></i>Observed</span><span><i class="legend-dot forecast"></i>Trend line</span>'
+            }
+        };
+
+        function drawPreview(mode) {
+            const bounds = previewCanvas.getBoundingClientRect();
+            if (!bounds.width || !bounds.height || !previewContext) return;
+            const ratio = Math.min(window.devicePixelRatio || 1, 2);
+            previewCanvas.width = Math.round(bounds.width * ratio);
+            previewCanvas.height = Math.round(bounds.height * ratio);
+            const ctx = previewContext;
+            ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+            const width = bounds.width;
+            const height = bounds.height;
+            const plot = { left: 31, right: width - 12, top: 14, bottom: height - 22 };
+            const x = index => plot.left + (index / (previewValues.length - 1)) * (plot.right - plot.left);
+            const y = value => plot.bottom - value * (plot.bottom - plot.top);
+
+            ctx.clearRect(0, 0, width, height);
+            ctx.font = '9px ui-monospace, monospace';
+            ctx.textBaseline = 'middle';
+            for (let row = 0; row < 4; row += 1) {
+                const gy = plot.top + row * (plot.bottom - plot.top) / 3;
+                ctx.strokeStyle = '#e9efed';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(plot.left, gy);
+                ctx.lineTo(plot.right, gy);
+                ctx.stroke();
+                ctx.fillStyle = '#8a9999';
+                ctx.fillText(`${90 - row * 20}`, 3, gy);
+            }
+
+            if (mode === 'forecast') {
+                const start = 40;
+                ctx.beginPath();
+                ctx.moveTo(x(start), y(previewValues[start] + 0.09));
+                for (let index = start + 1; index < previewValues.length; index += 1) ctx.lineTo(x(index), y(previewValues[index] + 0.09));
+                for (let index = previewValues.length - 1; index >= start; index -= 1) ctx.lineTo(x(index), y(previewValues[index] - 0.09));
+                ctx.closePath();
+                ctx.fillStyle = 'rgba(223, 173, 57, .16)';
+                ctx.fill();
+                ctx.setLineDash([4, 4]);
+                ctx.strokeStyle = '#d5a42e';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                for (let index = start; index < previewValues.length; index += 1) {
+                    if (index === start) ctx.moveTo(x(index), y(previewValues[index]));
+                    else ctx.lineTo(x(index), y(previewValues[index]));
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.strokeStyle = '#c7d3d0';
+                ctx.beginPath();
+                ctx.moveTo(x(start), plot.top);
+                ctx.lineTo(x(start), plot.bottom);
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = '#118184';
+            ctx.lineWidth = 2.2;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            previewValues.forEach((value, index) => {
+                if (mode === 'forecast' && index > 40) return;
+                if (index === 0) ctx.moveTo(x(index), y(value));
+                else ctx.lineTo(x(index), y(value));
+            });
+            ctx.stroke();
+
+            if (mode === 'anomaly') {
+                [15, 32, 45].forEach((index, point) => {
+                    const anomalyY = y(previewValues[index] + (point === 1 ? 0.2 : -0.17));
+                    ctx.fillStyle = '#d96c55';
+                    ctx.beginPath();
+                    ctx.arc(x(index), anomalyY, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                });
+            } else if (mode === 'report') {
+                ctx.setLineDash([3, 4]);
+                ctx.strokeStyle = '#d5a42e';
+                ctx.lineWidth = 1.6;
+                ctx.beginPath();
+                previewValues.forEach((_, index) => {
+                    const from = Math.max(0, index - 3);
+                    const segment = previewValues.slice(from, index + 1);
+                    const average = segment.reduce((sum, value) => sum + value, 0) / segment.length;
+                    if (index === 0) ctx.moveTo(x(index), y(average));
+                    else ctx.lineTo(x(index), y(average));
+                });
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+
+        function selectPreviewMode(mode) {
+            const content = previewModes[mode];
+            if (!content) return;
+            document.querySelectorAll('[data-preview-mode]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button.dataset.previewMode === mode));
+            });
+            document.getElementById('preview-prompt-text').textContent = content.prompt;
+            document.getElementById('preview-chart-title').textContent = content.chart;
+            document.getElementById('preview-insight-label').textContent = content.label;
+            document.getElementById('preview-insight-title').textContent = content.title;
+            document.getElementById('preview-insight-copy').textContent = content.copy;
+            document.getElementById('preview-insight-foot').innerHTML = content.foot;
+            document.getElementById('preview-legend').innerHTML = content.legend;
+            drawPreview(mode);
+        }
+
+        document.querySelectorAll('[data-preview-mode]').forEach(button => {
+            button.addEventListener('click', () => selectPreviewMode(button.dataset.previewMode));
+        });
+        window.addEventListener('resize', () => {
+            const selected = document.querySelector('[data-preview-mode][aria-pressed="true"]');
+            drawPreview(selected ? selected.dataset.previewMode : 'forecast');
+        });
+        selectPreviewMode('forecast');
     </script>
 </body>
 </html>
