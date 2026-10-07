@@ -2,53 +2,59 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://www.weili.space/</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-07</lastmod>
     <priority>1.0</priority>
   </url>
   
   
   <url>
     <loc>https://www.weili.space/about/</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-07</lastmod>
     <priority>0.8</priority>
   </url>
   
   <url>
     <loc>https://www.weili.space/about/publications/</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-07</lastmod>
     <priority>0.8</priority>
   </url>
   
   <url>
     <loc>https://www.weili.space/blog/</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-07</lastmod>
     <priority>0.8</priority>
   </url>
   
   <url>
     <loc>https://www.weili.space/tais/</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-07</lastmod>
     <priority>0.8</priority>
   </url>
   
   <url>
     <loc>https://www.weili.space/apexscholar/</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-07</lastmod>
     <priority>0.8</priority>
   </url>
   
   <url>
     <loc>https://www.weili.space/ccf/</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-07</lastmod>
     <priority>0.8</priority>
   </url>
   
   <url>
     <loc>https://www.weili.space/StardewValley/</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-07</lastmod>
     <priority>0.8</priority>
   </url>
   
+  
+  <url>
+    <loc>https://www.weili.space/2026/10/07/CS%E4%BF%9D%E7%A0%94%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/</loc>
+    <lastmod>2026-10-07</lastmod>
+    <priority>0.6</priority>
+  </url>
   
   <url>
     <loc>https://www.weili.space/2026/08/26/%E5%9C%A8AI%E6%97%B6%E4%BB%A3%E6%89%BE%E5%88%B0%E8%87%AA%E5%B7%B1%E7%9A%84vibe/</loc>
