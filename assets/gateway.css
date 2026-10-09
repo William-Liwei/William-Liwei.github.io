@@ -1,0 +1,14 @@
+.gateway { min-height: 100svh; display: grid; place-items: center; }
+.gateway-main { width: min(460px, calc(100% - 48px)); padding: 96px 0; }
+.gateway-theme { position: absolute; top: 24px; right: 24px; font-size: 21px; }
+.gateway h1 { margin: 0 0 48px; font: 600 clamp(4.5rem, 15vw, 6.5rem)/1 var(--header-font); letter-spacing: -0.045em; color: var(--ink); }
+.gateway h1 > span { color: var(--gold); }
+.gateway-links { display: grid; border-top: 1px solid var(--line); }
+.gateway-links a { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 21px 0; border-bottom: 1px solid var(--line); font-size: 1.05rem; }
+.gateway-links .gateway-primary { font-weight: 650; }
+.gateway-links a > span:last-child { color: var(--gold); transition: transform 180ms ease; }
+.gateway-links a:hover > span:last-child { transform: translate(3px, -3px); }
+.gateway-social { display: flex; flex-wrap: wrap; gap: 25px; margin-top: 32px; font-size: .85rem; }
+.gateway-social a { color: var(--muted); }
+.gateway-social a:hover { color: var(--gold); }
+@media (prefers-reduced-motion: reduce) { .gateway-links a > span:last-child { transition: none; } }
