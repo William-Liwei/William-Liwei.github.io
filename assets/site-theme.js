@@ -1,5 +1,5 @@
 (function () {
-  var root = document.documentElement, system = window.matchMedia('(prefers-color-scheme: dark)'), saved;
+  var root = document.documentElement, system = window.matchMedia('(prefers-color-scheme: dark)'), saved, transitionTimer;
   try { saved = localStorage.getItem('wl-theme'); } catch (e) {}
   var explicit = saved === 'dark' || saved === 'light';
   root.dataset.theme = explicit ? saved : system.matches ? 'dark' : 'light';
@@ -8,10 +8,11 @@
     if (button) button.setAttribute('aria-label', root.dataset.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
   }
   function apply(theme) {
+    window.clearTimeout(transitionTimer);
     root.classList.add('theme-changing');
     root.dataset.theme = theme;
     label();
-    window.setTimeout(function () { root.classList.remove('theme-changing'); }, 240);
+    transitionTimer = window.setTimeout(function () { root.classList.remove('theme-changing'); }, 240);
   }
   document.addEventListener('DOMContentLoaded', function () {
     label();

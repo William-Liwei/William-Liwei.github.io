@@ -1,31 +1,16 @@
 (function () {
   var $$ = function (selector, root) { return Array.from((root || document).querySelectorAll(selector)); };
-  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-  $$('.service-more').forEach(function (details) {
-    details.addEventListener('toggle', function () {
-      var items=details.querySelector('.plain-list');
-      if(details.open && !reduced.matches && items.animate) {
-        items.animate([{opacity:.35,transform:'translateY(-4px)'},{opacity:1,transform:'none'}],{duration:200,easing:'ease-out'});
-      }
-    });
-  });
   $$('[data-show]').forEach(function (list, index) {
     var limit = Number(list.dataset.show), items = $$(':scope > li, :scope > article', list);
     if (!limit || items.length <= limit) return;
-    items.slice(limit).forEach(function (el) { el.classList.add('extra'); });
-    list.classList.add('is-collapsed');
     if (!list.id) list.id = 'expandable-' + index;
-    var btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'toggle-btn'; btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-controls', list.id);
-    function label() { btn.textContent = list.classList.contains('is-collapsed') ? 'Show all ' + items.length : 'Show less'; }
-    label();
-    btn.addEventListener('click', function () {
-      var collapsed = list.classList.toggle('is-collapsed');
-      btn.setAttribute('aria-expanded', String(!collapsed)); label();
-      if (!collapsed && !reduced.matches) items.slice(limit).forEach(function (el) { el.animate([{opacity:.35, transform:'translateY(4px)'},{opacity:1,transform:'none'}], {duration:180}); });
-      if (collapsed) list.scrollIntoView({block:'nearest'});
-    });
-    list.insertAdjacentElement('afterend', btn);
+    var button = document.createElement('button');
+    button.type = 'button'; button.className = 'toggle-btn';
+    button.setAttribute('aria-controls', list.id);
+    // Keep all content visible if the motion enhancement did not load.
+    if (!window.SiteMotion) return;
+    list.insertAdjacentElement('afterend', button);
+    SiteMotion.expandableList(list, button, limit);
   });
 
   var menu = document.querySelector('.section-menu'), mobile = matchMedia('(max-width: 720px)');
