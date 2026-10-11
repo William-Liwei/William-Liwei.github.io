@@ -227,7 +227,7 @@ const TABS = {
       { key: 'rank', label: 'CCF 等级', options: () => [['A', 'A 类'], ['B', 'B 类'], ['C', 'C 类'], ['N', '非 CCF']] },
       { key: 'status', label: '截稿状态', options: () => [['open', '未截稿'], ['week', '7 天内截稿'], ['month', '30 天内截稿'], ['passed', '已截稿'], ['tbd', '待公布']] },
       { key: 'tz', label: '截稿时间显示为', def: 'bj', noAll: true, options: () => [['bj', '北京时间'], ['local', '本机时区'], ['orig', '会议原时区']] },
-      { key: 'latest', label: '只看每个会议最新一届', type: 'check', def: '1' }
+      { key: 'latest', label: '只看每个会议最新一届', offLabel: '显示所有年份', type: 'check', def: '1' }
     ],
     match(r, f) {
       if (f.sub !== 'all' && r.sub !== f.sub) return false;
@@ -256,7 +256,7 @@ const TABS = {
       } },
       { label: '全称', cls: 'cell-full', render: (r) => `${esc(r.description)}${sub(esc([r.date, r.place].filter(Boolean).join(' · ')))}` },
       { label: 'CCF', sort: 'rank', render: (r) => rankBadge(r.rank) },
-      { label: '领域', render: (r) => esc(SUB_NAMES[r.sub] || r.sub) },
+      { label: '领域', cls: 'cell-field', render: (r) => esc(SUB_NAMES[r.sub] || r.sub) },
       { label: '截稿时间', sort: 'deadline', render: deadlineCell },
       { label: '录用率', sort: 'acc', render: acceptanceCell },
       { label: '', render: (r, i) => copyBtn(i) }
@@ -298,7 +298,7 @@ const TABS = {
       } },
       { label: '级别', sort: 'level', render: (r) => rankBadge(r.level) },
       { label: '类型', render: (r) => esc(r.type) },
-      { label: '领域', render: (r) => esc(r.category) },
+      { label: '领域', cls: 'cell-field', render: (r) => esc(r.category) },
       { label: '出版社', render: (r) => esc(r.publisher) },
       { label: '指标 / 截稿', render: (r) => {
         if (r.type === '期刊') return journalMetrics(r, data.meta || {}) || '<span class="muted">未收录于 JCR</span>';
@@ -401,7 +401,7 @@ function readUrl() {
   const filters = state.filters[state.tab];
   for (const key of Object.keys(filters)) if (p.has(key)) filters[key] = p.get(key);
   const sortKey = p.get('sort');
-  if (sortKey) state.sort[state.tab] = { key: sortKey, dir: p.get('dir') === 'desc' ? 'desc' : 'asc' };
+  if (TABS[state.tab].columns.some((c) => c.sort === sortKey)) state.sort[state.tab] = { key: sortKey, dir: p.get('dir') === 'desc' ? 'desc' : 'asc' };
 }
 
 function writeUrl() {
@@ -451,6 +451,39 @@ function renderFilters() {
   }).join('');
 }
 
+function renderFilterSummary() {
+  const values = state.filters[state.tab];
+  const changed = TABS[state.tab].filters.filter((f) => values[f.key] !== (f.def ?? 'all'));
+  const chips = changed.map((f) => {
+    const value = values[f.key];
+    const label = f.type === 'check' ? (value === '1' ? f.label : f.offLabel || f.label)
+      : `${f.label}：${f.options().find(([v]) => v === value)?.[1] || value}`;
+    return { key: f.key, label };
+  });
+  if (state.q) chips.unshift({ key: 'q', label: `搜索：${state.q}` });
+  $('#filter-count').textContent = changed.length ? `${changed.length} 项已调整` : '默认';
+  $('#active-filters').hidden = !chips.length;
+  $('#active-filters').innerHTML = chips.map(({ key, label }) => `<button type="button" class="filter-chip" data-remove="${key}" aria-label="移除筛选：${esc(label)}"><span>${esc(label)}</span><span aria-hidden="true">×</span></button>`).join('');
+}
+
+function renderMobileSort() {
+  const tab = TABS[state.tab], sort = state.sort[state.tab];
+  const labels = {
+    title: ['会议名称 A–Z', '会议名称 Z–A'], name: ['名称 A–Z', '名称 Z–A'],
+    rank: ['CCF 等级 A → C', 'CCF 等级 C → A'], level: ['CCF 等级 A → C', 'CCF 等级 C → A'], ccf: ['CCF 等级 A → C', 'CCF 等级 C → A'],
+    deadline: ['即将截稿优先', '截稿时间由晚到早'], acc: ['录用率由低到高', '录用率由高到低'],
+    jif: ['影响因子由低到高', '影响因子由高到低'], quart: ['JCR Q1 → Q4', 'JCR Q4 → Q1'],
+    cas: ['中科院 1 → 4 区', '中科院 4 → 1 区'], xr: ['新锐 1 → 4 区', '新锐 4 → 1 区']
+  };
+  const options = tab.defaultSort ? [] : ['<option value="default">目录原顺序</option>'];
+  for (const c of tab.columns.filter((c) => c.sort)) {
+    ['asc', 'desc'].forEach((dir, index) => options.push(`<option value="${c.sort}:${dir}">${esc(labels[c.sort]?.[index] || c.label)}</option>`));
+  }
+  $('#mobile-sort').innerHTML = options.join('');
+  $('#mobile-sort').value = sort ? `${sort.key}:${sort.dir}` : 'default';
+  $('#mobile-sort').disabled = false;
+}
+
 function compareRows(tab, sort) {
   if (!sort) return null;
   const sign = sort.dir === 'desc' ? -1 : 1;
@@ -496,6 +529,7 @@ function render() {
   state.page = Math.min(state.page, pages);
   const start = (state.page - 1) * PAGE_SIZE;
   const sort = state.sort[state.tab];
+  const focusedSort = document.activeElement?.closest('#thead [data-sort]')?.dataset.sort;
 
   $('#thead').innerHTML = `<tr>${tab.columns.map((c) => {
     if (!c.sort) return `<th scope="col">${c.label ? esc(c.label) : '<span class="visually-hidden">操作</span>'}</th>`;
@@ -505,15 +539,19 @@ function render() {
 
   $('#tbody').innerHTML = state.view.slice(start, start + PAGE_SIZE).map((row, i) => `<tr>${tab.columns.map((c) => {
     const cls = c.cls ? ` class="${c.cls}"` : '';
-    return `<td data-label="${esc(c.label)}"${cls}>${c.render(row, start + i)}</td>`;
+    return `<td data-label="${esc(c.label)}"${cls}><div class="cell-value">${c.render(row, start + i)}</div></td>`;
   }).join('')}</tr>`).join('');
 
   $('#empty').hidden = state.view.length > 0;
   $('#loading').hidden = true;
   $('#result-count').textContent = `共 ${state.view.length} 条${pages > 1 ? `，第 ${state.page} / ${pages} 页` : ''}`;
   $('#data-note').textContent = tab.note();
+  $('#panel').setAttribute('aria-busy', 'false');
+  renderFilterSummary();
+  renderMobileSort();
   renderPagination(pages);
   writeUrl();
+  if (focusedSort) $(`#thead [data-sort="${focusedSort}"]`)?.focus({ preventScroll: true });
 }
 
 function renderPagination(pages) {
@@ -537,6 +575,7 @@ async function showTab(tab, { resetPage = true } = {}) {
   state.tab = tab;
   if (resetPage) state.page = 1;
   renderTabs();
+  $('#panel').setAttribute('aria-busy', 'true');
   if (!data[tab]) {
     $('#thead').innerHTML = '';
     $('#tbody').innerHTML = '';
@@ -544,12 +583,18 @@ async function showTab(tab, { resetPage = true } = {}) {
     $('#pagination').innerHTML = '';
     $('#result-count').textContent = '';
     $('#data-note').textContent = '';
+    $('#active-filters').hidden = true;
+    $('#filter-count').textContent = '加载中';
+    $('#mobile-sort').disabled = true;
     $('#empty').hidden = true;
     $('#loading').hidden = false;
     $('#loading').textContent = tab === 'jcr' ? '正在加载期刊数据（约 2 万种）…' : '正在加载数据…';
     try {
       await TABS[tab].load();
     } catch (err) {
+      if (state.tab !== tab) return;
+      $('#panel').setAttribute('aria-busy', 'false');
+      $('#filter-count').textContent = '待加载';
       $('#loading').textContent = location.protocol === 'file:'
         ? '请通过本地服务器打开页面（npm run serve），直接打开文件无法加载数据。'
         : `数据加载失败：${err.message}。请刷新重试。`;
@@ -559,6 +604,10 @@ async function showTab(tab, { resetPage = true } = {}) {
   }
   renderFilters();
   render();
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches && $('#panel').animate) {
+    $('#panel').getAnimations().forEach((animation) => animation.cancel());
+    $('#panel').animate([{ opacity: .85, transform: 'translateY(3px)' }, { opacity: 1, transform: 'none' }], { duration: 180, easing: 'ease-out' });
+  }
 }
 
 // ---------- Utilities ----------
@@ -627,11 +676,16 @@ function initTimeTool() {
 // ---------- Events ----------
 
 function bindEvents() {
+  const mobile = matchMedia('(max-width: 760px)');
+  const sizeFilters = () => { $('#filter-panel').open = !mobile.matches; };
+  sizeFilters();
+  mobile.addEventListener('change', sizeFilters);
   const tabs = [...document.querySelectorAll('.tab')];
   tabs.forEach((btn, i) => {
     btn.addEventListener('click', () => btn.dataset.tab !== state.tab && showTab(btn.dataset.tab));
     btn.addEventListener('keydown', (e) => {
       if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
       const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
       next.focus();
       showTab(next.dataset.tab);
@@ -649,6 +703,27 @@ function bindEvents() {
     const key = e.target.dataset.filter;
     if (!key) return;
     state.filters[state.tab][key] = e.target.type === 'checkbox' ? (e.target.checked ? '1' : '0') : e.target.value;
+    state.page = 1;
+    render();
+  });
+
+  $('#active-filters').addEventListener('click', (e) => {
+    const button = e.target.closest('[data-remove]');
+    if (!button) return;
+    const key = button.dataset.remove;
+    const index = [...button.parentElement.children].indexOf(button);
+    if (key === 'q') { state.q = ''; $('#search').value = ''; }
+    else state.filters[state.tab][key] = defaultFilters(state.tab)[key];
+    state.page = 1;
+    renderFilters();
+    render();
+    const remaining = [...$('#active-filters').children];
+    (remaining[Math.min(index, remaining.length - 1)] || $('#filter-panel summary')).focus({ preventScroll: true });
+  });
+
+  $('#mobile-sort').addEventListener('change', (e) => {
+    const [key, dir] = e.target.value.split(':');
+    state.sort[state.tab] = key === 'default' ? null : { key, dir };
     state.page = 1;
     render();
   });
@@ -681,7 +756,7 @@ function bindEvents() {
     if (!page) return;
     state.page = page;
     render();
-    $('.tabs').scrollIntoView({ block: 'start', behavior: 'smooth' });
+    $('.tabs').scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
   });
 
   $('#reset-btn').addEventListener('click', () => {
@@ -692,6 +767,10 @@ function bindEvents() {
     $('#search').value = '';
     renderFilters();
     render();
+  });
+  $('#empty-reset').addEventListener('click', () => {
+    $('#reset-btn').click();
+    $('#search').focus({ preventScroll: true });
   });
 
   $('#share-btn').addEventListener('click', async () => {
@@ -705,21 +784,11 @@ function bindEvents() {
 
   $('#refresh-btn').addEventListener('click', () => refreshConferences());
 
-  $('#theme-toggle').addEventListener('click', () => {
-    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    try {
-      localStorage.setItem('wl-theme', next);
-    } catch {
-      // Private mode: the toggle still works for this visit.
-    }
-  });
-
   // Keep countdowns current.
   setInterval(() => {
     if (document.visibilityState !== 'visible' || !data.conf) return;
     refreshDeadlines();
-    if (state.tab !== 'jcr' && !document.activeElement?.closest?.('#tbody')) render();
+    if (state.tab !== 'jcr' && !document.activeElement?.closest?.('#tbody, #active-filters, #mobile-sort')) render();
   }, 60 * 1000);
 }
 
