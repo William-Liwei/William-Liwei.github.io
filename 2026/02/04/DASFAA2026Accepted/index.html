@@ -26,8 +26,9 @@
   <link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="/atom.xml">
   <script src="/assets/site-theme.js"></script>
   <link rel="stylesheet" href="/assets/fonts/fonts.css">
-  <link rel="stylesheet" href="/assets/profile.css">
+  <link rel="stylesheet" href="/assets/site.css">
   <link rel="stylesheet" href="/assets/journal.css">
+  <script src="/assets/journal.js" defer></script>
   
   <script>
     window.MathJax = {tex: {inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true}, options: {skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']}};
@@ -38,17 +39,7 @@
 
 <body class="journal">
   <a class="skip-link" href="#main">跳至正文</a>
-  <nav class="site-nav" aria-label="Primary">
-    <div class="wrap nav-inner">
-      <a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a>
-      <div class="nav-links">
-        <a href="/about/">About</a>
-        <a href="/blog/" aria-current="true">Blog</a>
-        <a href="/ccf/">CCF Online</a>
-      </div>
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle theme">◐</button>
-    </div>
-  </nav>
+  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
   <main id="main" class="wrap journal-main"><article class="journal-post">
   <header class="post-heading">
     <a class="back-link" href="/blog/">← Blog</a>
@@ -56,6 +47,7 @@
     <div class="post-meta"><time datetime="2026-02-04T09:33:05.000Z">2026.02.04</time><span>Wei Li</span></div>
     <div class="post-tags"><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/%E8%AE%BA%E6%96%87/">论文</a><a class="tag" href="/tags/Time-Series/">Time Series</a><a class="tag" href="/tags/DASFAA/">DASFAA</a></div>
   </header>
+  <div class="post-reading">
   
   <details class="post-toc"><summary>文章目录</summary><nav aria-label="Table of contents"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E7%AF%87%E5%B7%A5%E4%BD%9C%E8%A2%AB-DASFAA-2026-CCF-B-%E5%BD%95%E7%94%A8"><span class="toc-text">一篇工作被 DASFAA 2026 (CCF-B) 录用</span></a></li></ol></nav></details>
   <div class="post-body"><h1 id="一篇工作被-DASFAA-2026-CCF-B-录用"><a href="#一篇工作被-DASFAA-2026-CCF-B-录用" class="headerlink" title="一篇工作被 DASFAA 2026 (CCF-B) 录用"></a>一篇工作被 DASFAA 2026 (CCF-B) 录用</h1><p>作为第一作者，我的一项关于如何处理异构时序数据的相关工作被数据库会议 <strong>DASFAA 2026（CCF-B）</strong>录用为<strong>Regular Paper</strong>。然而，受制于学校课程安排，以及路途花销等问题，是否参会尚在考虑。</p>
@@ -65,6 +57,7 @@
 <p>本次中稿的工作其实也是身经百战的老兵，从NeurIPS 2025失利，再到AAAI 2025折戟，最终被DASFAA 2026所录，实际上并不尽如人意。外加上开会时间恰好位于劳动节之前，学校课程较多，以及路途花销较大，性价比不高，故而我尚在考虑中。</p>
 <p>非常欢迎与我探讨时序相关的学术问题！</p>
 </div>
+  </div>
   <nav class="post-neighbors" aria-label="Adjacent posts">
     <div><span class="muted">上一篇</span><a href="/2026/04/05/%E9%87%8D%E8%AF%86%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%EF%BC%9A%E7%AE%97%E6%B3%95%E4%B8%8E%E5%89%8D%E6%B2%BF/">重识时间序列：算法与前沿</a></div>
     <div><span class="muted">下一篇</span><a href="/2026/01/24/ICASSP2026Accepted/">ICASSP2026Accepted</a></div>
@@ -72,6 +65,6 @@
 </article>
 
 </main>
-  <footer class="site-footer"><div class="wrap journal-footer"><span>© 2026 Wei Li</span><nav aria-label="Footer"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/atom.xml">RSS</a></nav></div></footer>
+  <footer class="site-footer"><div class="wrap footer-inner"><span>© 2026 Wei Li</span><nav class="footer-links" aria-label="Footer"><a href="/">Home</a><a href="/about/">About</a><a href="/blog/">Blog</a><a href="/atom.xml">RSS</a></nav></div></footer>
 </body>
 </html>

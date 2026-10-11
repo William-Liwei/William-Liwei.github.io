@@ -1,91 +1,70 @@
-// Small enhancements for /about/ and /about/publications/. The content itself
-// is pre-rendered at build time (scripts/prerender-profile.js).
 (function () {
-  var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
-
-  // Theme toggle, shared with the homepage via localStorage "wl-theme".
-  var toggle = document.getElementById('theme-toggle');
-  if (toggle) {
-    toggle.addEventListener('click', function () {
-      var root = document.documentElement;
-      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      root.setAttribute('data-theme', next);
-      try { localStorage.setItem('wl-theme', next); } catch (e) { /* storage unavailable */ }
-    });
-  }
-
-  // "Show more": lists with data-show="N" keep the first N items visible.
-  $$('[data-show]').forEach(function (list) {
-    var limit = Number(list.getAttribute('data-show'));
-    var items = $$(':scope > li, :scope > article', list);
-    if (items.length <= limit) return;
+  var $$ = function (selector, root) { return Array.from((root || document).querySelectorAll(selector)); };
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  $$('[data-show]').forEach(function (list, index) {
+    var limit = Number(list.dataset.show), items = $$(':scope > li, :scope > article', list);
+    if (!limit || items.length <= limit) return;
     items.slice(limit).forEach(function (el) { el.classList.add('extra'); });
     list.classList.add('is-collapsed');
+    if (!list.id) list.id = 'expandable-' + index;
     var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'toggle-btn';
-    btn.setAttribute('aria-expanded', 'false');
-    var label = function () { return list.classList.contains('is-collapsed') ? 'Show all ' + items.length : 'Show less'; };
-    btn.textContent = label();
+    btn.type = 'button'; btn.className = 'toggle-btn'; btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-controls', list.id);
+    function label() { btn.textContent = list.classList.contains('is-collapsed') ? 'Show all ' + items.length : 'Show less'; }
+    label();
     btn.addEventListener('click', function () {
       var collapsed = list.classList.toggle('is-collapsed');
-      btn.setAttribute('aria-expanded', String(!collapsed));
-      btn.textContent = label();
-      if (collapsed) list.scrollIntoView({ block: 'nearest' });
+      btn.setAttribute('aria-expanded', String(!collapsed)); label();
+      if (!collapsed && !reduced.matches) items.slice(limit).forEach(function (el) { el.animate([{opacity:.35, transform:'translateY(4px)'},{opacity:1,transform:'none'}], {duration:180}); });
+      if (collapsed) list.scrollIntoView({block:'nearest'});
     });
     list.insertAdjacentElement('afterend', btn);
   });
 
-  // Highlight the nav link of the section in view.
-  var navLinks = $$('.nav-links a[href^="#"]');
+  var menu = document.querySelector('.section-menu'), mobile = matchMedia('(max-width: 720px)');
+  if (menu) {
+    function sizeMenu() { menu.open = !mobile.matches; }
+    sizeMenu(); mobile.addEventListener('change', sizeMenu);
+    menu.addEventListener('click', function (e) { if (mobile.matches && e.target.closest('a')) menu.open = false; });
+  }
+  var navLinks = $$('.section-links a');
   if (navLinks.length && 'IntersectionObserver' in window) {
-    var byId = {};
-    navLinks.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
     var observer = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
-        if (!entry.isIntersecting || !byId[entry.target.id]) return;
-        navLinks.forEach(function (a) { a.removeAttribute('aria-current'); });
-        byId[entry.target.id].setAttribute('aria-current', 'true');
+        if (!entry.isIntersecting) return;
+        navLinks.forEach(function (link) { if(link.hash === '#' + entry.target.id) link.setAttribute('aria-current','location'); else link.removeAttribute('aria-current'); });
       });
-    }, { rootMargin: '-40% 0px -55% 0px' });
-    Object.keys(byId).forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
+    }, {rootMargin:'-15% 0px -60% 0px'});
+    navLinks.forEach(function(link) { var section = document.getElementById(link.hash.slice(1)); if(section) observer.observe(section); });
   }
-
-  // BibTeX toggles.
-  $$('.bib-btn').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var target = document.getElementById(btn.getAttribute('aria-controls'));
-      if (!target) return;
-      target.hidden = !target.hidden;
-      btn.setAttribute('aria-expanded', String(!target.hidden));
+  $$('.copy-bib').forEach(function (btn) {
+    btn.hidden = false;
+    btn.addEventListener('click', async function () {
+      var target = document.getElementById(btn.dataset.copy), status = btn.parentElement.querySelector('.copy-status');
+      try {
+        await navigator.clipboard.writeText(target.textContent);
+        btn.textContent = 'Copied'; status.textContent = 'BibTeX copied.';
+        setTimeout(function () { btn.textContent = 'Copy'; status.textContent = ''; }, 1800);
+      } catch (e) {
+        var range = document.createRange(); range.selectNodeContents(target);
+        var selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
+        status.textContent = 'Copy unavailable. Text selected; use Ctrl+C or your device’s copy menu.';
+      }
     });
   });
-
-  // Figure lightbox (full-resolution original).
   var lightbox = document.getElementById('lightbox');
   if (lightbox) {
-    var img = lightbox.querySelector('img');
-    var closeBtn = lightbox.querySelector('.lightbox-close');
-    var lastFocus = null;
-    var close = function () {
-      lightbox.hidden = true;
-      img.removeAttribute('src');
-      if (lastFocus) lastFocus.focus();
-    };
-    $$('.pub-thumb').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        lastFocus = btn;
-        img.src = btn.getAttribute('data-full');
-        img.alt = btn.querySelector('img') ? btn.querySelector('img').alt : '';
-        lightbox.hidden = false;
-        closeBtn.focus();
-      });
+    var img=lightbox.querySelector('img'), closeBtn=lightbox.querySelector('button'), lastFocus;
+    function close() { lightbox.hidden=true; document.body.style.overflow=''; img.removeAttribute('src'); if(lastFocus) lastFocus.focus(); }
+    $$('.pub-thumb').forEach(function(btn) { btn.addEventListener('click',function() {
+      lastFocus=btn; img.src=btn.dataset.full; img.alt=btn.querySelector('img').alt;
+      lightbox.hidden=false; document.body.style.overflow='hidden'; closeBtn.focus();
+    }); });
+    closeBtn.addEventListener('click',close);
+    lightbox.addEventListener('click',function(e) { if(e.target===lightbox) close(); });
+    document.addEventListener('keydown',function(e) {
+      if(lightbox.hidden) return;
+      if(e.key==='Escape') close();
+      if(e.key==='Tab') { e.preventDefault(); closeBtn.focus(); }
     });
-    closeBtn.addEventListener('click', close);
-    lightbox.addEventListener('click', function (e) { if (e.target === lightbox) close(); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !lightbox.hidden) close(); });
   }
 })();

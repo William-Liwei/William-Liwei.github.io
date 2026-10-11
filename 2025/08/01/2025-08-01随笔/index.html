@@ -26,8 +26,9 @@
   <link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="/atom.xml">
   <script src="/assets/site-theme.js"></script>
   <link rel="stylesheet" href="/assets/fonts/fonts.css">
-  <link rel="stylesheet" href="/assets/profile.css">
+  <link rel="stylesheet" href="/assets/site.css">
   <link rel="stylesheet" href="/assets/journal.css">
+  <script src="/assets/journal.js" defer></script>
   
   <script>
     window.MathJax = {tex: {inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true}, options: {skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']}};
@@ -38,17 +39,7 @@
 
 <body class="journal">
   <a class="skip-link" href="#main">跳至正文</a>
-  <nav class="site-nav" aria-label="Primary">
-    <div class="wrap nav-inner">
-      <a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a>
-      <div class="nav-links">
-        <a href="/about/">About</a>
-        <a href="/blog/" aria-current="true">Blog</a>
-        <a href="/ccf/">CCF Online</a>
-      </div>
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle theme">◐</button>
-    </div>
-  </nav>
+  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
   <main id="main" class="wrap journal-main"><article class="journal-post">
   <header class="post-heading">
     <a class="back-link" href="/blog/">← Blog</a>
@@ -56,6 +47,7 @@
     <div class="post-meta"><time datetime="2025-08-01T03:26:25.000Z">2025.08.01</time><span>Wei Li</span></div>
     <div class="post-tags"><a class="tag" href="/tags/%E9%9A%8F%E7%AC%94/">随笔</a><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/%E8%AE%BA%E6%96%87/">论文</a><a class="tag" href="/tags/Time-Series/">Time Series</a></div>
   </header>
+  <div class="post-reading">
   
   <details class="post-toc"><summary>文章目录</summary><nav aria-label="Table of contents"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%97%B6%E5%BA%8F%E9%A2%84%E6%B5%8B%EF%BC%9A%E4%BB%8E%E7%90%86%E8%AE%BA%E5%88%B0%E5%AE%9E%E8%B7%B5%E2%80%94%E2%80%94%E4%BB%A5%E6%88%91%E7%9A%84%E5%9B%9B%E9%A1%B9%E7%9B%B8%E5%85%B3%E5%B7%A5%E4%BD%9C%E4%B8%BA%E4%BE%8B"><span class="toc-text">时序预测：从理论到实践——以我的四项相关工作为例</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E7%BB%99%E4%B8%80%E6%8A%8A%E5%A5%BD%E9%94%A4%E5%AD%90%EF%BC%8C%E9%85%8D%E4%B8%80%E4%B8%AA%E4%B8%93%E7%94%A8%E9%92%89%E5%AD%90-EnergyPatchTST"><span class="toc-text">一、给一把好锤子，配一个专用钉子 (EnergyPatchTST)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%9B%9E%E5%88%B0%E6%BA%90%E5%A4%B4%EF%BC%8C%E8%AE%A9%E6%95%B0%E5%AD%A6%E5%92%8C%E6%A8%A1%E5%9E%8B%E6%8F%A1%E6%89%8B-LWSpace"><span class="toc-text">二、回到源头，让数学和模型握手 (LWSpace)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%BD%93%E2%80%9C%E8%BF%9C%E8%A7%86%E7%9C%BC%E2%80%9D%E9%81%87%E4%B8%8A%E2%80%9C%E6%98%BE%E5%BE%AE%E9%95%9C%E2%80%9D-SWIFT"><span class="toc-text">三、当“远视眼”遇上“显微镜” (SWIFT)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E8%B7%B3%E5%87%BA%E2%80%9C%E7%8C%9C%E7%AD%94%E6%A1%88%E2%80%9D%E7%9A%84%E6%A1%86%E6%A1%86-TimeFlowDiffuser"><span class="toc-text">四、跳出“猜答案”的框框 (TimeFlowDiffuser)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B0%BE%E5%A3%B0%E3%80%81%E5%B1%95%E6%9C%9B%E6%9C%AA%E6%9D%A5"><span class="toc-text">尾声、展望未来</span></a></li></ol></li></ol></nav></details>
   <div class="post-body"><h3 id="时序预测：从理论到实践——以我的四项相关工作为例"><a href="#时序预测：从理论到实践——以我的四项相关工作为例" class="headerlink" title="时序预测：从理论到实践——以我的四项相关工作为例"></a><strong>时序预测：从理论到实践——以我的四项相关工作为例</strong></h3><p>大家好，我想和大家聊聊我过去一段时间做的一件事：时间序列预测。</p>
@@ -137,6 +129,7 @@
 <p>这个过程很辛苦，但也充满了发现的乐趣。我不敢说我的这些工作解决了什么大问题，它们都还很初级，有很多需要改进的地方。但它们确实是我认真思考和努力实践的结果。</p>
 <p>时间的长河依然在流淌，它所蕴含的秘密，远比我们想象的要多得多。而我，作为一个在这条河边行走的求索者，能做的，就是继续保持好奇，继续保持思考，继续迈出下一个，再下一个脚印。</p>
 </div>
+  </div>
   <nav class="post-neighbors" aria-label="Adjacent posts">
     <div><span class="muted">上一篇</span><a href="/2025/08/03/2025-08-03%E9%9A%8F%E7%AC%94/">2025.08.03随笔</a></div>
     <div><span class="muted">下一篇</span><a href="/2025/07/30/CCFOnline/">CCFOnline</a></div>
@@ -144,6 +137,6 @@
 </article>
 
 </main>
-  <footer class="site-footer"><div class="wrap journal-footer"><span>© 2026 Wei Li</span><nav aria-label="Footer"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/atom.xml">RSS</a></nav></div></footer>
+  <footer class="site-footer"><div class="wrap footer-inner"><span>© 2026 Wei Li</span><nav class="footer-links" aria-label="Footer"><a href="/">Home</a><a href="/about/">About</a><a href="/blog/">Blog</a><a href="/atom.xml">RSS</a></nav></div></footer>
 </body>
 </html>

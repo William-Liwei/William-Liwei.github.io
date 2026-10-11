@@ -2,69 +2,99 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://www.weili.space/</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-10-11</lastmod>
     <priority>1.0</priority>
   </url>
   
   
   <url>
     <loc>https://www.weili.space/about/</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-10-11</lastmod>
     <priority>0.8</priority>
   </url>
   
   <url>
     <loc>https://www.weili.space/about/publications/</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-10-11</lastmod>
     <priority>0.8</priority>
   </url>
   
   <url>
     <loc>https://www.weili.space/blog/</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-10-11</lastmod>
     <priority>0.8</priority>
   </url>
   
   <url>
     <loc>https://www.weili.space/tais/</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-10-11</lastmod>
     <priority>0.8</priority>
   </url>
   
   <url>
     <loc>https://www.weili.space/apexscholar/</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-10-11</lastmod>
     <priority>0.8</priority>
   </url>
   
   <url>
     <loc>https://www.weili.space/ccf/</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-10-11</lastmod>
     <priority>0.8</priority>
   </url>
   
   <url>
     <loc>https://www.weili.space/StardewValley/</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-10-11</lastmod>
     <priority>0.8</priority>
   </url>
   
   
   <url>
-    <loc>https://www.weili.space/2026/10/07/CS%E4%BF%9D%E7%A0%94%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/</loc>
-    <lastmod>2026-10-07</lastmod>
+    <loc>https://www.weili.space/2025/05/31/EnergyPatchTST/</loc>
+    <lastmod>2026-10-11</lastmod>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>https://www.weili.space/2026/08/26/%E5%9C%A8AI%E6%97%B6%E4%BB%A3%E6%89%BE%E5%88%B0%E8%87%AA%E5%B7%B1%E7%9A%84vibe/</loc>
-    <lastmod>2026-08-26</lastmod>
+    <loc>https://www.weili.space/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-2/</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.weili.space/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-1/</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.weili.space/2026/04/05/%E9%87%8D%E8%AF%86%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%EF%BC%9A%E7%AE%97%E6%B3%95%E4%B8%8E%E5%89%8D%E6%B2%BF/</loc>
+    <lastmod>2026-10-11</lastmod>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://www.weili.space/2026/08/09/APCL-Kudos-Research-Showcase/</loc>
-    <lastmod>2026-08-09</lastmod>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.weili.space/2026/05/31/KDD2026-APCL/</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.weili.space/2026/10/07/CS%E4%BF%9D%E7%A0%94%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.weili.space/2026/08/26/%E5%9C%A8AI%E6%97%B6%E4%BB%A3%E6%89%BE%E5%88%B0%E8%87%AA%E5%B7%B1%E7%9A%84vibe/</loc>
+    <lastmod>2026-10-11</lastmod>
     <priority>0.6</priority>
   </url>
   
@@ -77,18 +107,6 @@
   <url>
     <loc>https://www.weili.space/2025/02/14/%E5%AD%A6%E6%9C%AF%E6%B5%B7%E6%8A%A5/</loc>
     <lastmod>2026-06-28</lastmod>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.weili.space/2026/05/31/KDD2026-APCL/</loc>
-    <lastmod>2026-05-31</lastmod>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.weili.space/2026/04/05/%E9%87%8D%E8%AF%86%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%EF%BC%9A%E7%AE%97%E6%B3%95%E4%B8%8E%E5%89%8D%E6%B2%BF/</loc>
-    <lastmod>2026-04-05</lastmod>
     <priority>0.6</priority>
   </url>
   
@@ -135,12 +153,6 @@
   </url>
   
   <url>
-    <loc>https://www.weili.space/2025/05/31/EnergyPatchTST/</loc>
-    <lastmod>2025-08-01</lastmod>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
     <loc>https://www.weili.space/2025/07/17/AnyRouter/</loc>
     <lastmod>2025-07-17</lastmod>
     <priority>0.6</priority>
@@ -172,12 +184,6 @@
   
   <url>
     <loc>https://www.weili.space/2025/05/30/ISCC2025WriteUp/</loc>
-    <lastmod>2025-05-30</lastmod>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.weili.space/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-1/</loc>
     <lastmod>2025-05-30</lastmod>
     <priority>0.6</priority>
   </url>
@@ -221,12 +227,6 @@
   <url>
     <loc>https://www.weili.space/2025/02/17/%E8%AF%BE%E7%A8%8B%E7%BF%BC%E9%80%89%E9%80%9A%EF%BC%9A%E5%9F%BA%E4%BA%8Eflask%E5%92%8Cplaywright%E7%9A%84%E4%BA%91%E4%B8%BB%E6%9C%BA%E9%83%A8%E7%BD%B2%E7%BD%91%E7%AB%99/</loc>
     <lastmod>2025-02-17</lastmod>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://www.weili.space/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-2/</loc>
-    <lastmod>2025-02-16</lastmod>
     <priority>0.6</priority>
   </url>
   

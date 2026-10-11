@@ -1,14 +1,19 @@
 .gateway { min-height: 100svh; display: grid; place-items: center; }
-.gateway-main { width: min(460px, calc(100% - 48px)); padding: 96px 0; }
-.gateway-theme { position: absolute; top: 24px; right: 24px; font-size: 21px; }
-.gateway h1 { margin: 0 0 48px; font: 600 clamp(4.5rem, 15vw, 6.5rem)/1 var(--header-font); letter-spacing: -0.045em; color: var(--ink); }
+.gateway-main { width: min(490px, calc(100% - 48px)); padding: 88px 0; animation: arrive 260ms ease-out; }
+.gateway-theme { position: absolute; top: 24px; right: 24px; }
+.gateway h1 { margin: 0 0 26px; font: 600 clamp(4.5rem, 15vw, 6.5rem)/1 var(--header-font); letter-spacing: -.045em; color: var(--ink); }
 .gateway h1 > span { color: var(--gold); }
+.gateway-keywords { margin-bottom: 30px; }
+.gateway-keywords p { margin: 0 0 14px; line-height: 1.5; font-size: .87rem; }
+.gateway-keywords span { display: block; color: var(--ink-soft); }
+.gateway-keywords small { display: block; margin-top: 3px; font-size: .78rem; color: var(--muted); }
 .gateway-links { display: grid; border-top: 1px solid var(--line); }
-.gateway-links a { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 21px 0; border-bottom: 1px solid var(--line); font-size: 1.05rem; }
+.gateway-links a { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 10px; margin: 0 -10px; border-bottom: 1px solid var(--line); font-size: 1.05rem; transition: background-color 180ms ease, color 180ms ease; }
 .gateway-links .gateway-primary { font-weight: 650; }
 .gateway-links a > span:last-child { color: var(--gold); transition: transform 180ms ease; }
-.gateway-links a:hover > span:last-child { transform: translate(3px, -3px); }
-.gateway-social { display: flex; flex-wrap: wrap; gap: 25px; margin-top: 32px; font-size: .85rem; }
+.gateway-links a:is(:hover,:focus-visible) { background: var(--surface); }
+.gateway-links a:is(:hover,:focus-visible) > span:last-child { transform: translateX(4px); }
+.gateway-social { display: flex; flex-wrap: wrap; gap: 25px; margin-top: 28px; font-size: .85rem; }
 .gateway-social a { color: var(--muted); }
 .gateway-social a:hover { color: var(--gold); }
-@media (prefers-reduced-motion: reduce) { .gateway-links a > span:last-child { transition: none; } }
+@keyframes arrive { from { opacity: .5; transform: translateY(5px); } to { opacity: 1; transform: none; } }

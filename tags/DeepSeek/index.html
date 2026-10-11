@@ -21,32 +21,24 @@
   <link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="/atom.xml">
   <script src="/assets/site-theme.js"></script>
   <link rel="stylesheet" href="/assets/fonts/fonts.css">
-  <link rel="stylesheet" href="/assets/profile.css">
+  <link rel="stylesheet" href="/assets/site.css">
   <link rel="stylesheet" href="/assets/journal.css">
+  <script src="/assets/journal.js" defer></script>
   
 </head>
 
 <body class="journal">
   <a class="skip-link" href="#main">跳至正文</a>
-  <nav class="site-nav" aria-label="Primary">
-    <div class="wrap nav-inner">
-      <a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a>
-      <div class="nav-links">
-        <a href="/about/">About</a>
-        <a href="/blog/" aria-current="true">Blog</a>
-        <a href="/ccf/">CCF Online</a>
-      </div>
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle theme">◐</button>
-    </div>
-  </nav>
+  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
   <main id="main" class="wrap journal-main"><header class="journal-heading"><h1>Tag / DeepSeek</h1><a href="/blog/">All posts →</a></header>
+
 <div class="journal-list">
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-02-23T12:25:26.000Z">2025.02.23</time></div>
+    <div class="post-meta"><time datetime="2025-02-23T12:25:26.000Z">2025.02.23</time><span>技术实践</span></div>
     <h2><a href="/2025/02/23/%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2DeepSeek%E7%9A%84%E4%B8%AA%E4%BA%BA%E7%BB%8F%E9%AA%8C/">本地部署DeepSeek的个人经验</a></h2>
     
-    <p class="post-summary">本地部署DeepSeek-R1模型全攻略：Ollama+Page Assist轻量化方案——零代码实现私有知识库与AI助手 摘要本文记录了个人在本地部署DeepSeek系列大语言模型的完整过程，为需要私有化部署AI模型的开发者提供参考。 核心优势 隐私安全：数据完全本地化，避免敏感信息泄露 轻量部署：集成显卡即可运行1.5B&amp;#x2F;7B模型，RTX...</p>
+    <p class="post-summary">——零代码实现私有知识库与AI助手 本文记录了个人在本地部署DeepSeek系列大语言模型的完整过程，为需要私有化部署AI模型的开发者提供参考。 隐私安全：数据完全本地化，避免敏感信息泄露 轻量部署：集成显卡即可运行1.5B/7B模型，RTX4060也可运行14B甚至32B模型 扩展性强：支持...</p>
     <div class="post-tags"><a class="tag" href="/tags/DeepSeek/">DeepSeek</a><a class="tag" href="/tags/Ollama/">Ollama</a></div>
   </article>
   
@@ -54,6 +46,6 @@
 
 
 </main>
-  <footer class="site-footer"><div class="wrap journal-footer"><span>© 2026 Wei Li</span><nav aria-label="Footer"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/atom.xml">RSS</a></nav></div></footer>
+  <footer class="site-footer"><div class="wrap footer-inner"><span>© 2026 Wei Li</span><nav class="footer-links" aria-label="Footer"><a href="/">Home</a><a href="/about/">About</a><a href="/blog/">Blog</a><a href="/atom.xml">RSS</a></nav></div></footer>
 </body>
 </html>

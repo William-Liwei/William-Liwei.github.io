@@ -14,7 +14,7 @@
 <meta property="og:description" content="APCL 上线 Kudos Research Showcase我的 KDD 2026 论文 Adaptive Prototypical Contrastive Learning for Time Series Clustering 目前已经上线 Kudos Research Showcase。这篇推文整理了论文的基本信息、面向大众读者的解释，以及我对这项工作的简要理解。  Paper: Adapt">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-08-09T09:39:38.000Z">
-<meta property="article:modified_time" content="2026-08-09T09:42:26.449Z">
+<meta property="article:modified_time" content="2026-10-11T02:34:12.019Z">
 <meta property="article:author" content="Wei Li">
 <meta property="article:tag" content="学术">
 <meta property="article:tag" content="论文">
@@ -27,8 +27,9 @@
   <link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="/atom.xml">
   <script src="/assets/site-theme.js"></script>
   <link rel="stylesheet" href="/assets/fonts/fonts.css">
-  <link rel="stylesheet" href="/assets/profile.css">
+  <link rel="stylesheet" href="/assets/site.css">
   <link rel="stylesheet" href="/assets/journal.css">
+  <script src="/assets/journal.js" defer></script>
   
   <script>
     window.MathJax = {tex: {inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true}, options: {skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']}};
@@ -39,17 +40,7 @@
 
 <body class="journal">
   <a class="skip-link" href="#main">跳至正文</a>
-  <nav class="site-nav" aria-label="Primary">
-    <div class="wrap nav-inner">
-      <a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a>
-      <div class="nav-links">
-        <a href="/about/">About</a>
-        <a href="/blog/" aria-current="true">Blog</a>
-        <a href="/ccf/">CCF Online</a>
-      </div>
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle theme">◐</button>
-    </div>
-  </nav>
+  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
   <main id="main" class="wrap journal-main"><article class="journal-post">
   <header class="post-heading">
     <a class="back-link" href="/blog/">← Blog</a>
@@ -57,6 +48,7 @@
     <div class="post-meta"><time datetime="2026-08-09T09:39:38.000Z">2026.08.09</time><span>Wei Li</span></div>
     <div class="post-tags"><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/%E8%AE%BA%E6%96%87/">论文</a><a class="tag" href="/tags/Time-Series/">Time Series</a><a class="tag" href="/tags/KDD/">KDD</a><a class="tag" href="/tags/APCL/">APCL</a></div>
   </header>
+  <div class="post-reading">
   
   <details class="post-toc"><summary>文章目录</summary><nav aria-label="Table of contents"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#APCL-%E4%B8%8A%E7%BA%BF-Kudos-Research-Showcase"><span class="toc-text">APCL 上线 Kudos Research Showcase</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%AD%E6%96%87%E7%89%88"><span class="toc-text">中文版</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%9A%E4%BF%97%E6%A0%87%E9%A2%98-Plain-Language-Title"><span class="toc-text">通俗标题 &#x2F; Plain Language Title</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%99%E7%AF%87%E5%B7%A5%E4%BD%9C%E5%9C%A8%E5%81%9A%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="toc-text">这篇工作在做什么？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%87%8D%E8%A6%81%EF%BC%9F"><span class="toc-text">为什么重要？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E7%82%B9%E4%B8%AA%E4%BA%BA%E8%A7%86%E8%A7%92"><span class="toc-text">一点个人视角</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#English-Version"><span class="toc-text">English Version</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Plain-Language-Title"><span class="toc-text">Plain Language Title</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#What-Is-It-About"><span class="toc-text">What Is It About?</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Why-Is-It-Important"><span class="toc-text">Why Is It Important?</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Perspective"><span class="toc-text">Perspective</span></a></li></ol></li></ol></li></ol></nav></details>
   <div class="post-body"><h1 id="APCL-上线-Kudos-Research-Showcase"><a href="#APCL-上线-Kudos-Research-Showcase" class="headerlink" title="APCL 上线 Kudos Research Showcase"></a>APCL 上线 Kudos Research Showcase</h1><p>我的 KDD 2026 论文 <strong>Adaptive Prototypical Contrastive Learning for Time Series Clustering</strong> 目前已经上线 <strong>Kudos Research Showcase</strong>。这篇推文整理了论文的基本信息、面向大众读者的解释，以及我对这项工作的简要理解。</p>
@@ -91,6 +83,7 @@
 <p>Deep clustering often faces a chicken-and-egg problem: accurate assignments require high-quality representations, while learning cluster-aware representations also requires reliable assignments. Developing APCL was an attempt to break this loop. It transforms cluster selection from arbitrary guesswork into an optimization problem, allowing the natural geometry of data to guide the discovery of hierarchical patterns.</p>
 <p>For more details, please visit the <a target="_blank" rel="noopener" href="https://link.growkudos.com/1f16medmg3k">Kudos Research Showcase</a> or the <a target="_blank" rel="noopener" href="https://dl.acm.org/doi/10.1145/3770855.3817773">ACM Digital Library</a>.</p>
 </div>
+  </div>
   <nav class="post-neighbors" aria-label="Adjacent posts">
     <div><span class="muted">上一篇</span><a href="/2026/08/26/%E5%9C%A8AI%E6%97%B6%E4%BB%A3%E6%89%BE%E5%88%B0%E8%87%AA%E5%B7%B1%E7%9A%84vibe/">在AI时代找到自己的vibe</a></div>
     <div><span class="muted">下一篇</span><a href="/2026/05/31/KDD2026-APCL/">KDD2026-APCL</a></div>
@@ -98,6 +91,6 @@
 </article>
 
 </main>
-  <footer class="site-footer"><div class="wrap journal-footer"><span>© 2026 Wei Li</span><nav aria-label="Footer"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/atom.xml">RSS</a></nav></div></footer>
+  <footer class="site-footer"><div class="wrap footer-inner"><span>© 2026 Wei Li</span><nav class="footer-links" aria-label="Footer"><a href="/">Home</a><a href="/about/">About</a><a href="/blog/">Blog</a><a href="/atom.xml">RSS</a></nav></div></footer>
 </body>
 </html>

@@ -1,14 +1,23 @@
 window.ABOUT_DATA = {
   profile: {
-    role: "PhD Student in Computer Science",
+    role: "Incoming PhD Student in Computer Science",
     affiliation: "Shanghai Jiao Tong University × Beijing Zhongguancun Academy",
     phdPeriod: "2027-",
     undergraduate: "Computer Science and Technology, Shanghai University",
     undergraduatePeriod: "2023-2027",
     advisors: "Prof. Guanjie Zheng (Shanghai Jiao Tong University) and Prof. Jie Feng (Beijing Zhongguancun Academy)",
-    bio: "My undergraduate education is in Computer Science and Technology at Shanghai University (2023-2027). I am a PhD student in Computer Science at Shanghai Jiao Tong University × Beijing Zhongguancun Academy (2027-), advised by Prof. Guanjie Zheng and Prof. Jie Feng. My research focuses on machine learning for structured and temporal data, including representation learning, forecasting, generative modeling, clustering, and AI research systems."
+    // Optional strings may be empty; optional lists may be [].
+    homeKeywords: [
+      { school: "SJTU × Beijing Zhongguancun Academy", label: "Incoming PhD · 2027–" },
+      { school: "Shanghai University", label: "Undergraduate · 2023–2027" }
+    ],
+    bio: "I am an undergraduate in Computer Science and Technology at Shanghai University (2023–2027). In 2027, I will join Shanghai Jiao Tong University × Beijing Zhongguancun Academy as a PhD student, advised by Prof. Guanjie Zheng and Prof. Jie Feng.",
+    research: "I study how to learn from structured and temporal data, with a focus on forecasting, clustering, and generation under heterogeneity and uncertainty."
   },
   personalInfo: {
+    name: "Wei Li",
+    alternateName: "William",
+    cv: "",
     email: "liwei008009@163.com",
     github: "https://github.com/William-Liwei",
     googleScholar: "https://scholar.google.com/citations?user=jLPVuhoAAAAJ",
@@ -17,9 +26,7 @@ window.ABOUT_DATA = {
   news: [
     { year: 2026, month: 10, content: "Awarded the <strong>National Scholarship</strong> and the <strong>Baosteel Scholarship</strong>." },
     { year: 2026, month: 9, content: "SDFlow accepted for <strong>Poster Presentation</strong> at <strong>NeurIPS 2026 (CCF-A)</strong>." },
-    { year: 2026, month: 8, content: "The APCL <strong>(KDD 2026, CCF-A)</strong> blog post is now live." },
-    { year: 2026, month: 6, content: "APCL scheduled for <strong>Poster Presentation</strong> at <strong>KDD 2026 (CCF-A)</strong>." },
-    { year: 2026, month: 5, content: "One full paper (APCL) accepted to <strong>KDD 2026 (CCF-A)</strong>." },
+    { year: 2026, month: 8, content: "APCL accepted to <strong>KDD 2026 (CCF-A)</strong> and presented as a poster. <a href=\"/2026/05/31/KDD2026-APCL/\">Read the paper story →</a>" },
     { year: 2026, month: 5, content: "Won <strong>International First Prize</strong> at <strong>ASC26</strong>." },
     { year: 2026, month: 2, content: "One full paper (ClusterPatchTST) accepted for <strong>Oral Presentation</strong> at <strong>DASFAA 2026 (CCF-B)</strong>." },
     { year: 2026, month: 2, content: "Advanced to the finals of the <strong>ASC Student Supercomputer Challenge</strong>." },
@@ -44,9 +51,11 @@ window.ABOUT_DATA = {
       badges: [{ type: "ccf", text: "CCF-A" }, { type: "paper", text: "Full Paper" }, { type: "poster", text: "Poster" }, { type: "author", text: "Sole Author" }],
       links: [
         { type: "link", label: "ACM DL", url: "https://dl.acm.org/doi/10.1145/3770855.3817773" },
-        { type: "github", url: "https://github.com/William-Liwei/apcl" }
+        { type: "github", url: "https://github.com/William-Liwei/apcl" },
+        { type: "blog", url: "/2026/05/31/KDD2026-APCL/" }
       ],
       thumbnail: "apcl.png",
+      summary: "Learns time-series representations and the number of clusters together, using hierarchical prototypes and an MDL-guided contrastive objective.",
       abstract: "Addresses time-series clustering with an unknown number of clusters by combining hierarchical prototypes, contrastive learning, and the MDL principle to jointly learn representations and cluster cardinality.",
       bibtex: `@inproceedings{li2026apcl,
   title={Adaptive Prototypical Contrastive Learning for Time Series Clustering},
@@ -67,6 +76,7 @@ window.ABOUT_DATA = {
       badges: [{ type: "ccf", text: "CCF-A" }, { type: "paper", text: "Full Paper" }, { type: "poster", text: "Poster" }, { type: "author", text: "First Author" }],
       links: [{ type: "arxiv", url: "https://arxiv.org/abs/2605.05736" }],
       thumbnail: "sdflow.png",
+      summary: "Generates time series in parallel by combining a low-rank latent space with similarity-guided flow matching, connecting the generative process to the geometry of temporal data.",
       abstract: "SDFlow introduces a similarity-driven, non-autoregressive flow-matching framework for time-series generation in high-dimensional discrete latent spaces. By learning a low-rank subspace and initializing generation with similarity-guided manifold anchors, it aligns the generative process with the geometry of real temporal data and supports parallel synthesis.",
       bibtex: `@misc{li2026sdflow,
       title={SDFlow: Similarity-Driven Flow Matching for Time Series Generation}, 
@@ -88,6 +98,7 @@ window.ABOUT_DATA = {
       badges: [{ type: "ccf", text: "CCF-B" }, { type: "paper", text: "Full Paper" }, { type: "author", text: "Sole Author" }],
       links: [{ type: "doi", label: "DOI", url: "https://doi.org/10.1007/978-981-92-0372-7_31" }],
       thumbnail: "clusterpatchtst.png",
+      summary: "Combines causal clustering and uncertainty modeling to address structural differences between series in forecasting.",
       abstract: "Uses causal clustering to capture cross-series structural heterogeneity and uncertainty modeling to improve robust and reliable forecasting.",
       bibtex: `@inproceedings{li2026clusterpatchtst,
   title={ClusterPatchTST: Uncertainty-Aware Causal Clustering for Heterogeneous Time Series Forecasting},
@@ -182,6 +193,7 @@ window.ABOUT_DATA = {
       badges: [{ type: "ccf", text: "CCF-C" }, { type: "oral", text: "Oral" }, { type: "author", text: "First Author" }],
       links: [{ type: "doi", label: "DOI", url: "https://doi.org/10.1007/978-981-96-9815-8_27" }, { type: "github", url: "https://github.com/William-Liwei/EnergyPatchTST" }],
       thumbnail: "energypatchtst.png",
+      summary: "Pairs multiscale temporal modeling with uncertainty estimation to forecast energy demand and describe the reliability of predictions.",
       abstract: "Combines multiscale Patch Transformers with uncertainty estimation for energy forecasting; the platform received a software copyright and 300+ GitHub stars.",
       bibtex: `@inproceedings{li2025energypatchtst,
   title={EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting},

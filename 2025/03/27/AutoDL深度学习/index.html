@@ -23,8 +23,9 @@
   <link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="/atom.xml">
   <script src="/assets/site-theme.js"></script>
   <link rel="stylesheet" href="/assets/fonts/fonts.css">
-  <link rel="stylesheet" href="/assets/profile.css">
+  <link rel="stylesheet" href="/assets/site.css">
   <link rel="stylesheet" href="/assets/journal.css">
+  <script src="/assets/journal.js" defer></script>
   
   <script>
     window.MathJax = {tex: {inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true}, options: {skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']}};
@@ -35,17 +36,7 @@
 
 <body class="journal">
   <a class="skip-link" href="#main">跳至正文</a>
-  <nav class="site-nav" aria-label="Primary">
-    <div class="wrap nav-inner">
-      <a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a>
-      <div class="nav-links">
-        <a href="/about/">About</a>
-        <a href="/blog/" aria-current="true">Blog</a>
-        <a href="/ccf/">CCF Online</a>
-      </div>
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle theme">◐</button>
-    </div>
-  </nav>
+  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
   <main id="main" class="wrap journal-main"><article class="journal-post">
   <header class="post-heading">
     <a class="back-link" href="/blog/">← Blog</a>
@@ -53,6 +44,7 @@
     <div class="post-meta"><time datetime="2025-03-27T11:02:38.000Z">2025.03.27</time><span>Wei Li</span></div>
     <div class="post-tags"><a class="tag" href="/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a></div>
   </header>
+  <div class="post-reading">
   
   <details class="post-toc"><summary>文章目录</summary><nav aria-label="Table of contents"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#AutoDL%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B"><span class="toc-text">AutoDL深度学习实战教程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E9%9B%B6%E5%9F%BA%E7%A1%80%E6%9E%81%E9%80%9F%E5%85%A5%E9%97%A8"><span class="toc-text">一、零基础极速入门</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%85%85%E5%80%BC"><span class="toc-text">1. 注册与充值</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%88%9B%E5%BB%BA%E8%AE%AD%E7%BB%83%E5%AE%9E%E4%BE%8B%EF%BC%88%E5%85%B3%E9%94%AE%E6%AD%A5%E9%AA%A4%EF%BC%89"><span class="toc-text">2. 创建训练实例（关键步骤）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%95%B0%E6%8D%AE%E5%87%86%E5%A4%87%E4%B8%8E%E4%BC%A0%E8%BE%93%EF%BC%88%E6%96%B0%E6%89%8B%E5%BF%85%E7%9C%8B%EF%BC%89"><span class="toc-text">二、数据准备与传输（新手必看）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%9C%AC%E5%9C%B0%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86%E8%A7%84%E8%8C%83"><span class="toc-text">1. 本地数据处理规范</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%B8%8A%E4%BC%A0%E6%95%B0%E6%8D%AE%E5%88%B0%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="toc-text">2. 上传数据到服务器</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%E5%85%A8%E6%B5%81%E7%A8%8B%EF%BC%88%E4%BB%A5%E5%9B%BE%E5%83%8F%E5%88%86%E7%B1%BB%E4%B8%BA%E4%BE%8B%EF%BC%89"><span class="toc-text">三、模型训练全流程（以图像分类为例）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%90%AF%E5%8A%A8JupyterLab"><span class="toc-text">1. 启动JupyterLab</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E7%9B%91%E6%8E%A7%E8%AE%AD%E7%BB%83%E7%8A%B6%E6%80%81"><span class="toc-text">2. 监控训练状态</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E7%9C%81%E6%97%B6%E7%9C%81%E9%92%B1%E6%8A%80%E5%B7%A7%EF%BC%88%E8%A1%80%E6%B3%AA%E7%BB%8F%E9%AA%8C%EF%BC%89"><span class="toc-text">四、省时省钱技巧（血泪经验）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E8%B4%B9%E7%94%A8%E6%8E%A7%E5%88%B6%E4%B8%89%E6%9D%BF%E6%96%A7"><span class="toc-text">1. 费用控制三板斧</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E7%8E%AF%E5%A2%83%E5%A4%8D%E7%94%A8%E6%8A%80%E5%B7%A7"><span class="toc-text">2. 环境复用技巧</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%80%A5%E6%95%91%E5%8C%85"><span class="toc-text">五、常见问题急救包</span></a></li></ol></li></ol></nav></details>
   <div class="post-body"><h1 id="AutoDL深度学习实战教程"><a href="#AutoDL深度学习实战教程" class="headerlink" title="AutoDL深度学习实战教程"></a>AutoDL深度学习实战教程</h1><hr>
@@ -142,6 +134,7 @@
 </tr>
 </tbody></table>
 </div>
+  </div>
   <nav class="post-neighbors" aria-label="Adjacent posts">
     <div><span class="muted">上一篇</span><a href="/2025/04/06/2025%E4%B8%8A%E5%A4%A7%E8%AE%A1%E9%99%A2%E6%8E%A8%E5%85%8D%E8%A7%84%E5%88%99/">2025上大计院推免规则</a></div>
     <div><span class="muted">下一篇</span><a href="/2025/03/27/%E8%BD%AF%E8%91%97%E7%94%B3%E8%AF%B7%E8%AE%B0%E5%BD%95/">软著申请记录</a></div>
@@ -149,6 +142,6 @@
 </article>
 
 </main>
-  <footer class="site-footer"><div class="wrap journal-footer"><span>© 2026 Wei Li</span><nav aria-label="Footer"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/atom.xml">RSS</a></nav></div></footer>
+  <footer class="site-footer"><div class="wrap footer-inner"><span>© 2026 Wei Li</span><nav class="footer-links" aria-label="Footer"><a href="/">Home</a><a href="/about/">About</a><a href="/blog/">Blog</a><a href="/atom.xml">RSS</a></nav></div></footer>
 </body>
 </html>

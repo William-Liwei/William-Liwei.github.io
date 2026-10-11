@@ -24,8 +24,9 @@
   <link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="/atom.xml">
   <script src="/assets/site-theme.js"></script>
   <link rel="stylesheet" href="/assets/fonts/fonts.css">
-  <link rel="stylesheet" href="/assets/profile.css">
+  <link rel="stylesheet" href="/assets/site.css">
   <link rel="stylesheet" href="/assets/journal.css">
+  <script src="/assets/journal.js" defer></script>
   
   <script>
     window.MathJax = {tex: {inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true}, options: {skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']}};
@@ -36,17 +37,7 @@
 
 <body class="journal">
   <a class="skip-link" href="#main">跳至正文</a>
-  <nav class="site-nav" aria-label="Primary">
-    <div class="wrap nav-inner">
-      <a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a>
-      <div class="nav-links">
-        <a href="/about/">About</a>
-        <a href="/blog/" aria-current="true">Blog</a>
-        <a href="/ccf/">CCF Online</a>
-      </div>
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle theme">◐</button>
-    </div>
-  </nav>
+  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
   <main id="main" class="wrap journal-main"><article class="journal-post">
   <header class="post-heading">
     <a class="back-link" href="/blog/">← Blog</a>
@@ -54,6 +45,7 @@
     <div class="post-meta"><time datetime="2025-05-30T04:15:00.000Z">2025.05.30</time><span>Wei Li</span></div>
     <div class="post-tags"><a class="tag" href="/tags/ctf/">ctf</a><a class="tag" href="/tags/ISCC/">ISCC</a></div>
   </header>
+  <div class="post-reading">
   
   <details class="post-toc"><summary>文章目录</summary><nav aria-label="Table of contents"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#ISCC2025-CTF-WriteUp-%E6%B1%87%E6%80%BB"><span class="toc-text">ISCC2025 CTF WriteUp 汇总</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Pwn-%E7%B1%BB%E5%88%AB"><span class="toc-text">Pwn 类别</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#book-manager"><span class="toc-text">book_manager</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#call"><span class="toc-text">call</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Dilemma"><span class="toc-text">Dilemma</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Enc"><span class="toc-text">Enc++</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Fufu"><span class="toc-text">Fufu</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#mini-pwn"><span class="toc-text">mini pwn</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#mutilsumi"><span class="toc-text">mutilsumi</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#program"><span class="toc-text">program</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#vm-pwn"><span class="toc-text">vm_pwn</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reverse-%E7%B1%BB%E5%88%AB"><span class="toc-text">Reverse 类别</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#CrackMe"><span class="toc-text">CrackMe</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#HolyGrail"><span class="toc-text">HolyGrail</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SecretGrid"><span class="toc-text">SecretGrid</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#uglyCpp"><span class="toc-text">uglyCpp</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Mobile-%E7%B1%BB%E5%88%AB"><span class="toc-text">Mobile 类别</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Detective"><span class="toc-text">Detective</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#GGAD"><span class="toc-text">GGAD</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Vmobile"><span class="toc-text">Vmobile</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%97%B6%E9%97%B4%E5%B0%BD%E5%A4%B4"><span class="toc-text">时间尽头</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9D%A1%E7%BE%8E%E4%BA%BA"><span class="toc-text">睡美人</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Web-%E7%B1%BB%E5%88%AB"><span class="toc-text">Web 类别</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#ISCC%E8%B4%AD%E7%89%A9%E4%B8%AD%E5%BF%83"><span class="toc-text">ISCC购物中心</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ShallowSeek"><span class="toc-text">ShallowSeek</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E5%99%A8"><span class="toc-text">命令执行器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B0%81%E5%8A%A8%E4%BA%86%E6%88%91%E7%9A%84%E5%A5%B6%E9%85%AA"><span class="toc-text">谁动了我的奶酪</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Misc-%E7%B1%BB%E5%88%AB"><span class="toc-text">Misc 类别</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%AB%E5%8D%A6"><span class="toc-text">八卦</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%B7%E9%80%94%E4%B9%8B%E5%AD%90"><span class="toc-text">迷途之子</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E8%BF%B7%E8%B8%AA"><span class="toc-text">神经网络迷踪</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AD%A3%E6%AD%A3%E5%BE%97%E8%B4%9F"><span class="toc-text">正正得负</span></a></li></ol></li></ol></li></ol></nav></details>
   <div class="post-body"><h1 id="ISCC2025-CTF-WriteUp-汇总"><a href="#ISCC2025-CTF-WriteUp-汇总" class="headerlink" title="ISCC2025 CTF WriteUp 汇总"></a>ISCC2025 CTF WriteUp 汇总</h1><p>本文记载了部分ISCC2025的题解，主要是个人赛时做出来的内容，也有部分内容是赛后得到的。内容因为过长经过AI总结，可能存在差错，并不代表个人真实WriteUp，仅供参考学习。</p>
@@ -338,6 +330,7 @@
 
 
 </div>
+  </div>
   <nav class="post-neighbors" aria-label="Adjacent posts">
     <div><span class="muted">上一篇</span><a href="/2025/05/31/EnergyPatchTST/">EnergyPatchTST</a></div>
     <div><span class="muted">下一篇</span><a href="/2025/04/14/%E4%B8%8A%E6%B5%B7%E5%A4%A7%E5%AD%A6%E6%95%B0%E5%AD%97%E9%80%BB%E8%BE%91%E5%AE%9E%E9%AA%8C%E6%8A%A5%E5%91%8A/">上海大学数字逻辑实验报告</a></div>
@@ -345,6 +338,6 @@
 </article>
 
 </main>
-  <footer class="site-footer"><div class="wrap journal-footer"><span>© 2026 Wei Li</span><nav aria-label="Footer"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/atom.xml">RSS</a></nav></div></footer>
+  <footer class="site-footer"><div class="wrap footer-inner"><span>© 2026 Wei Li</span><nav class="footer-links" aria-label="Footer"><a href="/">Home</a><a href="/about/">About</a><a href="/blog/">Blog</a><a href="/atom.xml">RSS</a></nav></div></footer>
 </body>
 </html>

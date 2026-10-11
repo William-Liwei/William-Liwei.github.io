@@ -26,8 +26,9 @@
   <link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="/atom.xml">
   <script src="/assets/site-theme.js"></script>
   <link rel="stylesheet" href="/assets/fonts/fonts.css">
-  <link rel="stylesheet" href="/assets/profile.css">
+  <link rel="stylesheet" href="/assets/site.css">
   <link rel="stylesheet" href="/assets/journal.css">
+  <script src="/assets/journal.js" defer></script>
   
   <script>
     window.MathJax = {tex: {inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true}, options: {skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']}};
@@ -38,17 +39,7 @@
 
 <body class="journal">
   <a class="skip-link" href="#main">跳至正文</a>
-  <nav class="site-nav" aria-label="Primary">
-    <div class="wrap nav-inner">
-      <a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a>
-      <div class="nav-links">
-        <a href="/about/">About</a>
-        <a href="/blog/" aria-current="true">Blog</a>
-        <a href="/ccf/">CCF Online</a>
-      </div>
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle theme">◐</button>
-    </div>
-  </nav>
+  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
   <main id="main" class="wrap journal-main"><article class="journal-post">
   <header class="post-heading">
     <a class="back-link" href="/blog/">← Blog</a>
@@ -56,6 +47,7 @@
     <div class="post-meta"><time datetime="2025-02-17T14:21:37.000Z">2025.02.17</time><span>Wei Li</span></div>
     <div class="post-tags"><a class="tag" href="/tags/%E5%BB%BA%E7%AB%99/">建站</a><a class="tag" href="/tags/flask/">flask</a><a class="tag" href="/tags/playwright/">playwright</a><a class="tag" href="/tags/%E9%80%89%E8%AF%BE/">选课</a></div>
   </header>
+  <div class="post-reading">
   
   <details class="post-toc"><summary>文章目录</summary><nav aria-label="Table of contents"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%AF%BE%E7%A8%8B%E7%BF%BC%E9%80%89%E9%80%9A%EF%BC%9A%E5%9F%BA%E4%BA%8E-Playwright-%E4%B8%8E-Flask-%E7%9A%84%E4%BA%91%E4%B8%BB%E6%9C%BA%E9%83%A8%E7%BD%B2%E7%BD%91%E7%AB%99"><span class="toc-text">课程翼选通：基于 Playwright 与 Flask 的云主机部署网站</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E8%83%8C%E6%99%AF"><span class="toc-text">一、背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E9%80%89%E8%AF%BE%E9%9A%BE%E7%9A%84%E7%8E%B0%E7%8A%B6%E8%AF%A6%E6%9E%90"><span class="toc-text">二、选课难的现状详析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84"><span class="toc-text">三、系统架构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%A0%B8%E5%BF%83%E5%8A%9F%E8%83%BD%E6%A8%A1%E5%9D%97"><span class="toc-text">四、核心功能模块</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89%E6%99%BA%E8%83%BD%E9%80%89%E8%AF%BE%E7%B3%BB%E7%BB%9F"><span class="toc-text">（一）智能选课系统</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89%E7%94%A8%E6%88%B7%E7%AE%A1%E7%90%86%E7%B3%BB%E7%BB%9F"><span class="toc-text">（二）用户管理系统</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89%E8%AF%84%E8%AE%BA%E7%B3%BB%E7%BB%9F%E4%B8%8E-AI-%E5%88%86%E6%9E%90"><span class="toc-text">（三）评论系统与 AI 分析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%8A%80%E6%9C%AF%E5%88%9B%E6%96%B0%E7%82%B9"><span class="toc-text">五、技术创新点</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E7%B3%BB%E7%BB%9F%E6%80%A7%E8%83%BD"><span class="toc-text">六、系统性能</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E5%AE%89%E5%85%A8%E6%80%A7%E8%AE%BE%E8%AE%A1"><span class="toc-text">七、安全性设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E9%83%A8%E7%BD%B2%E6%96%B9%E6%A1%88"><span class="toc-text">八、部署方案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%9D%E3%80%81%E6%9C%AA%E6%9D%A5%E5%B1%95%E6%9C%9B"><span class="toc-text">九、未来展望</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E3%80%81%E6%8A%80%E6%9C%AF%E4%BA%AE%E7%82%B9%E6%80%BB%E7%BB%93"><span class="toc-text">十、技术亮点总结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E4%B8%80%E3%80%81%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8C"><span class="toc-text">十一、操作手册</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E8%AE%BF%E9%97%AE%E7%BD%91%E7%AB%99"><span class="toc-text">1. 访问网站</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%A1%AB%E5%86%99%E4%B8%AA%E4%BA%BA%E4%BF%A1%E6%81%AF"><span class="toc-text">2. 填写个人信息</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E8%8E%B7%E5%8F%96-Cookie"><span class="toc-text">3. 获取 Cookie</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E5%A1%AB%E5%86%99%E8%AF%BE%E7%A8%8B%E4%BF%A1%E6%81%AF"><span class="toc-text">4. 填写课程信息</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-%E6%9B%B4%E6%96%B0%E6%95%B0%E6%8D%AE%E5%B9%B6%E5%BC%80%E5%A7%8B%E6%8E%92%E8%AF%BE"><span class="toc-text">5. 更新数据并开始排课</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-%E6%89%93%E5%BC%80%E9%80%89%E8%AF%BE%E7%BD%91%E7%AB%99"><span class="toc-text">6. 打开选课网站</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-%E6%89%93%E5%BC%80%E6%8E%92%E8%AF%BE%E5%8A%A9%E6%89%8B"><span class="toc-text">7. 打开排课助手</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-%E6%89%93%E5%BC%80%E8%80%83%E8%AF%95%E7%BD%91%E7%AB%99"><span class="toc-text">8. 打开考试网站</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-%E6%88%90%E7%BB%A9%E6%9F%A5%E8%AF%A2"><span class="toc-text">9. 成绩查询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#10-%E8%AF%BE%E7%A8%8B%E8%AF%84%E8%AE%BA"><span class="toc-text">10. 课程评论</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E4%BA%8C%E3%80%81%E6%8E%A8%E8%8D%90%E8%B5%84%E6%BA%90"><span class="toc-text">十二、推荐资源</span></a></li></ol></li></ol></nav></details>
   <div class="post-body"><h1 id="课程翼选通：基于-Playwright-与-Flask-的云主机部署网站"><a href="#课程翼选通：基于-Playwright-与-Flask-的云主机部署网站" class="headerlink" title="课程翼选通：基于 Playwright 与 Flask 的云主机部署网站"></a>课程翼选通：基于 Playwright 与 Flask 的云主机部署网站</h1><p><em>黎玮，王子欣</em></p>
@@ -104,6 +96,7 @@
 </ol>
 <h2 id="十二、推荐资源"><a href="#十二、推荐资源" class="headerlink" title="十二、推荐资源"></a>十二、推荐资源</h2><p>如果您对“课程翼选通”的技术实现感兴趣，可以查看相关的 GitHub 代码：<a target="_blank" rel="noopener" href="https://github.com/William-Liwei/Course-wing-gating">课程翼选通 GitHub 仓库</a>。您也可以阅读指南 PDF 文件，以获取更详细的指导。</p>
 </div>
+  </div>
   <nav class="post-neighbors" aria-label="Adjacent posts">
     <div><span class="muted">上一篇</span><a href="/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/">如何开发基于 Streamlit 和 SQLite 的数据库管理工具</a></div>
     <div><span class="muted">下一篇</span><a href="/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-2/">hexo建站教学(2)</a></div>
@@ -111,6 +104,6 @@
 </article>
 
 </main>
-  <footer class="site-footer"><div class="wrap journal-footer"><span>© 2026 Wei Li</span><nav aria-label="Footer"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/atom.xml">RSS</a></nav></div></footer>
+  <footer class="site-footer"><div class="wrap footer-inner"><span>© 2026 Wei Li</span><nav class="footer-links" aria-label="Footer"><a href="/">Home</a><a href="/about/">About</a><a href="/blog/">Blog</a><a href="/atom.xml">RSS</a></nav></div></footer>
 </body>
 </html>

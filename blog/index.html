@@ -21,8 +21,9 @@
   <link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="/atom.xml">
   <script src="/assets/site-theme.js"></script>
   <link rel="stylesheet" href="/assets/fonts/fonts.css">
-  <link rel="stylesheet" href="/assets/profile.css">
+  <link rel="stylesheet" href="/assets/site.css">
   <link rel="stylesheet" href="/assets/journal.css">
+  <script src="/assets/journal.js" defer></script>
   
 <style>mjx-container[jax="SVG"] {
   direction: ltr;
@@ -140,257 +141,257 @@ mjx-container[display="true"] + br {
 
 <body class="journal">
   <a class="skip-link" href="#main">跳至正文</a>
-  <nav class="site-nav" aria-label="Primary">
-    <div class="wrap nav-inner">
-      <a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a>
-      <div class="nav-links">
-        <a href="/about/">About</a>
-        <a href="/blog/" aria-current="true">Blog</a>
-        <a href="/ccf/">CCF Online</a>
-      </div>
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle theme">◐</button>
-    </div>
-  </nav>
+  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
   <main id="main" class="wrap journal-main"><header class="journal-heading"><h1>Blog</h1><a href="/archives/">All archives →</a></header>
-<div class="journal-list">
+
+<div class="blog-tools" hidden>
+  <label class="search-label" for="blog-search">搜索文章</label>
+  <div class="search-row"><input id="blog-search" type="search" placeholder="搜索标题、标签或摘要…" autocomplete="off"><button type="button" id="clear-search">清除</button></div>
+  <div class="topic-filters" role="group" aria-label="文章主题">
+    <button type="button" data-topic="全部" aria-pressed="true">全部</button><button type="button" data-topic="科研" aria-pressed="false">科研</button><button type="button" data-topic="技术实践" aria-pressed="false">技术实践</button><button type="button" data-topic="经验分享" aria-pressed="false">经验分享</button><button type="button" data-topic="随笔" aria-pressed="false">随笔</button>
+  </div>
+</div>
+<p class="search-status" role="status" hidden></p>
+
+<div class="journal-list" id="blog-results">
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2026-10-07T08:42:34.000Z">2026.10.07</time></div>
+    <div class="post-meta"><time datetime="2026-10-07T08:42:34.000Z">2026.10.07</time><span>经验分享</span></div>
     <h2><a href="/2026/10/07/CS%E4%BF%9D%E7%A0%94%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/">CS保研经验分享</a></h2>
     
-    <p class="post-summary">CS保研经验分享：从上大到上交九月二十四日，下午两点整，我接受了上交发来的待录取通知，正式结束了为期三年的保研历程。我之所以写下此文不是为了诉苦或炫耀，只是因为自己淋过雨，想给后来人撑一把伞。当然，我的经历有着不可复制性，因而只能当作参考，其中未免存在谬误，还望各位不吝批评指正。</p>
+    <p class="post-summary">记录从上海大学到上海交通大学的推免经历，分享准备过程、选择与个人反思。</p>
     <div class="post-tags"><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/%E8%AE%BA%E6%96%87/">论文</a><a class="tag" href="/tags/%E4%BF%9D%E7%A0%94/">保研</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2026-08-26T11:05:16.000Z">2026.08.26</time></div>
+    <div class="post-meta"><time datetime="2026-08-26T11:05:16.000Z">2026.08.26</time><span>随笔</span></div>
     <h2><a href="/2026/08/26/%E5%9C%A8AI%E6%97%B6%E4%BB%A3%E6%89%BE%E5%88%B0%E8%87%AA%E5%B7%B1%E7%9A%84vibe/">在AI时代找到自己的vibe</a></h2>
     
-    <p class="post-summary">AI时代，“Vibe Coding”是一个绕不过去的关键词。 我们可以给coding一个vibe，但是却总是不记得给自己营造一个独属于自己的，适合自己节奏的vibe。</p>
+    <p class="post-summary">从 Vibe Coding 谈起，思考如何在 AI 时代找到适合自己的学习、创作与生活节奏。</p>
     <div class="post-tags"><a class="tag" href="/tags/%E9%9A%8F%E7%AC%94/">随笔</a><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/AI/">AI</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2026-08-09T09:39:38.000Z">2026.08.09</time></div>
+    <div class="post-meta"><time datetime="2026-08-09T09:39:38.000Z">2026.08.09</time><span>科研</span></div>
     <h2><a href="/2026/08/09/APCL-Kudos-Research-Showcase/">APCL 上线 Kudos Research Showcase</a></h2>
     
-    <p class="post-summary">APCL 上线 Kudos Research Showcase我的 KDD 2026 论文 Adaptive Prototypical Contrastive Learning for Time Series Clustering 目前已经上线 Kudos Research Showcase。这篇推文整理了论文的基本信息、面向大众读者的解释，以及我对这...</p>
+    <p class="post-summary">整理 APCL 在 Kudos Research Showcase 的展示信息，以及面向非专业读者的研究介绍。</p>
     <div class="post-tags"><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/%E8%AE%BA%E6%96%87/">论文</a><a class="tag" href="/tags/Time-Series/">Time Series</a><a class="tag" href="/tags/KDD/">KDD</a><a class="tag" href="/tags/APCL/">APCL</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2026-05-31T14:11:06.000Z">2026.05.31</time></div>
+    <div class="post-meta"><time datetime="2026-05-31T14:11:06.000Z">2026.05.31</time><span>科研</span></div>
     <h2><a href="/2026/05/31/KDD2026-APCL/">KDD2026-APCL</a></h2>
     
-    <p class="post-summary">告别盲猜K值！KDD 2026：让AI在时间序列里实现“聚类自由”面对如山般的IoT或金融数据，没有标签，最头疼的是什么？ 老板问你：“这些数据能分成几类？”你只能看着屏幕盲猜一个K&amp;#x3D;10。 猜大了，模型过拟合；猜小了，关键模式被掩盖。这就是时间序列聚类里最经典的困境： 你需要聚类分配来学习特征，但你又需要高质量特征来找聚类边界。 最近 KD...</p>
+    <p class="post-summary">介绍 APCL 如何结合层次原型、对比学习与 MDL 准则，联合学习时间序列表征和聚类数量。</p>
     <div class="post-tags"><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/%E8%AE%BA%E6%96%87/">论文</a><a class="tag" href="/tags/Time-Series/">Time Series</a><a class="tag" href="/tags/KDD/">KDD</a><a class="tag" href="/tags/CCF-A/">CCF-A</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2026-04-05T15:10:24.000Z">2026.04.05</time></div>
+    <div class="post-meta"><time datetime="2026-04-05T15:10:24.000Z">2026.04.05</time><span>科研</span></div>
     <h2><a href="/2026/04/05/%E9%87%8D%E8%AF%86%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%EF%BC%9A%E7%AE%97%E6%B3%95%E4%B8%8E%E5%89%8D%E6%B2%BF/">重识时间序列：算法与前沿</a></h2>
     
-    <p class="post-summary">重识时间序列：算法与前沿版本更新： 2026-04-05：ver-1.0 引言时间序列，本质上是从海量（抑或稀疏）的历史数据中，挖掘世界运转的隐秘规律。 在过去的一年多时间里，我的主要研究方向是时间序列与深度学习的交叉领域。从传统的频域算法（傅里叶、小波变换），到 Transformer（PatchTST、TimesNet），再到如今前沿的状态空间模型...</p>
+    <p class="post-summary">梳理时间序列分析的基本问题、算法与研究进展，作为持续更新的学习笔记。</p>
     <div class="post-tags"><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97/">时间序列</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2026-02-04T09:33:05.000Z">2026.02.04</time></div>
+    <div class="post-meta"><time datetime="2026-02-04T09:33:05.000Z">2026.02.04</time><span>科研</span></div>
     <h2><a href="/2026/02/04/DASFAA2026Accepted/">DASFAA2026Accepted</a></h2>
     
-    <p class="post-summary">一篇工作被 DASFAA 2026 (CCF-B) 录用作为第一作者，我的一项关于如何处理异构时序数据的相关工作被数据库会议 DASFAA 2026（CCF-B）录用为Regular Paper。然而，受制于学校课程安排，以及路途花销等问题，是否参会尚在考虑。</p>
+    <p class="post-summary">作为第一作者，我的一项关于如何处理异构时序数据的相关工作被数据库会议 DASFAA 2026（CCF-B）录用为Regular Paper。然而，受制于学校课程安排，以及路途花销等问题，是否参会尚在考虑。</p>
     <div class="post-tags"><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/%E8%AE%BA%E6%96%87/">论文</a><a class="tag" href="/tags/Time-Series/">Time Series</a><a class="tag" href="/tags/DASFAA/">DASFAA</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2026-01-24T14:15:39.000Z">2026.01.24</time></div>
+    <div class="post-meta"><time datetime="2026-01-24T14:15:39.000Z">2026.01.24</time><span>科研</span></div>
     <h2><a href="/2026/01/24/ICASSP2026Accepted/">ICASSP2026Accepted</a></h2>
     
-    <p class="post-summary">两篇工作被 ICASSP 2026 (CCF-B) 录用非常荣幸，在2026开年之际，我作为唯一作者的两篇论文被信号处理领域会议 ICASSP 2026 (CCF-B) 录用。 在此，我由衷感谢所有给予我指导、支持与鼓励的老师、同学和朋友们。这两项工作均聚焦于将传统信号处理理论与深度学习模型深度融合，以提升时间序列预测的精度与健壮性，是我在大半年前已开...</p>
+    <p class="post-summary">非常荣幸，在2026开年之际，我作为唯一作者的两篇论文被信号处理领域会议 ICASSP 2026 (CCF-B) 录用。 在此，我由衷感谢所有给予我指导、支持与鼓励的老师、同学和朋友们。这两项工作均聚焦于将传统信号处理理论与深度学习模型深度融合，以提升时间序列预测的精度与健壮性，是我在大半年前...</p>
     <div class="post-tags"><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/%E8%AE%BA%E6%96%87/">论文</a><a class="tag" href="/tags/Time-Series/">Time Series</a><a class="tag" href="/tags/ICASSP/">ICASSP</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2026-01-04T00:30:42.000Z">2026.01.04</time></div>
+    <div class="post-meta"><time datetime="2026-01-04T00:30:42.000Z">2026.01.04</time><span>随笔</span></div>
     <h2><a href="/2026/01/04/2025%E6%80%BB%E7%BB%93/">2025总结</a></h2>
     
-    <p class="post-summary">2025年度总结正值2026年的第一个工作日，借此机会对过去的一年进行简单的总结，同时也对未来发展做出初步规划。</p>
+    <p class="post-summary">正值2026年的第一个工作日，借此机会对过去的一年进行简单的总结，同时也对未来发展做出初步规划。</p>
     <div class="post-tags"><a class="tag" href="/tags/%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/">年度总结</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-09-17T11:32:56.000Z">2025.09.17</time></div>
+    <div class="post-meta"><time datetime="2025-09-17T11:32:56.000Z">2025.09.17</time><span>随笔</span></div>
     <h2><a href="/2025/09/17/2025-09-17%E9%9A%8F%E7%AC%94/">2025.09.17随笔</a></h2>
     
-    <p class="post-summary">异化，文字与人难得有空闲下来写写随笔，却又觉得身心俱疲，可一说起来却又止不住笔。这一次，不用AI，让我写点真正属于我自己的总结和心里话。</p>
+    <p class="post-summary">难得有空闲下来写写随笔，却又觉得身心俱疲，可一说起来却又止不住笔。这一次，不用AI，让我写点真正属于我自己的总结和心里话。</p>
     <div class="post-tags"><a class="tag" href="/tags/%E9%9A%8F%E7%AC%94/">随笔</a><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/%E8%AE%BA%E6%96%87/">论文</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-08-03T04:40:38.000Z">2025.08.03</time></div>
+    <div class="post-meta"><time datetime="2025-08-03T04:40:38.000Z">2025.08.03</time><span>随笔</span></div>
     <h2><a href="/2025/08/03/2025-08-03%E9%9A%8F%E7%AC%94/">2025.08.03随笔</a></h2>
     
-    <p class="post-summary">一篇论文的重生：我的NeurIPS审稿意见与它的“二周目”人生写在前面 在科研社区里，我们习惯于分享成功的喜悦，展示最终被接收的光鲜论文。但今天，我想分享一个不那么常见的故事——一个关于“撤稿”的故事，以及一篇论文如何在顶会审稿意见的“锤炼”下，迎来“二周目”新生的过程。</p>
+    <p class="post-summary">写在前面 在科研社区里，我们习惯于分享成功的喜悦，展示最终被接收的光鲜论文。但今天，我想分享一个不那么常见的故事——一个关于“撤稿”的故事，以及一篇论文如何在顶会审稿意见的“锤炼”下，迎来“二周目”新生的过程。</p>
     <div class="post-tags"><a class="tag" href="/tags/%E9%9A%8F%E7%AC%94/">随笔</a><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/%E8%AE%BA%E6%96%87/">论文</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-08-01T03:26:25.000Z">2025.08.01</time></div>
+    <div class="post-meta"><time datetime="2025-08-01T03:26:25.000Z">2025.08.01</time><span>随笔</span></div>
     <h2><a href="/2025/08/01/2025-08-01%E9%9A%8F%E7%AC%94/">2025.08.01随笔</a></h2>
     
-    <p class="post-summary">时序预测：从理论到实践——以我的四项相关工作为例大家好，我想和大家聊聊我过去一段时间做的一件事：时间序列预测。 说白了，就是看着一串随时间变化的数字，比如过去一个月的用电量、过去一年的股票价格，然后去猜它接下来会怎么变。这件事听起来不复杂，我们每个人其实天天都在做。出门前看看天，是想预测接下来几个小时会不会下雨；买东西看评价，是想预测自己拿到手后会不会...</p>
+    <p class="post-summary">大家好，我想和大家聊聊我过去一段时间做的一件事：时间序列预测。 说白了，就是看着一串随时间变化的数字，比如过去一个月的用电量、过去一年的股票价格，然后去猜它接下来会怎么变。这件事听起来不复杂，我们每个人其实天天都在做。出门前看看天，是想预测接下来几个小时会不会下雨；买东西看评价，是想预测自己拿...</p>
     <div class="post-tags"><a class="tag" href="/tags/%E9%9A%8F%E7%AC%94/">随笔</a><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/%E8%AE%BA%E6%96%87/">论文</a><a class="tag" href="/tags/Time-Series/">Time Series</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-07-30T11:43:11.000Z">2025.07.30</time></div>
+    <div class="post-meta"><time datetime="2025-07-30T11:43:11.000Z">2025.07.30</time><span>科研</span></div>
     <h2><a href="/2025/07/30/CCFOnline/">CCFOnline</a></h2>
     
-    <p class="post-summary">告别Ctrl+F！这个CCF在线查询神器，治好了我的投稿焦虑症你一定经历过这样的场景。 一篇论文的初稿终于基本成型，Introduction的逻辑捋顺了，实验数据也更新到了最后一版。你长舒一口气，泡上一杯茶，然后打开了那个你再熟悉不过的PDF文件——《中国计算机学会推荐国际学术会议和期刊目录》。 接下来，是一套堪称“学术仪式”的固定操作： 按下 Ctr...</p>
+    <p class="post-summary">你一定经历过这样的场景。 一篇论文的初稿终于基本成型，Introduction的逻辑捋顺了，实验数据也更新到了最后一版。你长舒一口气，泡上一杯茶，然后打开了那个你再熟悉不过的PDF文件——《中国计算机学会推荐国际学术会议和期刊目录》。 接下来，是一套堪称“学术仪式”的固定操作： 按下 Ctrl...</p>
     <div class="post-tags"><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/%E8%AE%BA%E6%96%87/">论文</a><a class="tag" href="/tags/%E5%88%9B%E4%B8%9A/">创业</a><a class="tag" href="/tags/CCF/">CCF</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-07-17T08:36:07.000Z">2025.07.17</time></div>
+    <div class="post-meta"><time datetime="2025-07-17T08:36:07.000Z">2025.07.17</time><span>技术实践</span></div>
     <h2><a href="/2025/07/17/AnyRouter/">AnyRouter</a></h2>
     
-    <p class="post-summary">免费用 Claude Code ？最近各大技术群里都在传一个「不花钱也能用 Claude Code」的骚操作，核心其实就是 AnyRouter 这个中转平台。下面把完整流程拆给你，照着做就能免费薅 API 额度。</p>
+    <p class="post-summary">最近各大技术群里都在传一个「不花钱也能用 Claude Code」的骚操作，核心其实就是 AnyRouter 这个中转平台。下面把完整流程拆给你，照着做就能免费薅 API 额度。</p>
     <div class="post-tags"><a class="tag" href="/tags/Claude/">Claude</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-06-25T11:30:00.000Z">2025.06.25</time></div>
+    <div class="post-meta"><time datetime="2025-06-25T11:30:00.000Z">2025.06.25</time><span>科研</span></div>
     <h2><a href="/2025/06/25/SWIFT/">SWIFT</a></h2>
     
-    <p class="post-summary">SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series PredictionThis is an official implementation of [SWIFT: State-space Wavelet Integrated Fore...</p>
+    <p class="post-summary">This is an official implementation of [SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction].</p>
     <div class="post-tags"><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/%E8%AE%BA%E6%96%87/">论文</a><a class="tag" href="/tags/Time-Series/">Time Series</a><a class="tag" href="/tags/GitHub/">GitHub</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-06-09T09:45:02.000Z">2025.06.09</time></div>
+    <div class="post-meta"><time datetime="2025-06-09T09:45:02.000Z">2025.06.09</time><span>随笔</span></div>
     <h2><a href="/2025/06/09/2025-06-09%E9%9A%8F%E7%AC%94/">2025.06.09随笔</a></h2>
     
-    <p class="post-summary">随笔今日是夏季学期的第一天，由于前些日子骑公路车压弯摔了一跤，左半边身子受了点皮外伤，故行动略有不便。课上，见外教在教授HTML、XML等内容，又不禁为自己过去一段时间的努力而感慨。</p>
+    <p class="post-summary">今日是夏季学期的第一天，由于前些日子骑公路车压弯摔了一跤，左半边身子受了点皮外伤，故行动略有不便。课上，见外教在教授HTML、XML等内容，又不禁为自己过去一段时间的努力而感慨。</p>
     <div class="post-tags"><a class="tag" href="/tags/%E9%9A%8F%E7%AC%94/">随笔</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-06-07T11:52:49.000Z">2025.06.07</time></div>
+    <div class="post-meta"><time datetime="2025-06-07T11:52:49.000Z">2025.06.07</time><span>技术实践</span></div>
     <h2><a href="/2025/06/07/%E6%88%91%E7%9A%84%E4%B8%96%E7%95%8C%E5%9C%B0%E9%93%81%E7%BA%BF%E8%B7%AF%E5%9B%BE/">我的世界地铁线路图</a></h2>
     
-    <p class="post-summary">我的世界地铁线路图</p>
+    
     <div class="post-tags"><a class="tag" href="/tags/%E6%88%91%E7%9A%84%E4%B8%96%E7%95%8C/">我的世界</a><a class="tag" href="/tags/%E6%B8%B8%E6%88%8F/">游戏</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-05-31T06:13:43.000Z">2025.05.31</time></div>
+    <div class="post-meta"><time datetime="2025-05-31T06:13:43.000Z">2025.05.31</time><span>科研</span></div>
     <h2><a href="/2025/05/31/EnergyPatchTST/">EnergyPatchTST</a></h2>
     
-    <p class="post-summary">EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy ForecastingThis is an official implementation of EnergyPatchTST: Multi-scale Time Ser...</p>
+    <p class="post-summary">介绍结合多尺度建模与不确定性估计的 EnergyPatchTST 能源预测方法。</p>
     <div class="post-tags"><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/%E8%AE%BA%E6%96%87/">论文</a><a class="tag" href="/tags/Time-Series/">Time Series</a><a class="tag" href="/tags/GitHub/">GitHub</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-05-30T04:15:00.000Z">2025.05.30</time></div>
+    <div class="post-meta"><time datetime="2025-05-30T04:15:00.000Z">2025.05.30</time><span>技术实践</span></div>
     <h2><a href="/2025/05/30/ISCC2025WriteUp/">ISCC2025WriteUp</a></h2>
     
-    <p class="post-summary">ISCC2025 CTF WriteUp 汇总本文记载了部分ISCC2025的题解，主要是个人赛时做出来的内容，也有部分内容是赛后得到的。内容因为过长经过AI总结，可能存在差错，并不代表个人真实WriteUp，仅供参考学习。</p>
+    <p class="post-summary">本文记载了部分ISCC2025的题解，主要是个人赛时做出来的内容，也有部分内容是赛后得到的。内容因为过长经过AI总结，可能存在差错，并不代表个人真实WriteUp，仅供参考学习。</p>
     <div class="post-tags"><a class="tag" href="/tags/ctf/">ctf</a><a class="tag" href="/tags/ISCC/">ISCC</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-04-14T11:25:19.000Z">2025.04.14</time></div>
+    <div class="post-meta"><time datetime="2025-04-14T11:25:19.000Z">2025.04.14</time><span>技术实践</span></div>
     <h2><a href="/2025/04/14/%E4%B8%8A%E6%B5%B7%E5%A4%A7%E5%AD%A6%E6%95%B0%E5%AD%97%E9%80%BB%E8%BE%91%E5%AE%9E%E9%AA%8C%E6%8A%A5%E5%91%8A/">上海大学数字逻辑实验报告</a></h2>
     
-    <p class="post-summary">上海大学计算机学院数字逻辑实验报告作者：William-Liwei 如需转载，请告知我，并注明原作者。 仅供学弟学妹参考学习，请勿抄袭！</p>
+    <p class="post-summary">作者：William-Liwei 如需转载，请告知我，并注明原作者。 仅供学弟学妹参考学习，请勿抄袭！</p>
     <div class="post-tags"><a class="tag" href="/tags/%E6%95%B0%E5%AD%97%E9%80%BB%E8%BE%91%E5%AE%9E%E9%AA%8C/">数字逻辑实验</a><a class="tag" href="/tags/%E6%8A%A5%E5%91%8A/">报告</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-04-06T11:44:49.000Z">2025.04.06</time></div>
+    <div class="post-meta"><time datetime="2025-04-06T11:44:49.000Z">2025.04.06</time><span>经验分享</span></div>
     <h2><a href="/2025/04/06/2025%E4%B8%8A%E5%A4%A7%E8%AE%A1%E9%99%A2%E6%8E%A8%E5%85%8D%E8%A7%84%E5%88%99/">2025上大计院推免规则</a></h2>
     
-    <p class="post-summary">上海大学计算机学院2025年推荐优秀应届本科毕业生免试攻读研究生工作实施办法一、推荐工作进程 9月9日：计算机学院成立2025年推荐免试硕士研究生工作小组并召开工作会议，讨论制定实施办法。 9月10日：向学生传达推荐自荐报名工作的有关精神，在学院网站上公布推荐实施办法并报学校备案。 9月10-11日：学生报名；学院接收学生的报名材料（交到年级辅导员处）...</p>
+    <p class="post-summary">9月9日：计算机学院成立2025年推荐免试硕士研究生工作小组并召开工作会议，讨论制定实施办法。 9月10日：向学生传达推荐自荐报名工作的有关精神，在学院网站上公布推荐实施办法并报学校备案。 9月10-11日：学生报名；学院接收学生的报名材料（交到年级辅导员处）。 9月12-15日：审核学生报名...</p>
     <div class="post-tags"><a class="tag" href="/tags/%E4%BF%9D%E7%A0%94/">保研</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-03-27T11:02:38.000Z">2025.03.27</time></div>
+    <div class="post-meta"><time datetime="2025-03-27T11:02:38.000Z">2025.03.27</time><span>技术实践</span></div>
     <h2><a href="/2025/03/27/AutoDL%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">AutoDL深度学习</a></h2>
     
-    <p class="post-summary">AutoDL深度学习实战教程 一、零基础极速入门1. 注册与充值 注册地址：AutoDL官网用微信扫码登录最方便，学生认证还有优惠 首次充值：建议先充10元（RTX3090可玩6小时，T4显卡可玩12小时）</p>
+    <p class="post-summary">注册地址：AutoDL官网用微信扫码登录最方便，学生认证还有优惠 首次充值：建议先充10元（RTX3090可玩6小时，T4显卡可玩12小时）</p>
     <div class="post-tags"><a class="tag" href="/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-03-27T10:46:26.000Z">2025.03.27</time></div>
+    <div class="post-meta"><time datetime="2025-03-27T10:46:26.000Z">2025.03.27</time><span>经验分享</span></div>
     <h2><a href="/2025/03/27/%E8%BD%AF%E8%91%97%E7%94%B3%E8%AF%B7%E8%AE%B0%E5%BD%95/">软著申请记录</a></h2>
     
-    <p class="post-summary">从零到软著——我的软件著作权申请全记录💡 为什么需要申请软著？最近我开发的「课程翼选通」智能选课系统成功获得软件著作权，这个基于Playwright+Flask的选课系统从立项到上线历时半年。申请软著不仅是知识产权的保护，更是对团队成果的官方认证，后续申报项目&amp;#x2F;评奖都有重要作用。</p>
+    <p class="post-summary">最近我开发的「课程翼选通」智能选课系统成功获得软件著作权，这个基于Playwright+Flask的选课系统从立项到上线历时半年。申请软著不仅是知识产权的保护，更是对团队成果的官方认证，后续申报项目/评奖都有重要作用。</p>
     <div class="post-tags"><a class="tag" href="/tags/%E8%BD%AF%E4%BB%B6%E5%BC%80%E5%8F%91/">软件开发</a><a class="tag" href="/tags/%E7%9F%A5%E8%AF%86%E4%BA%A7%E6%9D%83/">知识产权</a><a class="tag" href="/tags/%E8%BD%AF%E4%BB%B6%E8%91%97%E4%BD%9C%E6%9D%83/">软件著作权</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-03-05T12:22:23.000Z">2025.03.05</time></div>
+    <div class="post-meta"><time datetime="2025-03-05T12:22:23.000Z">2025.03.05</time><span>经验分享</span></div>
     <h2><a href="/2025/03/05/%E4%B8%8A%E5%A4%A7%E8%AE%A1%E9%99%A22025%E8%AE%A4%E5%8F%AF%E7%AB%9E%E8%B5%9B%E5%88%97%E8%A1%A8/">上大计院2025认可竞赛列表</a></h2>
     
-    <p class="post-summary">2025 届计算机工程与科学学院推荐免试攻读硕士学位研究生学科竞赛认定目录本文内容截止至2025.3.27，如官网更新，请以官网信息为准。</p>
+    <p class="post-summary">本文内容截止至2025.3.27，如官网更新，请以官网信息为准。</p>
     <div class="post-tags"><a class="tag" href="/tags/%E7%AB%9E%E8%B5%9B/">竞赛</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-03-03T13:19:31.000Z">2025.03.03</time></div>
+    <div class="post-meta"><time datetime="2025-03-03T13:19:31.000Z">2025.03.03</time><span>技术实践</span></div>
     <h2><a href="/2025/03/03/CCF%E6%8E%A8%E8%8D%90%E7%9B%AE%E5%BD%95-2022%E7%89%88/">CCF推荐目录-2022版</a></h2>
     
-    <p class="post-summary">中国计算机学会推荐目录 - 2022 更名版一、目录说明中国计算机学会（CCF）推荐国际学术会议和期刊目录（2022 年）是对 2019 年第五版目录的更新和更名。本次更新旨在反映近年来计算机领域的发展和变化，为研究人员提供更准确的学术参考。目录涵盖了计算机体系结构、并行与分布计算、存储系统、计算机网络、网络与信息安全、软件工程、系统软件、程序设计语言...</p>
+    <p class="post-summary">中国计算机学会（CCF）推荐国际学术会议和期刊目录（2022 年）是对 2019 年第五版目录的更新和更名。本次更新旨在反映近年来计算机领域的发展和变化，为研究人员提供更准确的学术参考。目录涵盖了计算机体系结构、并行与分布计算、存储系统、计算机网络、网络与信息安全、软件工程、系统软件、程序设计...</p>
     <div class="post-tags"><a class="tag" href="/tags/CCF/">CCF</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-02-23T12:25:26.000Z">2025.02.23</time></div>
+    <div class="post-meta"><time datetime="2025-02-23T12:25:26.000Z">2025.02.23</time><span>技术实践</span></div>
     <h2><a href="/2025/02/23/%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2DeepSeek%E7%9A%84%E4%B8%AA%E4%BA%BA%E7%BB%8F%E9%AA%8C/">本地部署DeepSeek的个人经验</a></h2>
     
-    <p class="post-summary">本地部署DeepSeek-R1模型全攻略：Ollama+Page Assist轻量化方案——零代码实现私有知识库与AI助手 摘要本文记录了个人在本地部署DeepSeek系列大语言模型的完整过程，为需要私有化部署AI模型的开发者提供参考。 核心优势 隐私安全：数据完全本地化，避免敏感信息泄露 轻量部署：集成显卡即可运行1.5B&amp;#x2F;7B模型，RTX...</p>
+    <p class="post-summary">——零代码实现私有知识库与AI助手 本文记录了个人在本地部署DeepSeek系列大语言模型的完整过程，为需要私有化部署AI模型的开发者提供参考。 隐私安全：数据完全本地化，避免敏感信息泄露 轻量部署：集成显卡即可运行1.5B/7B模型，RTX4060也可运行14B甚至32B模型 扩展性强：支持...</p>
     <div class="post-tags"><a class="tag" href="/tags/DeepSeek/">DeepSeek</a><a class="tag" href="/tags/Ollama/">Ollama</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-02-18T15:19:26.000Z">2025.02.18</time></div>
+    <div class="post-meta"><time datetime="2025-02-18T15:19:26.000Z">2025.02.18</time><span>技术实践</span></div>
     <h2><a href="/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/">如何开发基于 Streamlit 和 SQLite 的数据库管理工具</a></h2>
     
-    <p class="post-summary">用 Streamlit 和 SQLite 构建高效数据库管理工具在数据驱动的开发中，数据库管理是一个不可或缺的环节。最近，我开发了一个基于 Python 的简单数据库管理工具，用于管理和展示石窟艺术数据。这个项目不仅帮助我巩固了对 Streamlit 和 SQLite 的理解，还让我体会到了快速开发工具的强大能力。 项目背景我们的目标是创建一个简单易用...</p>
+    <p class="post-summary">在数据驱动的开发中，数据库管理是一个不可或缺的环节。最近，我开发了一个基于 Python 的简单数据库管理工具，用于管理和展示石窟艺术数据。这个项目不仅帮助我巩固了对 Streamlit 和 SQLite 的理解，还让我体会到了快速开发工具的强大能力。 我们的目标是创建一个简单易用的工具，用于...</p>
     <div class="post-tags"><a class="tag" href="/tags/Python/">Python</a><a class="tag" href="/tags/Streamlit/">Streamlit</a><a class="tag" href="/tags/SQLite/">SQLite</a><a class="tag" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86/">数据库管理</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-02-17T14:21:37.000Z">2025.02.17</time></div>
+    <div class="post-meta"><time datetime="2025-02-17T14:21:37.000Z">2025.02.17</time><span>技术实践</span></div>
     <h2><a href="/2025/02/17/%E8%AF%BE%E7%A8%8B%E7%BF%BC%E9%80%89%E9%80%9A%EF%BC%9A%E5%9F%BA%E4%BA%8Eflask%E5%92%8Cplaywright%E7%9A%84%E4%BA%91%E4%B8%BB%E6%9C%BA%E9%83%A8%E7%BD%B2%E7%BD%91%E7%AB%99/">课程翼选通：基于flask和playwright的云主机部署网站</a></h2>
     
-    <p class="post-summary">课程翼选通：基于 Playwright 与 Flask 的云主机部署网站黎玮，王子欣 上海大学计算机工程与科学学院 摘要 “课程翼选通”是一个创新的部署于天翼云主机上的教育辅助平台，旨在通过技术手段简化高校学生的选课流程，提升选课效率，并通过集成成绩查询、课程评价和用户社区等功能，构建一个全方位的教务辅助系统。该系统采用 Flask 框架进行后端开发，...</p>
+    <p class="post-summary">黎玮，王子欣 上海大学计算机工程与科学学院 摘要 “课程翼选通”是一个创新的部署于天翼云主机上的教育辅助平台，旨在通过技术手段简化高校学生的选课流程，提升选课效率，并通过集成成绩查询、课程评价和用户社区等功能，构建一个全方位的教务辅助系统。该系统采用 Flask 框架进行后端开发，确保了服务的...</p>
     <div class="post-tags"><a class="tag" href="/tags/%E5%BB%BA%E7%AB%99/">建站</a><a class="tag" href="/tags/flask/">flask</a><a class="tag" href="/tags/playwright/">playwright</a><a class="tag" href="/tags/%E9%80%89%E8%AF%BE/">选课</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-02-16T06:22:15.000Z">2025.02.16</time></div>
+    <div class="post-meta"><time datetime="2025-02-16T06:22:15.000Z">2025.02.16</time><span>技术实践</span></div>
     <h2><a href="/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-2/">hexo建站教学(2)</a></h2>
     
-    <p class="post-summary">从一开始：更改Hexo网站域名本篇博客将详细介绍如何通过 Vercel 设置自定义域名，实现个性化且高效的网站托管。本文将逐步介绍 如何使用 Vercel 以及如何在 GitHub 上设置自定义域名。 常见的修改域名方式有如下两种，不过个人推荐采用Vercel。</p>
+    <p class="post-summary">继续整理 Hexo 博客的配置与建站实践。</p>
     <div class="post-tags"><a class="tag" href="/tags/%E5%BB%BA%E7%AB%99/">建站</a><a class="tag" href="/tags/%E6%95%99%E5%AD%A6/">教学</a><a class="tag" href="/tags/hexo/">hexo</a><a class="tag" href="/tags/github/">github</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-02-16T06:13:43.000Z">2025.02.16</time></div>
+    <div class="post-meta"><time datetime="2025-02-16T06:13:43.000Z">2025.02.16</time><span>技术实践</span></div>
     <h2><a href="/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-1/">hexo建站教学(1)</a></h2>
     
-    <p class="post-summary">从零开始：使用 Hexo 搭建并部署个人博客到 GitHub本篇博客将详细介绍如何使用 Hexo 搭建个人博客，并将其部署到 GitHub 上，实现免费且高效的个人网站托管。我们将从环境准备开始，逐步介绍 Hexo 的安装、配置、内容创作以及最终的部署过程。</p>
+    <p class="post-summary">记录使用 Hexo 搭建个人博客的基础步骤和配置。</p>
     <div class="post-tags"><a class="tag" href="/tags/%E5%BB%BA%E7%AB%99/">建站</a><a class="tag" href="/tags/%E6%95%99%E5%AD%A6/">教学</a><a class="tag" href="/tags/hexo/">hexo</a><a class="tag" href="/tags/github/">github</a></div>
   </article>
   
   <article class="journal-item">
-    <div class="post-meta"><time datetime="2025-02-14T15:16:13.000Z">2025.02.14</time></div>
+    <div class="post-meta"><time datetime="2025-02-14T15:16:13.000Z">2025.02.14</time><span>科研</span></div>
     <h2><a href="/2025/02/14/%E5%AD%A6%E6%9C%AF%E6%B5%B7%E6%8A%A5/">学术海报</a></h2>
     
-    <p class="post-summary">Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics Authors：Wei Li, Zixin Wang, Qixiang Gao, Fenglei Yang* Published in：CAMM...</p>
+    <p class="post-summary">Authors：Wei Li, Zixin Wang, Qixiang Gao, Fenglei Yang* Published in：CAMMIC 2025 (EI Indexed Conference), Full Paper (Poster Presentation). Email：&amp;#...</p>
     <div class="post-tags"><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/%E8%AE%BA%E6%96%87/">论文</a></div>
   </article>
   
@@ -398,6 +399,6 @@ mjx-container[display="true"] + br {
 
 
 </main>
-  <footer class="site-footer"><div class="wrap journal-footer"><span>© 2026 Wei Li</span><nav aria-label="Footer"><a href="/">Home</a><a href="/archives/">Archives</a><a href="/atom.xml">RSS</a></nav></div></footer>
+  <footer class="site-footer"><div class="wrap footer-inner"><span>© 2026 Wei Li</span><nav class="footer-links" aria-label="Footer"><a href="/">Home</a><a href="/about/">About</a><a href="/blog/">Blog</a><a href="/atom.xml">RSS</a></nav></div></footer>
 </body>
 </html>
