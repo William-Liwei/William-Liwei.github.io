@@ -13,13 +13,7 @@
 <meta property="og:site_name" content="William-Liwei&#39;s blog">
 <meta property="og:description" content="EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy ForecastingThis is an official implementation of  EnergyPatchTST: Multi-scale Time Series Transformers with">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://img.shields.io/badge/License-Apache_2.0-blue.svg">
-<meta property="og:image" content="https://badgen.net/github/issues/William-Liwei/EnergyPatchTST?color=red">
-<meta property="og:image" content="https://badgen.net/github/prs/William-Liwei/EnergyPatchTST?color=yellow">
-<meta property="og:image" content="https://img.shields.io/github/repo-size/william-liwei/energypatchtst?color=green">
-<meta property="og:image" content="https://badgen.net/github/stars/William-Liwei/EnergyPatchTST?color=orange">
-<meta property="og:image" content="https://badgen.net/github/forks/William-Liwei/EnergyPatchTST?color=pink">
-<meta property="og:image" content="https://api.star-history.com/svg?repos=William-Liwei/EnergyPatchTST&type=Date">
+<meta property="og:image" content="https://www.weili.space/assets/social/f5eb46c36ea366333948.png">
 <meta property="article:published_time" content="2025-05-31T06:13:43.000Z">
 <meta property="article:modified_time" content="2026-10-11T02:34:12.041Z">
 <meta property="article:author" content="Wei Li">
@@ -28,7 +22,8 @@
 <meta property="article:tag" content="Time Series">
 <meta property="article:tag" content="GitHub">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://img.shields.io/badge/License-Apache_2.0-blue.svg">
+<meta name="twitter:image" content="https://www.weili.space/assets/social/f5eb46c36ea366333948.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"EnergyPatchTST","description":"介绍结合多尺度建模与不确定性估计的 EnergyPatchTST 能源预测方法。","url":"https://www.weili.space/2025/05/31/EnergyPatchTST/","mainEntityOfPage":"https://www.weili.space/2025/05/31/EnergyPatchTST/","image":"https://www.weili.space/assets/social/f5eb46c36ea366333948.png","datePublished":"2025-05-31T06:13:43.000Z","author":{"@type":"Person","name":"Wei Li","url":"https://www.weili.space/about/"}}</script>
   <link rel="canonical" href="https://www.weili.space/2025/05/31/EnergyPatchTST/">
   <link rel="icon" href="/favicon.ico">
   <link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="/atom.xml">
@@ -38,28 +33,24 @@
   <link rel="stylesheet" href="/assets/journal.css">
   <script src="/assets/journal.js" defer></script>
   
-  <script>
-    window.MathJax = {tex: {inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true}, options: {skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']}};
-  </script>
-  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-  
 </head>
 
 <body class="journal">
   <a class="skip-link" href="#main">跳至正文</a>
-  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
+  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
   <main id="main" class="wrap journal-main"><article class="journal-post">
   <header class="post-heading">
     <a class="back-link" href="/blog/">← Blog</a>
     <h1>EnergyPatchTST</h1>
     <div class="post-meta"><time datetime="2025-05-31T06:13:43.000Z">2025.05.31</time><span>Wei Li</span></div>
+    
     <div class="post-tags"><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/%E8%AE%BA%E6%96%87/">论文</a><a class="tag" href="/tags/Time-Series/">Time Series</a><a class="tag" href="/tags/GitHub/">GitHub</a></div>
   </header>
   <div class="post-reading">
   
   <details class="post-toc"><summary>文章目录</summary><nav aria-label="Table of contents"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#EnergyPatchTST-Multi-scale-Time-Series-Transformers-with-Uncertainty-Estimation-for-Energy-Forecasting"><span class="toc-text">EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Authors"><span class="toc-text">Authors</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Introduction-Motivation"><span class="toc-text">Introduction &amp; Motivation</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Prerequisites"><span class="toc-text">Prerequisites</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Data-set-preparation"><span class="toc-text">Data set preparation</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Model-Overview"><span class="toc-text">Model Overview</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Key-Features"><span class="toc-text">Key Features</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Experiment-Results"><span class="toc-text">Experiment Results</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Commercial-Use"><span class="toc-text">Commercial Use</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Contact"><span class="toc-text">Contact</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Acknowledgement"><span class="toc-text">Acknowledgement</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Citation"><span class="toc-text">Citation</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Star-History"><span class="toc-text">Star History</span></a></li></ol></li></ol></nav></details>
   <div class="post-body"><h1 id="EnergyPatchTST-Multi-scale-Time-Series-Transformers-with-Uncertainty-Estimation-for-Energy-Forecasting"><a href="#EnergyPatchTST-Multi-scale-Time-Series-Transformers-with-Uncertainty-Estimation-for-Energy-Forecasting" class="headerlink" title="EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting"></a>EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting</h1><p>This is an official implementation of  <a target="_blank" rel="noopener" href="https://link.springer.com/chapter/10.1007/978-981-96-9815-8_27">EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting</a>.</p>
-<p><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="license"> <a target="_blank" rel="noopener" href="https://github.com/William-Liwei/EnergyPatchTST/issues"><img src="https://badgen.net/github/issues/William-Liwei/EnergyPatchTST?color=red" alt="Issues"></a> <a target="_blank" rel="noopener" href="https://github.com/William-Liwei/EnergyPatchTST/pulls"><img src="https://badgen.net/github/prs/William-Liwei/EnergyPatchTST?color=yellow" alt="PRs"></a> <img src="https://img.shields.io/github/repo-size/william-liwei/energypatchtst?color=green" alt="GitHub repo size"> <img src="https://badgen.net/github/stars/William-Liwei/EnergyPatchTST?color=orange" alt="GitHub Repo stars"> <img src="https://badgen.net/github/forks/William-Liwei/EnergyPatchTST?color=pink" alt="GitHub forks"></p>
+<p><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="license" decoding="async"> <a target="_blank" rel="noopener" href="https://github.com/William-Liwei/EnergyPatchTST/issues"><img src="https://badgen.net/github/issues/William-Liwei/EnergyPatchTST?color=red" alt="Issues" decoding="async" loading="lazy"></a> <a target="_blank" rel="noopener" href="https://github.com/William-Liwei/EnergyPatchTST/pulls"><img src="https://badgen.net/github/prs/William-Liwei/EnergyPatchTST?color=yellow" alt="PRs" decoding="async" loading="lazy"></a> <img src="https://img.shields.io/github/repo-size/william-liwei/energypatchtst?color=green" alt="GitHub repo size" decoding="async" loading="lazy"> <img src="https://badgen.net/github/stars/William-Liwei/EnergyPatchTST?color=orange" alt="GitHub Repo stars" decoding="async" loading="lazy"> <img src="https://badgen.net/github/forks/William-Liwei/EnergyPatchTST?color=pink" alt="GitHub forks" decoding="async" loading="lazy"></p>
 <span id="more"></span>
 
 <h2 id="Authors"><a href="#Authors" class="headerlink" title="Authors"></a>Authors</h2><ul>
@@ -104,12 +95,15 @@
  <picture>
    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=William-Liwei/EnergyPatchTST&type=Date&theme=dark">
    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=William-Liwei/EnergyPatchTST&type=Date">
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=William-Liwei/EnergyPatchTST&type=Date">
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=William-Liwei/EnergyPatchTST&type=Date" decoding="async" loading="lazy">
  </picture>
 
 </a>
 </div>
   </div>
+  
+  <section class="related-posts" aria-labelledby="related-heading"><h2 id="related-heading">继续阅读</h2><ul><li><a href="/2025/06/25/SWIFT/"><span>科研</span><strong>SWIFT</strong><span aria-hidden="true">→</span></a></li><li><a href="/2026/08/09/APCL-Kudos-Research-Showcase/"><span>科研</span><strong>APCL 上线 Kudos Research Showcase</strong><span aria-hidden="true">→</span></a></li><li><a href="/2026/05/31/KDD2026-APCL/"><span>科研</span><strong>KDD2026-APCL</strong><span aria-hidden="true">→</span></a></li></ul></section>
+  
   <nav class="post-neighbors" aria-label="Adjacent posts">
     <div><span class="muted">上一篇</span><a href="/2025/06/07/%E6%88%91%E7%9A%84%E4%B8%96%E7%95%8C%E5%9C%B0%E9%93%81%E7%BA%BF%E8%B7%AF%E5%9B%BE/">我的世界地铁线路图</a></div>
     <div><span class="muted">下一篇</span><a href="/2025/05/30/ISCC2025WriteUp/">ISCC2025WriteUp</a></div>

@@ -13,6 +13,7 @@
 <meta property="og:site_name" content="William-Liwei&#39;s blog">
 <meta property="og:description" content="用 Streamlit 和 SQLite 构建高效数据库管理工具在数据驱动的开发中，数据库管理是一个不可或缺的环节。最近，我开发了一个基于 Python 的简单数据库管理工具，用于管理和展示石窟艺术数据。这个项目不仅帮助我巩固了对 Streamlit 和 SQLite 的理解，还让我体会到了快速开发工具的强大能力。 项目背景我们的目标是创建一个简单易用的工具，用于管理和展示石窟艺术数据。这些数据存">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.weili.space/assets/social/323585abb4e52e1774cd.png">
 <meta property="article:published_time" content="2025-02-18T15:19:26.000Z">
 <meta property="article:modified_time" content="2025-02-18T15:20:46.803Z">
 <meta property="article:author" content="Wei Li">
@@ -21,6 +22,8 @@
 <meta property="article:tag" content="SQLite">
 <meta property="article:tag" content="数据库管理">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.weili.space/assets/social/323585abb4e52e1774cd.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"如何开发基于 Streamlit 和 SQLite 的数据库管理工具","description":"在数据驱动的开发中，数据库管理是一个不可或缺的环节。最近，我开发了一个基于 Python 的简单数据库管理工具，用于管理和展示石窟艺术数据。这个项目不仅帮助我巩固了对 Streamlit 和 SQLite 的理解，还让我体会到了快速开发工具的强大能力。 我们的目标是创建一个简单易用的工具，用于...","url":"https://www.weili.space/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/","mainEntityOfPage":"https://www.weili.space/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/","image":"https://www.weili.space/assets/social/323585abb4e52e1774cd.png","datePublished":"2025-02-18T15:19:26.000Z","author":{"@type":"Person","name":"Wei Li","url":"https://www.weili.space/about/"}}</script>
   <link rel="canonical" href="https://www.weili.space/2025/02/18/如何开发基于-Streamlit-和-SQLite-的数据库管理工具/">
   <link rel="icon" href="/favicon.ico">
   <link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="/atom.xml">
@@ -30,21 +33,17 @@
   <link rel="stylesheet" href="/assets/journal.css">
   <script src="/assets/journal.js" defer></script>
   
-  <script>
-    window.MathJax = {tex: {inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true}, options: {skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']}};
-  </script>
-  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-  
 </head>
 
 <body class="journal">
   <a class="skip-link" href="#main">跳至正文</a>
-  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
+  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
   <main id="main" class="wrap journal-main"><article class="journal-post">
   <header class="post-heading">
     <a class="back-link" href="/blog/">← Blog</a>
     <h1>如何开发基于 Streamlit 和 SQLite 的数据库管理工具</h1>
     <div class="post-meta"><time datetime="2025-02-18T15:19:26.000Z">2025.02.18</time><span>Wei Li</span></div>
+    
     <div class="post-tags"><a class="tag" href="/tags/Python/">Python</a><a class="tag" href="/tags/Streamlit/">Streamlit</a><a class="tag" href="/tags/SQLite/">SQLite</a><a class="tag" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86/">数据库管理</a></div>
   </header>
   <div class="post-reading">
@@ -86,6 +85,9 @@
 </ul>
 </div>
   </div>
+  
+  <section class="related-posts" aria-labelledby="related-heading"><h2 id="related-heading">继续阅读</h2><ul><li><a href="/2025/07/17/AnyRouter/"><span>技术实践</span><strong>AnyRouter</strong><span aria-hidden="true">→</span></a></li><li><a href="/2025/06/07/%E6%88%91%E7%9A%84%E4%B8%96%E7%95%8C%E5%9C%B0%E9%93%81%E7%BA%BF%E8%B7%AF%E5%9B%BE/"><span>技术实践</span><strong>我的世界地铁线路图</strong><span aria-hidden="true">→</span></a></li><li><a href="/2025/05/30/ISCC2025WriteUp/"><span>技术实践</span><strong>ISCC2025WriteUp</strong><span aria-hidden="true">→</span></a></li></ul></section>
+  
   <nav class="post-neighbors" aria-label="Adjacent posts">
     <div><span class="muted">上一篇</span><a href="/2025/02/23/%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2DeepSeek%E7%9A%84%E4%B8%AA%E4%BA%BA%E7%BB%8F%E9%AA%8C/">本地部署DeepSeek的个人经验</a></div>
     <div><span class="muted">下一篇</span><a href="/2025/02/17/%E8%AF%BE%E7%A8%8B%E7%BF%BC%E9%80%89%E9%80%9A%EF%BC%9A%E5%9F%BA%E4%BA%8Eflask%E5%92%8Cplaywright%E7%9A%84%E4%BA%91%E4%B8%BB%E6%9C%BA%E9%83%A8%E7%BD%B2%E7%BD%91%E7%AB%99/">课程翼选通：基于flask和playwright的云主机部署网站</a></div>

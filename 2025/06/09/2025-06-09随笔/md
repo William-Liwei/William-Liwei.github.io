@@ -1,4 +1,5 @@
 ---
+summary: "梳理时间序列分析的基本问题、算法与研究进展，作为持续更新的学习笔记。"
 title: 重识时间序列：算法与前沿
 date: 2026-04-05 23:10:24
 tags: [时间序列,学术]
@@ -826,10 +827,3 @@ model = torch.compile(model)
   - [链接：https://github.com/thuml/Time-Series-Library](https://github.com/thuml/Time-Series-Library)
 - **GluonTS:** 亚马逊开发的基于 MXNet/PyTorch 的概率时序建模库，Chronos 等模型多源于此。
   - [链接：https://github.com/awslabs/gluonts](https://github.com/awslabs/gluonts)
-
-
-
-
-
-
-

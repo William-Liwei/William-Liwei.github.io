@@ -260,6 +260,12 @@ th[aria-sort="descending"] .sort-btn::after { content: "↓"; opacity: 1; color:
   font-size: 0.78rem; cursor: pointer; white-space: nowrap;
 }
 .row-btn:hover { border-color: var(--gold-bg); color: var(--gold); }
+.row-actions { display: flex; flex-wrap: wrap; gap: 6px; min-width: 72px; }
+.favorite-btn[aria-pressed="true"] { border-color: var(--gold-bg); background: var(--gold-soft); color: var(--gold); }
+.favorites-option { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; font-size: .8rem; color: var(--ink-soft); cursor: pointer; }
+.favorites-option input { width: 16px; height: 16px; accent-color: var(--gold-bg); }
+.favorites-option small { color: var(--muted); margin-left: auto; font-size: .72rem; }
+#favorites-count { font-variant-numeric: tabular-nums; color: var(--gold); }
 
 .empty, .loading { margin: 0; padding: 40px 16px; text-align: center; color: var(--muted); }
 .empty p { margin: 0 0 16px; }

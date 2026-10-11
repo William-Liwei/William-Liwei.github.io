@@ -13,14 +13,17 @@
 <meta property="og:site_name" content="William-Liwei&#39;s blog">
 <meta property="og:description" content="从一开始：更改Hexo网站域名本篇博客将详细介绍如何通过 Vercel 设置自定义域名，实现个性化且高效的网站托管。本文将逐步介绍  如何使用 Vercel 以及如何在 GitHub 上设置自定义域名。 常见的修改域名方式有如下两种，不过个人推荐采用Vercel。">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.weili.space/assets/social/e24fdcc22f9d6e762598.png">
 <meta property="article:published_time" content="2025-02-16T06:22:15.000Z">
-<meta property="article:modified_time" content="2026-10-11T02:34:12.032Z">
+<meta property="article:modified_time" content="2026-10-11T03:43:22.754Z">
 <meta property="article:author" content="Wei Li">
+<meta property="article:tag" content="GitHub">
 <meta property="article:tag" content="建站">
 <meta property="article:tag" content="教学">
 <meta property="article:tag" content="hexo">
-<meta property="article:tag" content="github">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.weili.space/assets/social/e24fdcc22f9d6e762598.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"hexo建站教学(2)","description":"继续整理 Hexo 博客的配置与建站实践。","url":"https://www.weili.space/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-2/","mainEntityOfPage":"https://www.weili.space/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-2/","image":"https://www.weili.space/assets/social/e24fdcc22f9d6e762598.png","datePublished":"2025-02-16T06:22:15.000Z","author":{"@type":"Person","name":"Wei Li","url":"https://www.weili.space/about/"}}</script>
   <link rel="canonical" href="https://www.weili.space/2025/02/16/hexo建站教学-2/">
   <link rel="icon" href="/favicon.ico">
   <link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="/atom.xml">
@@ -30,22 +33,18 @@
   <link rel="stylesheet" href="/assets/journal.css">
   <script src="/assets/journal.js" defer></script>
   
-  <script>
-    window.MathJax = {tex: {inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true}, options: {skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']}};
-  </script>
-  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-  
 </head>
 
 <body class="journal">
   <a class="skip-link" href="#main">跳至正文</a>
-  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
+  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
   <main id="main" class="wrap journal-main"><article class="journal-post">
   <header class="post-heading">
     <a class="back-link" href="/blog/">← Blog</a>
     <h1>hexo建站教学(2)</h1>
     <div class="post-meta"><time datetime="2025-02-16T06:22:15.000Z">2025.02.16</time><span>Wei Li</span></div>
-    <div class="post-tags"><a class="tag" href="/tags/%E5%BB%BA%E7%AB%99/">建站</a><a class="tag" href="/tags/%E6%95%99%E5%AD%A6/">教学</a><a class="tag" href="/tags/hexo/">hexo</a><a class="tag" href="/tags/github/">github</a></div>
+    
+    <div class="post-tags"><a class="tag" href="/tags/GitHub/">GitHub</a><a class="tag" href="/tags/%E5%BB%BA%E7%AB%99/">建站</a><a class="tag" href="/tags/%E6%95%99%E5%AD%A6/">教学</a><a class="tag" href="/tags/hexo/">hexo</a></div>
   </header>
   <div class="post-reading">
   
@@ -137,6 +136,9 @@
 </ol>
 </div>
   </div>
+  
+  <section class="related-posts" aria-labelledby="related-heading"><h2 id="related-heading">继续阅读</h2><ul><li><a href="/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-1/"><span>技术实践</span><strong>hexo建站教学(1)</strong><span aria-hidden="true">→</span></a></li><li><a href="/2025/02/17/%E8%AF%BE%E7%A8%8B%E7%BF%BC%E9%80%89%E9%80%9A%EF%BC%9A%E5%9F%BA%E4%BA%8Eflask%E5%92%8Cplaywright%E7%9A%84%E4%BA%91%E4%B8%BB%E6%9C%BA%E9%83%A8%E7%BD%B2%E7%BD%91%E7%AB%99/"><span>技术实践</span><strong>课程翼选通：基于flask和playwright的云主机部署网站</strong><span aria-hidden="true">→</span></a></li><li><a href="/2025/06/25/SWIFT/"><span>科研</span><strong>SWIFT</strong><span aria-hidden="true">→</span></a></li></ul></section>
+  
   <nav class="post-neighbors" aria-label="Adjacent posts">
     <div><span class="muted">上一篇</span><a href="/2025/02/17/%E8%AF%BE%E7%A8%8B%E7%BF%BC%E9%80%89%E9%80%9A%EF%BC%9A%E5%9F%BA%E4%BA%8Eflask%E5%92%8Cplaywright%E7%9A%84%E4%BA%91%E4%B8%BB%E6%9C%BA%E9%83%A8%E7%BD%B2%E7%BD%91%E7%AB%99/">课程翼选通：基于flask和playwright的云主机部署网站</a></div>
     <div><span class="muted">下一篇</span><a href="/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-1/">hexo建站教学(1)</a></div>

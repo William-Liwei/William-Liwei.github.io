@@ -51,12 +51,6 @@
   
   
   <url>
-    <loc>https://www.weili.space/2025/05/31/EnergyPatchTST/</loc>
-    <lastmod>2026-10-11</lastmod>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
     <loc>https://www.weili.space/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-2/</loc>
     <lastmod>2026-10-11</lastmod>
     <priority>0.6</priority>
@@ -64,6 +58,12 @@
   
   <url>
     <loc>https://www.weili.space/2025/02/16/hexo%E5%BB%BA%E7%AB%99%E6%95%99%E5%AD%A6-1/</loc>
+    <lastmod>2026-10-11</lastmod>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.weili.space/2025/05/31/EnergyPatchTST/</loc>
     <lastmod>2026-10-11</lastmod>
     <priority>0.6</priority>
   </url>
@@ -87,13 +87,13 @@
   </url>
   
   <url>
-    <loc>https://www.weili.space/2026/10/07/CS%E4%BF%9D%E7%A0%94%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/</loc>
+    <loc>https://www.weili.space/2026/08/26/%E5%9C%A8AI%E6%97%B6%E4%BB%A3%E6%89%BE%E5%88%B0%E8%87%AA%E5%B7%B1%E7%9A%84vibe/</loc>
     <lastmod>2026-10-11</lastmod>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>https://www.weili.space/2026/08/26/%E5%9C%A8AI%E6%97%B6%E4%BB%A3%E6%89%BE%E5%88%B0%E8%87%AA%E5%B7%B1%E7%9A%84vibe/</loc>
+    <loc>https://www.weili.space/2026/10/07/CS%E4%BF%9D%E7%A0%94%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/</loc>
     <lastmod>2026-10-11</lastmod>
     <priority>0.6</priority>
   </url>

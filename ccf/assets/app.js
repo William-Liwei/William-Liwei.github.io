@@ -1,6 +1,11 @@
 import {
   conferenceKeys, esc, formatCountdown, formatInZone, parseTimezone, pickDeadline, processConferences, safeUrl, wallTimeToUtc
 } from './lib.js';
+import {favoriteKey, readStored, writeStored, favoriteSet, FAVORITES_KEY, PREFERENCES_KEY} from './preferences.js';
+
+let storage;
+try { storage = localStorage; } catch {}
+let favorites = favoriteSet(readStored(storage, FAVORITES_KEY, []));
 
 const PAGE_SIZE = 50;
 const CONF_CACHE_KEY = 'ccfonline-conferences-v3';
@@ -215,7 +220,10 @@ function partitionLines(j, m) {
   return lines;
 }
 
-const copyBtn = (i) => `<button type="button" class="row-btn" data-copy="${i}">复制</button>`;
+const copyBtn = (i) => {
+  const saved = favorites.has(favoriteKey(state.view[i], state.tab));
+  return `<div class="row-actions"><button type="button" class="row-btn favorite-btn" data-favorite="${i}" aria-pressed="${saved}" aria-label="${saved ? '取消收藏' : '收藏此条记录'}"><span aria-hidden="true">${saved ? '★' : '☆'}</span> ${saved ? '已收藏' : '收藏'}</button><button type="button" class="row-btn" data-copy="${i}">复制</button></div>`;
+};
 
 const TABS = {
   conf: {
@@ -383,7 +391,7 @@ function unique(rows, key) {
 
 // ---------- State & URL ----------
 
-const state = { tab: 'conf', q: '', filters: {}, sort: {}, page: 1, view: [] };
+const state = { tab: 'conf', q: '', filters: {}, sort: {}, page: 1, view: [], savedOnly: false };
 
 function defaultFilters(tab) {
   return Object.fromEntries(TABS[tab].filters.map((f) => [f.key, f.def ?? 'all']));
@@ -391,22 +399,37 @@ function defaultFilters(tab) {
 
 function readUrl() {
   const p = new URLSearchParams(location.search);
+  const known = ['tab','q','p','sort','dir','saved', ...Object.values(TABS).flatMap((tab) => tab.filters.map((f) => f.key))];
+  const explicit = known.some((key) => p.has(key));
+  const stored = explicit ? {} : readStored(storage, PREFERENCES_KEY, {});
   state.tab = TABS[p.get('tab')] ? p.get('tab') : 'conf';
+  if (!explicit && TABS[stored?.tab]) state.tab = stored.tab;
   state.q = p.get('q') || '';
-  state.page = Math.max(1, Number(p.get('p')) || 1);
+  state.page = Math.max(1, Math.floor(Number(p.get('p')) || 1));
+  state.savedOnly = explicit ? p.get('saved') === '1' : stored?.savedOnly === true;
   for (const tab of Object.keys(TABS)) {
     state.filters[tab] = defaultFilters(tab);
     state.sort[tab] = TABS[tab].defaultSort;
+    if (!explicit) {
+      for (const f of TABS[tab].filters) {
+        const value = stored?.filters?.[tab]?.[f.key];
+        if (typeof value === 'string' && (f.type !== 'check' || ['0','1'].includes(value))) state.filters[tab][f.key] = value;
+      }
+      const sort = stored?.sort?.[tab];
+      if (TABS[tab].columns.some((c) => c.sort && c.sort === sort?.key)) state.sort[tab] = {key:sort.key,dir:sort.dir === 'desc' ? 'desc' : 'asc'};
+    }
   }
   const filters = state.filters[state.tab];
-  for (const key of Object.keys(filters)) if (p.has(key)) filters[key] = p.get(key);
+  for (const f of TABS[state.tab].filters) if (p.has(f.key) && (f.type !== 'check' || ['0','1'].includes(p.get(f.key)))) filters[f.key] = p.get(f.key);
   const sortKey = p.get('sort');
   if (TABS[state.tab].columns.some((c) => c.sort === sortKey)) state.sort[state.tab] = { key: sortKey, dir: p.get('dir') === 'desc' ? 'desc' : 'asc' };
 }
 
 function writeUrl() {
   const p = new URLSearchParams();
-  if (state.tab !== 'conf') p.set('tab', state.tab);
+  // Even the default tab is explicit so shared links override local preferences.
+  p.set('tab', state.tab);
+  if (state.savedOnly) p.set('saved', '1');
   if (state.q) p.set('q', state.q);
   const defaults = defaultFilters(state.tab);
   for (const [key, value] of Object.entries(state.filters[state.tab])) if (value !== defaults[key]) p.set(key, value);
@@ -419,6 +442,7 @@ function writeUrl() {
   if (state.page > 1) p.set('p', state.page);
   const qs = p.toString();
   history.replaceState(null, '', `${location.pathname}${qs ? `?${qs}` : ''}`);
+  writeStored(storage, PREFERENCES_KEY, {tab:state.tab,filters:state.filters,sort:state.sort,savedOnly:state.savedOnly});
 }
 
 // ---------- Rendering ----------
@@ -516,7 +540,7 @@ function computeView() {
   const rows = data[state.tab] || [];
   const f = state.filters[state.tab];
   const terms = state.q.toLowerCase().split(/\s+/).filter(Boolean);
-  const view = rows.filter((r) => terms.every((t) => r._s.includes(t)) && tab.match(r, f));
+  const view = rows.filter((r) => (!state.savedOnly || favorites.has(favoriteKey(r,state.tab))) && terms.every((t) => r._s.includes(t)) && tab.match(r, f));
   const cmp = compareRows(state.tab, state.sort[state.tab]);
   return cmp ? view.sort(cmp) : view;
 }
@@ -543,6 +567,9 @@ function render() {
   }).join('')}</tr>`).join('');
 
   $('#empty').hidden = state.view.length > 0;
+  $('#empty p').textContent = state.savedOnly ? '当前条件下没有收藏，试试取消“只看收藏”或调整筛选。' : '没有符合条件的结果，试试减少筛选条件。';
+  $('#favorites-only').checked = state.savedOnly;
+  $('#favorites-count').textContent = new Set(data[state.tab].filter((r) => favorites.has(favoriteKey(r,state.tab))).map((r) => favoriteKey(r,state.tab))).size;
   $('#loading').hidden = true;
   $('#result-count').textContent = `共 ${state.view.length} 条${pages > 1 ? `，第 ${state.page} / ${pages} 页` : ''}`;
   $('#data-note').textContent = tab.note();
@@ -706,6 +733,16 @@ function bindEvents() {
     state.page = 1;
     render();
   });
+  $('#favorites-only').addEventListener('change', (e) => {
+    state.savedOnly = e.target.checked;
+    state.page = 1;
+    render();
+  });
+  window.addEventListener('storage', (e) => {
+    if (e.key !== FAVORITES_KEY && e.key !== null) return;
+    favorites = favoriteSet(readStored(storage,FAVORITES_KEY,[]));
+    render();
+  });
 
   $('#active-filters').addEventListener('click', (e) => {
     const button = e.target.closest('[data-remove]');
@@ -739,6 +776,20 @@ function bindEvents() {
   });
 
   $('#tbody').addEventListener('click', async (e) => {
+    const favorite = e.target.closest('[data-favorite]');
+    if (favorite) {
+      const index = Number(favorite.dataset.favorite), row = state.view[index];
+      if (!row) return;
+      const key = favoriteKey(row,state.tab), saved = !favorites.has(key);
+      if (saved) favorites.add(key); else favorites.delete(key);
+      const persisted = writeStored(storage,FAVORITES_KEY,[...favorites]);
+      const position = index - (state.page-1)*PAGE_SIZE;
+      render();
+      const buttons = [...document.querySelectorAll('[data-favorite]')];
+      (buttons[Math.min(position,buttons.length-1)] || $('#favorites-only')).focus({preventScroll:true});
+      toast(persisted ? (saved ? '已收藏，下次访问仍会保留' : '已取消收藏') : '已更新本次收藏，浏览器未允许保存');
+      return;
+    }
     const btn = e.target.closest('[data-copy]');
     if (!btn) return;
     const row = state.view[Number(btn.dataset.copy)];
@@ -761,6 +812,7 @@ function bindEvents() {
 
   $('#reset-btn').addEventListener('click', () => {
     state.q = '';
+    state.savedOnly = false;
     state.filters[state.tab] = defaultFilters(state.tab);
     state.sort[state.tab] = TABS[state.tab].defaultSort;
     state.page = 1;

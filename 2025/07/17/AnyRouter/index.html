@@ -13,11 +13,14 @@
 <meta property="og:site_name" content="William-Liwei&#39;s blog">
 <meta property="og:description" content="免费用 Claude Code ？最近各大技术群里都在传一个「不花钱也能用 Claude Code」的骚操作，核心其实就是 AnyRouter 这个中转平台。下面把完整流程拆给你，照着做就能免费薅 API 额度。">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.weili.space/assets/social/f2720a0b61d63ef951b1.png">
 <meta property="article:published_time" content="2025-07-17T08:36:07.000Z">
 <meta property="article:modified_time" content="2025-07-17T08:50:32.361Z">
 <meta property="article:author" content="Wei Li">
 <meta property="article:tag" content="Claude">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.weili.space/assets/social/f2720a0b61d63ef951b1.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"AnyRouter","description":"最近各大技术群里都在传一个「不花钱也能用 Claude Code」的骚操作，核心其实就是 AnyRouter 这个中转平台。下面把完整流程拆给你，照着做就能免费薅 API 额度。","url":"https://www.weili.space/2025/07/17/AnyRouter/","mainEntityOfPage":"https://www.weili.space/2025/07/17/AnyRouter/","image":"https://www.weili.space/assets/social/f2720a0b61d63ef951b1.png","datePublished":"2025-07-17T08:36:07.000Z","author":{"@type":"Person","name":"Wei Li","url":"https://www.weili.space/about/"}}</script>
   <link rel="canonical" href="https://www.weili.space/2025/07/17/AnyRouter/">
   <link rel="icon" href="/favicon.ico">
   <link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="/atom.xml">
@@ -27,26 +30,22 @@
   <link rel="stylesheet" href="/assets/journal.css">
   <script src="/assets/journal.js" defer></script>
   
-  <script>
-    window.MathJax = {tex: {inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true}, options: {skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']}};
-  </script>
-  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-  
 </head>
 
 <body class="journal">
   <a class="skip-link" href="#main">跳至正文</a>
-  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
+  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
   <main id="main" class="wrap journal-main"><article class="journal-post">
   <header class="post-heading">
     <a class="back-link" href="/blog/">← Blog</a>
     <h1>AnyRouter</h1>
     <div class="post-meta"><time datetime="2025-07-17T08:36:07.000Z">2025.07.17</time><span>Wei Li</span></div>
+    
     <div class="post-tags"><a class="tag" href="/tags/Claude/">Claude</a></div>
   </header>
   <div class="post-reading">
   
-  <details class="post-toc"><summary>文章目录</summary><nav aria-label="Table of contents"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%8D%E8%B4%B9%E7%94%A8-Claude-Code-%EF%BC%9F"><span class="toc-text">免费用 Claude Code ？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%88%E4%B8%8A%E8%BD%A6%EF%BC%9A%E6%B3%A8%E5%86%8C-AnyRouter"><span class="toc-text">先上车：注册 AnyRouter</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A2%86key%EF%BC%9A%E7%94%9F%E6%88%90-API-Token"><span class="toc-text">领key：生成 API Token</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A3%85-Claude-Code"><span class="toc-text">装 Claude Code</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%85%8D%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%EF%BC%88%E4%BA%8C%E9%80%89%E4%B8%80%EF%BC%89"><span class="toc-text">配环境变量（二选一）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%80%E5%B9%B2"><span class="toc-text">开干</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A2%9D%E5%BA%A6-%E6%A8%A1%E5%9E%8B%E5%B0%8F%E8%B4%B4%E5%A3%AB"><span class="toc-text">额度 &amp; 模型小贴士</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%81%BF%E5%9D%91%E6%8C%87%E5%8D%97"><span class="toc-text">避坑指南</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%99%E5%9C%A8%E6%9C%80%E5%90%8E"><span class="toc-text">写在最后</span></a></li></ol></li></ol></li></ol></nav></details>
+  <details class="post-toc"><summary>文章目录</summary><nav aria-label="Table of contents"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%8D%E8%B4%B9%E7%94%A8-Claude-Code-%EF%BC%9F"><span class="toc-text">免费用 Claude Code ？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%88%E4%B8%8A%E8%BD%A6%EF%BC%9A%E6%B3%A8%E5%86%8C-AnyRouter"><span class="toc-text">先上车：注册 AnyRouter</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A2%86key%EF%BC%9A%E7%94%9F%E6%88%90-API-Token"><span class="toc-text">领key：生成 API Token</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A3%85-Claude-Code"><span class="toc-text">装 Claude Code</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%85%8D%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%EF%BC%88%E4%BA%8C%E9%80%89%E4%B8%80%EF%BC%89"><span class="toc-text">配环境变量（二选一）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%80%E5%B9%B2"><span class="toc-text">开干</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A2%9D%E5%BA%A6-%E6%A8%A1%E5%9E%8B%E5%B0%8F%E8%B4%B4%E5%A3%AB"><span class="toc-text">额度 &amp; 模型小贴士</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%81%BF%E5%9D%91%E6%8C%87%E5%8D%97"><span class="toc-text">避坑指南</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%99%E5%9C%A8%E6%9C%80%E5%90%8E"><span class="toc-text">写在最后</span></a></li></ol></li></ol></nav></details>
   <div class="post-body"><h1 id="免费用-Claude-Code-？"><a href="#免费用-Claude-Code-？" class="headerlink" title="免费用 Claude Code ？"></a>免费用 Claude Code ？</h1><p>最近各大技术群里都在传一个「不花钱也能用 Claude Code」的骚操作，核心其实就是 AnyRouter 这个中转平台。下面把完整流程拆给你，照着做就能免费薅 API 额度。</p>
 <span id="more"></span>
 
@@ -102,6 +101,9 @@
 <h3 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h3><p>这套方法目前还能白嫖，但指不定哪天就收费。趁着免费，赶紧爽一波，记得别把公司核心项目往里扔就行。另外，最近网站据说遭到了攻击，目前似乎瘫痪了，不知道什么时候能修好。</p>
 </div>
   </div>
+  
+  <section class="related-posts" aria-labelledby="related-heading"><h2 id="related-heading">继续阅读</h2><ul><li><a href="/2025/06/07/%E6%88%91%E7%9A%84%E4%B8%96%E7%95%8C%E5%9C%B0%E9%93%81%E7%BA%BF%E8%B7%AF%E5%9B%BE/"><span>技术实践</span><strong>我的世界地铁线路图</strong><span aria-hidden="true">→</span></a></li><li><a href="/2025/05/30/ISCC2025WriteUp/"><span>技术实践</span><strong>ISCC2025WriteUp</strong><span aria-hidden="true">→</span></a></li><li><a href="/2025/04/14/%E4%B8%8A%E6%B5%B7%E5%A4%A7%E5%AD%A6%E6%95%B0%E5%AD%97%E9%80%BB%E8%BE%91%E5%AE%9E%E9%AA%8C%E6%8A%A5%E5%91%8A/"><span>技术实践</span><strong>上海大学数字逻辑实验报告</strong><span aria-hidden="true">→</span></a></li></ul></section>
+  
   <nav class="post-neighbors" aria-label="Adjacent posts">
     <div><span class="muted">上一篇</span><a href="/2025/07/30/CCFOnline/">CCFOnline</a></div>
     <div><span class="muted">下一篇</span><a href="/2025/06/25/SWIFT/">SWIFT</a></div>

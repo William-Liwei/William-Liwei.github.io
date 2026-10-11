@@ -13,6 +13,7 @@
 <meta property="og:site_name" content="William-Liwei&#39;s blog">
 <meta property="og:description" content="APCL 上线 Kudos Research Showcase我的 KDD 2026 论文 Adaptive Prototypical Contrastive Learning for Time Series Clustering 目前已经上线 Kudos Research Showcase。这篇推文整理了论文的基本信息、面向大众读者的解释，以及我对这项工作的简要理解。  Paper: Adapt">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.weili.space/assets/social/4585816f79910b53d082.png">
 <meta property="article:published_time" content="2026-08-09T09:39:38.000Z">
 <meta property="article:modified_time" content="2026-10-11T02:34:12.019Z">
 <meta property="article:author" content="Wei Li">
@@ -22,6 +23,8 @@
 <meta property="article:tag" content="KDD">
 <meta property="article:tag" content="APCL">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.weili.space/assets/social/4585816f79910b53d082.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"APCL 上线 Kudos Research Showcase","description":"整理 APCL 在 Kudos Research Showcase 的展示信息，以及面向非专业读者的研究介绍。","url":"https://www.weili.space/2026/08/09/APCL-Kudos-Research-Showcase/","mainEntityOfPage":"https://www.weili.space/2026/08/09/APCL-Kudos-Research-Showcase/","image":"https://www.weili.space/assets/social/4585816f79910b53d082.png","datePublished":"2026-08-09T09:39:38.000Z","author":{"@type":"Person","name":"Wei Li","url":"https://www.weili.space/about/"}}</script>
   <link rel="canonical" href="https://www.weili.space/2026/08/09/APCL-Kudos-Research-Showcase/">
   <link rel="icon" href="/favicon.ico">
   <link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="/atom.xml">
@@ -31,21 +34,17 @@
   <link rel="stylesheet" href="/assets/journal.css">
   <script src="/assets/journal.js" defer></script>
   
-  <script>
-    window.MathJax = {tex: {inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true}, options: {skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']}};
-  </script>
-  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-  
 </head>
 
 <body class="journal">
   <a class="skip-link" href="#main">跳至正文</a>
-  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
+  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
   <main id="main" class="wrap journal-main"><article class="journal-post">
   <header class="post-heading">
     <a class="back-link" href="/blog/">← Blog</a>
     <h1>APCL 上线 Kudos Research Showcase</h1>
     <div class="post-meta"><time datetime="2026-08-09T09:39:38.000Z">2026.08.09</time><span>Wei Li</span></div>
+    
     <div class="post-tags"><a class="tag" href="/tags/%E5%AD%A6%E6%9C%AF/">学术</a><a class="tag" href="/tags/%E8%AE%BA%E6%96%87/">论文</a><a class="tag" href="/tags/Time-Series/">Time Series</a><a class="tag" href="/tags/KDD/">KDD</a><a class="tag" href="/tags/APCL/">APCL</a></div>
   </header>
   <div class="post-reading">
@@ -84,6 +83,9 @@
 <p>For more details, please visit the <a target="_blank" rel="noopener" href="https://link.growkudos.com/1f16medmg3k">Kudos Research Showcase</a> or the <a target="_blank" rel="noopener" href="https://dl.acm.org/doi/10.1145/3770855.3817773">ACM Digital Library</a>.</p>
 </div>
   </div>
+  
+  <section class="related-posts" aria-labelledby="related-heading"><h2 id="related-heading">继续阅读</h2><ul><li><a href="/2026/05/31/KDD2026-APCL/"><span>科研</span><strong>KDD2026-APCL</strong><span aria-hidden="true">→</span></a></li><li><a href="/2026/02/04/DASFAA2026Accepted/"><span>科研</span><strong>DASFAA2026Accepted</strong><span aria-hidden="true">→</span></a></li><li><a href="/2026/01/24/ICASSP2026Accepted/"><span>科研</span><strong>ICASSP2026Accepted</strong><span aria-hidden="true">→</span></a></li></ul></section>
+  
   <nav class="post-neighbors" aria-label="Adjacent posts">
     <div><span class="muted">上一篇</span><a href="/2026/08/26/%E5%9C%A8AI%E6%97%B6%E4%BB%A3%E6%89%BE%E5%88%B0%E8%87%AA%E5%B7%B1%E7%9A%84vibe/">在AI时代找到自己的vibe</a></div>
     <div><span class="muted">下一篇</span><a href="/2026/05/31/KDD2026-APCL/">KDD2026-APCL</a></div>
