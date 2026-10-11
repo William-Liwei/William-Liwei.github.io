@@ -441,7 +441,7 @@ function writeUrl() {
   }
   if (state.page > 1) p.set('p', state.page);
   const qs = p.toString();
-  history.replaceState(null, '', `${location.pathname}${qs ? `?${qs}` : ''}`);
+  history.replaceState(null, '', `${location.pathname}${qs ? `?${qs}` : ''}${location.hash}`);
   writeStored(storage, PREFERENCES_KEY, {tab:state.tab,filters:state.filters,sort:state.sort,savedOnly:state.savedOnly});
 }
 
@@ -835,6 +835,17 @@ function bindEvents() {
   });
 
   $('#refresh-btn').addEventListener('click', () => refreshConferences());
+
+  $('#copy-group-number')?.addEventListener('click', async (e) => {
+    const button = e.currentTarget;
+    try {
+      await copyText(button.dataset.groupNumber);
+      toast('群号 1129726599 已复制');
+    } catch {
+      toast('复制失败，请手动复制群号 1129726599');
+    }
+    button.focus({ preventScroll: true });
+  });
 
   // Keep countdowns current.
   setInterval(() => {

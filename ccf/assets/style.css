@@ -116,6 +116,9 @@ a, button, input, select { -webkit-tap-highlight-color: transparent; transition:
 .byline { margin: 0; color: var(--muted); font-size: .78rem; }
 .byline a { color: inherit; text-decoration: none; }
 .byline a:hover { color: var(--gold); }
+.community-entry { display: inline-block; margin-top: 14px; padding-block: 5px; font-size: .8rem; line-height: 1.8; text-decoration: none; }
+.community-entry > span:first-child { color: var(--muted); }
+.community-entry:hover { text-decoration: underline; text-underline-offset: 4px; }
 
 /* ---------- Tabs ---------- */
 
@@ -278,6 +281,27 @@ th[aria-sort="descending"] .sort-btn::after { content: "↓"; opacity: 1; color:
 .pagination button[aria-current="page"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .pagination button:disabled { opacity: 0.4; cursor: default; }
 .pagination .gap { padding: 5px 2px; color: var(--muted); }
+
+/* ---------- Community ---------- */
+
+.community { display: grid; grid-template-columns: minmax(0,1fr) 200px; align-items: center; gap: 40px; margin: 32px 0; padding: 30px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); scroll-margin-top: 80px; }
+.community-copy { min-width: 0; }
+.community-kicker { margin: 0 0 8px; color: var(--gold); font-size: .75rem; }
+.community h2 { margin: 0 0 10px; font-size: clamp(1.15rem, 2.5vw, 1.4rem); line-height: 1.5; }
+.community-description { margin: 0; color: var(--ink-soft); font-size: .9rem; }
+.community-number { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; margin: 20px 0 14px; color: var(--muted); font-size: .82rem; }
+.community-number strong { color: var(--ink); font-family: var(--mono); font-size: 1.25rem; font-weight: 600; letter-spacing: .025em; user-select: all; }
+.community-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.community-actions .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; text-decoration: none; }
+.community-notice { max-width: 68ch; margin: 18px 0 0; color: var(--muted); font-size: .78rem; line-height: 1.85; }
+.community-qr { margin: 0; text-align: center; }
+.community-qr a { display: block; width: fit-content; margin-inline: auto; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; }
+.community-qr img { display: block; width: 184px; max-width: 100%; height: auto; background: #fff; }
+.community-qr figcaption { margin-top: 10px; color: var(--muted); font-size: .72rem; line-height: 1.7; }
+@media (max-width: 600px) {
+  .community { grid-template-columns: minmax(0,1fr); gap: 24px; padding: 22px 18px; }
+  .community-entry > span:first-child { display: inline; }
+}
 
 /* ---------- Time zone tool ---------- */
 
