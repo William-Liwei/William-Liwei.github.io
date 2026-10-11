@@ -176,6 +176,31 @@ section { padding: 3.7rem 0 0; scroll-margin-top: 82px; }
 .copy-bib { margin-top: 12px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; color: var(--ink); background: var(--surface); cursor: pointer; }
 .copy-status { display: block; font-size: .8rem; color: var(--muted); }
 .research-bio { color: var(--ink-soft); }
+.section-title { letter-spacing: -.025em; }
+.card { border-radius: 16px; transition: border-color 200ms ease, box-shadow 200ms ease; }
+.card:focus-within { border-color: var(--gold-line); }
+.pub-item { transition: border-color 180ms ease; }
+.pub-title a { text-decoration-color: transparent; text-underline-offset: 5px; }
+.pub-title a:is(:hover,:focus-visible) { text-decoration: underline; text-decoration-thickness: 1px; }
+#service .grid-2 { align-items: start; }
+.service-card { background: var(--surface); box-shadow: none; padding: 1.4rem 1.5rem; }
+.service-card h3 { font-size: 1rem; letter-spacing: -.015em; padding-bottom: .4rem; }
+.service-card .plain-list li { padding-block: .8rem; gap: .2rem; }
+.service-card .plain-list strong { font-size: .9rem; line-height: 1.6; }
+.service-card .plain-list span { font-size: .8rem; }
+.service-more { margin-top: 8px; border-top: 1px solid var(--line); }
+.service-more summary { display: flex; align-items: center; justify-content: space-between; padding: 13px 0 0; color: var(--gold); cursor: pointer; font-size: .82rem; font-weight: 600; list-style: none; }
+.service-more summary::-webkit-details-marker { display: none; }
+.service-more .label-less { display: none; }
+.service-more[open] .label-more { display: none; }
+.service-more[open] .label-less { display: inline; }
+.service-more .more-count { margin-left: 6px; color: var(--muted); font-weight: 400; }
+.more-chevron { transition: transform 180ms ease; }
+.service-more[open] .more-chevron { transform: rotate(180deg); }
+.service-more .plain-list { margin-top: .3rem; }
+@media (hover: hover) and (pointer: fine) {
+  .card:hover { border-color: var(--gold-line); box-shadow: 0 8px 24px rgba(0,0,0,.055); }
+}
 @media (max-width:720px) {
   .profile { padding-top: 2rem; }
   .profile h1 { line-height: 1.15; }
@@ -188,4 +213,6 @@ section { padding: 3.7rem 0 0; scroll-margin-top: 82px; }
   html { color-scheme: light; }
   .section-menu, .copy-bib { display: none; }
   body { color: #222; }
+  .service-more > .plain-list { display: block !important; }
+  .service-more summary { display: none; }
 }

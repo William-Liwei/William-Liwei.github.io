@@ -3,12 +3,12 @@
 .gateway-theme { position: absolute; top: 24px; right: 24px; }
 .gateway h1 { margin: 0 0 26px; font: 600 clamp(4.5rem, 15vw, 6.5rem)/1 var(--header-font); letter-spacing: -.045em; color: var(--ink); }
 .gateway h1 > span { color: var(--gold); }
-.gateway-keywords { margin-bottom: 30px; }
+.gateway-keywords { margin-bottom: 32px; padding-left: 16px; border-left: 1px solid var(--gold-line); }
 .gateway-keywords p { margin: 0 0 14px; line-height: 1.5; font-size: .87rem; }
 .gateway-keywords span { display: block; color: var(--ink-soft); }
 .gateway-keywords small { display: block; margin-top: 3px; font-size: .78rem; color: var(--muted); }
 .gateway-links { display: grid; border-top: 1px solid var(--line); }
-.gateway-links a { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 10px; margin: 0 -10px; border-bottom: 1px solid var(--line); font-size: 1.05rem; transition: background-color 180ms ease, color 180ms ease; }
+.gateway-links a { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 22px 10px; margin: 0 -10px; border-bottom: 1px solid var(--line); font-size: 1.05rem; transition: background-color 180ms ease, color 180ms ease; }
 .gateway-links .gateway-primary { font-weight: 650; }
 .gateway-links a > span:last-child { color: var(--gold); transition: transform 180ms ease; }
 .gateway-links a:is(:hover,:focus-visible) { background: var(--surface); }

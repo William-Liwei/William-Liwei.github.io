@@ -250,6 +250,7 @@ window.ABOUT_DATA = {
       icon: "review",
       title: "Academic Service",
       items: [
+        { event: "IEEE International Conference on Acoustics, Speech, and Signal Processing (ICASSP 2027)", role: "Reviewer (Invited)" },
         { event: "Frontiers in Physics (Interdisciplinary Physics)", role: "Reviewer" },
         { event: "Conference on Neural Information Processing Systems (NeurIPS 2026)", role: "Ethics Reviewer (Invited)" },
         { event: "AAAI Conference on Artificial Intelligence (AAAI 2027)", role: "Program Committee Member / Reviewer (Invited)" },
@@ -285,7 +286,7 @@ window.ABOUT_DATA = {
   ],
   projects: [
     { title: "'CCF-Online' Academic Conference Portal", desc: "Independently developed and deployed an online portal that scrapes and integrates data from multiple sources to provide researchers with efficient access to academic conference information.", tags: ["Independent Project", "Scrapy", "JavaScript"], links: [{ type: "live_demo", url: "https://www.weili.space/ccf/" }] },
-    { title: "SHU Prophet: An Intelligent Time-Series Forecasting & Decision Platform", desc: "Engineered 'SHU Prophet,' a full-stack intelligent platform for advanced time-series analysis. This project integrates a suite of self-developed models with an interactive AI Agent (LangChain & LLM) to automate data analysis, generate insightful reports, and bridge the gap between complex algorithms and intuitive decision-making.", tags: ["Time Series Forecasting", "Full-Stack", "AI Agent", "LangChain", "Vue.js", "Python", "Flask", "ECharts"], links: [{ type: "github", url: "https://github.com/William-Liwei/shuprophet" }, { type: "live_demo", url: "https://shuprophet.weili.space" }] },
+    { title: "SHU Prophet: An Intelligent Time-Series Forecasting & Decision Platform", desc: "Engineered 'SHU Prophet,' a full-stack intelligent platform for advanced time-series analysis. This project integrates a suite of self-developed models with an interactive AI Agent (LangChain & LLM) to automate data analysis, generate insightful reports, and bridge the gap between complex algorithms and intuitive decision-making.", tags: ["Time Series Forecasting", "Full-Stack", "AI Agent", "LangChain", "Vue.js", "Python", "Flask", "ECharts"], links: [{ type: "github", url: "https://github.com/William-Liwei/shuprophet" }] },
     { title: "Cloud-based Automated Course Selection System", desc: "Led the development of a cloud-hosted system that automates the course selection process, featuring an LLM-based sentiment analysis module for course reviews. Award-winning project.", tags: ["Project Lead", "Flask", "Playwright", "Cloud Computing"], links: [] },
     { title: "Cultural Heritage Database System", desc: "Developed a digital management platform for the University's Key Laboratory of Silicate Cultural Heritage, supporting multi-source data entry, retrieval, and visualization.", tags: ["Database Design", "MySQL", "Data Visualization"], links: [] },
     { title: "Smart Parking IoT Platform", desc: "Designed and built a full-stack IoT parking solution, enabling real-time parking availability queries, reservations, and payments. Awarded Gold Medal at a university innovation competition.", tags: ["IoT", "Full-Stack", "Python", "Flask"], links: [] },
