@@ -78,7 +78,19 @@
       <div class="active-filters" id="active-filters" role="group" aria-label="已调整的筛选条件" hidden></div>
 
       <div class="result-tools">
-        <label class="favorites-option"><input type="checkbox" id="favorites-only">只看收藏 <span id="favorites-count">0</span><small>保存在此浏览器</small></label>
+        <div class="favorites-tools">
+          <label class="favorites-option"><input type="checkbox" id="favorites-only">只看收藏 <span id="favorites-count">0</span><small>保存在此浏览器</small></label>
+          <details class="favorites-backup" id="favorites-backup">
+            <summary>收藏备份</summary>
+            <p>导出全部收藏，换浏览器或设备时可导入恢复。导入会合并已有收藏，不会覆盖；文件仅在本地读取。</p>
+            <div class="favorites-backup-actions">
+              <button type="button" class="row-btn" id="export-favorites">导出收藏</button>
+              <button type="button" class="row-btn" id="import-favorites">导入收藏</button>
+              <input type="file" id="favorites-file" accept=".json,application/json" aria-label="选择收藏备份文件" hidden>
+            </div>
+            <p id="favorites-backup-status" role="status" hidden></p>
+          </details>
+        </div>
         <div class="data-status">
           <p id="result-count" aria-live="polite"></p>
           <p id="data-note"></p>

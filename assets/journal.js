@@ -3,44 +3,112 @@
   function element(tag,cls,value) { var el=document.createElement(tag); if(cls) el.className=cls; if(value) el.textContent=value; return el; }
   if(list && tools) {
     var input=document.getElementById('blog-search'), status=document.querySelector('.search-status');
-    var pagination=document.querySelector('.journal-pagination'), original=list.innerHTML, topic='全部', posts=[];
-    var controller=new AbortController(), timeout=setTimeout(function(){controller.abort();},8000);
-    fetch('/blog/search.json',{signal:controller.signal}).then(function(r){if(!r.ok) throw Error(r.status); return r.json();}).then(function(data) {
-      posts=data; tools.hidden=false;
+    var feedback=document.querySelector('.search-feedback'), retry=document.getElementById('retry-search');
+    var pagination=document.querySelector('.journal-pagination'), featured=document.querySelector('.featured-posts');
+    var original=list.innerHTML, showingOriginal=true, topic='全部', posts=[], state='loading', searchTimer;
+    var filters=Array.from(tools.querySelectorAll('[data-topic]'));
+    var topics=filters.map(function(btn){return btn.dataset.topic;});
+    tools.hidden=false;
+    function readLocation() {
       var params=new URLSearchParams(location.search);
       input.value=params.get('q')||'';
-      if(['科研','技术实践','经验分享','随笔'].includes(params.get('topic'))) topic=params.get('topic');
-      function render() {
-        var query=input.value.trim().toLocaleLowerCase();
-        var featured=document.querySelector('.featured-posts');
-        if(featured) featured.hidden=Boolean(query || topic!=='全部');
-        document.querySelectorAll('[data-topic]').forEach(function(btn){btn.setAttribute('aria-pressed',String(btn.dataset.topic===topic));});
-        var url=new URL(location.href);
-        if(query) url.searchParams.set('q',input.value.trim()); else url.searchParams.delete('q');
-        if(topic!=='全部') url.searchParams.set('topic',topic); else url.searchParams.delete('topic');
-        history.replaceState(null,'',url);
-        if(!query && topic==='全部') { list.innerHTML=original; status.hidden=true; if(pagination) pagination.hidden=false; return; }
-        if(pagination) pagination.hidden=true;
-        var matches=posts.filter(function(p){return (topic==='全部'||p.topic===topic) && (!query || (p.title+' '+p.summary+' '+p.tags.map(function(t){return t.name;}).join(' ')).toLocaleLowerCase().includes(query));});
-        list.replaceChildren();
-        status.hidden=false; status.textContent=matches.length?'找到 '+matches.length+' 篇文章':'没有匹配的文章，试试其他关键词或清除筛选。';
-        matches.forEach(function(p) {
-          var article=element('article','journal-item'), meta=element('div','post-meta'), time=element('time','',p.date);
-          time.dateTime=p.date.replaceAll('.','-'); meta.append(time,element('span','',p.topic));
-          if(p.pinned) meta.append(element('span','tag tag-strong','置顶'));
-          var h=element('h2'), a=element('a','',p.title); a.href=p.path; h.append(a); article.append(meta,h);
-          if(p.summary) article.append(element('p','post-summary',p.summary));
-          var tags=element('div','post-tags');
-          p.tags.forEach(function(t){var link=element('a','tag',t.name);link.href=t.path;tags.append(link);});
-          article.append(tags); list.append(article);
-        });
+      topic=topics.includes(params.get('topic'))?params.get('topic'):'全部';
+    }
+    function writeLocation() {
+      var url=new URL(location.href), query=input.value.trim();
+      if(query) url.searchParams.set('q',query); else url.searchParams.delete('q');
+      if(topic!=='全部') url.searchParams.set('topic',topic); else url.searchParams.delete('topic');
+      if(url.href!==location.href) history.replaceState(history.state,'',url);
+    }
+    function message(value,canRetry) {
+      feedback.hidden=!value; status.textContent=value; retry.hidden=!canRetry;
+    }
+    function restoreArticles() {
+      if(!showingOriginal) { list.innerHTML=original; showingOriginal=true; }
+      if(pagination) pagination.hidden=false;
+      if(featured) featured.hidden=false;
+    }
+    function highlighted(target,value,tokens) {
+      value=String(value||'');
+      var escaped=tokens.filter(Boolean).slice(0,24).sort(function(a,b){return b.length-a.length;}).map(function(token){return token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');});
+      if(!escaped.length) { target.textContent=value; return; }
+      var expression=new RegExp(escaped.join('|'),'gi'), match, cursor=0;
+      while((match=expression.exec(value))!==null) {
+        target.append(document.createTextNode(value.slice(cursor,match.index)),element('mark','',match[0]));
+        cursor=match.index+match[0].length;
       }
-      var timer;
-      input.addEventListener('input',function(){clearTimeout(timer);timer=setTimeout(render,100);});
-      document.querySelectorAll('[data-topic]').forEach(function(btn){btn.addEventListener('click',function(){topic=btn.dataset.topic;render();});});
-      document.getElementById('clear-search').addEventListener('click',function(){input.value='';topic='全部';render();input.focus();});
-      render();
-    }).catch(function(){status.hidden=false;status.textContent='搜索暂不可用，仍可浏览文章和归档。';}).finally(function(){clearTimeout(timeout);});
+      target.append(document.createTextNode(value.slice(cursor)));
+    }
+    function clearSearch() {
+      clearTimeout(searchTimer); input.value=''; topic='全部'; render(true); input.focus();
+    }
+    function render(updateLocation) {
+      var query=input.value.trim();
+      filters.forEach(function(btn){btn.setAttribute('aria-pressed',String(btn.dataset.topic===topic));});
+      if(updateLocation) writeLocation();
+      if(state!=='ready') {
+        restoreArticles();
+        message(state==='loading'?'正在准备搜索，文章列表仍可浏览。':'搜索暂不可用，下面仍为原文章列表。请重试加载。',state==='failed');
+        return;
+      }
+      if(!query && topic==='全部') { restoreArticles(); message('',false); return; }
+      if(pagination) pagination.hidden=true;
+      if(featured) featured.hidden=true;
+      var matches=window.JournalSearch.search(posts.filter(function(p){return topic==='全部'||p.topic===topic;}),query);
+      var tokens=window.JournalSearch.tokenize(query);
+      var fragment=document.createDocumentFragment();
+      message(matches.length?'找到 '+matches.length+' 篇文章'+(query?' · 按相关度排序':''):'没有找到匹配的文章。',false);
+      matches.forEach(function(result) {
+        var p=result.post, article=element('article','journal-item'), meta=element('div','post-meta'), time=element('time','',p.date);
+        time.dateTime=p.date.replaceAll('.','-'); meta.append(time,element('span','',p.topic));
+        if(p.pinned) meta.append(element('span','tag tag-strong','置顶'));
+        var h=element('h2'), a=element('a'); a.href=p.path; highlighted(a,p.title,tokens); h.append(a); article.append(meta,h);
+        if(p.summary) { var summary=element('p','post-summary'); highlighted(summary,p.summary,tokens); article.append(summary); }
+        if(result.bodyMatch && result.excerpt) {
+          var snippet=element('p','search-snippet'), excerpt=element('span');
+          highlighted(excerpt,result.excerpt,tokens); snippet.append(element('span','search-snippet-label','正文匹配'),excerpt); article.append(snippet);
+        }
+        var tags=element('div','post-tags');
+        p.tags.forEach(function(t){var link=element('a','tag');link.href=t.path;highlighted(link,t.name,tokens);tags.append(link);});
+        article.append(tags); fragment.append(article);
+      });
+      if(!matches.length) {
+        var empty=element('div','search-empty'), reset=element('button','','清除筛选，查看全部文章');
+        reset.type='button'; reset.id='reset-empty-search'; reset.addEventListener('click',clearSearch);
+        empty.append(element('p','','试试更短的关键词，或切换文章主题。'),reset); fragment.append(empty);
+      }
+      list.replaceChildren(fragment); showingOriginal=false;
+    }
+    function loadSearch() {
+      state='loading'; render(false);
+      var controller=new AbortController(), timeout=setTimeout(function(){controller.abort();},8000);
+      fetch('/blog/search.json',{signal:controller.signal}).then(function(r){if(!r.ok) throw Error(r.status); return r.json();}).then(function(data) {
+        if(!window.JournalSearch || !Array.isArray(data) || !data.every(function(p){return p && typeof p.title==='string' && typeof p.path==='string' && typeof p.date==='string' && Array.isArray(p.tags);})) throw Error('search index');
+        posts=data; state='ready'; render(false);
+      }).catch(function(){state='failed';render(false);}).finally(function(){clearTimeout(timeout);});
+    }
+    input.addEventListener('input',function(event){clearTimeout(searchTimer);if(!event.isComposing) searchTimer=setTimeout(function(){render(true);},100);});
+    input.addEventListener('compositionend',function(){clearTimeout(searchTimer);searchTimer=setTimeout(function(){render(true);},100);});
+    input.addEventListener('keydown',function(event){
+      if(event.isComposing) return;
+      if(event.key==='Enter') { clearTimeout(searchTimer); render(true); }
+      if(event.key==='Escape' && input.value) { event.preventDefault(); clearSearch(); }
+    });
+    filters.forEach(function(btn){btn.addEventListener('click',function(){clearTimeout(searchTimer);topic=btn.dataset.topic;render(true);});});
+    document.getElementById('clear-search').addEventListener('click',clearSearch);
+    function saveBeforeNavigation(event) {
+      if(event.target.closest('a[href]')) writeLocation();
+    }
+    list.addEventListener('click',saveBeforeNavigation);
+    list.addEventListener('auxclick',saveBeforeNavigation);
+    if(featured) {
+      featured.addEventListener('click',saveBeforeNavigation);
+      featured.addEventListener('auxclick',saveBeforeNavigation);
+    }
+    retry.addEventListener('click',function(){if(window.JournalSearch) loadSearch();else location.reload();});
+    window.addEventListener('popstate',function(){clearTimeout(searchTimer);readLocation();render(false);});
+    window.addEventListener('pageshow',function(event){if(event.persisted){clearTimeout(searchTimer);readLocation();render(false);}});
+    readLocation(); loadSearch();
   }
   var toc=document.querySelector('.post-toc');
   if(toc) {

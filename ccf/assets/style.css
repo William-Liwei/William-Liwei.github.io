@@ -273,10 +273,17 @@ th[aria-sort="descending"] .sort-btn::after { content: "↓"; opacity: 1; color:
 .row-btn:hover { border-color: var(--gold-bg); color: var(--gold); }
 .row-actions { display: flex; flex-wrap: wrap; gap: 6px; min-width: 72px; }
 .favorite-btn[aria-pressed="true"] { border-color: var(--gold-bg); background: var(--gold-soft); color: var(--gold); }
-.favorites-option { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; font-size: .8rem; color: var(--ink-soft); cursor: pointer; }
+.favorites-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin-top: 16px; }
+.favorites-option { display: flex; flex: 1 1 auto; flex-wrap: wrap; align-items: center; gap: 8px; font-size: .8rem; color: var(--ink-soft); cursor: pointer; }
 .favorites-option input { width: 16px; height: 16px; accent-color: var(--gold-bg); }
-.favorites-option small { color: var(--muted); margin-left: auto; font-size: .72rem; }
+.favorites-option small { color: var(--muted); font-size: .72rem; }
 #favorites-count { font-variant-numeric: tabular-nums; color: var(--gold); }
+.favorites-backup { min-width: 0; color: var(--muted); font-size: .76rem; }
+.favorites-backup summary { padding-block: 8px; color: var(--ink-soft); cursor: pointer; }
+.favorites-backup[open] { flex-basis: 100%; padding: 4px 12px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
+.favorites-backup p { max-width: 72ch; margin: 2px 0 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.favorites-backup-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.favorites-backup #favorites-backup-status { margin: 12px 0 0; color: var(--ink-soft); }
 
 .empty, .loading { margin: 0; padding: 40px 16px; text-align: center; color: var(--muted); }
 .empty p { margin: 0 0 16px; }
@@ -367,6 +374,7 @@ th[aria-sort="descending"] .sort-btn::after { content: "↓"; opacity: 1; color:
   .filters select { min-height: 44px; font-size: 16px; }
   .filters .check { grid-column: 1 / -1; min-height: 44px; padding: 0; }
   .favorites-option { min-height: 44px; }
+  .favorites-backup summary { min-height: 44px; padding-block: 12px; }
   .data-status { display: grid; gap: 6px; margin-bottom: 12px; }
   .mobile-sort { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; font-size: .78rem; color: var(--muted); }
   .mobile-sort select { min-width: 0; flex: 1; min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); font-size: 16px; }

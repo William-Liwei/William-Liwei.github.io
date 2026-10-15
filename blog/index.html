@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="/assets/fonts/fonts.css">
   <link rel="stylesheet" href="/assets/site.css">
   <link rel="stylesheet" href="/assets/journal.css">
+  <script src="/assets/blog-search.js" defer></script>
   <script src="/assets/journal.js" defer></script>
   
 <style>mjx-container[jax="SVG"] {
@@ -153,12 +154,13 @@ mjx-container[display="true"] + br {
 
 <div class="blog-tools" hidden>
   <label class="search-label" for="blog-search">搜索文章</label>
-  <div class="search-row"><input id="blog-search" type="search" placeholder="搜索标题、标签或摘要…" autocomplete="off"><button type="button" id="clear-search">清除</button></div>
+  <div class="search-row"><input id="blog-search" type="search" placeholder="搜索标题、标签或正文…" autocomplete="off" enterkeyhint="search" aria-controls="blog-results" aria-describedby="search-hint"><button type="button" id="clear-search" aria-label="清除关键词和主题筛选">清除</button></div>
+  <p class="search-hint" id="search-hint">支持全文搜索，多个关键词用空格分隔。</p>
   <div class="topic-filters" role="group" aria-label="文章主题">
     <button type="button" data-topic="全部" aria-pressed="true">全部</button><button type="button" data-topic="科研" aria-pressed="false">科研</button><button type="button" data-topic="技术实践" aria-pressed="false">技术实践</button><button type="button" data-topic="经验分享" aria-pressed="false">经验分享</button><button type="button" data-topic="随笔" aria-pressed="false">随笔</button>
   </div>
 </div>
-<p class="search-status" role="status" hidden></p>
+<div class="search-feedback" hidden><p class="search-status" role="status" aria-atomic="true"></p><button type="button" id="retry-search" hidden>重新加载搜索</button></div>
 
 <div class="journal-list" id="blog-results">
   

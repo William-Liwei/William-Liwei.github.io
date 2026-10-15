@@ -1,7 +1,7 @@
 import {
   conferenceKeys, esc, formatCountdown, formatInZone, parseTimezone, pickDeadline, processConferences, safeUrl, wallTimeToUtc
 } from './lib.js';
-import {favoriteKey, readStored, writeStored, favoriteSet, FAVORITES_KEY, PREFERENCES_KEY} from './preferences.js';
+import {favoriteKey, readStored, writeStored, favoriteSet, serializeFavoritesBackup, importFavoritesBackup, FAVORITES_BACKUP_MAX_BYTES, FAVORITES_KEY, PREFERENCES_KEY} from './preferences.js';
 import {buildConferenceCalendar} from './calendar.js';
 
 let storage;
@@ -728,6 +728,50 @@ function downloadCalendar(rows, filename) {
   toast(`已导出 ${count} 个时间节点，请导入日历并设置提醒`);
 }
 
+function backupStatus(message) {
+  const status = $('#favorites-backup-status');
+  status.textContent = message;
+  status.hidden = false;
+}
+
+function exportFavorites() {
+  if (!favorites.size) { backupStatus('还没有收藏，可先点击记录旁的“收藏”'); return; }
+  try {
+    const text = serializeFavoritesBackup(favorites);
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json;charset=utf-8' }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `ccf-favorites-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    backupStatus(`已导出全部 ${favorites.size} 条收藏，可在其他浏览器导入`);
+  } catch (err) { backupStatus(err.message || '导出失败，请稍后重试'); }
+}
+
+async function importFavorites(file) {
+  if (!file) return;
+  const button = $('#import-favorites');
+  button.disabled = true;
+  try {
+    if (file.size > FAVORITES_BACKUP_MAX_BYTES) throw new Error('请选择不超过 100 KB 的收藏备份');
+    const text = await file.text();
+    // Merge against current state after reading, including changes made in the meantime.
+    const result = importFavoritesBackup(storage, favorites, text);
+    favorites = result.favorites;
+    render();
+    backupStatus(result.persisted
+      ? `已合并收藏，新增 ${result.added} 条，共 ${favorites.size} 条；已保存在此浏览器`
+      : `已合并收藏，新增 ${result.added} 条；浏览器未允许保存，仅本次页面有效，请保留备份文件`);
+  } catch (err) {
+    backupStatus(`${err.message || '无法读取文件，请重试'}。原收藏未改变`);
+  } finally {
+    button.disabled = false;
+    $('#favorites-file').value = '';
+  }
+}
+
 let toastTimer;
 function toast(message) {
   const el = $('#toast');
@@ -827,6 +871,9 @@ function bindEvents() {
     state.page = 1;
     render();
   });
+  $('#export-favorites').addEventListener('click', exportFavorites);
+  $('#import-favorites').addEventListener('click', () => $('#favorites-file').click());
+  $('#favorites-file').addEventListener('change', (e) => importFavorites(e.target.files?.[0]));
   window.addEventListener('storage', (e) => {
     if (e.key !== FAVORITES_KEY && e.key !== null) return;
     favorites = favoriteSet(readStored(storage,FAVORITES_KEY,[]));
