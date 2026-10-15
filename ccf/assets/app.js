@@ -2,6 +2,7 @@ import {
   conferenceKeys, esc, formatCountdown, formatInZone, parseTimezone, pickDeadline, processConferences, safeUrl, wallTimeToUtc
 } from './lib.js';
 import {favoriteKey, readStored, writeStored, favoriteSet, FAVORITES_KEY, PREFERENCES_KEY} from './preferences.js';
+import {buildConferenceCalendar} from './calendar.js';
 
 let storage;
 try { storage = localStorage; } catch {}
@@ -30,7 +31,7 @@ const $ = (sel) => document.querySelector(sel);
 
 // ---------- Data ----------
 
-const data = { meta: null, conf: null, confUpdated: null, confNext: new Map(), ccf: null, ccfLevels: new Map(), jcr: null };
+const data = { meta: null, conf: null, confUpdated: null, confNotice: '', confNext: new Map(), ccf: null, ccfLevels: new Map(), jcr: null };
 const pending = {};
 
 function once(key, fn) {
@@ -42,9 +43,15 @@ function once(key, fn) {
 }
 
 async function getJson(path) {
-  const res = await fetch(path);
-  if (!res.ok) throw new Error(`${path}: HTTP ${res.status}`);
-  return res.json();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+  try {
+    const res = await fetch(path, { signal: controller.signal });
+    if (!res.ok) throw new Error(`${path}: HTTP ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 const loadMeta = () => once('meta', async () => {
@@ -73,10 +80,18 @@ const loadJournals = () => once('jcr', async () => {
   });
 });
 
+function validConferenceSnapshot(snapshot) {
+  const validTime = (value) => value == null || (typeof value === 'number' && Number.isFinite(value) && Number.isFinite(new Date(value).getTime()));
+  return typeof snapshot?.updated === 'string' && Number.isFinite(Date.parse(snapshot.updated))
+    && Array.isArray(snapshot.rows) && snapshot.rows.length > 0
+    && snapshot.rows.every((row) => row && typeof row.title === 'string' && row.title.trim()
+      && Array.isArray(row.timeline) && row.timeline.every((round) => round && validTime(round.deadline) && validTime(round.abstract)));
+}
+
 function readCachedConferences() {
   try {
     const cached = JSON.parse(localStorage.getItem(CONF_CACHE_KEY));
-    return cached?.updated && Array.isArray(cached.rows) ? cached : null;
+    return validConferenceSnapshot(cached) ? cached : null;
   } catch {
     return null;
   }
@@ -109,23 +124,69 @@ function refreshDeadlines() {
   }
 }
 
+function updateDataWarning() {
+  $('#data-warning').hidden = state.tab === 'jcr' || !data.confNotice;
+  $('#data-warning').textContent = data.confNotice;
+}
+
+function repaintConferenceData() {
+  updateDataWarning();
+  if (state.tab !== 'jcr' && data[state.tab] && $('#panel').getAttribute('aria-busy') === 'false') {
+    renderFilters();
+    render();
+  }
+}
+
+function applyConferenceSnapshot(snapshot) {
+  if (!validConferenceSnapshot(snapshot)) throw new Error('会议数据不完整');
+  // A slow bundled response must not overwrite a newer browser refresh.
+  if (!data.confUpdated || Date.parse(snapshot.updated) >= Date.parse(data.confUpdated)) {
+    setConferences(snapshot);
+    writeStored(storage, CONF_CACHE_KEY, snapshot);
+  }
+}
+
+async function updateConferenceSnapshot() {
+  try {
+    applyConferenceSnapshot(await getJson('data/conferences.json'));
+    data.confNotice = '';
+  } catch (err) {
+    if (!data.conf) throw err;
+    data.confNotice = '暂时无法获取最新数据，已保留本机缓存；可点击“刷新会议数据”重试。';
+  }
+  repaintConferenceData();
+  if (Date.now() - Date.parse(data.confUpdated) > STALE_MS) void refreshConferences({ silent: true });
+}
+
 const loadConferences = () => once('conf', async () => {
-  await loadCcfList().catch(() => {}); // only used to fill missing CCF levels
-  const snapshot = await getJson('data/conferences.json');
   const cached = readCachedConferences();
-  const best = cached && Date.parse(cached.updated) > Date.parse(snapshot.updated) ? cached : snapshot;
-  setConferences(best);
-  if (Date.now() - Date.parse(best.updated) > STALE_MS) refreshConferences({ silent: true });
+  if (cached) {
+    setConferences(cached);
+    data.confNotice = '已显示本机缓存，正在后台检查更新…';
+  }
+  // Optional rank enrichment must not block cached or bundled conference rows.
+  void loadCcfList().then(() => {
+    if (data.conf) {
+      setConferences({ updated: data.confUpdated, rows: data.conf });
+      repaintConferenceData();
+    }
+  }).catch(() => {});
+  if (cached) {
+    void updateConferenceSnapshot();
+  } else {
+    await updateConferenceSnapshot();
+  }
 });
 
 async function fetchCcfddl() {
   const { load } = await import('./vendor/js-yaml.js');
-  const options = typeof AbortSignal.timeout === 'function' ? { signal: AbortSignal.timeout(20000), cache: 'no-cache' } : { cache: 'no-cache' };
   let lastError;
   for (const base of CCFDDL_MIRRORS) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
     try {
       const [confText, accText] = await Promise.all(['allconf.yml', 'allacc.yml'].map(async (file) => {
-        const res = await fetch(`${base}/${file}`, options);
+        const res = await fetch(`${base}/${file}`, { signal: controller.signal, cache: 'no-cache' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.text();
       }));
@@ -134,6 +195,9 @@ async function fetchCcfddl() {
       return { updated: new Date().toISOString(), rows };
     } catch (err) {
       lastError = err;
+    } finally {
+      clearTimeout(timeout);
+      controller.abort();
     }
   }
   throw lastError;
@@ -148,16 +212,14 @@ async function refreshConferences({ silent = false } = {}) {
   btn.classList.add('is-loading');
   try {
     const snapshot = await fetchCcfddl();
-    setConferences(snapshot);
-    try {
-      localStorage.setItem(CONF_CACHE_KEY, JSON.stringify(snapshot));
-    } catch {
-      // Storage full or disabled: the fresh data still applies to this visit.
-    }
-    if (state.tab !== 'jcr') render();
+    applyConferenceSnapshot(snapshot);
+    data.confNotice = '';
+    repaintConferenceData();
     if (!silent) toast(`已更新，共 ${snapshot.rows.length} 条会议记录`);
   } catch (err) {
-    if (!silent) toast(`更新失败（${err.message || '网络错误'}），继续使用当前数据`);
+    data.confNotice = data.conf ? '暂时无法更新，当前数据仍可查询；请留意下方的数据更新时间。' : '';
+    updateDataWarning();
+    if (!silent) toast(data.conf ? '更新失败，已保留当前数据，请稍后重试' : '暂时无法加载会议数据，请稍后重试');
   } finally {
     refreshing = false;
     btn.disabled = false;
@@ -220,9 +282,13 @@ function partitionLines(j, m) {
   return lines;
 }
 
+const hasCalendarDates = (row) => row.timeline.some((round) => [round.deadline, round.abstract].some((time) => Number.isFinite(time) && time >= Date.now()));
+
 const copyBtn = (i) => {
-  const saved = favorites.has(favoriteKey(state.view[i], state.tab));
-  return `<div class="row-actions"><button type="button" class="row-btn favorite-btn" data-favorite="${i}" aria-pressed="${saved}" aria-label="${saved ? '取消收藏' : '收藏此条记录'}"><span aria-hidden="true">${saved ? '★' : '☆'}</span> ${saved ? '已收藏' : '收藏'}</button><button type="button" class="row-btn" data-copy="${i}">复制</button></div>`;
+  const row = state.view[i];
+  const saved = favorites.has(favoriteKey(row, state.tab));
+  const calendar = state.tab === 'conf' && hasCalendarDates(row);
+  return `<div class="row-actions"><button type="button" class="row-btn favorite-btn" data-favorite="${i}" aria-pressed="${saved}" aria-label="${saved ? '取消收藏' : '收藏此条记录'}"><span aria-hidden="true">${saved ? '★' : '☆'}</span> ${saved ? '已收藏' : '收藏'}</button><button type="button" class="row-btn" data-copy="${i}">复制</button>${calendar ? `<button type="button" class="row-btn calendar-btn" data-calendar="${i}" aria-describedby="calendar-note">加入日历</button>` : ''}</div>`;
 };
 
 const TABS = {
@@ -457,6 +523,9 @@ function renderTabs() {
   $('#search').placeholder = TABS[state.tab].placeholder;
   $('#search').value = state.q;
   $('#refresh-btn').hidden = state.tab !== 'conf';
+  $('#export-calendar').hidden = state.tab !== 'conf';
+  $('#calendar-note').hidden = state.tab !== 'conf';
+  updateDataWarning();
 }
 
 function renderFilters() {
@@ -571,8 +640,11 @@ function render() {
   $('#favorites-only').checked = state.savedOnly;
   $('#favorites-count').textContent = new Set(data[state.tab].filter((r) => favorites.has(favoriteKey(r,state.tab))).map((r) => favoriteKey(r,state.tab))).size;
   $('#loading').hidden = true;
+  $('#data-retry').hidden = true;
   $('#result-count').textContent = `共 ${state.view.length} 条${pages > 1 ? `，第 ${state.page} / ${pages} 页` : ''}`;
   $('#data-note').textContent = tab.note();
+  $('#export-calendar').disabled = !(data.conf || []).some((row) => favorites.has(favoriteKey(row, 'conf')) && hasCalendarDates(row));
+  updateDataWarning();
   $('#panel').setAttribute('aria-busy', 'false');
   renderFilterSummary();
   renderMobileSort();
@@ -602,6 +674,8 @@ async function showTab(tab, { resetPage = true } = {}) {
   state.tab = tab;
   if (resetPage) state.page = 1;
   renderTabs();
+  $('#data-retry').hidden = true;
+  $('#export-calendar').disabled = true;
   $('#panel').setAttribute('aria-busy', 'true');
   if (!data[tab]) {
     $('#thead').innerHTML = '';
@@ -624,7 +698,8 @@ async function showTab(tab, { resetPage = true } = {}) {
       $('#filter-count').textContent = '待加载';
       $('#loading').textContent = location.protocol === 'file:'
         ? '请通过本地服务器打开页面（npm run serve），直接打开文件无法加载数据。'
-        : `数据加载失败：${err.message}。请刷新重试。`;
+        : '暂时无法加载数据，请检查网络后重试。';
+      $('#data-retry').hidden = false;
       return;
     }
     if (state.tab !== tab) return; // user switched tabs meanwhile
@@ -638,6 +713,20 @@ async function showTab(tab, { resetPage = true } = {}) {
 }
 
 // ---------- Utilities ----------
+
+function downloadCalendar(rows, filename) {
+  const { text, count } = buildConferenceCalendar(rows);
+  if (!count) { toast('没有可导出的未来截稿时间，待公布和已截稿记录会自动跳过'); return; }
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/calendar;charset=utf-8' }));
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  toast(`已导出 ${count} 个时间节点，请导入日历并设置提醒`);
+}
 
 let toastTimer;
 function toast(message) {
@@ -776,6 +865,12 @@ function bindEvents() {
   });
 
   $('#tbody').addEventListener('click', async (e) => {
+    const calendar = e.target.closest('[data-calendar]');
+    if (calendar && state.tab === 'conf') {
+      const row = state.view[Number(calendar.dataset.calendar)];
+      if (row) downloadCalendar([row], `ccf-${String(row.title).replace(/[^a-zA-Z0-9_-]/g, '-')}-${row.year || 'deadline'}.ics`);
+      return;
+    }
     const favorite = e.target.closest('[data-favorite]');
     if (favorite) {
       const index = Number(favorite.dataset.favorite), row = state.view[index];
@@ -835,6 +930,11 @@ function bindEvents() {
   });
 
   $('#refresh-btn').addEventListener('click', () => refreshConferences());
+  $('#data-retry').addEventListener('click', () => showTab(state.tab, { resetPage: false }));
+  $('#export-calendar').addEventListener('click', () => {
+    const rows = (data.conf || []).filter((row) => favorites.has(favoriteKey(row, 'conf')));
+    downloadCalendar(rows, 'ccf-favorites.ics');
+  });
 
   $('#copy-group-number')?.addEventListener('click', async (e) => {
     const button = e.currentTarget;

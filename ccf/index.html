@@ -61,11 +61,15 @@
         <div class="toolbar-actions">
           <button type="button" class="btn" id="reset-btn">清空筛选</button>
           <button type="button" class="btn" id="share-btn" title="复制带筛选条件的链接">复制链接</button>
+          <button type="button" class="btn" id="export-calendar" aria-describedby="calendar-note" hidden disabled>导出收藏日历</button>
           <button type="button" class="btn btn-accent" id="refresh-btn" hidden>
             <span class="spinner" aria-hidden="true"></span><span class="btn-label">刷新会议数据</span>
           </button>
         </div>
       </div>
+
+      <p class="calendar-note" id="calendar-note" hidden>日历包含未来的截稿与摘要时间，导入后可自行设置提醒。延期不会自动同步，请以会议官网为准。</p>
+      <p class="data-warning" id="data-warning" role="status" hidden></p>
 
       <details class="filter-panel" id="filter-panel" open>
         <summary><span>筛选条件 <span id="filter-count">默认</span></span><span class="filter-chevron" aria-hidden="true">⌄</span></summary>
@@ -89,6 +93,7 @@
         </table>
         <div class="empty" id="empty" hidden><p>没有符合条件的结果，试试减少筛选条件。</p><button type="button" class="btn" id="empty-reset">重置筛选</button></div>
         <p class="loading" id="loading">正在加载数据…</p>
+        <button type="button" class="btn" id="data-retry" hidden>重新加载</button>
         <noscript><p class="empty">请启用 JavaScript 以搜索和筛选数据。</p></noscript>
       </div>
 
