@@ -1,0 +1,1015 @@
+import {
+  conferenceKeys, esc, formatCountdown, formatInZone, parseTimezone, pickDeadline, processConferences, safeUrl, wallTimeToUtc
+} from './lib.js';
+import {favoriteKey, readStored, writeStored, favoriteSet, serializeFavoritesBackup, importFavoritesBackup, FAVORITES_BACKUP_MAX_BYTES, FAVORITES_KEY, PREFERENCES_KEY} from './preferences.js';
+import {buildConferenceCalendar} from './calendar.js';
+
+let storage;
+try { storage = localStorage; } catch {}
+let favorites = favoriteSet(readStored(storage, FAVORITES_KEY, []));
+
+const PAGE_SIZE = 50;
+const CONF_CACHE_KEY = 'ccfonline-conferences-v3';
+const LEGACY_CACHE_KEYS = ['conferenceData_v2', 'acceptanceRateData_v2', 'lastUpdate_v2'];
+const STALE_MS = 24 * 3600 * 1000;
+// ccfddl publishes the merged YAML on the `page` branch of ccfddl/ccfddl.github.io;
+// ccfddl.com serves the same files and is usually reachable from mainland China.
+const CCFDDL_MIRRORS = [
+  'https://ccfddl.com/conference',
+  'https://raw.githubusercontent.com/ccfddl/ccfddl.github.io/page/conference'
+];
+const BEIJING = { zone: 'Asia/Shanghai' };
+
+const SUB_NAMES = {
+  AI: '人工智能', CG: '计算机图形学与多媒体', CT: '计算机科学理论', DB: '数据库/数据挖掘/内容检索',
+  DS: '计算机体系结构/并行与分布计算/存储系统', HI: '人机交互与普适计算', MX: '交叉/综合/新兴',
+  NW: '计算机网络', SC: '网络与信息安全', SE: '软件工程/系统软件/程序设计语言'
+};
+const RANK_ORDER = { A: 0, B: 1, C: 2, N: 3 };
+
+const $ = (sel) => document.querySelector(sel);
+
+// ---------- Data ----------
+
+const data = { meta: null, conf: null, confUpdated: null, confNotice: '', confNext: new Map(), ccf: null, ccfLevels: new Map(), jcr: null };
+const pending = {};
+
+function once(key, fn) {
+  pending[key] ||= fn().catch((err) => {
+    delete pending[key];
+    throw err;
+  });
+  return pending[key];
+}
+
+async function getJson(path) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+  try {
+    const res = await fetch(path, { signal: controller.signal });
+    if (!res.ok) throw new Error(`${path}: HTTP ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+const loadMeta = () => once('meta', async () => {
+  data.meta = await getJson('data/meta.json');
+});
+
+const loadCcfList = () => once('ccf', async () => {
+  const rows = await getJson('data/ccf-list.json');
+  data.ccf = rows.map((r) => ({ ...r, _s: `${r.name} ${r.full} ${r.publisher}`.toLowerCase() }));
+  for (const r of rows) {
+    if (r.type === '会议') for (const k of conferenceKeys(r.name, r.dblp)) data.ccfLevels.set(k, r.level);
+  }
+});
+
+const loadJournals = () => once('jcr', async () => {
+  const json = await getJson('data/journals.json');
+  data.jcrCategories = json.categories;
+  data.jcr = json.rows.map((row) => {
+    const j = {};
+    json.fields.forEach((field, i) => { j[field] = row[i]; });
+    j.categories = j.categories.map((i) => json.categories[i]);
+    const jif = parseFloat(j.jif);
+    j.jifNum = Number.isFinite(jif) ? jif : j.jif.startsWith('<') ? 0 : null;
+    j._s = `${j.name} ${j.issn} ${j.eissn}`.toLowerCase();
+    return j;
+  });
+});
+
+function validConferenceSnapshot(snapshot) {
+  const validTime = (value) => value == null || (typeof value === 'number' && Number.isFinite(value) && Number.isFinite(new Date(value).getTime()));
+  return typeof snapshot?.updated === 'string' && Number.isFinite(Date.parse(snapshot.updated))
+    && Array.isArray(snapshot.rows) && snapshot.rows.length > 0
+    && snapshot.rows.every((row) => row && typeof row.title === 'string' && row.title.trim()
+      && Array.isArray(row.timeline) && row.timeline.every((round) => round && validTime(round.deadline) && validTime(round.abstract)));
+}
+
+function readCachedConferences() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(CONF_CACHE_KEY));
+    return validConferenceSnapshot(cached) ? cached : null;
+  } catch {
+    return null;
+  }
+}
+
+function setConferences(snapshot) {
+  data.confUpdated = snapshot.updated;
+  const latestYear = new Map();
+  for (const r of snapshot.rows) latestYear.set(r.title, Math.max(latestYear.get(r.title) ?? 0, r.year ?? 0));
+  data.conf = snapshot.rows.map((r) => {
+    const rank = r.rank && r.rank !== 'N' ? r.rank
+      : conferenceKeys(r.title, r.dblp).map((k) => data.ccfLevels.get(k)).find(Boolean) || 'N';
+    return { ...r, rank, latest: (r.year ?? 0) === latestYear.get(r.title), _s: `${r.title} ${r.description}`.toLowerCase() };
+  });
+  refreshDeadlines();
+}
+
+// Recomputes "next deadline" per edition and per conference title (used by the CCF list tab).
+function refreshDeadlines() {
+  if (!data.conf) return;
+  const now = Date.now();
+  data.confNext = new Map();
+  for (const r of data.conf) {
+    r.dl = pickDeadline(r.timeline, now);
+    if (!r.dl || r.dl.status === 'passed') continue;
+    for (const key of conferenceKeys(r.title, r.dblp)) {
+      const current = data.confNext.get(key);
+      if (!current || r.dl.deadline < current.deadline) data.confNext.set(key, { ...r.dl, year: r.year });
+    }
+  }
+}
+
+function updateDataWarning() {
+  $('#data-warning').hidden = state.tab === 'jcr' || !data.confNotice;
+  $('#data-warning').textContent = data.confNotice;
+}
+
+function repaintConferenceData() {
+  updateDataWarning();
+  if (state.tab !== 'jcr' && data[state.tab] && $('#panel').getAttribute('aria-busy') === 'false') {
+    renderFilters();
+    render();
+  }
+}
+
+function applyConferenceSnapshot(snapshot) {
+  if (!validConferenceSnapshot(snapshot)) throw new Error('会议数据不完整');
+  // A slow bundled response must not overwrite a newer browser refresh.
+  if (!data.confUpdated || Date.parse(snapshot.updated) >= Date.parse(data.confUpdated)) {
+    setConferences(snapshot);
+    writeStored(storage, CONF_CACHE_KEY, snapshot);
+  }
+}
+
+async function updateConferenceSnapshot() {
+  try {
+    applyConferenceSnapshot(await getJson('data/conferences.json'));
+    data.confNotice = '';
+  } catch (err) {
+    if (!data.conf) throw err;
+    data.confNotice = '暂时无法获取最新数据，已保留本机缓存；可点击“刷新会议数据”重试。';
+  }
+  repaintConferenceData();
+  if (Date.now() - Date.parse(data.confUpdated) > STALE_MS) void refreshConferences({ silent: true });
+}
+
+const loadConferences = () => once('conf', async () => {
+  const cached = readCachedConferences();
+  if (cached) {
+    setConferences(cached);
+    data.confNotice = '已显示本机缓存，正在后台检查更新…';
+  }
+  // Optional rank enrichment must not block cached or bundled conference rows.
+  void loadCcfList().then(() => {
+    if (data.conf) {
+      setConferences({ updated: data.confUpdated, rows: data.conf });
+      repaintConferenceData();
+    }
+  }).catch(() => {});
+  if (cached) {
+    void updateConferenceSnapshot();
+  } else {
+    await updateConferenceSnapshot();
+  }
+});
+
+async function fetchCcfddl() {
+  const { load } = await import('./vendor/js-yaml.js');
+  let lastError;
+  for (const base of CCFDDL_MIRRORS) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+    try {
+      const [confText, accText] = await Promise.all(['allconf.yml', 'allacc.yml'].map(async (file) => {
+        const res = await fetch(`${base}/${file}`, { signal: controller.signal, cache: 'no-cache' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.text();
+      }));
+      const rows = processConferences(load(confText), load(accText));
+      if (rows.length < 100) throw new Error('数据不完整');
+      return { updated: new Date().toISOString(), rows };
+    } catch (err) {
+      lastError = err;
+    } finally {
+      clearTimeout(timeout);
+      controller.abort();
+    }
+  }
+  throw lastError;
+}
+
+let refreshing = false;
+async function refreshConferences({ silent = false } = {}) {
+  if (refreshing) return;
+  refreshing = true;
+  const btn = $('#refresh-btn');
+  btn.disabled = true;
+  btn.classList.add('is-loading');
+  try {
+    const snapshot = await fetchCcfddl();
+    applyConferenceSnapshot(snapshot);
+    data.confNotice = '';
+    repaintConferenceData();
+    if (!silent) toast(`已更新，共 ${snapshot.rows.length} 条会议记录`);
+  } catch (err) {
+    data.confNotice = data.conf ? '暂时无法更新，当前数据仍可查询；请留意下方的数据更新时间。' : '';
+    updateDataWarning();
+    if (!silent) toast(data.conf ? '更新失败，已保留当前数据，请稍后重试' : '暂时无法加载会议数据，请稍后重试');
+  } finally {
+    refreshing = false;
+    btn.disabled = false;
+    btn.classList.remove('is-loading');
+  }
+}
+
+// ---------- Tab definitions ----------
+
+const rankBadge = (rank) => `<span class="rank rank-${esc(rank || 'N')}">${rank && rank !== 'N' ? esc(rank) : '—'}</span>`;
+const sub = (text) => (text ? `<span class="cell-sub">${text}</span>` : '');
+
+function deadlineZone(mode, row) {
+  if (mode === 'local') return null;
+  if (mode === 'orig') return parseTimezone(row.timezone);
+  return BEIJING;
+}
+
+function deadlineCell(row) {
+  const d = row.dl;
+  if (!d) return '<span class="muted">待公布</span>';
+  const mode = state.filters.conf.tz;
+  const zone = deadlineZone(mode, row);
+  const suffix = mode === 'orig' ? ` <span class="muted">${esc(row.timezone)}</span>` : '';
+  const notes = [d.rounds > 1 ? `共 ${d.rounds} 轮` : '', d.comment].filter(Boolean).join(' · ');
+  return `<div class="deadline status-${d.status}">`
+    + `<time datetime="${new Date(d.deadline).toISOString()}">${esc(formatInZone(d.deadline, zone, true))}</time>${suffix}`
+    + `<span class="countdown">${esc(formatCountdown(d.deadline))}</span>`
+    + (d.abstract ? sub(`摘要 ${esc(formatInZone(d.abstract, zone))}`) : '')
+    + (notes ? sub(esc(notes)) : '')
+    + '</div>';
+}
+
+function acceptanceCell(row) {
+  const a = row.acceptance;
+  if (!a) return '<span class="muted">—</span>';
+  return `<span title="${esc(a.str)}">${(a.rate * 100).toFixed(1)}%</span>${sub(`${esc(a.year)} 年`)}`;
+}
+
+function journalMetrics(j, versions) {
+  const tags = [];
+  if (j.jif) tags.push(`<span class="tag" title="JCR ${esc(versions.jcrVersion)} 影响因子">IF ${esc(j.jif)}</span>`);
+  if (j.quartile) tags.push(`<span class="tag">${esc(j.quartile)}</span>`);
+  if (j.cas) tags.push(`<span class="tag" title="中科院分区 ${esc(versions.casVersion)}">中科院 ${esc(j.cas)} 区${j.casTop ? ' Top' : ''}</span>`);
+  if (j.xr) tags.push(`<span class="tag" title="新锐分区 ${esc(versions.xrVersion)}">新锐 ${esc(j.xr)} 区${j.xrTop ? ' Top' : ''}</span>`);
+  if (j.xrWarn) tags.push('<span class="tag tag-warn" title="新锐分区标注为 Under Review（预警）">预警</span>');
+  return tags.join('');
+}
+
+function zoneCell(zone, top, warn) {
+  if (!zone) return '<span class="muted">—</span>';
+  return `<span class="tag">${esc(zone)} 区</span>${top ? '<span class="tag tag-top">Top</span>' : ''}${warn ? '<span class="tag tag-warn">预警</span>' : ''}`;
+}
+
+function partitionLines(j, m) {
+  const lines = [];
+  if (j.jif) lines.push(`JCR ${m.jcrVersion}：IF ${j.jif}${j.quartile ? `，${j.quartile}` : ''}${j.rank ? `，学科排名 ${j.rank}` : ''}`);
+  if (j.cas) lines.push(`中科院 ${m.casVersion}：${j.cas} 区${j.casTop ? ' Top' : ''}`);
+  if (j.xr) lines.push(`新锐 ${m.xrVersion}：${j.xr} 区${j.xrTop ? ' Top' : ''}${j.xrWarn ? '（预警）' : ''}`);
+  return lines;
+}
+
+const hasCalendarDates = (row) => row.timeline.some((round) => [round.deadline, round.abstract].some((time) => Number.isFinite(time) && time >= Date.now()));
+
+const copyBtn = (i) => {
+  const row = state.view[i];
+  const saved = favorites.has(favoriteKey(row, state.tab));
+  const calendar = state.tab === 'conf' && hasCalendarDates(row);
+  return `<div class="row-actions"><button type="button" class="row-btn favorite-btn" data-favorite="${i}" aria-pressed="${saved}" aria-label="${saved ? '取消收藏' : '收藏此条记录'}"><span aria-hidden="true">${saved ? '★' : '☆'}</span> ${saved ? '已收藏' : '收藏'}</button><button type="button" class="row-btn" data-copy="${i}">复制</button>${calendar ? `<button type="button" class="row-btn calendar-btn" data-calendar="${i}" aria-describedby="calendar-note">加入日历</button>` : ''}</div>`;
+};
+
+const TABS = {
+  conf: {
+    placeholder: '搜索会议简称或全称，如 KDD、NeurIPS',
+    load: loadConferences,
+    defaultSort: { key: 'deadline', dir: 'asc' },
+    filters: [
+      { key: 'sub', label: '领域', options: () => Object.entries(SUB_NAMES) },
+      { key: 'rank', label: 'CCF 等级', options: () => [['A', 'A 类'], ['B', 'B 类'], ['C', 'C 类'], ['N', '非 CCF']] },
+      { key: 'status', label: '截稿状态', options: () => [['open', '未截稿'], ['week', '7 天内截稿'], ['month', '30 天内截稿'], ['passed', '已截稿'], ['tbd', '待公布']] },
+      { key: 'tz', label: '截稿时间显示为', def: 'bj', noAll: true, options: () => [['bj', '北京时间'], ['local', '本机时区'], ['orig', '会议原时区']] },
+      { key: 'latest', label: '只看每个会议最新一届', offLabel: '显示所有年份', type: 'check', def: '1' }
+    ],
+    match(r, f) {
+      if (f.sub !== 'all' && r.sub !== f.sub) return false;
+      if (f.rank !== 'all' && r.rank !== f.rank) return false;
+      if (f.latest === '1' && !r.latest) return false;
+      const s = r.dl?.status;
+      switch (f.status) {
+        case 'open': return !!r.dl && s !== 'passed';
+        case 'week': return s === 'urgent';
+        case 'month': return s === 'urgent' || s === 'warning';
+        case 'passed': return s === 'passed';
+        case 'tbd': return !r.dl;
+        default: return true;
+      }
+    },
+    sortValue: {
+      title: (r) => r.title.toLowerCase(),
+      rank: (r) => RANK_ORDER[r.rank] ?? 3,
+      acc: (r) => r.acceptance?.rate ?? null
+    },
+    columns: [
+      { label: '会议', sort: 'title', cls: 'cell-title', render: (r) => {
+        const url = safeUrl(r.link);
+        const name = `${esc(r.title)} ${esc(r.year ?? '')}`;
+        return url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${name}</a>` : name;
+      } },
+      { label: '全称', cls: 'cell-full', render: (r) => `${esc(r.description)}${sub(esc([r.date, r.place].filter(Boolean).join(' · ')))}` },
+      { label: 'CCF', sort: 'rank', render: (r) => rankBadge(r.rank) },
+      { label: '领域', cls: 'cell-field', render: (r) => esc(SUB_NAMES[r.sub] || r.sub) },
+      { label: '截稿时间', sort: 'deadline', render: deadlineCell },
+      { label: '录用率', sort: 'acc', render: acceptanceCell },
+      { label: '', render: (r, i) => copyBtn(i) }
+    ],
+    copyText(r) {
+      const d = r.dl;
+      const lines = [`${r.title} ${r.year ?? ''}（CCF ${r.rank !== 'N' ? r.rank : '未收录'}）`, r.description];
+      if (d) lines.push(`截稿：${formatInZone(d.deadline, BEIJING)} 北京时间（${formatInZone(d.deadline, parseTimezone(r.timezone))} ${r.timezone}）`);
+      else lines.push('截稿：待公布');
+      if (r.date || r.place) lines.push(`会议：${[r.date, r.place].filter(Boolean).join(' · ')}`);
+      if (r.acceptance) lines.push(`录用率：${(r.acceptance.rate * 100).toFixed(1)}%（${r.acceptance.year}）`);
+      if (safeUrl(r.link)) lines.push(r.link);
+      return lines.join('\n');
+    },
+    note: () => (data.confUpdated ? `会议数据更新于 ${formatInZone(Date.parse(data.confUpdated), null)} · 来源 ccfddl` : '')
+  },
+
+  ccf: {
+    placeholder: '搜索简称、全称或出版社',
+    load: () => Promise.all([loadCcfList(), loadMeta(), loadConferences().catch(() => {})]),
+    defaultSort: null,
+    filters: [
+      { key: 'cat', label: '领域', options: () => unique(data.ccf, 'category') },
+      { key: 'type', label: '类型', options: () => [['期刊', '期刊'], ['会议', '会议']] },
+      { key: 'level', label: '级别', options: () => [['A', 'A 类'], ['B', 'B 类'], ['C', 'C 类']] },
+      { key: 'pub', label: '出版社', options: () => unique(data.ccf, 'publisher') }
+    ],
+    match: (r, f) => (f.cat === 'all' || r.category === f.cat) && (f.type === 'all' || r.type === f.type)
+      && (f.level === 'all' || r.level === f.level) && (f.pub === 'all' || r.publisher === f.pub),
+    sortValue: {
+      name: (r) => (r.name || r.full).toLowerCase(),
+      level: (r) => RANK_ORDER[r.level] ?? 3
+    },
+    columns: [
+      { label: '简称', sort: 'name', cls: 'cell-title', render: (r) => esc(r.name) || '<span class="muted">—</span>' },
+      { label: '全称', cls: 'cell-full', render: (r) => {
+        const url = safeUrl(r.url);
+        return url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(r.full)}</a>` : esc(r.full);
+      } },
+      { label: '级别', sort: 'level', render: (r) => rankBadge(r.level) },
+      { label: '类型', render: (r) => esc(r.type) },
+      { label: '领域', cls: 'cell-field', render: (r) => esc(r.category) },
+      { label: '出版社', render: (r) => esc(r.publisher) },
+      { label: '指标 / 截稿', render: (r) => {
+        if (r.type === '期刊') return journalMetrics(r, data.meta || {}) || '<span class="muted">未收录于 JCR</span>';
+        const next = conferenceKeys(r.name, r.dblp).map((k) => data.confNext.get(k)).find(Boolean);
+        if (!next) return '<span class="muted">—</span>';
+        return `<div class="deadline status-${next.status}"><time>${esc(formatInZone(next.deadline, BEIJING))}</time>`
+          + `<span class="countdown">${esc(next.year)} · ${esc(formatCountdown(next.deadline))}</span></div>`;
+      } },
+      { label: '', render: (r, i) => copyBtn(i) }
+    ],
+    copyText(r) {
+      const lines = [[r.name, r.full].filter(Boolean).join(' - '), `CCF ${r.level} 类${r.type} · ${r.category}`, `出版社：${r.publisher}`];
+      if (r.type === '期刊') lines.push(...partitionLines(r, data.meta || {}));
+      if (safeUrl(r.url)) lines.push(r.url);
+      return lines.join('\n');
+    },
+    note: () => (data.meta ? `CCF 推荐目录 ${data.meta.ccfListVersion} 版 · 期刊指标：JCR ${data.meta.jcrVersion} / 中科院 ${data.meta.casVersion} / 新锐 ${data.meta.xrVersion}` : '')
+  },
+
+  jcr: {
+    placeholder: '搜索期刊名或 ISSN',
+    load: () => Promise.all([loadJournals(), loadMeta()]),
+    defaultSort: { key: 'jif', dir: 'desc' },
+    filters: [
+      { key: 'jcat', label: 'JCR 学科', options: () => data.jcrCategories.map((c) => [c, c]) },
+      { key: 'jif', label: '影响因子', options: () => [['10', '≥ 10'], ['5', '5 – 10'], ['3', '3 – 5'], ['0', '< 3']] },
+      { key: 'quart', label: 'JCR 分区', options: () => ['Q1', 'Q2', 'Q3', 'Q4'].map((q) => [q, q]) },
+      { key: 'cas', label: '中科院分区', options: () => [1, 2, 3, 4].map((z) => [String(z), `${z} 区`]) },
+      { key: 'xr', label: '新锐分区', options: () => [1, 2, 3, 4].map((z) => [String(z), `${z} 区`]) },
+      { key: 'ccf', label: 'CCF 推荐', options: () => [['any', 'CCF 收录'], ['A', 'A 类'], ['B', 'B 类'], ['C', 'C 类']] },
+      { key: 'top', label: '只看中科院 Top', type: 'check', def: '0' },
+      { key: 'nowarn', label: '排除预警期刊', type: 'check', def: '0' }
+    ],
+    match(j, f) {
+      if (f.jcat !== 'all' && !j.categories.includes(f.jcat)) return false;
+      if (f.quart !== 'all' && j.quartile !== f.quart) return false;
+      if (f.cas !== 'all' && String(j.cas) !== f.cas) return false;
+      if (f.xr !== 'all' && String(j.xr) !== f.xr) return false;
+      if (f.top === '1' && !j.casTop) return false;
+      if (f.nowarn === '1' && j.xrWarn) return false;
+      if (f.ccf === 'any' && !j.ccf) return false;
+      if (f.ccf !== 'all' && f.ccf !== 'any' && j.ccf !== f.ccf) return false;
+      if (f.jif !== 'all') {
+        const v = j.jifNum;
+        if (v == null) return false;
+        const ranges = { 10: [10, Infinity], 5: [5, 10], 3: [3, 5], 0: [0, 3] };
+        const [lo, hi] = ranges[f.jif] || [-Infinity, Infinity];
+        if (v < lo || v >= hi) return false;
+      }
+      return true;
+    },
+    sortValue: {
+      name: (j) => j.name.toLowerCase(),
+      jif: (j) => j.jifNum,
+      quart: (j) => (j.quartile ? Number(j.quartile[1]) : null),
+      cas: (j) => j.cas || null,
+      xr: (j) => j.xr || null,
+      ccf: (j) => (j.ccf ? RANK_ORDER[j.ccf] : null)
+    },
+    columns: [
+      { label: '期刊', sort: 'name', cls: 'cell-full', render: (j) => `<strong>${esc(j.name)}</strong>${sub(`<span class="mono">${esc([j.issn, j.eissn].filter(Boolean).join(' / '))}</span>`)}` },
+      { label: 'JCR 学科', render: (j) => sub(esc(j.categories.join('；'))) },
+      { label: '影响因子', sort: 'jif', render: (j) => (j.jif ? `<strong>${esc(j.jif)}</strong>${sub(esc(j.rank))}` : '<span class="muted">—</span>') },
+      { label: 'JCR', sort: 'quart', render: (j) => (j.quartile ? `<span class="tag">${esc(j.quartile)}</span>` : '<span class="muted">—</span>') },
+      { label: '中科院', sort: 'cas', render: (j) => zoneCell(j.cas, j.casTop) },
+      { label: '新锐', sort: 'xr', render: (j) => zoneCell(j.xr, j.xrTop, j.xrWarn) },
+      { label: 'CCF', sort: 'ccf', render: (j) => (j.ccf ? rankBadge(j.ccf) : '<span class="muted">—</span>') },
+      { label: '', render: (j, i) => copyBtn(i) }
+    ],
+    copyText(j) {
+      const lines = [j.name, `ISSN ${j.issn || '—'} / eISSN ${j.eissn || '—'}`, ...partitionLines(j, data.meta || {})];
+      if (j.ccf) lines.push(`CCF 推荐：${j.ccf} 类`);
+      return lines.join('\n');
+    },
+    note: () => (data.meta ? `JCR ${data.meta.jcrVersion}（${Number(data.meta.jcrVersion) + 1} 年 6 月发布）· 中科院分区 ${data.meta.casVersion} · 新锐分区 ${data.meta.xrVersion} · 共 ${data.jcr?.length ?? 0} 种期刊` : '')
+  }
+};
+
+function unique(rows, key) {
+  return [...new Set((rows || []).map((r) => r[key]).filter(Boolean))].map((v) => [v, v]);
+}
+
+// ---------- State & URL ----------
+
+const state = { tab: 'conf', q: '', filters: {}, sort: {}, page: 1, view: [], savedOnly: false };
+
+function defaultFilters(tab) {
+  return Object.fromEntries(TABS[tab].filters.map((f) => [f.key, f.def ?? 'all']));
+}
+
+function readUrl() {
+  const p = new URLSearchParams(location.search);
+  const known = ['tab','q','p','sort','dir','saved', ...Object.values(TABS).flatMap((tab) => tab.filters.map((f) => f.key))];
+  const explicit = known.some((key) => p.has(key));
+  const stored = explicit ? {} : readStored(storage, PREFERENCES_KEY, {});
+  state.tab = TABS[p.get('tab')] ? p.get('tab') : 'conf';
+  if (!explicit && TABS[stored?.tab]) state.tab = stored.tab;
+  state.q = p.get('q') || '';
+  state.page = Math.max(1, Math.floor(Number(p.get('p')) || 1));
+  state.savedOnly = explicit ? p.get('saved') === '1' : stored?.savedOnly === true;
+  for (const tab of Object.keys(TABS)) {
+    state.filters[tab] = defaultFilters(tab);
+    state.sort[tab] = TABS[tab].defaultSort;
+    if (!explicit) {
+      for (const f of TABS[tab].filters) {
+        const value = stored?.filters?.[tab]?.[f.key];
+        if (typeof value === 'string' && (f.type !== 'check' || ['0','1'].includes(value))) state.filters[tab][f.key] = value;
+      }
+      const sort = stored?.sort?.[tab];
+      if (TABS[tab].columns.some((c) => c.sort && c.sort === sort?.key)) state.sort[tab] = {key:sort.key,dir:sort.dir === 'desc' ? 'desc' : 'asc'};
+    }
+  }
+  const filters = state.filters[state.tab];
+  for (const f of TABS[state.tab].filters) if (p.has(f.key) && (f.type !== 'check' || ['0','1'].includes(p.get(f.key)))) filters[f.key] = p.get(f.key);
+  const sortKey = p.get('sort');
+  if (TABS[state.tab].columns.some((c) => c.sort === sortKey)) state.sort[state.tab] = { key: sortKey, dir: p.get('dir') === 'desc' ? 'desc' : 'asc' };
+}
+
+function writeUrl() {
+  const p = new URLSearchParams();
+  // Even the default tab is explicit so shared links override local preferences.
+  p.set('tab', state.tab);
+  if (state.savedOnly) p.set('saved', '1');
+  if (state.q) p.set('q', state.q);
+  const defaults = defaultFilters(state.tab);
+  for (const [key, value] of Object.entries(state.filters[state.tab])) if (value !== defaults[key]) p.set(key, value);
+  const sort = state.sort[state.tab];
+  const def = TABS[state.tab].defaultSort;
+  if (sort && (sort.key !== def?.key || sort.dir !== def?.dir)) {
+    p.set('sort', sort.key);
+    p.set('dir', sort.dir);
+  }
+  if (state.page > 1) p.set('p', state.page);
+  const qs = p.toString();
+  history.replaceState(null, '', `${location.pathname}${qs ? `?${qs}` : ''}${location.hash}`);
+  writeStored(storage, PREFERENCES_KEY, {tab:state.tab,filters:state.filters,sort:state.sort,savedOnly:state.savedOnly});
+}
+
+// ---------- Rendering ----------
+
+function renderTabs() {
+  document.querySelectorAll('.tab').forEach((btn) => {
+    const active = btn.dataset.tab === state.tab;
+    btn.setAttribute('aria-selected', String(active));
+    btn.tabIndex = active ? 0 : -1;
+  });
+  $('#panel').setAttribute('aria-labelledby', `tab-${state.tab}`);
+  $('#search').placeholder = TABS[state.tab].placeholder;
+  $('#search').value = state.q;
+  $('#refresh-btn').hidden = state.tab !== 'conf';
+  $('#export-calendar').hidden = state.tab !== 'conf';
+  $('#calendar-note').hidden = state.tab !== 'conf';
+  updateDataWarning();
+}
+
+function renderFilters() {
+  const tab = TABS[state.tab];
+  const values = state.filters[state.tab];
+  $('#filters').innerHTML = tab.filters.map((f) => {
+    const id = `f-${f.key}`;
+    if (f.type === 'check') {
+      return `<label class="check"><input type="checkbox" id="${id}" data-filter="${f.key}"${values[f.key] === '1' ? ' checked' : ''}>${esc(f.label)}</label>`;
+    }
+    const options = f.options();
+    if (values[f.key] !== (f.def ?? 'all') && !options.some(([v]) => v === values[f.key])) values[f.key] = f.def ?? 'all';
+    const all = f.noAll ? '' : '<option value="all">全部</option>';
+    const opts = options.map(([v, label]) => `<option value="${esc(v)}"${v === values[f.key] ? ' selected' : ''}>${esc(label)}</option>`).join('');
+    return `<label for="${id}">${esc(f.label)}<select id="${id}" data-filter="${f.key}">${all}${opts}</select></label>`;
+  }).join('');
+}
+
+function renderFilterSummary() {
+  const values = state.filters[state.tab];
+  const changed = TABS[state.tab].filters.filter((f) => values[f.key] !== (f.def ?? 'all'));
+  const chips = changed.map((f) => {
+    const value = values[f.key];
+    const label = f.type === 'check' ? (value === '1' ? f.label : f.offLabel || f.label)
+      : `${f.label}：${f.options().find(([v]) => v === value)?.[1] || value}`;
+    return { key: f.key, label };
+  });
+  if (state.q) chips.unshift({ key: 'q', label: `搜索：${state.q}` });
+  $('#filter-count').textContent = changed.length ? `${changed.length} 项已调整` : '默认';
+  $('#active-filters').hidden = !chips.length;
+  $('#active-filters').innerHTML = chips.map(({ key, label }) => `<button type="button" class="filter-chip" data-remove="${key}" aria-label="移除筛选：${esc(label)}"><span>${esc(label)}</span><span aria-hidden="true">×</span></button>`).join('');
+}
+
+function renderMobileSort() {
+  const tab = TABS[state.tab], sort = state.sort[state.tab];
+  const labels = {
+    title: ['会议名称 A–Z', '会议名称 Z–A'], name: ['名称 A–Z', '名称 Z–A'],
+    rank: ['CCF 等级 A → C', 'CCF 等级 C → A'], level: ['CCF 等级 A → C', 'CCF 等级 C → A'], ccf: ['CCF 等级 A → C', 'CCF 等级 C → A'],
+    deadline: ['即将截稿优先', '截稿时间由晚到早'], acc: ['录用率由低到高', '录用率由高到低'],
+    jif: ['影响因子由低到高', '影响因子由高到低'], quart: ['JCR Q1 → Q4', 'JCR Q4 → Q1'],
+    cas: ['中科院 1 → 4 区', '中科院 4 → 1 区'], xr: ['新锐 1 → 4 区', '新锐 4 → 1 区']
+  };
+  const options = tab.defaultSort ? [] : ['<option value="default">目录原顺序</option>'];
+  for (const c of tab.columns.filter((c) => c.sort)) {
+    ['asc', 'desc'].forEach((dir, index) => options.push(`<option value="${c.sort}:${dir}">${esc(labels[c.sort]?.[index] || c.label)}</option>`));
+  }
+  $('#mobile-sort').innerHTML = options.join('');
+  $('#mobile-sort').value = sort ? `${sort.key}:${sort.dir}` : 'default';
+  $('#mobile-sort').disabled = false;
+}
+
+function compareRows(tab, sort) {
+  if (!sort) return null;
+  const sign = sort.dir === 'desc' ? -1 : 1;
+  if (tab === 'conf' && sort.key === 'deadline') {
+    // asc: upcoming soonest first, then TBD, then passed (most recent first).
+    const group = (r) => (!r.dl ? 1 : r.dl.status === 'passed' ? 2 : 0);
+    return (a, b) => {
+      if (sort.dir === 'asc') {
+        const g = group(a) - group(b);
+        if (g) return g;
+        if (!a.dl) return 0;
+        return group(a) === 2 ? b.dl.deadline - a.dl.deadline : a.dl.deadline - b.dl.deadline;
+      }
+      if (!a.dl || !b.dl) return (a.dl ? 0 : 1) - (b.dl ? 0 : 1);
+      return b.dl.deadline - a.dl.deadline;
+    };
+  }
+  const get = TABS[tab].sortValue[sort.key];
+  if (!get) return null;
+  return (a, b) => {
+    const va = get(a);
+    const vb = get(b);
+    if (va == null || vb == null) return (va == null) - (vb == null); // empty values always last
+    return (va < vb ? -1 : va > vb ? 1 : 0) * sign;
+  };
+}
+
+function computeView() {
+  const tab = TABS[state.tab];
+  const rows = data[state.tab] || [];
+  const f = state.filters[state.tab];
+  const terms = state.q.toLowerCase().split(/\s+/).filter(Boolean);
+  const view = rows.filter((r) => (!state.savedOnly || favorites.has(favoriteKey(r,state.tab))) && terms.every((t) => r._s.includes(t)) && tab.match(r, f));
+  const cmp = compareRows(state.tab, state.sort[state.tab]);
+  return cmp ? view.sort(cmp) : view;
+}
+
+function render() {
+  const tab = TABS[state.tab];
+  if (!data[state.tab]) return;
+  state.view = computeView();
+  const pages = Math.max(1, Math.ceil(state.view.length / PAGE_SIZE));
+  state.page = Math.min(state.page, pages);
+  const start = (state.page - 1) * PAGE_SIZE;
+  const sort = state.sort[state.tab];
+  const focusedSort = document.activeElement?.closest('#thead [data-sort]')?.dataset.sort;
+
+  $('#thead').innerHTML = `<tr>${tab.columns.map((c) => {
+    if (!c.sort) return `<th scope="col">${c.label ? esc(c.label) : '<span class="visually-hidden">操作</span>'}</th>`;
+    const aria = sort?.key === c.sort ? (sort.dir === 'desc' ? 'descending' : 'ascending') : 'none';
+    return `<th scope="col" aria-sort="${aria}"><button type="button" class="sort-btn" data-sort="${c.sort}">${esc(c.label)}</button></th>`;
+  }).join('')}</tr>`;
+
+  $('#tbody').innerHTML = state.view.slice(start, start + PAGE_SIZE).map((row, i) => `<tr>${tab.columns.map((c) => {
+    const cls = c.cls ? ` class="${c.cls}"` : '';
+    return `<td data-label="${esc(c.label)}"${cls}><div class="cell-value">${c.render(row, start + i)}</div></td>`;
+  }).join('')}</tr>`).join('');
+
+  $('#empty').hidden = state.view.length > 0;
+  $('#empty p').textContent = state.savedOnly ? '当前条件下没有收藏，试试取消“只看收藏”或调整筛选。' : '没有符合条件的结果，试试减少筛选条件。';
+  $('#favorites-only').checked = state.savedOnly;
+  $('#favorites-count').textContent = new Set(data[state.tab].filter((r) => favorites.has(favoriteKey(r,state.tab))).map((r) => favoriteKey(r,state.tab))).size;
+  $('#loading').hidden = true;
+  $('#data-retry').hidden = true;
+  $('#result-count').textContent = `共 ${state.view.length} 条${pages > 1 ? `，第 ${state.page} / ${pages} 页` : ''}`;
+  $('#data-note').textContent = tab.note();
+  $('#export-calendar').disabled = !(data.conf || []).some((row) => favorites.has(favoriteKey(row, 'conf')) && hasCalendarDates(row));
+  updateDataWarning();
+  $('#panel').setAttribute('aria-busy', 'false');
+  renderFilterSummary();
+  renderMobileSort();
+  renderPagination(pages);
+  writeUrl();
+  if (focusedSort) $(`#thead [data-sort="${focusedSort}"]`)?.focus({ preventScroll: true });
+}
+
+function renderPagination(pages) {
+  const nav = $('#pagination');
+  if (pages <= 1) {
+    nav.innerHTML = '';
+    return;
+  }
+  const p = state.page;
+  const shown = [...new Set([1, p - 2, p - 1, p, p + 1, p + 2, pages])].filter((n) => n >= 1 && n <= pages).sort((a, b) => a - b);
+  let html = `<button type="button" data-page="${p - 1}"${p === 1 ? ' disabled' : ''} aria-label="上一页">‹</button>`;
+  shown.forEach((n, i) => {
+    if (i && n - shown[i - 1] > 1) html += '<span class="gap">…</span>';
+    html += `<button type="button" data-page="${n}"${n === p ? ' aria-current="page"' : ''}>${n}</button>`;
+  });
+  html += `<button type="button" data-page="${p + 1}"${p === pages ? ' disabled' : ''} aria-label="下一页">›</button>`;
+  nav.innerHTML = html;
+}
+
+async function showTab(tab, { resetPage = true } = {}) {
+  state.tab = tab;
+  if (resetPage) state.page = 1;
+  renderTabs();
+  $('#data-retry').hidden = true;
+  $('#export-calendar').disabled = true;
+  $('#panel').setAttribute('aria-busy', 'true');
+  if (!data[tab]) {
+    $('#thead').innerHTML = '';
+    $('#tbody').innerHTML = '';
+    $('#filters').innerHTML = '';
+    $('#pagination').innerHTML = '';
+    $('#result-count').textContent = '';
+    $('#data-note').textContent = '';
+    $('#active-filters').hidden = true;
+    $('#filter-count').textContent = '加载中';
+    $('#mobile-sort').disabled = true;
+    $('#empty').hidden = true;
+    $('#loading').hidden = false;
+    $('#loading').textContent = tab === 'jcr' ? '正在加载期刊数据（约 2 万种）…' : '正在加载数据…';
+    try {
+      await TABS[tab].load();
+    } catch (err) {
+      if (state.tab !== tab) return;
+      $('#panel').setAttribute('aria-busy', 'false');
+      $('#filter-count').textContent = '待加载';
+      $('#loading').textContent = location.protocol === 'file:'
+        ? '请通过本地服务器打开页面（npm run serve），直接打开文件无法加载数据。'
+        : '暂时无法加载数据，请检查网络后重试。';
+      $('#data-retry').hidden = false;
+      return;
+    }
+    if (state.tab !== tab) return; // user switched tabs meanwhile
+  }
+  renderFilters();
+  render();
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches && $('#panel').animate) {
+    $('#panel').getAnimations().forEach((animation) => animation.cancel());
+    $('#panel').animate([{ opacity: .85, transform: 'translateY(3px)' }, { opacity: 1, transform: 'none' }], { duration: 180, easing: 'ease-out' });
+  }
+}
+
+// ---------- Utilities ----------
+
+function downloadCalendar(rows, filename) {
+  const { text, count } = buildConferenceCalendar(rows);
+  if (!count) { toast('没有可导出的未来截稿时间，待公布和已截稿记录会自动跳过'); return; }
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/calendar;charset=utf-8' }));
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  toast(`已导出 ${count} 个时间节点，请导入日历并设置提醒`);
+}
+
+function backupStatus(message) {
+  const status = $('#favorites-backup-status');
+  status.textContent = message;
+  status.hidden = false;
+}
+
+function exportFavorites() {
+  if (!favorites.size) { backupStatus('还没有收藏，可先点击记录旁的“收藏”'); return; }
+  try {
+    const text = serializeFavoritesBackup(favorites);
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json;charset=utf-8' }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `ccf-favorites-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    backupStatus(`已导出全部 ${favorites.size} 条收藏，可在其他浏览器导入`);
+  } catch (err) { backupStatus(err.message || '导出失败，请稍后重试'); }
+}
+
+async function importFavorites(file) {
+  if (!file) return;
+  const button = $('#import-favorites');
+  button.disabled = true;
+  try {
+    if (file.size > FAVORITES_BACKUP_MAX_BYTES) throw new Error('请选择不超过 100 KB 的收藏备份');
+    const text = await file.text();
+    // Merge against current state after reading, including changes made in the meantime.
+    const result = importFavoritesBackup(storage, favorites, text);
+    favorites = result.favorites;
+    render();
+    backupStatus(result.persisted
+      ? `已合并收藏，新增 ${result.added} 条，共 ${favorites.size} 条；已保存在此浏览器`
+      : `已合并收藏，新增 ${result.added} 条；浏览器未允许保存，仅本次页面有效，请保留备份文件`);
+  } catch (err) {
+    backupStatus(`${err.message || '无法读取文件，请重试'}。原收藏未改变`);
+  } finally {
+    button.disabled = false;
+    $('#favorites-file').value = '';
+  }
+}
+
+let toastTimer;
+function toast(message) {
+  const el = $('#toast');
+  el.textContent = message;
+  el.classList.add('is-visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('is-visible'), 2600);
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const area = document.createElement('textarea');
+    area.value = text;
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.append(area);
+    area.select();
+    const ok = document.execCommand('copy');
+    area.remove();
+    if (!ok) throw new Error('copy failed');
+  }
+}
+
+function debounce(fn, ms) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), ms);
+  };
+}
+
+// ---------- Time zone tool ----------
+
+const TZ_OPTIONS = [
+  ['AoE', 'AoE（UTC−12）'], ['Asia/Shanghai', '北京'], ['UTC', 'UTC'],
+  ['America/Los_Angeles', '洛杉矶 / 美西'], ['America/New_York', '纽约 / 美东'],
+  ['Europe/London', '伦敦'], ['Europe/Paris', '巴黎 / 中欧'], ['Asia/Tokyo', '东京'],
+  ['Asia/Seoul', '首尔'], ['Asia/Singapore', '新加坡'], ['Australia/Sydney', '悉尼'], ['Pacific/Honolulu', '檀香山']
+];
+
+function convertTime() {
+  const from = $('#tz-from').value;
+  const ms = wallTimeToUtc(`${$('#tz-date').value} ${$('#tz-time').value}`, from);
+  if (ms == null) return;
+  $('#tz-result').innerHTML = TZ_OPTIONS.map(([zone, label]) => `<li${zone === from ? ' class="is-source"' : ''}>`
+    + `<span>${esc(label)}</span><strong>${esc(formatInZone(ms, parseTimezone(zone), true))}</strong></li>`).join('');
+}
+
+function initTimeTool() {
+  $('#tz-from').innerHTML = TZ_OPTIONS.map(([v, label]) => `<option value="${esc(v)}">${esc(label)}</option>`).join('');
+  $('#tz-date').value = formatInZone(Date.now(), null).slice(0, 10);
+  $('#tz-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    convertTime();
+  });
+  $('#tz-form').addEventListener('change', convertTime);
+  convertTime();
+}
+
+// ---------- Events ----------
+
+function bindEvents() {
+  const mobile = matchMedia('(max-width: 760px)');
+  const sizeFilters = () => { $('#filter-panel').open = !mobile.matches; };
+  sizeFilters();
+  mobile.addEventListener('change', sizeFilters);
+  const tabs = [...document.querySelectorAll('.tab')];
+  tabs.forEach((btn, i) => {
+    btn.addEventListener('click', () => btn.dataset.tab !== state.tab && showTab(btn.dataset.tab));
+    btn.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
+      const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      next.focus();
+      showTab(next.dataset.tab);
+    });
+  });
+
+  const onSearch = debounce(() => {
+    state.q = $('#search').value.trim();
+    state.page = 1;
+    render();
+  }, 150);
+  $('#search').addEventListener('input', onSearch);
+
+  $('#filters').addEventListener('change', (e) => {
+    const key = e.target.dataset.filter;
+    if (!key) return;
+    state.filters[state.tab][key] = e.target.type === 'checkbox' ? (e.target.checked ? '1' : '0') : e.target.value;
+    state.page = 1;
+    render();
+  });
+  $('#favorites-only').addEventListener('change', (e) => {
+    state.savedOnly = e.target.checked;
+    state.page = 1;
+    render();
+  });
+  $('#export-favorites').addEventListener('click', exportFavorites);
+  $('#import-favorites').addEventListener('click', () => $('#favorites-file').click());
+  $('#favorites-file').addEventListener('change', (e) => importFavorites(e.target.files?.[0]));
+  window.addEventListener('storage', (e) => {
+    if (e.key !== FAVORITES_KEY && e.key !== null) return;
+    favorites = favoriteSet(readStored(storage,FAVORITES_KEY,[]));
+    render();
+  });
+
+  $('#active-filters').addEventListener('click', (e) => {
+    const button = e.target.closest('[data-remove]');
+    if (!button) return;
+    const key = button.dataset.remove;
+    const index = [...button.parentElement.children].indexOf(button);
+    if (key === 'q') { state.q = ''; $('#search').value = ''; }
+    else state.filters[state.tab][key] = defaultFilters(state.tab)[key];
+    state.page = 1;
+    renderFilters();
+    render();
+    const remaining = [...$('#active-filters').children];
+    (remaining[Math.min(index, remaining.length - 1)] || $('#filter-panel summary')).focus({ preventScroll: true });
+  });
+
+  $('#mobile-sort').addEventListener('change', (e) => {
+    const [key, dir] = e.target.value.split(':');
+    state.sort[state.tab] = key === 'default' ? null : { key, dir };
+    state.page = 1;
+    render();
+  });
+
+  $('#thead').addEventListener('click', (e) => {
+    const key = e.target.closest('[data-sort]')?.dataset.sort;
+    if (!key) return;
+    const current = state.sort[state.tab];
+    const dir = current?.key === key && current.dir === 'asc' ? 'desc' : 'asc';
+    state.sort[state.tab] = { key, dir };
+    state.page = 1;
+    render();
+  });
+
+  $('#tbody').addEventListener('click', async (e) => {
+    const calendar = e.target.closest('[data-calendar]');
+    if (calendar && state.tab === 'conf') {
+      const row = state.view[Number(calendar.dataset.calendar)];
+      if (row) downloadCalendar([row], `ccf-${String(row.title).replace(/[^a-zA-Z0-9_-]/g, '-')}-${row.year || 'deadline'}.ics`);
+      return;
+    }
+    const favorite = e.target.closest('[data-favorite]');
+    if (favorite) {
+      const index = Number(favorite.dataset.favorite), row = state.view[index];
+      if (!row) return;
+      const key = favoriteKey(row,state.tab), saved = !favorites.has(key);
+      if (saved) favorites.add(key); else favorites.delete(key);
+      const persisted = writeStored(storage,FAVORITES_KEY,[...favorites]);
+      const position = index - (state.page-1)*PAGE_SIZE;
+      render();
+      const buttons = [...document.querySelectorAll('[data-favorite]')];
+      (buttons[Math.min(position,buttons.length-1)] || $('#favorites-only')).focus({preventScroll:true});
+      toast(persisted ? (saved ? '已收藏，下次访问仍会保留' : '已取消收藏') : '已更新本次收藏，浏览器未允许保存');
+      return;
+    }
+    const btn = e.target.closest('[data-copy]');
+    if (!btn) return;
+    const row = state.view[Number(btn.dataset.copy)];
+    if (!row) return;
+    try {
+      await copyText(TABS[state.tab].copyText(row));
+      toast('已复制到剪贴板');
+    } catch {
+      toast('复制失败，请检查浏览器权限');
+    }
+  });
+
+  $('#pagination').addEventListener('click', (e) => {
+    const page = Number(e.target.closest('[data-page]')?.dataset.page);
+    if (!page) return;
+    state.page = page;
+    render();
+    $('.tabs').scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+  });
+
+  $('#reset-btn').addEventListener('click', () => {
+    state.q = '';
+    state.savedOnly = false;
+    state.filters[state.tab] = defaultFilters(state.tab);
+    state.sort[state.tab] = TABS[state.tab].defaultSort;
+    state.page = 1;
+    $('#search').value = '';
+    renderFilters();
+    render();
+  });
+  $('#empty-reset').addEventListener('click', () => {
+    $('#reset-btn').click();
+    $('#search').focus({ preventScroll: true });
+  });
+
+  $('#share-btn').addEventListener('click', async () => {
+    try {
+      await copyText(location.href);
+      toast('链接已复制，打开后会保留当前筛选条件');
+    } catch {
+      toast('复制失败，请手动复制地址栏链接');
+    }
+  });
+
+  $('#refresh-btn').addEventListener('click', () => refreshConferences());
+  $('#data-retry').addEventListener('click', () => showTab(state.tab, { resetPage: false }));
+  $('#export-calendar').addEventListener('click', () => {
+    const rows = (data.conf || []).filter((row) => favorites.has(favoriteKey(row, 'conf')));
+    downloadCalendar(rows, 'ccf-favorites.ics');
+  });
+
+  $('#copy-group-number')?.addEventListener('click', async (e) => {
+    const button = e.currentTarget;
+    try {
+      await copyText(button.dataset.groupNumber);
+      toast('群号 1129726599 已复制');
+    } catch {
+      toast('复制失败，请手动复制群号 1129726599');
+    }
+    button.focus({ preventScroll: true });
+  });
+
+  // Keep countdowns current.
+  setInterval(() => {
+    if (document.visibilityState !== 'visible' || !data.conf) return;
+    refreshDeadlines();
+    if (state.tab !== 'jcr' && !document.activeElement?.closest?.('#tbody, #active-filters, #mobile-sort')) render();
+  }, 60 * 1000);
+}
+
+// ---------- Init ----------
+
+try {
+  LEGACY_CACHE_KEYS.forEach((k) => localStorage.removeItem(k));
+} catch {
+  // Storage disabled.
+}
+readUrl();
+bindEvents();
+initTimeTool();
+showTab(state.tab, { resetPage: false });

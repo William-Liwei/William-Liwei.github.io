@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <title>如何开发基于 Streamlit 和 SQLite 的数据库管理工具 | Wei Li</title>
+  <meta name="generator" content="hexo-theme-yilia-plus">
+  <meta name="description" content="用 Streamlit 和 SQLite 构建高效数据库管理工具在数据驱动的开发中，数据库管理是一个不可或缺的环节。最近，我开发了一个基于 Python 的简单数据库管理工具，用于管理和展示石窟艺术数据。这个项目不仅帮助我巩固了对 Streamlit 和 SQLite 的理解，还让我体会到了快速开发工具的强大能力。 项目背景我们的目标是创建一个简单易用的工具，用于管理和展示石窟艺术数据。这些数据存">
+<meta property="og:type" content="article">
+<meta property="og:title" content="如何开发基于 Streamlit 和 SQLite 的数据库管理工具 | Wei Li">
+<meta property="og:url" content="https://www.weili.space/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/">
+<meta property="og:site_name" content="William-Liwei&#39;s blog">
+<meta property="og:description" content="用 Streamlit 和 SQLite 构建高效数据库管理工具在数据驱动的开发中，数据库管理是一个不可或缺的环节。最近，我开发了一个基于 Python 的简单数据库管理工具，用于管理和展示石窟艺术数据。这个项目不仅帮助我巩固了对 Streamlit 和 SQLite 的理解，还让我体会到了快速开发工具的强大能力。 项目背景我们的目标是创建一个简单易用的工具，用于管理和展示石窟艺术数据。这些数据存">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.weili.space/assets/social/323585abb4e52e1774cd.png">
+<meta property="article:published_time" content="2025-02-18T15:19:26.000Z">
+<meta property="article:modified_time" content="2026-10-19T09:49:20.492Z">
+<meta property="article:author" content="Wei Li">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="Streamlit">
+<meta property="article:tag" content="SQLite">
+<meta property="article:tag" content="数据库管理">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.weili.space/assets/social/323585abb4e52e1774cd.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"如何开发基于 Streamlit 和 SQLite 的数据库管理工具","description":"在数据驱动的开发中，数据库管理是一个不可或缺的环节。最近，我开发了一个基于 Python 的简单数据库管理工具，用于管理和展示石窟艺术数据。这个项目不仅帮助我巩固了对 Streamlit 和 SQLite 的理解，还让我体会到了快速开发工具的强大能力。 我们的目标是创建一个简单易用的工具，用于...","url":"https://www.weili.space/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/","mainEntityOfPage":"https://www.weili.space/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/","image":"https://www.weili.space/assets/social/323585abb4e52e1774cd.png","datePublished":"2025-02-18T15:19:26.000Z","author":{"@type":"Person","name":"Wei Li","url":"https://www.weili.space/about/"}}</script>
+  <link rel="canonical" href="https://www.weili.space/2025/02/18/如何开发基于-Streamlit-和-SQLite-的数据库管理工具/">
+  <link rel="icon" href="/favicon.ico">
+  <link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="/atom.xml">
+  <script src="/assets/site-theme.js"></script>
+  <link rel="stylesheet" href="/assets/fonts/fonts.css">
+  <link rel="stylesheet" href="/assets/site.css">
+  <link rel="stylesheet" href="/assets/journal.css">
+  
+  <script src="/assets/journal.js" defer></script>
+  <script src="/assets/reading-progress.js" defer></script>
+  
+</head>
+
+<body class="journal">
+  <a class="skip-link" href="#main">跳至正文</a>
+  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
+  <main id="main" class="wrap journal-main"><article class="journal-post">
+  <header class="post-heading">
+    <a class="back-link" href="/blog/">← Blog</a>
+    <h1>如何开发基于 Streamlit 和 SQLite 的数据库管理工具</h1>
+    <div class="post-meta"><time datetime="2025-02-18T15:19:26.000Z">2025.02.18</time><span>Wei Li</span><span class="reading-time">约 3 分钟阅读</span></div>
+    
+    <div class="post-tags"><a class="tag" href="/tags/Python/">Python</a><a class="tag" href="/tags/Streamlit/">Streamlit</a><a class="tag" href="/tags/SQLite/">SQLite</a><a class="tag" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86/">数据库管理</a></div>
+  </header>
+  <div class="post-reading">
+  
+  <details class="post-toc"><summary>文章目录</summary><nav aria-label="Table of contents"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%A8-Streamlit-%E5%92%8C-SQLite-%E6%9E%84%E5%BB%BA%E9%AB%98%E6%95%88%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7"><span class="toc-text">用 Streamlit 和 SQLite 构建高效数据库管理工具</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A1%B9%E7%9B%AE%E8%83%8C%E6%99%AF"><span class="toc-text">项目背景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8A%80%E6%9C%AF%E6%A0%88"><span class="toc-text">技术栈</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0"><span class="toc-text">功能实现</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-%E6%95%B0%E6%8D%AE%E5%BA%93%E6%93%8D%E4%BD%9C"><span class="toc-text">1. 数据库操作</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-Streamlit-%E7%95%8C%E9%9D%A2%E5%BC%80%E5%8F%91"><span class="toc-text">2. Streamlit 界面开发</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-%E5%9B%BE%E7%89%87%E5%A4%84%E7%90%86"><span class="toc-text">3. 图片处理</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A1%B9%E7%9B%AE%E8%BF%90%E8%A1%8C"><span class="toc-text">项目运行</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-text">总结</span></a></li></ol></li></ol></nav></details>
+  <div class="post-body"><h2 id="用-Streamlit-和-SQLite-构建高效数据库管理工具"><a href="#用-Streamlit-和-SQLite-构建高效数据库管理工具" class="headerlink" title="用 Streamlit 和 SQLite 构建高效数据库管理工具"></a>用 Streamlit 和 SQLite 构建高效数据库管理工具</h2><p>在数据驱动的开发中，数据库管理是一个不可或缺的环节。最近，我开发了一个基于 Python 的简单数据库管理工具，用于管理和展示石窟艺术数据。这个项目不仅帮助我巩固了对 Streamlit 和 SQLite 的理解，还让我体会到了快速开发工具的强大能力。</p>
+<h3 id="项目背景"><a href="#项目背景" class="headerlink" title="项目背景"></a>项目背景</h3><p>我们的目标是创建一个简单易用的工具，用于管理和展示石窟艺术数据。这些数据存储在一个 SQLite 数据库中，包括雕塑的时期、洞窟名称、洞窟编号、来源、地区以及相关的图片等信息。为了实现这一目标，我选择了 Python 的 Streamlit 框架，因为它能够快速搭建交互式 Web 应用。</p>
+<span id="more"></span>
+
+<h3 id="技术栈"><a href="#技术栈" class="headerlink" title="技术栈"></a>技术栈</h3><ul>
+<li><strong>Python</strong>：作为开发语言，简洁且功能强大。</li>
+<li><strong>Streamlit</strong>：用于构建交互式 Web 界面。</li>
+<li><strong>SQLite</strong>：轻量级数据库，适合小型项目。</li>
+</ul>
+<h3 id="功能实现"><a href="#功能实现" class="headerlink" title="功能实现"></a>功能实现</h3><h4 id="1-数据库操作"><a href="#1-数据库操作" class="headerlink" title="1. 数据库操作"></a>1. 数据库操作</h4><p>我封装了几个关键的数据库操作函数，包括查询、插入&#x2F;更新和删除记录。以下是部分代码示例：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">query_database</span>(<span class="params">period=<span class="literal">None</span>, cave_name=<span class="literal">None</span>, cave_number=<span class="literal">None</span>, source=<span class="literal">None</span>, region=<span class="literal">None</span></span>):</span><br><span class="line">    conn = sqlite3.connect(sqlite_db_path)</span><br><span class="line">    cursor = conn.cursor()</span><br><span class="line">    query = <span class="string">&quot;SELECT * FROM BuddhaSculptures&quot;</span></span><br><span class="line">    params = []</span><br><span class="line">    conditions = []</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> period:</span><br><span class="line">        conditions.append(<span class="string">&quot;period = ?&quot;</span>)</span><br><span class="line">        params.append(period)</span><br><span class="line">    <span class="keyword">if</span> cave_name:</span><br><span class="line">        conditions.append(<span class="string">&quot;cave_name = ?&quot;</span>)</span><br><span class="line">        params.append(cave_name)</span><br><span class="line">    <span class="keyword">if</span> cave_number:</span><br><span class="line">        conditions.append(<span class="string">&quot;cave_number = ?&quot;</span>)</span><br><span class="line">        params.append(cave_number)</span><br><span class="line">    <span class="keyword">if</span> source:</span><br><span class="line">        conditions.append(<span class="string">&quot;source = ?&quot;</span>)</span><br><span class="line">        params.append(source)</span><br><span class="line">    <span class="keyword">if</span> region:</span><br><span class="line">        conditions.append(<span class="string">&quot;region = ?&quot;</span>)</span><br><span class="line">        params.append(region)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> conditions:</span><br><span class="line">        query += <span class="string">&quot; WHERE &quot;</span> + <span class="string">&quot; AND &quot;</span>.join(conditions)</span><br><span class="line"></span><br><span class="line">    cursor.execute(query, params)</span><br><span class="line">    results = cursor.fetchall()</span><br><span class="line">    cursor.close()</span><br><span class="line">    conn.close()</span><br><span class="line">    <span class="keyword">return</span> results</span><br></pre></td></tr></table></figure>
+
+<p>这些函数通过 SQLite 的 Python 接口实现了对数据库的基本操作。</p>
+<h4 id="2-Streamlit-界面开发"><a href="#2-Streamlit-界面开发" class="headerlink" title="2. Streamlit 界面开发"></a>2. Streamlit 界面开发</h4><p>Streamlit 的界面开发非常直观。我通过简单的表单和按钮实现了查询、添加&#x2F;更新和删除记录的功能。以下是部分界面代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">st.subheader(<span class="string">&quot;Query Records&quot;</span>)</span><br><span class="line">period = st.text_input(<span class="string">&quot;Period&quot;</span>)</span><br><span class="line">cave_name = st.text_input(<span class="string">&quot;Cave Name&quot;</span>)</span><br><span class="line"><span class="comment"># 其他输入框...</span></span><br><span class="line"><span class="keyword">if</span> st.button(<span class="string">&quot;Query&quot;</span>):</span><br><span class="line">    results = query_database(period, cave_name, cave_number, source, region)</span><br><span class="line">    <span class="keyword">if</span> results:</span><br><span class="line">        st.write(<span class="string">f&quot;Found <span class="subst">&#123;<span class="built_in">len</span>(results)&#125;</span> results:&quot;</span>)</span><br><span class="line">        <span class="keyword">for</span> row <span class="keyword">in</span> results:</span><br><span class="line">            st.write(<span class="string">f&quot;ID: <span class="subst">&#123;row[<span class="number">0</span>]&#125;</span>, Period: <span class="subst">&#123;row[<span class="number">5</span>]&#125;</span>, Cave Name: <span class="subst">&#123;row[<span class="number">3</span>]&#125;</span>&quot;</span>)</span><br><span class="line">            image_data = row[-<span class="number">1</span>]</span><br><span class="line">            image = display_image_from_blob(image_data)</span><br><span class="line">            <span class="keyword">if</span> image:</span><br><span class="line">                st.image(image, caption=<span class="string">f&quot;Image ID: <span class="subst">&#123;row[<span class="number">0</span>]&#125;</span>&quot;</span>, use_container_width=<span class="literal">True</span>)</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                st.write(<span class="string">&quot;No image available.&quot;</span>)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        st.write(<span class="string">&quot;No results found.&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>通过 Streamlit 提供的组件，如 <code>st.text_input</code> 和 <code>st.button</code>，用户可以轻松进行数据查询。</p>
+<h4 id="3-图片处理"><a href="#3-图片处理" class="headerlink" title="3. 图片处理"></a>3. 图片处理</h4><p>为了支持图片的上传和展示，我使用了 <code>Pillow</code> 库来处理图片数据，并将其以 BLOB 格式存储在数据库中。以下是图片展示的代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">display_image_from_blob</span>(<span class="params">blob_data</span>):</span><br><span class="line">    <span class="keyword">if</span> blob_data:</span><br><span class="line">        image_bytes = io.BytesIO(blob_data)</span><br><span class="line">        image = Image.<span class="built_in">open</span>(image_bytes)</span><br><span class="line">        <span class="keyword">return</span> image</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span></span><br></pre></td></tr></table></figure>
+
+<p>通过这种方式，用户可以方便地上传图片，并在查询时直接查看图片内容。</p>
+<h3 id="项目运行"><a href="#项目运行" class="headerlink" title="项目运行"></a>项目运行</h3><p>为了方便启动项目，我编写了一个启动脚本 <code>db_start_streamlit.py</code>，它会检查环境变量，确保 Streamlit 只运行一次。以下是启动脚本的核心代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    <span class="keyword">if</span> os.environ.get(ENV_FLAG) <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">        os.environ[ENV_FLAG] = <span class="string">&quot;1&quot;</span></span><br><span class="line">        os.system(<span class="string">&quot;streamlit run db_streamlit.py&quot;</span>)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Streamlit is already running.&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>通过这个脚本，用户只需运行一个命令即可启动整个应用。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>通过这个项目，我不仅巩固了 Python 和 SQLite 的开发技能，还学习了如何使用 Streamlit 构建简单的 Web 应用。这个工具虽然简单，但已经能够满足我们对石窟艺术数据的基本管理需求。未来，我计划进一步优化界面设计，并尝试将数据迁移到更强大的数据库系统中，以支持更大的数据量和更复杂的查询。</p>
+<p>如果你对这个项目感兴趣，或者有类似的开发需求，欢迎与我交流！</p>
+<hr>
+<p><strong>附录</strong></p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://docs.streamlit.io/">Streamlit 官方文档</a> </li>
+<li><a target="_blank" rel="noopener" href="https://www.sqlite.org/docs.html">SQLite 官方文档</a> </li>
+<li><a target="_blank" rel="noopener" href="https://pillow.readthedocs.io/en/stable/">Pillow 官方文档</a></li>
+</ul>
+</div>
+  </div>
+  
+  <section class="related-posts" aria-labelledby="related-heading"><h2 id="related-heading">继续阅读</h2><ul><li><a href="/2025/07/17/AnyRouter/"><span>技术实践</span><strong>AnyRouter</strong><span aria-hidden="true">→</span></a></li><li><a href="/2025/06/07/%E6%88%91%E7%9A%84%E4%B8%96%E7%95%8C%E5%9C%B0%E9%93%81%E7%BA%BF%E8%B7%AF%E5%9B%BE/"><span>技术实践</span><strong>我的世界地铁线路图</strong><span aria-hidden="true">→</span></a></li><li><a href="/2025/05/30/ISCC2025WriteUp/"><span>技术实践</span><strong>ISCC2025WriteUp</strong><span aria-hidden="true">→</span></a></li></ul></section>
+  
+  <nav class="post-neighbors" aria-label="Adjacent posts">
+    <div><span class="muted">上一篇</span><a href="/2025/02/23/%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2DeepSeek%E7%9A%84%E4%B8%AA%E4%BA%BA%E7%BB%8F%E9%AA%8C/">本地部署DeepSeek的个人经验</a></div>
+    <div><span class="muted">下一篇</span><a href="/2025/02/17/%E8%AF%BE%E7%A8%8B%E7%BF%BC%E9%80%89%E9%80%9A%EF%BC%9A%E5%9F%BA%E4%BA%8Eflask%E5%92%8Cplaywright%E7%9A%84%E4%BA%91%E4%B8%BB%E6%9C%BA%E9%83%A8%E7%BD%B2%E7%BD%91%E7%AB%99/">课程翼选通：基于flask和playwright的云主机部署网站</a></div>
+  </nav>
+</article>
+
+</main>
+  <footer class="site-footer"><div class="wrap footer-inner"><span>© 2026 Wei Li</span><nav class="footer-links" aria-label="Footer"><a href="/">Home</a><a href="/about/">About</a><a href="/blog/">Blog</a><a href="/atom.xml">RSS</a></nav></div></footer>
+</body>
+</html>
