@@ -4,6 +4,8 @@
 .journal-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; padding-bottom: 30px; border-bottom: 1px solid var(--line); }
 .journal-heading h1 { margin: 0; font: 600 clamp(2.5rem, 7vw, 4rem)/1.15 var(--header-font); color: var(--ink); overflow-wrap: anywhere; }
 .journal-heading > a, .back-link { color: var(--gold); font-size: .88rem; white-space: nowrap; }
+.journal-heading-links { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px 20px; }
+.journal-heading-links a { display: inline-flex; align-items: center; min-height: 44px; color: var(--gold); font-size: .85rem; white-space: nowrap; }
 .journal-item { padding: 34px 0; border-bottom: 1px solid var(--line); }
 .post-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; color: var(--muted); font-size: .82rem; }
 .journal-item h2 { margin: 10px 0; font-size: clamp(1.2rem, 3vw, 1.5rem); font-weight: 600; line-height: 1.55; overflow-wrap: anywhere; }

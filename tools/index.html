@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="/tools/toolbox.css">
   <script src="/tools/text-tools.js" defer></script>
   <script src="/tools/toolbox.js" defer></script>
+  <script src="/tools/markdown-renderer.js" defer></script>
   <script src="/tools/markdown.js" defer></script>
 </head>
 <body class="toolbox-page">
@@ -76,7 +77,7 @@
       </section>
 
       <section id="markdown" class="tool-panel" aria-labelledby="markdown-heading" hidden>
-        <header class="panel-heading"><h2 id="markdown-heading">Markdown 预览</h2><p>边写边看排版，支持标题、列表、表格、链接与代码块。</p></header>
+        <header class="panel-heading"><h2 id="markdown-heading">Markdown 预览</h2><p>边写边看排版，支持标题、列表、表格、代码块与 LaTeX 数学公式。</p></header>
         <div class="markdown-options"><label><input type="checkbox" id="markdown-images"> 加载网络图片</label><span>开启后会向图片地址发起请求。</span></div>
         <div class="editor-grid markdown-editors">
           <div class="editor-field"><div class="editor-label"><label for="markdown-input">Markdown 原文</label><span id="markdown-count">0 字符</span></div><textarea id="markdown-input" maxlength="50000" spellcheck="false" placeholder="# 从一个标题开始\n\n在这里输入 Markdown…" aria-describedby="markdown-hint"></textarea></div>
@@ -84,6 +85,7 @@
         </div>
         <div class="tool-actions"><button type="button" id="export-markdown-pdf" class="action-primary" disabled>导出 PDF <span aria-hidden="true">↗</span></button><button type="button" id="copy-markdown-html" disabled>复制 HTML</button><button type="button" id="download-markdown" disabled>下载 .md</button><button type="button" id="sample-markdown" class="action-quiet">填入示例</button><button type="button" id="clear-markdown" class="action-quiet">清空</button><button type="button" id="retry-markdown" hidden>重试加载</button></div>
         <p class="field-hint" id="markdown-hint">最多 50,000 字符。导出 PDF 会打开打印窗口，请选择“另存为 PDF”。HTML 标签以文本显示；网络图片默认不加载。</p>
+        <p class="field-hint">公式写法：行内 <code>$E=mc^2$</code> 或 <code>\(E=mc^2\)</code>；独立公式使用 <code>$$…$$</code> 或 <code>\[…\]</code>。最多渲染 200 个公式，单个公式最多 4,000 字符。</p>
         <p class="tool-status" id="markdown-status" role="status" aria-atomic="true"></p>
       </section>
     </div>

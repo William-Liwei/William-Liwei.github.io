@@ -27,6 +27,10 @@ hr { margin: 24px 0; border: 0; border-top: 1px solid var(--line); }
 input[type="checkbox"] { accent-color: var(--accent); }
 .image-placeholder { display: block; margin: 12px 0; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 5px; font-size: .85em; color: var(--muted); }
 .empty-preview { color: var(--muted); font-size: .9em; }
+.math-block { display: block; margin: 1.2em 0; }
+.katex-display { overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
+.katex { color: var(--ink); }
+.math-error { color: #b44e36; white-space: pre-wrap; }
 @page { size: A4; margin: 18mm; }
 @media print {
   :root, [data-theme="dark"] { color-scheme: light; --bg: #fff; --ink: #222; --heading: #111; --muted: #555; --line: #ccc; --code: #f3f3f3; --accent: #645019; }
@@ -34,4 +38,6 @@ input[type="checkbox"] { accent-color: var(--accent); }
   p, li { orphans: 3; widows: 3; }
   pre { border: 1px solid #ddd; }
   a { color: #333; }
+  .math-block { break-inside: avoid; }
+  .katex-display { overflow: visible; }
 }
