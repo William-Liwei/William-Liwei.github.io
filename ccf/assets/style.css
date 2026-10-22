@@ -287,6 +287,15 @@ th[aria-sort="descending"] .sort-btn::after { content: "↓"; opacity: 1; color:
 
 .empty, .loading { margin: 0; padding: 40px 16px; text-align: center; color: var(--muted); }
 .empty p { margin: 0 0 16px; }
+.empty-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.deadline-stage { display: block; margin-top: 5px; color: var(--orange); font-size: .76rem; font-weight: 600; white-space: normal; }
+.deadline-rounds { max-width: 38ch; margin-top: 8px; font-size: .76rem; white-space: normal; }
+.deadline-rounds summary { min-height: 32px; padding-block: 6px; color: var(--gold); cursor: pointer; }
+.deadline-rounds ol { display: grid; gap: 10px; margin: 8px 0 0; padding: 0; list-style: none; }
+.deadline-rounds li { display: grid; gap: 4px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+.deadline-rounds li strong { color: var(--ink-soft); }
+.deadline-rounds time { display: inline; font: inherit; }
+.round-comment { color: var(--muted); overflow-wrap: anywhere; }
 
 .pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 16px; }
 .pagination button {
@@ -397,6 +406,7 @@ th[aria-sort="descending"] .sort-btn::after { content: "↓"; opacity: 1; color:
   .row-actions .row-btn { flex: 1 1 84px; min-width: 0; padding: 8px; line-height: 1.5; white-space: normal; }
   .deadline { white-space: normal; }
   .deadline time { display: block; }
+  .deadline-rounds summary { min-height: 44px; }
   .rank { justify-self: start; }
   .tag { width: fit-content; max-width: 100%; white-space: normal; }
   .pagination button { min-width: 44px; min-height: 44px; }

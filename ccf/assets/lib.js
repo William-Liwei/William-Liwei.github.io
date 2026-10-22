@@ -125,25 +125,27 @@ export function formatCountdown(ms, now = Date.now()) {
 // ---------- Conference data (ccfddl allconf.yml / allacc.yml) ----------
 
 function buildAcceptanceIndex(accList) {
-  const index = new Map();
-  for (const item of accList || []) {
-    if (!item?.title || !Array.isArray(item.accept_rates)) continue;
-    const rates = index.get(item.title) || [];
-    for (const r of item.accept_rates) {
-      if (r?.year != null && typeof r.rate === 'number') rates.push({ year: Number(r.year), rate: r.rate, str: r.str || '' });
-    }
-    index.set(item.title, rates.sort((a, b) => b.year - a.year));
-  }
-  return index;
+  return createConferenceIndex((accList || []).filter((item) => item?.title && Array.isArray(item.accept_rates)));
 }
 
 // Flattens ccfddl YAML (already parsed) into one row per conference edition.
 export function processConferences(confList, accList) {
   const acc = buildAcceptanceIndex(accList);
+  const conferences = createConferenceIndex(confList || []);
   const rows = [];
   for (const conf of confList || []) {
     if (!conf?.title || !Array.isArray(conf.confs)) continue;
-    const rates = acc.get(conf.title) || [];
+    let matches = findConferenceRows(acc, conf);
+    // Older acceptance files may only identify an abbreviation. Do not assign
+    // that rate to either venue when the conference source has a name collision.
+    const ambiguous = (conferences.byName.get(nameKey(conf.title))?.size || 0) > 1;
+    if (ambiguous && matches && !matches.every((item) =>
+      (conferenceDblp(conf) && conferenceDblp(item) === conferenceDblp(conf)) ||
+      (conferenceSource(conf) && conferenceSource(item) === conferenceSource(conf)))) matches = null;
+    const rates = (matches || []).flatMap((item) => item.accept_rates)
+      .filter((r) => r?.year != null && typeof r.rate === 'number' && Number.isFinite(r.rate))
+      .map((r) => ({ year: Number(r.year), rate: r.rate, str: r.str || '' }))
+      .sort((a, b) => b.year - a.year);
     for (const c of conf.confs) {
       const timeline = (c.timeline || []).map((t) => {
         const round = { deadline: wallTimeToUtc(t.deadline, c.timezone) };
@@ -156,6 +158,7 @@ export function processConferences(confList, accList) {
       rows.push({
         title: String(conf.title),
         dblp: String(conf.dblp || '').toLowerCase(),
+        sourceKey: conferenceSource(conf),
         description: conf.description || '',
         sub: conf.sub || '',
         rank: conf.rank?.ccf || 'N',
@@ -217,7 +220,120 @@ export function dblpKey(url) {
 // Keys used to link a CCF list conference with ccfddl rows (which use different
 // names for some, e.g. "SIGKDD" vs "KDD").
 export function conferenceKeys(name, dblp) {
-  return [nameKey(name) && `n:${nameKey(name)}`, dblp && `d:${dblp}`].filter(Boolean);
+  return [dblp && `d:${String(dblp).trim().toLowerCase()}`, nameKey(name) && `n:${nameKey(name)}`].filter(Boolean);
+}
+
+const conferenceDblp = row => String(row?.dblp || '').trim().toLowerCase();
+const conferenceSource = row => String(row?.sourceKey || row?.conference_key || '').trim().toLowerCase();
+const conferenceName = row => nameKey(row?.title || row?.name);
+
+// Editions of one venue share an identity; equal abbreviations alone do not.
+export function conferenceIdentity(row) {
+  const dblp = conferenceDblp(row), source = conferenceSource(row);
+  return dblp ? `d:${dblp}` : source ? `s:${source}`
+    : `n:${conferenceName(row)}:${nameKey(row?.description || row?.full)}`;
+}
+
+export function createConferenceIndex(rows) {
+  const byDblp = new Map(), bySource = new Map(), byName = new Map();
+  const add = (map, key, row) => { if (key) { if (!map.has(key)) map.set(key, []); map.get(key).push(row); } };
+  for (const row of rows || []) {
+    if (!row) continue;
+    add(byDblp, conferenceDblp(row), row);
+    add(bySource, conferenceSource(row), row);
+    const name = conferenceName(row);
+    if (!name) continue;
+    if (!byName.has(name)) byName.set(name, new Map());
+    add(byName.get(name), conferenceIdentity(row), row);
+  }
+  return { byDblp, bySource, byName };
+}
+
+export function findConferenceRows(index, query) {
+  if (!index) return null;
+  const dblp = conferenceDblp(query), source = conferenceSource(query);
+  if (dblp && index.byDblp.has(dblp)) return index.byDblp.get(dblp);
+  const exactSource = source && index.bySource.get(source);
+  if (exactSource && !exactSource.some((r) => dblp && conferenceDblp(r) && conferenceDblp(r) !== dblp)) return exactSource;
+  const names = index.byName.get(conferenceName(query));
+  if (names?.size !== 1) return null;
+  const candidates = names.values().next().value;
+  // A known, different identity is not a spelling variant of this venue.
+  if (candidates.some((r) => (dblp && conferenceDblp(r) && conferenceDblp(r) !== dblp)
+    || (source && conferenceSource(r) && conferenceSource(r) !== source))) return null;
+  return candidates;
+}
+
+export function latestConferenceYears(rows) {
+  const years = new Map();
+  for (const row of rows || []) {
+    const key = conferenceIdentity(row);
+    years.set(key, Math.max(years.get(key) || 0, row.year || 0));
+  }
+  return years;
+}
+
+export function nextConferenceDeadline(index, query, now = Date.now()) {
+  let next = null;
+  for (const row of findConferenceRows(index, query) || []) {
+    const d = pickDeadline(row.timeline, now);
+    if (d && d.status !== 'passed' && (!next || d.deadline < next.deadline)) next = { ...d, year: row.year };
+  }
+  return next;
+}
+
+export function deadlineStage(round, now = Date.now()) {
+  return Number.isFinite(round?.deadline) && round.deadline >= now && Number.isFinite(round.abstract) && round.abstract < now
+    ? '摘要已截止 · 全文未截止' : '';
+}
+
+// Source round order is retained; dates that were not supplied stay unknown.
+export function deadlineRoundsHTML(row, zone, now = Date.now()) {
+  if (!Array.isArray(row.timeline) || !row.timeline.length) return '';
+  const time = (value, missing) => Number.isFinite(value)
+    ? `<time datetime="${new Date(value).toISOString()}">${esc(formatInZone(value, zone))}</time>` : missing;
+  const items = row.timeline.map((round, i) => `<li><strong>第 ${i + 1} 轮</strong>`
+    + `<span>摘要：${time(round.abstract, '未提供')}</span><span>全文：${time(round.deadline, '待公布')}</span>`
+    + (deadlineStage(round, now) ? `<span class="deadline-stage">${deadlineStage(round, now)}</span>` : '')
+    + (round.comment ? `<span class="round-comment">${esc(round.comment)}</span>` : '') + '</li>').join('');
+  const key = JSON.stringify([conferenceIdentity(row), row.year]);
+  return `<details class="deadline-rounds" data-rounds-key="${esc(key)}"><summary>查看各轮时间（${row.timeline.length}）</summary><ol>${items}</ol></details>`;
+}
+
+export function conferenceCopyText(row, now = Date.now()) {
+  const beijing = { zone: 'Asia/Shanghai' }, d = pickDeadline(row.timeline, now);
+  const lines = [`${row.title} ${row.year ?? ''}（CCF ${row.rank && row.rank !== 'N' ? row.rank : '未收录'}）`, row.description];
+  lines.push(d ? `全文截稿：${formatInZone(d.deadline, beijing)} 北京时间（${formatInZone(d.deadline, parseTimezone(row.timezone))} ${row.timezone}）` : '全文截稿：待公布');
+  if (Number.isFinite(d?.abstract)) lines.push(`摘要：${formatInZone(d.abstract, beijing)} 北京时间`);
+  if (deadlineStage(d, now)) lines.push(`${deadlineStage(d, now)}；是否仍可投稿，请核对官网的摘要注册要求。`);
+  if (row.timeline.length > 1 || !d) row.timeline.forEach((round, i) => {
+    lines.push(`第 ${i + 1} 轮：摘要 ${round.abstract == null ? '未提供' : formatInZone(round.abstract, beijing)}；全文 ${round.deadline == null ? '待公布' : formatInZone(round.deadline, beijing)}（北京时间）${round.comment ? ` · ${round.comment}` : ''}`);
+  });
+  if (row.date || row.place) lines.push(`会议：${[row.date, row.place].filter(Boolean).join(' · ')}`);
+  if (row.acceptance) lines.push(`录用率：${(row.acceptance.rate * 100).toFixed(1)}%（${row.acceptance.year}）`);
+  if (safeUrl(row.link)) lines.push(row.link);
+  return lines.filter(Boolean).join('\n');
+}
+
+export function journalPartitionLines(journal, versions) {
+  const lines = [];
+  const jcr = [journal.jif && `IF ${journal.jif}`, journal.quartile && `最佳分区 ${journal.quartile}`,
+    journal.rank && `最佳分区对应学科排名 ${journal.rank}`].filter(Boolean);
+  if (jcr.length) lines.push(`JCR ${versions.jcrVersion}：${jcr.join('，')}`);
+  if (journal.cas) lines.push(`中科院 ${versions.casVersion}：${journal.cas} 区${journal.casTop ? ' Top' : ''}`);
+  if (journal.xr) lines.push(`新锐 ${versions.xrVersion}：${journal.xr} 区${journal.xrTop ? ' Top' : ''}${journal.xrWarn ? '（预警）' : ''}`);
+  return lines;
+}
+
+// Normalize only writing differences, not venue meanings or synonyms.
+export function searchTerms(query) {
+  return String(query || '').normalize('NFKC').toLowerCase().replace(/[‐‑‒–—−]/g, '-').trim().split(/\s+/).filter(Boolean);
+}
+
+export function journalSearchText(journal) {
+  const aliases = Array.isArray(journal.aliases) ? journal.aliases : [];
+  const compact = [journal.issn, journal.eissn].map(s => String(s || '').replace(/[-\s]/g, ''));
+  return searchTerms([journal.name, ...aliases, journal.issn, journal.eissn, ...compact].join(' ')).join(' ');
 }
 
 // ---------- Journal name matching ----------

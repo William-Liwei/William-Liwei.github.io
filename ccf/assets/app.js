@@ -1,5 +1,6 @@
 import {
-  conferenceKeys, esc, formatCountdown, formatInZone, parseTimezone, pickDeadline, processConferences, safeUrl, wallTimeToUtc
+  conferenceIdentity, createConferenceIndex, findConferenceRows, latestConferenceYears, nextConferenceDeadline,
+  deadlineStage, deadlineRoundsHTML, conferenceCopyText, journalPartitionLines as partitionLines, journalSearchText, searchTerms, esc, formatCountdown, formatInZone, parseTimezone, pickDeadline, processConferences, safeUrl, wallTimeToUtc
 } from './lib.js';
 import {favoriteKey, readStored, writeStored, favoriteSet, serializeFavoritesBackup, importFavoritesBackup, FAVORITES_BACKUP_MAX_BYTES, FAVORITES_KEY, PREFERENCES_KEY} from './preferences.js';
 import {buildConferenceCalendar} from './calendar.js';
@@ -9,8 +10,8 @@ try { storage = localStorage; } catch {}
 let favorites = favoriteSet(readStored(storage, FAVORITES_KEY, []));
 
 const PAGE_SIZE = 50;
-const CONF_CACHE_KEY = 'ccfonline-conferences-v3';
-const LEGACY_CACHE_KEYS = ['conferenceData_v2', 'acceptanceRateData_v2', 'lastUpdate_v2'];
+const CONF_CACHE_KEY = 'ccfonline-conferences-v4';
+const LEGACY_CACHE_KEYS = ['conferenceData_v2', 'acceptanceRateData_v2', 'lastUpdate_v2', 'ccfonline-conferences-v3'];
 const STALE_MS = 24 * 3600 * 1000;
 // ccfddl publishes the merged YAML on the `page` branch of ccfddl/ccfddl.github.io;
 // ccfddl.com serves the same files and is usually reachable from mainland China.
@@ -31,7 +32,7 @@ const $ = (sel) => document.querySelector(sel);
 
 // ---------- Data ----------
 
-const data = { meta: null, conf: null, confUpdated: null, confNotice: '', confNext: new Map(), ccf: null, ccfLevels: new Map(), jcr: null };
+const data = { meta: null, conf: null, confUpdated: null, confNotice: '', confIndex: null, ccf: null, ccfIndex: null, jcr: null };
 const pending = {};
 
 function once(key, fn) {
@@ -61,9 +62,7 @@ const loadMeta = () => once('meta', async () => {
 const loadCcfList = () => once('ccf', async () => {
   const rows = await getJson('data/ccf-list.json');
   data.ccf = rows.map((r) => ({ ...r, _s: `${r.name} ${r.full} ${r.publisher}`.toLowerCase() }));
-  for (const r of rows) {
-    if (r.type === '会议') for (const k of conferenceKeys(r.name, r.dblp)) data.ccfLevels.set(k, r.level);
-  }
+  data.ccfIndex = createConferenceIndex(rows.filter(r => r.type === '会议'));
 });
 
 const loadJournals = () => once('jcr', async () => {
@@ -75,7 +74,7 @@ const loadJournals = () => once('jcr', async () => {
     j.categories = j.categories.map((i) => json.categories[i]);
     const jif = parseFloat(j.jif);
     j.jifNum = Number.isFinite(jif) ? jif : j.jif.startsWith('<') ? 0 : null;
-    j._s = `${j.name} ${j.issn} ${j.eissn}`.toLowerCase();
+    j._s = journalSearchText(j);
     return j;
   });
 });
@@ -99,28 +98,22 @@ function readCachedConferences() {
 
 function setConferences(snapshot) {
   data.confUpdated = snapshot.updated;
-  const latestYear = new Map();
-  for (const r of snapshot.rows) latestYear.set(r.title, Math.max(latestYear.get(r.title) ?? 0, r.year ?? 0));
+  const latestYear = latestConferenceYears(snapshot.rows);
   data.conf = snapshot.rows.map((r) => {
     const rank = r.rank && r.rank !== 'N' ? r.rank
-      : conferenceKeys(r.title, r.dblp).map((k) => data.ccfLevels.get(k)).find(Boolean) || 'N';
-    return { ...r, rank, latest: (r.year ?? 0) === latestYear.get(r.title), _s: `${r.title} ${r.description}`.toLowerCase() };
+      : findConferenceRows(data.ccfIndex, r)?.[0]?.level || 'N';
+    return { ...r, rank, latest: (r.year ?? 0) === latestYear.get(conferenceIdentity(r)), _s: searchTerms(`${r.title} ${r.description}`).join(' ') };
   });
+  data.confIndex = createConferenceIndex(data.conf);
   refreshDeadlines();
 }
 
-// Recomputes "next deadline" per edition and per conference title (used by the CCF list tab).
+// Recomputes the selected full-paper deadline for each edition.
 function refreshDeadlines() {
   if (!data.conf) return;
   const now = Date.now();
-  data.confNext = new Map();
   for (const r of data.conf) {
     r.dl = pickDeadline(r.timeline, now);
-    if (!r.dl || r.dl.status === 'passed') continue;
-    for (const key of conferenceKeys(r.title, r.dblp)) {
-      const current = data.confNext.get(key);
-      if (!current || r.dl.deadline < current.deadline) data.confNext.set(key, { ...r.dl, year: r.year });
-    }
   }
 }
 
@@ -240,17 +233,20 @@ function deadlineZone(mode, row) {
 
 function deadlineCell(row) {
   const d = row.dl;
-  if (!d) return '<span class="muted">待公布</span>';
   const mode = state.filters.conf.tz;
   const zone = deadlineZone(mode, row);
+  const rounds = deadlineRoundsHTML(row, zone);
+  if (!d) return '<span class="muted">待公布</span>' + rounds;
   const suffix = mode === 'orig' ? ` <span class="muted">${esc(row.timezone)}</span>` : '';
-  const notes = [d.rounds > 1 ? `共 ${d.rounds} 轮` : '', d.comment].filter(Boolean).join(' · ');
+  const notes = [row.timeline.length > 1 ? `共 ${row.timeline.length} 轮` : '', d.comment].filter(Boolean).join(' · ');
+  const stage = deadlineStage(d);
   return `<div class="deadline status-${d.status}">`
     + `<time datetime="${new Date(d.deadline).toISOString()}">${esc(formatInZone(d.deadline, zone, true))}</time>${suffix}`
     + `<span class="countdown">${esc(formatCountdown(d.deadline))}</span>`
     + (d.abstract ? sub(`摘要 ${esc(formatInZone(d.abstract, zone))}`) : '')
+    + (stage ? `<span class="deadline-stage">${stage}</span>${sub('是否仍可投稿，请核对官网的摘要注册要求。')}` : '')
     + (notes ? sub(esc(notes)) : '')
-    + '</div>';
+    + '</div>' + rounds;
 }
 
 function acceptanceCell(row) {
@@ -262,7 +258,7 @@ function acceptanceCell(row) {
 function journalMetrics(j, versions) {
   const tags = [];
   if (j.jif) tags.push(`<span class="tag" title="JCR ${esc(versions.jcrVersion)} 影响因子">IF ${esc(j.jif)}</span>`);
-  if (j.quartile) tags.push(`<span class="tag">${esc(j.quartile)}</span>`);
+  if (j.quartile) tags.push(`<span class="tag" title="各 JCR 学科中的最佳分区">最佳 ${esc(j.quartile)}</span>`);
   if (j.cas) tags.push(`<span class="tag" title="中科院分区 ${esc(versions.casVersion)}">中科院 ${esc(j.cas)} 区${j.casTop ? ' Top' : ''}</span>`);
   if (j.xr) tags.push(`<span class="tag" title="新锐分区 ${esc(versions.xrVersion)}">新锐 ${esc(j.xr)} 区${j.xrTop ? ' Top' : ''}</span>`);
   if (j.xrWarn) tags.push('<span class="tag tag-warn" title="新锐分区标注为 Under Review（预警）">预警</span>');
@@ -272,14 +268,6 @@ function journalMetrics(j, versions) {
 function zoneCell(zone, top, warn) {
   if (!zone) return '<span class="muted">—</span>';
   return `<span class="tag">${esc(zone)} 区</span>${top ? '<span class="tag tag-top">Top</span>' : ''}${warn ? '<span class="tag tag-warn">预警</span>' : ''}`;
-}
-
-function partitionLines(j, m) {
-  const lines = [];
-  if (j.jif) lines.push(`JCR ${m.jcrVersion}：IF ${j.jif}${j.quartile ? `，${j.quartile}` : ''}${j.rank ? `，学科排名 ${j.rank}` : ''}`);
-  if (j.cas) lines.push(`中科院 ${m.casVersion}：${j.cas} 区${j.casTop ? ' Top' : ''}`);
-  if (j.xr) lines.push(`新锐 ${m.xrVersion}：${j.xr} 区${j.xrTop ? ' Top' : ''}${j.xrWarn ? '（预警）' : ''}`);
-  return lines;
 }
 
 const hasCalendarDates = (row) => row.timeline.some((round) => [round.deadline, round.abstract].some((time) => Number.isFinite(time) && time >= Date.now()));
@@ -299,7 +287,7 @@ const TABS = {
     filters: [
       { key: 'sub', label: '领域', options: () => Object.entries(SUB_NAMES) },
       { key: 'rank', label: 'CCF 等级', options: () => [['A', 'A 类'], ['B', 'B 类'], ['C', 'C 类'], ['N', '非 CCF']] },
-      { key: 'status', label: '截稿状态', options: () => [['open', '未截稿'], ['week', '7 天内截稿'], ['month', '30 天内截稿'], ['passed', '已截稿'], ['tbd', '待公布']] },
+      { key: 'status', label: '全文截稿状态', options: () => [['open', '全文未截稿'], ['week', '7 天内截稿'], ['month', '30 天内截稿'], ['passed', '全文已截稿'], ['tbd', '待公布']] },
       { key: 'tz', label: '截稿时间显示为', def: 'bj', noAll: true, options: () => [['bj', '北京时间'], ['local', '本机时区'], ['orig', '会议原时区']] },
       { key: 'latest', label: '只看每个会议最新一届', offLabel: '显示所有年份', type: 'check', def: '1' }
     ],
@@ -331,20 +319,11 @@ const TABS = {
       { label: '全称', cls: 'cell-full', render: (r) => `${esc(r.description)}${sub(esc([r.date, r.place].filter(Boolean).join(' · ')))}` },
       { label: 'CCF', sort: 'rank', render: (r) => rankBadge(r.rank) },
       { label: '领域', cls: 'cell-field', render: (r) => esc(SUB_NAMES[r.sub] || r.sub) },
-      { label: '截稿时间', sort: 'deadline', render: deadlineCell },
+      { label: '全文截稿', sort: 'deadline', render: deadlineCell },
       { label: '录用率', sort: 'acc', render: acceptanceCell },
       { label: '', render: (r, i) => copyBtn(i) }
     ],
-    copyText(r) {
-      const d = r.dl;
-      const lines = [`${r.title} ${r.year ?? ''}（CCF ${r.rank !== 'N' ? r.rank : '未收录'}）`, r.description];
-      if (d) lines.push(`截稿：${formatInZone(d.deadline, BEIJING)} 北京时间（${formatInZone(d.deadline, parseTimezone(r.timezone))} ${r.timezone}）`);
-      else lines.push('截稿：待公布');
-      if (r.date || r.place) lines.push(`会议：${[r.date, r.place].filter(Boolean).join(' · ')}`);
-      if (r.acceptance) lines.push(`录用率：${(r.acceptance.rate * 100).toFixed(1)}%（${r.acceptance.year}）`);
-      if (safeUrl(r.link)) lines.push(r.link);
-      return lines.join('\n');
-    },
+    copyText: conferenceCopyText,
     note: () => (data.confUpdated ? `会议数据更新于 ${formatInZone(Date.parse(data.confUpdated), null)} · 来源 ccfddl` : '')
   },
 
@@ -376,7 +355,7 @@ const TABS = {
       { label: '出版社', render: (r) => esc(r.publisher) },
       { label: '指标 / 截稿', render: (r) => {
         if (r.type === '期刊') return journalMetrics(r, data.meta || {}) || '<span class="muted">未收录于 JCR</span>';
-        const next = conferenceKeys(r.name, r.dblp).map((k) => data.confNext.get(k)).find(Boolean);
+        const next = nextConferenceDeadline(data.confIndex, r);
         if (!next) return '<span class="muted">—</span>';
         return `<div class="deadline status-${next.status}"><time>${esc(formatInZone(next.deadline, BEIJING))}</time>`
           + `<span class="countdown">${esc(next.year)} · ${esc(formatCountdown(next.deadline))}</span></div>`;
@@ -399,7 +378,7 @@ const TABS = {
     filters: [
       { key: 'jcat', label: 'JCR 学科', options: () => data.jcrCategories.map((c) => [c, c]) },
       { key: 'jif', label: '影响因子', options: () => [['10', '≥ 10'], ['5', '5 – 10'], ['3', '3 – 5'], ['0', '< 3']] },
-      { key: 'quart', label: 'JCR 分区', options: () => ['Q1', 'Q2', 'Q3', 'Q4'].map((q) => [q, q]) },
+      { key: 'quart', label: 'JCR 最佳分区', options: () => ['Q1', 'Q2', 'Q3', 'Q4'].map((q) => [q, q]) },
       { key: 'cas', label: '中科院分区', options: () => [1, 2, 3, 4].map((z) => [String(z), `${z} 区`]) },
       { key: 'xr', label: '新锐分区', options: () => [1, 2, 3, 4].map((z) => [String(z), `${z} 区`]) },
       { key: 'ccf', label: 'CCF 推荐', options: () => [['any', 'CCF 收录'], ['A', 'A 类'], ['B', 'B 类'], ['C', 'C 类']] },
@@ -435,8 +414,8 @@ const TABS = {
     columns: [
       { label: '期刊', sort: 'name', cls: 'cell-full', render: (j) => `<strong>${esc(j.name)}</strong>${sub(`<span class="mono">${esc([j.issn, j.eissn].filter(Boolean).join(' / '))}</span>`)}` },
       { label: 'JCR 学科', render: (j) => sub(esc(j.categories.join('；'))) },
-      { label: '影响因子', sort: 'jif', render: (j) => (j.jif ? `<strong>${esc(j.jif)}</strong>${sub(esc(j.rank))}` : '<span class="muted">—</span>') },
-      { label: 'JCR', sort: 'quart', render: (j) => (j.quartile ? `<span class="tag">${esc(j.quartile)}</span>` : '<span class="muted">—</span>') },
+      { label: '影响因子', sort: 'jif', render: (j) => (j.jif ? `<strong>${esc(j.jif)}</strong>${j.rank ? sub(`最佳分区对应排名 ${esc(j.rank)}`) : ''}` : '<span class="muted">—</span>') },
+      { label: 'JCR 最佳分区', sort: 'quart', render: (j) => (j.quartile ? `<span class="tag" title="各学科中最佳分区；学科筛选不改变此值">${esc(j.quartile)}</span>` : '<span class="muted">—</span>') },
       { label: '中科院', sort: 'cas', render: (j) => zoneCell(j.cas, j.casTop) },
       { label: '新锐', sort: 'xr', render: (j) => zoneCell(j.xr, j.xrTop, j.xrWarn) },
       { label: 'CCF', sort: 'ccf', render: (j) => (j.ccf ? rankBadge(j.ccf) : '<span class="muted">—</span>') },
@@ -447,7 +426,7 @@ const TABS = {
       if (j.ccf) lines.push(`CCF 推荐：${j.ccf} 类`);
       return lines.join('\n');
     },
-    note: () => (data.meta ? `JCR ${data.meta.jcrVersion}（${Number(data.meta.jcrVersion) + 1} 年 6 月发布）· 中科院分区 ${data.meta.casVersion} · 新锐分区 ${data.meta.xrVersion} · 共 ${data.jcr?.length ?? 0} 种期刊` : '')
+    note: () => (data.meta ? `JCR ${data.meta.jcrVersion}（${Number(data.meta.jcrVersion) + 1} 年 6 月发布）· 中科院分区 ${data.meta.casVersion} · 新锐分区 ${data.meta.xrVersion} · 共 ${data.jcr?.length ?? 0} 种期刊。JCR 显示各学科最佳分区，学科筛选不改变此口径。` : '')
   }
 };
 
@@ -608,7 +587,7 @@ function computeView() {
   const tab = TABS[state.tab];
   const rows = data[state.tab] || [];
   const f = state.filters[state.tab];
-  const terms = state.q.toLowerCase().split(/\s+/).filter(Boolean);
+  const terms = searchTerms(state.q);
   const view = rows.filter((r) => (!state.savedOnly || favorites.has(favoriteKey(r,state.tab))) && terms.every((t) => r._s.includes(t)) && tab.match(r, f));
   const cmp = compareRows(state.tab, state.sort[state.tab]);
   return cmp ? view.sort(cmp) : view;
@@ -623,6 +602,7 @@ function render() {
   const start = (state.page - 1) * PAGE_SIZE;
   const sort = state.sort[state.tab];
   const focusedSort = document.activeElement?.closest('#thead [data-sort]')?.dataset.sort;
+  const openRounds = new Set([...$('#tbody').querySelectorAll('details[data-rounds-key][open]')].map(node => node.dataset.roundsKey));
 
   $('#thead').innerHTML = `<tr>${tab.columns.map((c) => {
     if (!c.sort) return `<th scope="col">${c.label ? esc(c.label) : '<span class="visually-hidden">操作</span>'}</th>`;
@@ -634,9 +614,11 @@ function render() {
     const cls = c.cls ? ` class="${c.cls}"` : '';
     return `<td data-label="${esc(c.label)}"${cls}><div class="cell-value">${c.render(row, start + i)}</div></td>`;
   }).join('')}</tr>`).join('');
+  $('#tbody').querySelectorAll('details[data-rounds-key]').forEach(node => { node.open = openRounds.has(node.dataset.roundsKey); });
 
   $('#empty').hidden = state.view.length > 0;
   $('#empty p').textContent = state.savedOnly ? '当前条件下没有收藏，试试取消“只看收藏”或调整筛选。' : '没有符合条件的结果，试试减少筛选条件。';
+  $('#empty-keep-query').hidden = !state.q.trim();
   $('#favorites-only').checked = state.savedOnly;
   $('#favorites-count').textContent = new Set(data[state.tab].filter((r) => favorites.has(favoriteKey(r,state.tab))).map((r) => favoriteKey(r,state.tab))).size;
   $('#loading').hidden = true;
@@ -964,6 +946,15 @@ function bindEvents() {
   });
   $('#empty-reset').addEventListener('click', () => {
     $('#reset-btn').click();
+    $('#search').focus({ preventScroll: true });
+  });
+  $('#empty-keep-query').addEventListener('click', () => {
+    state.savedOnly = false;
+    state.filters[state.tab] = defaultFilters(state.tab);
+    state.sort[state.tab] = TABS[state.tab].defaultSort;
+    state.page = 1;
+    renderFilters();
+    render();
     $('#search').focus({ preventScroll: true });
   });
 

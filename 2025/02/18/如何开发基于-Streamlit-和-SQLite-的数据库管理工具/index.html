@@ -6,27 +6,26 @@
   
   <title>如何开发基于 Streamlit 和 SQLite 的数据库管理工具 | Wei Li</title>
   <meta name="generator" content="hexo-theme-yilia-plus">
-  <meta name="description" content="用 Streamlit 和 SQLite 构建高效数据库管理工具在数据驱动的开发中，数据库管理是一个不可或缺的环节。最近，我开发了一个基于 Python 的简单数据库管理工具，用于管理和展示石窟艺术数据。这个项目不仅帮助我巩固了对 Streamlit 和 SQLite 的理解，还让我体会到了快速开发工具的强大能力。 项目背景我们的目标是创建一个简单易用的工具，用于管理和展示石窟艺术数据。这些数据存">
+<meta name="description" content="在数据驱动的开发中，数据库管理是一个不可或缺的环节。最近，我开发了一个基于 Python 的简单数据库管理工具，用于管理和展示石窟艺术数据。这个项目不仅帮助我巩固了对 Streamlit 和 SQLite 的理解，还让我体会到了快速开发工具的强大能力。 我们的目标是创建一个简单易用的工具，用于...">
+<meta name="author" content="Wei Li">
+<link rel="canonical" href="https://www.weili.space/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/">
 <meta property="og:type" content="article">
 <meta property="og:title" content="如何开发基于 Streamlit 和 SQLite 的数据库管理工具 | Wei Li">
 <meta property="og:url" content="https://www.weili.space/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/">
-<meta property="og:site_name" content="William-Liwei&#39;s blog">
-<meta property="og:description" content="用 Streamlit 和 SQLite 构建高效数据库管理工具在数据驱动的开发中，数据库管理是一个不可或缺的环节。最近，我开发了一个基于 Python 的简单数据库管理工具，用于管理和展示石窟艺术数据。这个项目不仅帮助我巩固了对 Streamlit 和 SQLite 的理解，还让我体会到了快速开发工具的强大能力。 项目背景我们的目标是创建一个简单易用的工具，用于管理和展示石窟艺术数据。这些数据存">
+<meta property="og:site_name" content="Wei Li">
+<meta property="og:description" content="在数据驱动的开发中，数据库管理是一个不可或缺的环节。最近，我开发了一个基于 Python 的简单数据库管理工具，用于管理和展示石窟艺术数据。这个项目不仅帮助我巩固了对 Streamlit 和 SQLite 的理解，还让我体会到了快速开发工具的强大能力。 我们的目标是创建一个简单易用的工具，用于...">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://www.weili.space/assets/social/323585abb4e52e1774cd.png">
-<meta property="article:published_time" content="2025-02-18T15:19:26.000Z">
-<meta property="article:modified_time" content="2026-10-19T09:49:20.492Z">
-<meta property="article:author" content="Wei Li">
-<meta property="article:tag" content="Python">
-<meta property="article:tag" content="Streamlit">
-<meta property="article:tag" content="SQLite">
-<meta property="article:tag" content="数据库管理">
-<meta name="twitter:card" content="summary">
+<meta property="og:image:alt" content="Wei Li — Blog">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="如何开发基于 Streamlit 和 SQLite 的数据库管理工具 | Wei Li">
+<meta name="twitter:description" content="在数据驱动的开发中，数据库管理是一个不可或缺的环节。最近，我开发了一个基于 Python 的简单数据库管理工具，用于管理和展示石窟艺术数据。这个项目不仅帮助我巩固了对 Streamlit 和 SQLite 的理解，还让我体会到了快速开发工具的强大能力。 我们的目标是创建一个简单易用的工具，用于...">
 <meta name="twitter:image" content="https://www.weili.space/assets/social/323585abb4e52e1774cd.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"如何开发基于 Streamlit 和 SQLite 的数据库管理工具","description":"在数据驱动的开发中，数据库管理是一个不可或缺的环节。最近，我开发了一个基于 Python 的简单数据库管理工具，用于管理和展示石窟艺术数据。这个项目不仅帮助我巩固了对 Streamlit 和 SQLite 的理解，还让我体会到了快速开发工具的强大能力。 我们的目标是创建一个简单易用的工具，用于...","url":"https://www.weili.space/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/","mainEntityOfPage":"https://www.weili.space/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/","image":"https://www.weili.space/assets/social/323585abb4e52e1774cd.png","datePublished":"2025-02-18T15:19:26.000Z","author":{"@type":"Person","name":"Wei Li","url":"https://www.weili.space/about/"}}</script>
-  <link rel="canonical" href="https://www.weili.space/2025/02/18/如何开发基于-Streamlit-和-SQLite-的数据库管理工具/">
+<link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="https://www.weili.space/atom.xml">
+<meta property="article:author" content="Wei Li">
+<meta property="article:published_time" content="2025-02-18T15:19:26.000Z">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"如何开发基于 Streamlit 和 SQLite 的数据库管理工具","description":"在数据驱动的开发中，数据库管理是一个不可或缺的环节。最近，我开发了一个基于 Python 的简单数据库管理工具，用于管理和展示石窟艺术数据。这个项目不仅帮助我巩固了对 Streamlit 和 SQLite 的理解，还让我体会到了快速开发工具的强大能力。 我们的目标是创建一个简单易用的工具，用于...","url":"https://www.weili.space/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/","mainEntityOfPage":"https://www.weili.space/2025/02/18/%E5%A6%82%E4%BD%95%E5%BC%80%E5%8F%91%E5%9F%BA%E4%BA%8E-Streamlit-%E5%92%8C-SQLite-%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/","image":"https://www.weili.space/assets/social/323585abb4e52e1774cd.png","datePublished":"2025-02-18T15:19:26.000Z","author":{"@type":"Person","@id":"https://www.weili.space/#person","name":"Wei Li","alternateName":"William","url":"https://www.weili.space/about/","jobTitle":"Incoming PhD Student in Computer Science","sameAs":["https://github.com/William-Liwei","https://scholar.google.com/citations?user=jLPVuhoAAAAJ","https://orcid.org/0009-0008-8108-4854"]}}</script>
   <link rel="icon" href="/favicon.ico">
-  <link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="/atom.xml">
   <script src="/assets/site-theme.js"></script>
   <link rel="stylesheet" href="/assets/fonts/fonts.css">
   <link rel="stylesheet" href="/assets/site.css">

@@ -6,25 +6,26 @@
   
   <title>重识时间序列：算法与前沿 | Wei Li</title>
   <meta name="generator" content="hexo-theme-yilia-plus">
-  <meta name="description" content="重识时间序列：算法与前沿版本更新： 2026-04-05：ver-1.0 引言时间序列，本质上是从海量（抑或稀疏）的历史数据中，挖掘世界运转的隐秘规律。 在过去的一年多时间里，我的主要研究方向是时间序列与深度学习的交叉领域。从传统的频域算法（傅里叶、小波变换），到 Transformer（PatchTST、TimesNet），再到如今前沿的状态空间模型（SSM）与无条件时序生成大模型（Flow M">
+<meta name="description" content="梳理时间序列分析的基本问题、算法与研究进展，作为持续更新的学习笔记。">
+<meta name="author" content="Wei Li">
+<link rel="canonical" href="https://www.weili.space/2026/04/05/%E9%87%8D%E8%AF%86%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%EF%BC%9A%E7%AE%97%E6%B3%95%E4%B8%8E%E5%89%8D%E6%B2%BF/">
 <meta property="og:type" content="article">
 <meta property="og:title" content="重识时间序列：算法与前沿 | Wei Li">
 <meta property="og:url" content="https://www.weili.space/2026/04/05/%E9%87%8D%E8%AF%86%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%EF%BC%9A%E7%AE%97%E6%B3%95%E4%B8%8E%E5%89%8D%E6%B2%BF/">
-<meta property="og:site_name" content="William-Liwei&#39;s blog">
-<meta property="og:description" content="重识时间序列：算法与前沿版本更新： 2026-04-05：ver-1.0 引言时间序列，本质上是从海量（抑或稀疏）的历史数据中，挖掘世界运转的隐秘规律。 在过去的一年多时间里，我的主要研究方向是时间序列与深度学习的交叉领域。从传统的频域算法（傅里叶、小波变换），到 Transformer（PatchTST、TimesNet），再到如今前沿的状态空间模型（SSM）与无条件时序生成大模型（Flow M">
+<meta property="og:site_name" content="Wei Li">
+<meta property="og:description" content="梳理时间序列分析的基本问题、算法与研究进展，作为持续更新的学习笔记。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://www.weili.space/assets/social/59558526f298a37f8231.png">
-<meta property="article:published_time" content="2026-04-05T15:10:24.000Z">
-<meta property="article:modified_time" content="2026-10-19T09:49:20.501Z">
-<meta property="article:author" content="Wei Li">
-<meta property="article:tag" content="学术">
-<meta property="article:tag" content="时间序列">
-<meta name="twitter:card" content="summary">
+<meta property="og:image:alt" content="Wei Li — Blog">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="重识时间序列：算法与前沿 | Wei Li">
+<meta name="twitter:description" content="梳理时间序列分析的基本问题、算法与研究进展，作为持续更新的学习笔记。">
 <meta name="twitter:image" content="https://www.weili.space/assets/social/59558526f298a37f8231.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"重识时间序列：算法与前沿","description":"梳理时间序列分析的基本问题、算法与研究进展，作为持续更新的学习笔记。","url":"https://www.weili.space/2026/04/05/%E9%87%8D%E8%AF%86%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%EF%BC%9A%E7%AE%97%E6%B3%95%E4%B8%8E%E5%89%8D%E6%B2%BF/","mainEntityOfPage":"https://www.weili.space/2026/04/05/%E9%87%8D%E8%AF%86%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%EF%BC%9A%E7%AE%97%E6%B3%95%E4%B8%8E%E5%89%8D%E6%B2%BF/","image":"https://www.weili.space/assets/social/59558526f298a37f8231.png","datePublished":"2026-04-05T15:10:24.000Z","author":{"@type":"Person","name":"Wei Li","url":"https://www.weili.space/about/"}}</script>
-  <link rel="canonical" href="https://www.weili.space/2026/04/05/重识时间序列：算法与前沿/">
+<link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="https://www.weili.space/atom.xml">
+<meta property="article:author" content="Wei Li">
+<meta property="article:published_time" content="2026-04-05T15:10:24.000Z">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"重识时间序列：算法与前沿","description":"梳理时间序列分析的基本问题、算法与研究进展，作为持续更新的学习笔记。","url":"https://www.weili.space/2026/04/05/%E9%87%8D%E8%AF%86%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%EF%BC%9A%E7%AE%97%E6%B3%95%E4%B8%8E%E5%89%8D%E6%B2%BF/","mainEntityOfPage":"https://www.weili.space/2026/04/05/%E9%87%8D%E8%AF%86%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%EF%BC%9A%E7%AE%97%E6%B3%95%E4%B8%8E%E5%89%8D%E6%B2%BF/","image":"https://www.weili.space/assets/social/59558526f298a37f8231.png","datePublished":"2026-04-05T15:10:24.000Z","author":{"@type":"Person","@id":"https://www.weili.space/#person","name":"Wei Li","alternateName":"William","url":"https://www.weili.space/about/","jobTitle":"Incoming PhD Student in Computer Science","sameAs":["https://github.com/William-Liwei","https://scholar.google.com/citations?user=jLPVuhoAAAAJ","https://orcid.org/0009-0008-8108-4854"]}}</script>
   <link rel="icon" href="/favicon.ico">
-  <link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="/atom.xml">
   <script src="/assets/site-theme.js"></script>
   <link rel="stylesheet" href="/assets/fonts/fonts.css">
   <link rel="stylesheet" href="/assets/site.css">
@@ -172,7 +173,7 @@ mjx-container[display="true"] + br {
 
 <p>作者：黎玮 - 上海大学</p>
 <p>时间：2026.04.04</p>
-<p>邮箱：<a href="mailto:&#x6c;&#105;&#119;&#x65;&#105;&#x30;&#48;&#x38;&#48;&#48;&#x39;&#x40;&#x31;&#x36;&#x33;&#46;&#99;&#x6f;&#x6d;">liwei008009@163.com</a></p>
+<p>邮箱：<a href="mailto:&#108;&#x69;&#x77;&#x65;&#105;&#x30;&#x30;&#56;&#x30;&#48;&#57;&#x40;&#49;&#54;&#51;&#x2e;&#99;&#111;&#109;">liwei008009@163.com</a></p>
 <p>个人主页：weili.space/about</p>
 <h2 id="第1章-绪论"><a href="#第1章-绪论" class="headerlink" title="第1章 绪论"></a>第1章 绪论</h2><p>时间序列，是一种按照时间轴T组织起来的具有先后顺序的数据串。</p>
 <p>一直以来，无论是在传统教材中，还是在诸如 PatchTST、TimesNet 等前沿的深度学习研究中，往往将时间序列作为一个同质化的整体数据类型加以研究。然而，实践证明，不同领域的时间序列，除了其均是按照时间轴进行组织的这一共同特点之外，从数据分布、变量类型、变量数量、时间轴长度、样本数量、跨变量相关性、平稳性等等方面都有着截然不同的特点。因此，想要找到对世界上所有时间序列都普适的规律，往往是极其困难的，这也是为什么截止到2026年，我们依然很难找到一个真正能够在实际世界上而不是特定数据集上适用的时间序列基础模型（Time Series Foundation Model）。</p>
@@ -524,7 +525,7 @@ mjx-container[display="true"] + br {
 <p>独学而无友，则孤陋而寡闻。如果有学者希望与我进一步交流学术问题，或是探讨未来的相关合作，非常欢迎通过邮箱与我联系。再次感谢所有指导过我的恩师，以及每一位读到这里的读者！</p>
 <p>作者：黎玮 - 上海大学</p>
 <p>时间：2026.04.04</p>
-<p>邮箱：<a href="mailto:&#108;&#x69;&#119;&#101;&#105;&#x30;&#48;&#x38;&#48;&#48;&#x39;&#x40;&#x31;&#54;&#x33;&#46;&#x63;&#111;&#x6d;">liwei008009@163.com</a></p>
+<p>邮箱：<a href="mailto:&#x6c;&#x69;&#119;&#101;&#x69;&#x30;&#x30;&#56;&#48;&#x30;&#57;&#64;&#49;&#x36;&#x33;&#46;&#x63;&#111;&#109;">liwei008009@163.com</a></p>
 <p>个人主页：weili.space/about</p>
 <h2 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h2><p>相关资源可见下述。</p>
 <h3 id="链接"><a href="#链接" class="headerlink" title="链接"></a>链接</h3><ul>
