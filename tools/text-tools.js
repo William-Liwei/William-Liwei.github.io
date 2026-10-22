@@ -5,6 +5,8 @@
 })(typeof window === 'object' ? window : this, function () {
   'use strict';
   var MAX_CHARACTERS = 100000, MAX_LINES = 1000;
+  var MAX_INLINE_CHARACTERS = 6000, MAX_INLINE_TOKENS = 2000, MAX_INLINE_CELLS = 160000, MAX_INLINE_WORK = 1000000;
+  var graphemeSegmenter = typeof Intl === 'object' && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
   function normalize(text) { return String(text).replace(/\r\n?/g, '\n'); }
   function checkLength(text) {
     if (text.length > MAX_CHARACTERS) throw new RangeError('文本超过 100,000 字符，请分段处理。');
@@ -38,6 +40,70 @@
     }
     return value;
   }
+  function inlineTokens(text) {
+    var graphemes = graphemeSegmenter ? Array.from(graphemeSegmenter.segment(text), function (part) { return part.segment; }) : Array.from(text);
+    // A conservative fallback keeps combining marks and joined emoji intact.
+    if (!graphemeSegmenter) {
+      graphemes = graphemes.reduce(function (parts, char) {
+        var previous = parts[parts.length - 1];
+        var joinsPrevious = /[\p{Mark}\uFE0E\uFE0F\u200D\u{1F3FB}-\u{1F3FF}]/u.test(char) || (previous && previous.endsWith('\u200D'));
+        var flagPair = /\p{Regional_Indicator}/u.test(char) && previous && /^\p{Regional_Indicator}$/u.test(previous);
+        if (previous && (joinsPrevious || flagPair)) parts[parts.length - 1] += char;
+        else parts.push(char);
+        return parts;
+      }, []);
+    }
+    var tokens = [], previousKind = '';
+    graphemes.forEach(function (char) {
+      var kind = /^[\p{Script=Latin}\p{Number}_\p{Mark}]+$/u.test(char) ? 'word' : /^[ \t]+$/.test(char) ? 'space' : '';
+      if (kind && kind === previousKind) tokens[tokens.length - 1] += char;
+      else tokens.push(char);
+      previousKind = kind;
+    });
+    return tokens;
+  }
+  function pushSegment(segments, text, changed) {
+    if (!text) return;
+    var previous = segments[segments.length - 1];
+    if (previous && previous.changed === changed) previous.text += text;
+    else segments.push({ text: text, changed: changed });
+  }
+  function inlineDifference(before, after, budget) {
+    if (before.length > MAX_INLINE_CHARACTERS || after.length > MAX_INLINE_CHARACTERS) { budget.limited++; return null; }
+    var a = inlineTokens(before), b = inlineTokens(after);
+    if (a.length > MAX_INLINE_TOKENS || b.length > MAX_INLINE_TOKENS) { budget.limited++; return null; }
+    var start = 0, endA = a.length, endB = b.length, i, j;
+    while (start < endA && start < endB && a[start] === b[start]) start++;
+    while (endA > start && endB > start && a[endA - 1] === b[endB - 1]) { endA--; endB--; }
+    // Trim shared context first: a one-word edit in a long paragraph stays cheap.
+    var countA = endA - start, countB = endB - start;
+    var cells = (countA + 1) * (countB + 1);
+    if (cells > MAX_INLINE_CELLS || cells > budget.remaining) { budget.limited++; return null; }
+    budget.remaining -= cells;
+    var table = Array.from({ length: countA + 1 }, function () { return new Uint16Array(countB + 1); });
+    for (i = countA - 1; i >= 0; i--) {
+      for (j = countB - 1; j >= 0; j--) table[i][j] = a[start + i] === b[start + j] ? table[i + 1][j + 1] + 1 : Math.max(table[i + 1][j], table[i][j + 1]);
+    }
+    var left = [], right = [], shared = a.slice(0, start).concat(a.slice(endA)).join('');
+    pushSegment(left, a.slice(0, start).join(''), false); pushSegment(right, b.slice(0, start).join(''), false);
+    i = 0; j = 0;
+    while (i < countA || j < countB) {
+      if (i < countA && j < countB && a[start + i] === b[start + j]) {
+        var same = a[start + i++]; j++; shared += same;
+        pushSegment(left, same, false); pushSegment(right, same, false);
+      } else if (i < countA && (j === countB || table[i + 1][j] >= table[i][j + 1])) pushSegment(left, a[start + i++], true);
+      else pushSegment(right, b[start + j++], true);
+    }
+    pushSegment(left, a.slice(endA).join(''), false); pushSegment(right, b.slice(endB).join(''), false);
+    function weight(text) { return (text.match(/[\p{Letter}\p{Number}\p{Extended_Pictographic}\p{Regional_Indicator}]/gu) || []).length; }
+    var total = weight(before) + weight(after), common = weight(shared);
+    if (!total) { total = before.replace(/\s/g, '').length + after.replace(/\s/g, '').length; common = shared.replace(/\s/g, '').length; }
+    // Positional row pairing is not a semantic match. Only refine visibly similar
+    // text; sharing whitespace alone must not pair otherwise unrelated lines.
+    if (!common || common * 2 / total < 0.35) return null;
+    budget.highlighted++;
+    return { before: left, after: right };
+  }
   function compareText(before, after) {
     checkLength(before); checkLength(after);
     var left = normalize(before), right = normalize(after);
@@ -59,6 +125,7 @@
       }
     }
     var rows = [], oldLine = 1, newLine = 1, added = 0, removed = 0, unchanged = 0;
+    var inline = { remaining: MAX_INLINE_WORK, highlighted: 0, limited: 0 };
     for (i = 0; i < operations.length;) {
       var operation = operations[i];
       if (operation.type === 'same') {
@@ -71,10 +138,17 @@
           if (operation.type === 'removed') { deletions.push({ text: operation.text, line: oldLine++, kind: 'removed' }); removed++; }
           else { additions.push({ text: operation.text, line: newLine++, kind: 'added' }); added++; }
         }
-        for (j = 0; j < Math.max(deletions.length, additions.length); j++) rows.push({ before: deletions[j] || null, after: additions[j] || null });
+        for (j = 0; j < Math.max(deletions.length, additions.length); j++) {
+          var row = { before: deletions[j] || null, after: additions[j] || null };
+          if (row.before && row.after) {
+            var segments = inlineDifference(row.before.text, row.after.text, inline);
+            if (segments) { row.before.segments = segments.before; row.after.segments = segments.after; }
+          }
+          rows.push(row);
+        }
       }
     }
-    return { rows: rows, added: added, removed: removed, unchanged: unchanged, identical: left === right };
+    return { rows: rows, added: added, removed: removed, unchanged: unchanged, identical: left === right, inline: { highlighted: inline.highlighted, limited: inline.limited } };
   }
   return { cleanText: cleanText, compareText: compareText, MAX_CHARACTERS: MAX_CHARACTERS, MAX_LINES: MAX_LINES };
 });

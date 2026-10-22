@@ -29,15 +29,29 @@
     target.textContent = message;
     if (error) target.setAttribute('data-error', ''); else target.removeAttribute('data-error');
   }
+  function memoryUndo(button, capture, restore, target) {
+    var saved = null;
+    function discard() { saved = null; if (button) { button.hidden = true; button.disabled = true; } }
+    if (button) button.addEventListener('click', function () {
+      if (!saved) return;
+      var previous = saved; discard(); restore(previous); status(target, '已恢复上一步内容。');
+    });
+    return { remember: function () { saved = capture(); if (button) { button.hidden = false; button.disabled = false; } }, discard: discard };
+  }
   var cleanInput = get('clean-input'), cleanOutput = get('clean-output'), cleanStatus = get('clean-status'), copyButton = get('copy-clean');
+  var cleanUndo = memoryUndo(get('undo-clean'), function () {
+    return { input: cleanInput.value, output: cleanOutput.value, copyDisabled: copyButton.disabled };
+  }, function (saved) {
+    cleanInput.value = saved.input; cleanOutput.value = saved.output; copyButton.disabled = saved.copyDisabled; cleanCounts(); cleanInput.focus();
+  }, cleanStatus);
   function cleanCounts() { count(cleanInput, get('clean-input-count')); count(cleanOutput, get('clean-output-count')); }
   function invalidateClean() {
     var hadResult = !!cleanOutput.value;
     cleanOutput.value = ''; copyButton.disabled = true; cleanCounts();
     status(cleanStatus, hadResult ? '原文或选项已改变，请重新整理。' : '');
   }
-  cleanInput.addEventListener('input', invalidateClean);
-  document.querySelectorAll('.clean-options input').forEach(function (input) { input.addEventListener('change', invalidateClean); });
+  cleanInput.addEventListener('input', function () { cleanUndo.discard(); invalidateClean(); });
+  document.querySelectorAll('.clean-options input').forEach(function (input) { input.addEventListener('change', function () { cleanUndo.discard(); invalidateClean(); }); });
   function runClean() {
     if (!cleanInput.value) { status(cleanStatus, '请先粘贴需要整理的文字。', true); return; }
     try {
@@ -50,12 +64,13 @@
       status(cleanStatus, cleanOutput.value ? (cleanOutput.value === cleanInput.value ? '文本无需调整，结果与原文一致。' : '整理完成，请对照原文检查结果。') : '整理后没有可复制的文字。');
     } catch (error) { cleanOutput.value = ''; copyButton.disabled = true; cleanCounts(); status(cleanStatus, error.message, true); }
   }
-  get('clean-form').addEventListener('submit', function (event) { event.preventDefault(); runClean(); });
+  get('clean-form').addEventListener('submit', function (event) { event.preventDefault(); cleanUndo.discard(); runClean(); });
   get('sample-clean').addEventListener('click', function () {
+    cleanUndo.remember();
     cleanInput.value = 'Learning from temporal\ndata helps us make better\npredictions.\n\nTime series fore-\ncasting can be useful.\n\n这个段落从 PDF 复制后，\n出现了多余的换行。';
     runClean();
   });
-  get('clear-clean').addEventListener('click', function () { cleanInput.value = ''; invalidateClean(); status(cleanStatus, '已清空。'); cleanInput.focus(); });
+  get('clear-clean').addEventListener('click', function () { cleanUndo.remember(); cleanInput.value = ''; invalidateClean(); status(cleanStatus, '已清空，可撤销上一步。'); cleanInput.focus(); });
   async function copyText(value) {
     try { await navigator.clipboard.writeText(value); }
     catch (error) {
@@ -75,23 +90,37 @@
   });
 
   var before = get('before-text'), after = get('after-text'), comparison = get('comparison'), rows = get('diff-rows'), compareStatus = get('compare-status');
+  var compareUndo = memoryUndo(get('undo-compare'), function () {
+    return { before: before.value, after: after.value, compared: !comparison.hidden };
+  }, function (saved) {
+    before.value = saved.before; after.value = saved.after;
+    if (saved.compared) runComparison(); else invalidateComparison();
+    before.focus();
+  }, compareStatus);
   function compareCounts() { count(before, get('before-count')); count(after, get('after-count')); }
   function invalidateComparison() {
     var hadResult = !comparison.hidden;
     comparison.hidden = true; rows.replaceChildren(); compareCounts();
     status(compareStatus, hadResult ? '文本已改变，请重新对比。' : '');
   }
-  before.addEventListener('input', invalidateComparison); after.addEventListener('input', invalidateComparison);
+  before.addEventListener('input', function () { compareUndo.discard(); invalidateComparison(); });
+  after.addEventListener('input', function () { compareUndo.discard(); invalidateComparison(); });
   function diffCell(item, side) {
     var cell = document.createElement('div');
-    cell.className = 'diff-cell' + (item ? ' diff-' + item.kind : ' diff-placeholder');
+    cell.className = 'diff-cell' + (item ? ' diff-' + item.kind + (item.segments ? ' diff-inline' : '') : ' diff-placeholder');
     cell.dataset.side = side;
     if (!item) { cell.setAttribute('aria-hidden', 'true'); return cell; }
     var number = document.createElement('span'), sign = document.createElement('span'), text = document.createElement('pre');
     number.className = 'diff-number'; number.textContent = item.line; number.setAttribute('aria-label', '第 ' + item.line + ' 行');
     sign.className = 'diff-sign'; sign.textContent = item.kind === 'added' ? '+' : item.kind === 'removed' ? '−' : ' ';
     sign.setAttribute('aria-label', item.kind === 'added' ? '新增' : item.kind === 'removed' ? '删除' : '保留');
-    text.textContent = item.text === '' ? '（空行）' : item.text;
+    if (item.segments) {
+      item.segments.forEach(function (segment) {
+        if (segment.changed) {
+          var mark = document.createElement('mark'); mark.className = 'diff-change'; mark.textContent = segment.text; text.append(mark);
+        } else text.append(document.createTextNode(segment.text));
+      });
+    } else text.textContent = item.text === '' ? '（空行）' : item.text;
     if (item.text === '') text.className = 'diff-empty';
     cell.append(number, sign, text); return cell;
   }
@@ -107,16 +136,19 @@
       rows.replaceChildren(fragment);
       get('diff-summary').textContent = '新增 ' + result.added + ' 行 · 删除 ' + result.removed + ' 行 · 保留 ' + result.unchanged + ' 行';
       comparison.hidden = false;
-      status(compareStatus, result.identical ? '两段文本一致（已忽略系统换行格式差异）。' : '对比完成：新增 ' + result.added + ' 行，删除 ' + result.removed + ' 行。');
+      var inlineNote = result.inline.highlighted ? ' 相似行中的具体改动已加深标记。' : '';
+      if (result.inline.limited) inlineNote += ' ' + result.inline.limited + ' 对较长或复杂的行仅显示行级差异，请分段比较以查看细节。';
+      status(compareStatus, result.identical ? '两段文本一致（已忽略系统换行格式差异）。' : '对比完成：新增 ' + result.added + ' 行，删除 ' + result.removed + ' 行。' + inlineNote);
     } catch (error) { status(compareStatus, error.message, true); }
   }
-  get('compare-form').addEventListener('submit', function (event) { event.preventDefault(); runComparison(); });
-  get('swap-text').addEventListener('click', function () { var original = before.value; before.value = after.value; after.value = original; invalidateComparison(); });
+  get('compare-form').addEventListener('submit', function (event) { event.preventDefault(); compareUndo.discard(); runComparison(); });
+  get('swap-text').addEventListener('click', function () { compareUndo.discard(); var original = before.value; before.value = after.value; after.value = original; invalidateComparison(); });
   get('sample-compare').addEventListener('click', function () {
+    compareUndo.remember();
     before.value = '个人工具箱\n整理从 PDF 复制的文字。\n所有文本在浏览器中处理。';
     after.value = '个人工具箱\n整理从 PDF 复制的文字，保留段落。\n支持对比两段文字的改动。\n所有文本在浏览器中处理。';
     runComparison();
   });
-  get('clear-compare').addEventListener('click', function () { before.value = ''; after.value = ''; invalidateComparison(); status(compareStatus, '已清空。'); before.focus(); });
+  get('clear-compare').addEventListener('click', function () { compareUndo.remember(); before.value = ''; after.value = ''; invalidateComparison(); status(compareStatus, '已清空，可撤销上一步。'); before.focus(); });
   cleanCounts(); compareCounts();
 })();

@@ -64,15 +64,31 @@
 .diff-sign { color: var(--muted); }
 .diff-added { background: rgba(94, 119, 102, .11); }
 .diff-removed { background: rgba(168, 95, 63, .11); }
+.diff-inline.diff-added { background: rgba(94, 119, 102, .035); }
+.diff-inline.diff-removed { background: rgba(168, 95, 63, .035); }
+.diff-change { color: inherit; border-radius: 3px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.diff-added .diff-change { background: rgba(94, 119, 102, .23); box-shadow: inset 0 -1px rgba(94, 119, 102, .5); }
+.diff-removed .diff-change { background: rgba(168, 95, 63, .23); box-shadow: inset 0 -1px rgba(168, 95, 63, .5); }
 .diff-added .diff-sign { color: var(--sage); }
 .diff-removed .diff-sign { color: var(--clay); }
 [data-theme="dark"] .diff-added { background: rgba(143, 177, 154, .12); }
 [data-theme="dark"] .diff-removed { background: rgba(207, 135, 99, .12); }
+[data-theme="dark"] .diff-inline.diff-added { background: rgba(143, 177, 154, .035); }
+[data-theme="dark"] .diff-inline.diff-removed { background: rgba(207, 135, 99, .035); }
+[data-theme="dark"] .diff-added .diff-change { background: rgba(143, 177, 154, .25); box-shadow: inset 0 -1px rgba(143, 177, 154, .6); }
+[data-theme="dark"] .diff-removed .diff-change { background: rgba(207, 135, 99, .25); box-shadow: inset 0 -1px rgba(207, 135, 99, .6); }
 .diff-empty { color: var(--muted); font-style: italic; }
 .markdown-options { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-bottom: 18px; font-size: .74rem; }
 .markdown-options label { display: flex; align-items: center; gap: 7px; min-height: 36px; cursor: pointer; }
 .markdown-options input { accent-color: var(--gold); }
 .markdown-options > span { color: var(--muted); }
+.markdown-import { margin-bottom: 18px; padding: 14px; border: 1px dashed var(--line); border-radius: 10px; background: var(--surface); }
+.markdown-import.is-dragging { border-color: var(--gold-line); background: var(--gold-soft); }
+.markdown-file-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.markdown-file-actions button { min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-strong); color: var(--ink); font-size: .8rem; cursor: pointer; }
+.markdown-file-actions button:disabled { opacity: .5; cursor: default; }
+.markdown-file-actions span { min-width: 0; max-width: 100%; color: var(--muted); font-size: .75rem; overflow-wrap: anywhere; }
+.markdown-import p { margin: 10px 0 0; color: var(--muted); font-size: .74rem; line-height: 1.8; }
 .preview-label { color: var(--ink); font-weight: 600; }
 .markdown-editors textarea, #markdown-preview { height: 480px; min-height: 300px; }
 .markdown-editors textarea { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .82rem; }
