@@ -32,6 +32,9 @@
 .related-posts strong { font-size: .94rem; font-weight: 500; overflow-wrap: anywhere; }
 .related-posts a:hover strong { color: var(--gold); }
 .post-updated { color: var(--muted); font-size: .78rem; margin: 8px 0 0; }
+.post-notice { max-width: 760px; margin: 24px auto 0; padding: 14px 18px; border-left: 3px solid var(--gold-line); background: var(--gold-soft); border-radius: 0 8px 8px 0; font-size: .88rem; line-height: 1.8; overflow-wrap: anywhere; }
+.post-notice p { margin: 0; }
+.post-notice a { display: inline-block; color: var(--gold); text-decoration: underline; text-underline-offset: 3px; }
 .copy-ready { position: relative; padding-top: 50px !important; }
 .copy-code { position: absolute; top: 8px; right: 10px; border: 1px solid var(--line); border-radius: 7px; padding: 5px 10px; background: var(--paper); color: var(--muted); font: 500 .75rem/1.5 var(--body-font); cursor: pointer; }
 .copy-code:is(:hover,:focus-visible) { border-color: var(--gold-line); color: var(--gold); }
@@ -145,6 +148,7 @@
   .journal-main:has(.journal-post) { width: min(1120px, calc(100% - 64px)); }
   .journal-post .post-heading, .journal-post .post-neighbors { margin-left: 0; }
   .journal-post .related-posts { margin-left: 0; }
+  .journal-post .post-notice { margin-left: 0; }
   .post-reading { max-width: none; display: grid; grid-template-columns: minmax(0,760px) minmax(0,220px); gap: 48px; align-items: start; }
   .post-body { grid-column: 1; grid-row: 1; min-width: 0; }
   .post-toc { grid-column: 2; grid-row: 1; position: sticky; top: 84px; padding: 14px; max-height: calc(100vh - 108px); overflow-y: auto; font-size: .8rem; }
