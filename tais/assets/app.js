@@ -49,18 +49,20 @@ const previewCanvas = document.getElementById('tais-preview-chart');
             const x = index => plot.left + (index / (previewValues.length - 1)) * (plot.right - plot.left);
             const y = value => plot.bottom - value * (plot.bottom - plot.top);
 
+            const theme = getComputedStyle(document.documentElement);
+            const color = name => theme.getPropertyValue(name).trim();
             ctx.clearRect(0, 0, width, height);
             ctx.font = '9px ui-monospace, monospace';
             ctx.textBaseline = 'middle';
             for (let row = 0; row < 4; row += 1) {
                 const gy = plot.top + row * (plot.bottom - plot.top) / 3;
-                ctx.strokeStyle = '#e9efed';
+                ctx.strokeStyle = color('--line');
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(plot.left, gy);
                 ctx.lineTo(plot.right, gy);
                 ctx.stroke();
-                ctx.fillStyle = '#8a9999';
+                ctx.fillStyle = color('--muted');
                 ctx.fillText(`${90 - row * 20}`, 3, gy);
             }
 
@@ -71,10 +73,10 @@ const previewCanvas = document.getElementById('tais-preview-chart');
                 for (let index = start + 1; index < previewValues.length; index += 1) ctx.lineTo(x(index), y(previewValues[index] + 0.09));
                 for (let index = previewValues.length - 1; index >= start; index -= 1) ctx.lineTo(x(index), y(previewValues[index] - 0.09));
                 ctx.closePath();
-                ctx.fillStyle = 'rgba(223, 173, 57, .16)';
+                ctx.fillStyle = color('--gold-soft');
                 ctx.fill();
                 ctx.setLineDash([4, 4]);
-                ctx.strokeStyle = '#d5a42e';
+                ctx.strokeStyle = color('--gold-line');
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 for (let index = start; index < previewValues.length; index += 1) {
@@ -83,14 +85,14 @@ const previewCanvas = document.getElementById('tais-preview-chart');
                 }
                 ctx.stroke();
                 ctx.setLineDash([]);
-                ctx.strokeStyle = '#c7d3d0';
+                ctx.strokeStyle = color('--line');
                 ctx.beginPath();
                 ctx.moveTo(x(start), plot.top);
                 ctx.lineTo(x(start), plot.bottom);
                 ctx.stroke();
             }
 
-            ctx.strokeStyle = '#118184';
+            ctx.strokeStyle = color('--ink-soft');
             ctx.lineWidth = 2.2;
             ctx.lineJoin = 'round';
             ctx.lineCap = 'round';
@@ -105,17 +107,17 @@ const previewCanvas = document.getElementById('tais-preview-chart');
             if (mode === 'anomaly') {
                 [15, 32, 45].forEach((index, point) => {
                     const anomalyY = y(previewValues[index] + (point === 1 ? 0.2 : -0.17));
-                    ctx.fillStyle = '#d96c55';
+                    ctx.fillStyle = color('--clay');
                     ctx.beginPath();
                     ctx.arc(x(index), anomalyY, 4, 0, Math.PI * 2);
                     ctx.fill();
-                    ctx.strokeStyle = '#fff';
+                    ctx.strokeStyle = color('--paper');
                     ctx.lineWidth = 2;
                     ctx.stroke();
                 });
             } else if (mode === 'report') {
                 ctx.setLineDash([3, 4]);
-                ctx.strokeStyle = '#d5a42e';
+                ctx.strokeStyle = color('--gold-line');
                 ctx.lineWidth = 1.6;
                 ctx.beginPath();
                 previewValues.forEach((_, index) => {
@@ -154,12 +156,17 @@ const previewCanvas = document.getElementById('tais-preview-chart');
             drawPreview(selected ? selected.dataset.previewMode : 'forecast');
         });
         selectPreviewMode('forecast');
+        // Canvas colors must follow the shared site theme as well as CSS.
+        new MutationObserver(() => {
+            const selected = document.querySelector('[data-preview-mode][aria-pressed="true"]');
+            drawPreview(selected ? selected.dataset.previewMode : 'forecast');
+        }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
         const links = Array.from(document.querySelectorAll('nav a[href^="#"]'));
         let frame = 0;
         function updateNavigation() {
             frame = 0;
-            const offset = document.querySelector('.site-header').getBoundingClientRect().height + 48;
+            const offset = document.querySelector('.site-header').getBoundingClientRect().bottom + 32;
             let current = '';
             let closest = -Infinity;
             links.forEach(link => {

@@ -9,10 +9,10 @@
 .directory-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; list-style: none; padding: 0; margin: 0; }
 .directory-grid li { min-width: 0; }
 .directory-grid a { display: flex; flex-direction: column; height: 100%; padding: 20px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
-.directory-grid a:hover { border-color: var(--gold-line); }
+.directory-grid a:is(:hover,:focus-visible) { border-color: var(--gold-line); background: var(--surface-strong); }
 .directory-title { display: flex; justify-content: space-between; gap: 14px; color: var(--ink); font-weight: 600; font-size: .95rem; }
 .directory-title > span { color: var(--gold); }
-.directory-description { display: block; margin: 8px 0 14px; color: var(--muted); font-size: .82rem; }
+.directory-description { display: block; margin: 8px 0 14px; color: var(--muted); font-size: .82rem; line-height: 1.8; overflow-wrap: anywhere; }
 .directory-path { display: block; margin-top: auto; color: var(--gold); font-size: .72rem; overflow-wrap: anywhere; }
 .directory-note { margin: 30px 0 0; font-size: .8rem; color: var(--muted); }
 .directory-note a { color: var(--gold); text-decoration: underline; text-underline-offset: 3px; }

@@ -7,19 +7,21 @@
 .journal-heading-links { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px 20px; }
 .journal-heading-links a { display: inline-flex; align-items: center; min-height: 44px; color: var(--gold); font-size: .85rem; white-space: nowrap; }
 .journal-item { padding: 34px 0; border-bottom: 1px solid var(--line); }
-.post-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; color: var(--muted); font-size: .82rem; }
-.journal-item h2 { margin: 10px 0; font-size: clamp(1.2rem, 3vw, 1.5rem); font-weight: 600; line-height: 1.55; overflow-wrap: anywhere; }
-.post-summary { max-width: 72ch; margin: 10px 0 16px; color: var(--muted); line-height: 1.85; overflow-wrap: anywhere; }
+.post-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; color: var(--muted); font-size: .82rem; }
+.post-meta time { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.journal-item h2 { margin: 10px 0; font-size: clamp(1.2rem, 3vw, 1.5rem); font-weight: 600; line-height: 1.55; text-wrap: pretty; overflow-wrap: anywhere; }
+.post-summary { max-width: 72ch; margin: 10px 0 16px; color: var(--muted); line-height: 1.85; text-wrap: pretty; overflow-wrap: anywhere; }
 .journal-item h2 a { text-decoration: underline; text-decoration-color: transparent; text-decoration-thickness: 1px; text-underline-offset: 6px; transition: color var(--motion-fast) ease, text-decoration-color var(--motion-fast) ease; }
 .journal-item h2 a:is(:hover,:focus-visible) { color: var(--gold); text-decoration-color: var(--gold-line); }
-.post-tags { display: flex; flex-wrap: wrap; gap: 7px; }
+.post-tags { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 7px; }
+.post-tags .tag { max-width: 100%; white-space: normal; overflow-wrap: anywhere; line-height: 1.6; }
 .post-tags:empty { display: none; }
 .featured-posts { padding-top: 24px; }
 .featured-posts h2, .related-posts h2 { margin: 0 0 14px; font-size: .85rem; font-weight: 600; color: var(--muted); }
 .featured-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
-.featured-link { position: relative; display: grid; align-content: start; gap: 10px; padding: 18px 32px 18px 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.featured-link { position: relative; display: grid; min-width: 0; align-content: start; gap: 10px; padding: 18px 36px 18px 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
 .featured-link > span:first-child { font-size: .72rem; color: var(--muted); }
-.featured-link strong { font-size: .88rem; font-weight: 600; line-height: 1.65; overflow-wrap: anywhere; }
+.featured-link strong { min-width: 0; font-size: .88rem; font-weight: 600; line-height: 1.65; text-wrap: pretty; overflow-wrap: anywhere; }
 .featured-arrow { position: absolute; right: 14px; top: 16px; color: var(--gold); transition: transform 180ms ease; }
 .featured-link:is(:hover,:focus-visible) { border-color: var(--gold-line); }
 .featured-link:is(:hover,:focus-visible) .featured-arrow { transform: translate(2px,-2px); }
@@ -32,6 +34,7 @@
 .post-updated { color: var(--muted); font-size: .78rem; margin: 8px 0 0; }
 .copy-ready { position: relative; padding-top: 50px !important; }
 .copy-code { position: absolute; top: 8px; right: 10px; border: 1px solid var(--line); border-radius: 7px; padding: 5px 10px; background: var(--paper); color: var(--muted); font: 500 .75rem/1.5 var(--body-font); cursor: pointer; }
+.copy-code:is(:hover,:focus-visible) { border-color: var(--gold-line); color: var(--gold); }
 .heading-link { display: inline-block; border: 0; background: none; color: var(--gold); padding: 4px 8px; margin-left: 4px; font: inherit; font-size: .7em; cursor: pointer; opacity: .55; }
 .heading-link:is(:hover,:focus-visible) { opacity: 1; }
 .article-image { display: block; max-width: 100%; border: 0; padding: 0; background: none; cursor: zoom-in; }
@@ -55,7 +58,7 @@
 .journal-pagination .current { background: var(--ink); color: var(--paper); }
 .journal-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 20px; }
 .journal-footer nav { display: flex; gap: 20px; }
-.post-heading h1 { margin: 22px 0 18px; color: var(--ink); font-size: clamp(1.8rem, 4.5vw, 2.7rem); line-height: 1.4; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.post-heading h1 { margin: 22px 0 18px; color: var(--ink); font-size: clamp(1.8rem, 4.5vw, 2.7rem); line-height: 1.4; letter-spacing: -.025em; text-wrap: balance; overflow-wrap: anywhere; }
 .post-heading .post-tags { margin-top: 18px; }
 .reading-progress { position: fixed; inset: 0 0 auto; z-index: 25; height: 2px; pointer-events: none; }
 .reading-progress span { display: block; height: 100%; background: var(--gold-line); transform: scaleX(0); transform-origin: left; }
@@ -77,10 +80,13 @@
 .post-body iframe, .post-body embed, .post-body object { max-width: 100%; }
 .post-body blockquote { margin: 24px 0; padding: 8px 24px; border-left: 3px solid var(--gold-line); background: var(--gold-soft); }
 .post-body hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
-.post-body table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
-.post-body td, .post-body th { border: 1px solid var(--line); padding: 8px 14px; }
+.post-body table { display: block; max-width: 100%; margin: 24px 0; overflow-x: auto; border-collapse: collapse; }
+.post-body td, .post-body th { border: 1px solid var(--line); padding: 8px 14px; vertical-align: top; line-height: 1.75; }
+.post-body th { background: var(--surface); color: var(--ink); text-align: left; }
+.post-body figcaption { margin-top: 10px; color: var(--muted); font-size: .85em; line-height: 1.7; text-align: center; }
 .post-body code, .post-body pre { font-family: Consolas, 'Courier New', monospace; font-size: .88em; }
 .post-body :not(pre) > code { background: var(--gold-soft); padding: 2px 5px; border-radius: 4px; }
+.post-body pre code { font-size: inherit; }
 .post-body pre, .post-body .highlight { margin: 24px 0; padding: 18px; overflow-x: auto; background: var(--surface-strong); border: 1px solid var(--line); border-radius: 10px; line-height: 1.7; }
 .post-body .highlight pre { margin: 0; padding: 0; border: 0; background: none; font-size: .88rem; overflow: visible; }
 .post-body .highlight table { margin: 0; overflow: visible; }
@@ -98,7 +104,9 @@
 .post-neighbors div:last-child { text-align: right; }
 @media (max-width: 540px) {
   .journal-main { padding-top: 38px; }
-  .journal-heading { align-items: center; }
+  .journal-heading { align-items: flex-start; gap: 12px; }
+  .journal-heading-links { column-gap: 14px; }
+  .post-body blockquote { padding-inline: 16px; }
   .post-body { font-size: .95rem; }
   .post-neighbors { grid-template-columns: 1fr; }
   .post-neighbors div:last-child { text-align: left; }

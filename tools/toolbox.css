@@ -12,6 +12,7 @@
 .tool-picker a { display: flex; align-items: flex-start; gap: 12px; padding: 17px 14px; border: 1px solid transparent; border-radius: 10px; }
 .tool-picker a[aria-current] { background: var(--surface); border-color: var(--line); }
 .tool-picker a[aria-current] .tool-number { color: var(--gold); }
+.tool-picker a:is(:hover,:focus-visible) { border-color: var(--line); background: var(--surface); }
 .tool-number { padding-top: 3px; font-size: .68rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .tool-picker strong { display: block; font-size: .86rem; font-weight: 600; }
 .tool-picker small { display: block; margin-top: 5px; color: var(--muted); font-size: .72rem; line-height: 1.6; }
@@ -39,6 +40,7 @@
 .action-primary span { margin-left: 10px; }
 .tool-actions .action-quiet { background: transparent; border-color: transparent; color: var(--muted); }
 .tool-actions button:hover:not(:disabled) { border-color: var(--gold-line); }
+.tool-actions button:not(.action-primary):is(:hover,:focus-visible):not(:disabled) { border-color: var(--gold-line); background: var(--surface-strong); color: var(--ink); }
 .tool-actions button:disabled { opacity: .45; cursor: default; }
 .tool-status { min-height: 1.8em; margin: 0; color: var(--gold); font-size: .8rem; overflow-wrap: anywhere; }
 .tool-status[data-error] { color: var(--clay); }
