@@ -7,6 +7,18 @@
 .toolbox-intro { margin: 15px 0 12px; font-size: .95rem; }
 .local-note { display: flex; align-items: center; gap: 7px; margin: 0; color: var(--muted); font-size: .78rem; }
 .local-note > span { color: var(--sage); font-size: 1.2rem; line-height: 1; }
+.draft-controls { padding: 16px 0; border-bottom: 1px solid var(--line); }
+.draft-actions, .markdown-view-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.draft-actions label { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; margin-right: 8px; font-size: .8rem; }
+.draft-actions input { accent-color: var(--gold); }
+.draft-actions button, .markdown-view-controls button { min-height: 40px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink-soft); cursor: pointer; font-size: .78rem; }
+.draft-actions button:is(:hover,:focus-visible), .markdown-view-controls button:is(:hover,:focus-visible) { border-color: var(--gold-line); }
+.draft-controls p { margin: 4px 0 0; font-size: .74rem; line-height: 1.7; color: var(--muted); overflow-wrap: anywhere; }
+.draft-controls p[data-error] { color: var(--clay); }
+.markdown-view-controls { margin: 0 0 14px; }
+.markdown-view-controls button[aria-pressed="true"] { color: var(--gold); border-color: var(--gold-line); background: var(--gold-soft); }
+.markdown-editors[data-view="edit"], .markdown-editors[data-view="preview"] { grid-template-columns: minmax(0,1fr); }
+.markdown-editors:not([data-view="split"]) textarea, .markdown-editors:not([data-view="split"]) #markdown-preview { height: max(360px,65svh); }
 .toolbox-layout { display: grid; grid-template-columns: 228px minmax(0, 1fr); gap: 38px; padding-top: 32px; align-items: start; }
 .tool-picker { display: grid; gap: 10px; }
 .tool-picker a { display: flex; align-items: flex-start; gap: 12px; padding: 17px 14px; border: 1px solid transparent; border-radius: 10px; }

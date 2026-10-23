@@ -81,7 +81,7 @@
       else if(documentNotice)status(documentNotice);
     });
   });
-  function counts(){document.getElementById('markdown-count').textContent=Array.from(input.value).length.toLocaleString('zh-CN')+' 字符';download.disabled=!input.value.trim();}
+  function counts(){document.getElementById('markdown-count').textContent=Array.from(input.value).length.toLocaleString('zh-CN')+' 字符';download.disabled=!input.value.trim();document.dispatchEvent(new Event('toolbox:draft-change'));}
   function cancelImport() {
     importVersion++;importing=false;openFile.disabled=false;
   }
@@ -159,5 +159,16 @@
   new MutationObserver(function(){
     if(frame.contentDocument && frame.contentDocument.documentElement) frame.contentDocument.documentElement.dataset.theme=document.documentElement.dataset.theme;
   }).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  window.ToolboxMarkdownEditor={capture:function(){return {text:input.value,fileName:fileName};},restore:function(value){undo.remember(snapshot());applyDocument(value,'已恢复本机草稿。');}};
+  var viewButtons=Array.from(document.querySelectorAll('[data-markdown-view]')),editors=document.getElementById('markdown-editors');
+  function setView(view){
+    if(!editors)return;
+    editors.dataset.view=view;
+    document.getElementById('markdown-source-field').hidden=view==='preview';
+    document.getElementById('markdown-preview-field').hidden=view==='edit';
+    viewButtons.forEach(function(button){button.setAttribute('aria-pressed',String(button.dataset.markdownView===view));});
+  }
+  viewButtons.forEach(function(button){button.addEventListener('click',function(){setView(button.dataset.markdownView);});});
+  if(editors)setView(window.matchMedia&&window.matchMedia('(max-width: 600px)').matches?'edit':'split');
   counts();selected();
 })();

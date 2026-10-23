@@ -44,7 +44,7 @@
   }, function (saved) {
     cleanInput.value = saved.input; cleanOutput.value = saved.output; copyButton.disabled = saved.copyDisabled; cleanCounts(); cleanInput.focus();
   }, cleanStatus);
-  function cleanCounts() { count(cleanInput, get('clean-input-count')); count(cleanOutput, get('clean-output-count')); }
+  function cleanCounts() { count(cleanInput, get('clean-input-count')); count(cleanOutput, get('clean-output-count')); document.dispatchEvent(new Event('toolbox:draft-change')); }
   function invalidateClean() {
     var hadResult = !!cleanOutput.value;
     cleanOutput.value = ''; copyButton.disabled = true; cleanCounts();
@@ -97,7 +97,7 @@
     if (saved.compared) runComparison(); else invalidateComparison();
     before.focus();
   }, compareStatus);
-  function compareCounts() { count(before, get('before-count')); count(after, get('after-count')); }
+  function compareCounts() { count(before, get('before-count')); count(after, get('after-count')); document.dispatchEvent(new Event('toolbox:draft-change')); }
   function invalidateComparison() {
     var hadResult = !comparison.hidden;
     comparison.hidden = true; rows.replaceChildren(); compareCounts();
