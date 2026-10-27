@@ -5,13 +5,13 @@ window.ABOUT_DATA = {
     phdPeriod: "2027-",
     undergraduate: "Computer Science and Technology, Shanghai University",
     undergraduatePeriod: "2023-2027",
-    advisors: "Prof. Guanjie Zheng (Shanghai Jiao Tong University) and Prof. Jie Feng (Beijing Zhongguancun Academy)",
+    advisors: "",
     // Optional strings may be empty; optional lists may be [].
     homeKeywords: [
       { school: "SJTU × Beijing Zhongguancun Academy", label: "Incoming PhD · 2027–" },
       { school: "Shanghai University", label: "Undergraduate · 2023–2027" }
     ],
-    bio: "I am an undergraduate in Computer Science and Technology at Shanghai University (2023–2027). In 2027, I will join Shanghai Jiao Tong University × Beijing Zhongguancun Academy as a PhD student, advised by Prof. Guanjie Zheng and Prof. Jie Feng.",
+    bio: "I am an undergraduate in Computer Science and Technology at Shanghai University (2023–2027). In 2027, I will join Shanghai Jiao Tong University × Beijing Zhongguancun Academy as a PhD student.",
     research: "I study how to learn from structured and temporal data, with a focus on forecasting, clustering, and generation under heterogeneity and uncertainty."
   },
   personalInfo: {
