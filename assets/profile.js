@@ -1,4 +1,5 @@
 (function () {
+  var chinese=document.documentElement.lang.toLowerCase().startsWith('zh');
   var $$ = function (selector, root) { return Array.from((root || document).querySelectorAll(selector)); };
   $$('[data-show]').forEach(function (list, index) {
     var limit = Number(list.dataset.show), items = $$(':scope > li, :scope > article', list);
@@ -35,12 +36,12 @@
       var target = document.getElementById(btn.dataset.copy), status = btn.parentElement.querySelector('.copy-status');
       try {
         await navigator.clipboard.writeText(target.textContent);
-        btn.textContent = 'Copied'; status.textContent = 'BibTeX copied.';
-        setTimeout(function () { btn.textContent = 'Copy'; status.textContent = ''; }, 1800);
+        btn.textContent = chinese ? '已复制' : 'Copied'; status.textContent = chinese ? 'BibTeX 已复制。' : 'BibTeX copied.';
+        setTimeout(function () { btn.textContent = chinese ? '复制' : 'Copy'; status.textContent = ''; }, 1800);
       } catch (e) {
         var range = document.createRange(); range.selectNodeContents(target);
         var selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
-        status.textContent = 'Copy unavailable. Text selected; use Ctrl+C or your device’s copy menu.';
+        status.textContent = chinese ? '自动复制不可用，已选中文本；请使用 Ctrl+C 或设备的复制菜单。' : 'Copy unavailable. Text selected; use Ctrl+C or your device’s copy menu.';
       }
     });
   });

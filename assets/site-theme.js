@@ -5,7 +5,7 @@
   root.dataset.theme = explicit ? saved : system.matches ? 'dark' : 'light';
   function label() {
     var button = document.getElementById('theme-toggle');
-    if (button) button.setAttribute('aria-label', root.dataset.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+    if (button) button.setAttribute('aria-label', root.lang.toLowerCase().startsWith('zh') ? (root.dataset.theme === 'dark' ? '切换浅色主题' : '切换深色主题') : (root.dataset.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'));
   }
   function apply(theme) {
     window.clearTimeout(transitionTimer);

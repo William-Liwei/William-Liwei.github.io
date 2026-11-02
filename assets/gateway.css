@@ -1,6 +1,7 @@
 .gateway { min-height: 100svh; display: grid; place-items: center; }
 .gateway-main { width: min(510px, calc(100% - 48px)); padding: clamp(40px, 6svh, 96px) 0 clamp(24px, 4svh, 64px); animation: arrive 280ms var(--motion-ease); }
 .gateway-theme { position: absolute; top: 24px; right: 24px; }
+.gateway-controls { position: absolute; top: 24px; right: 24px; display: flex; align-items: center; gap: 12px; }
 .gateway h1 { margin: 0 0 32px; font: 600 clamp(4.5rem, 15vw, 7rem)/.95 var(--header-font); letter-spacing: -.045em; color: var(--ink); }
 .gateway h1 > span { color: var(--gold); }
 .gateway-keywords { margin-bottom: 38px; padding-left: 18px; border-left: 1px solid var(--gold-line); }

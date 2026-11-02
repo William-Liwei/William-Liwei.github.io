@@ -90,7 +90,8 @@
       list.classList.toggle('is-collapsed', !expanded);
       extra.forEach(function (item) { item.inert = !expanded; });
       button.setAttribute('aria-expanded', String(expanded));
-      button.textContent = expanded ? 'Show less' : 'Show all ' + list.children.length;
+      var chinese=document.documentElement.lang.toLowerCase().startsWith('zh');
+      button.textContent = chinese ? (expanded ? '收起' : '查看全部 '+list.children.length+' 项') : (expanded ? 'Show less' : 'Show all ' + list.children.length);
     }
     extra.forEach(function (item) { item.classList.add('extra'); });
     state();
