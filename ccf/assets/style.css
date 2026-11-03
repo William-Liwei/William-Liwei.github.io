@@ -305,6 +305,9 @@ th[aria-sort="descending"] .sort-btn::after { content: "↓"; opacity: 1; color:
 .pagination button[aria-current="page"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .pagination button:disabled { opacity: 0.4; cursor: default; }
 .pagination .gap { padding: 5px 2px; color: var(--muted); }
+.pagination-compact { justify-content: flex-start; align-items: center; gap: 8px; margin: 0 0 14px; font-size: .78rem; }
+.pagination-compact button { min-height: 36px; color: var(--ink-soft); }
+.pagination-compact .page-counter { min-width: 54px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
 
 /* ---------- Community ---------- */
 

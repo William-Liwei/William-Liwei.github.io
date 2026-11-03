@@ -4,6 +4,7 @@ import {
 } from './lib.js';
 import {favoriteKey, readStored, writeStored, favoriteSet, serializeFavoritesBackup, importFavoritesBackup, FAVORITES_BACKUP_MAX_BYTES, FAVORITES_KEY, PREFERENCES_KEY} from './preferences.js';
 import {buildConferenceCalendar} from './calendar.js';
+import {paginationHTML,validPage} from './pagination.js';
 
 let storage;
 try { storage = localStorage; } catch {}
@@ -636,20 +637,11 @@ function render() {
 }
 
 function renderPagination(pages) {
-  const nav = $('#pagination');
-  if (pages <= 1) {
-    nav.innerHTML = '';
-    return;
+  for(const id of ['pagination-top','pagination']) {
+    const nav=$('#'+id);
+    nav.innerHTML=paginationHTML(state.page,pages,id==='pagination-top');
+    nav.hidden=pages<=1;
   }
-  const p = state.page;
-  const shown = [...new Set([1, p - 2, p - 1, p, p + 1, p + 2, pages])].filter((n) => n >= 1 && n <= pages).sort((a, b) => a - b);
-  let html = `<button type="button" data-page="${p - 1}"${p === 1 ? ' disabled' : ''} aria-label="上一页">‹</button>`;
-  shown.forEach((n, i) => {
-    if (i && n - shown[i - 1] > 1) html += '<span class="gap">…</span>';
-    html += `<button type="button" data-page="${n}"${n === p ? ' aria-current="page"' : ''}>${n}</button>`;
-  });
-  html += `<button type="button" data-page="${p + 1}"${p === pages ? ' disabled' : ''} aria-label="下一页">›</button>`;
-  nav.innerHTML = html;
 }
 
 async function showTab(tab, { resetPage = true } = {}) {
@@ -663,7 +655,7 @@ async function showTab(tab, { resetPage = true } = {}) {
     $('#thead').innerHTML = '';
     $('#tbody').innerHTML = '';
     $('#filters').innerHTML = '';
-    $('#pagination').innerHTML = '';
+    renderPagination(0);
     $('#result-count').textContent = '';
     $('#data-note').textContent = '';
     $('#active-filters').hidden = true;
@@ -926,13 +918,19 @@ function bindEvents() {
     }
   });
 
-  $('#pagination').addEventListener('click', (e) => {
-    const page = Number(e.target.closest('[data-page]')?.dataset.page);
-    if (!page) return;
-    state.page = page;
+  ['pagination-top','pagination'].forEach(id=>$('#'+id).addEventListener('click', (e) => {
+    const button=e.target.closest('button[data-page]');
+    if(!button||button.disabled)return;
+    const page=validPage(button.dataset.page,Math.ceil(state.view.length/PAGE_SIZE));
+    if(page===null||page===state.page)return;
+    const step=button.dataset.step;
+    state.page=page;
     render();
-    $('.tabs').scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
-  });
+    const nav=$('#pagination-top');
+    const focus=(step&&nav.querySelector(`[data-step="${step}"]:not(:disabled)`))||nav.querySelector('button:not(:disabled)')||$('#search');
+    focus.focus({preventScroll:true});
+    if(id==='pagination')$('.tabs').scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+  }));
 
   $('#reset-btn').addEventListener('click', () => {
     state.q = '';
@@ -989,7 +987,7 @@ function bindEvents() {
   setInterval(() => {
     if (document.visibilityState !== 'visible' || !data.conf) return;
     refreshDeadlines();
-    if (state.tab !== 'jcr' && !document.activeElement?.closest?.('#tbody, #active-filters, #mobile-sort')) render();
+    if (state.tab !== 'jcr' && !document.activeElement?.closest?.('#tbody, #active-filters, #mobile-sort, #pagination-top, #pagination')) render();
   }, 60 * 1000);
 }
 
