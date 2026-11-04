@@ -24,6 +24,7 @@ window.ABOUT_DATA = {
     orcid: "https://orcid.org/0009-0008-8108-4854"
   },
   news: [
+    { year: 2026, month: 11, content: "Our preprint <strong>UniFlow</strong> is now available on <a href=\"https://arxiv.org/abs/2611.04825\">arXiv</a>." },
     { year: 2026, month: 10, content: "Awarded the <strong>National Scholarship</strong> and the <strong>Baosteel Scholarship</strong>." },
     { year: 2026, month: 9, content: "SDFlow accepted for <strong>Poster Presentation</strong> at <strong>NeurIPS 2026 (CCF-A)</strong>." },
     { year: 2026, month: 8, content: "APCL accepted to <strong>KDD 2026 (CCF-A)</strong> and presented as a poster. <a href=\"/2026/05/31/KDD2026-APCL/\">Read the paper story →</a>" },
@@ -41,8 +42,35 @@ window.ABOUT_DATA = {
     { year: 2024, month: 7, content: "Awarded Gold Medal in the university-level China 'Internet+' Innovation Competition." }
   ],
   // Stable id keeps shared publication links valid when titles or figures change.
-  // Only selected: true appears on About (up to four, ordered by display_order).
+  // Every selected: true entry appears on About, ordered by display_order.
   publications: [
+    {
+      title: "UniFlow: Unified Multi-Scale Flow Matching for Time Series Generation",
+      display_order: 3,
+      authors: "Feng, S.*, <strong>Li, W.*</strong>, Wu, M., Miao, C., & Zhao, P.",
+      venue: "arXiv preprint arXiv:2611.04825",
+      year: 2026,
+      month: 11,
+      badges: [{ type: "paper", text: "Preprint" }, { type: "author", text: "Co-first Author" }],
+      links: [
+        { type: "arxiv", url: "https://arxiv.org/abs/2611.04825" },
+        { type: "github", url: "https://github.com/William-Liwei/uniflow" }
+      ],
+      id: "uniflow",
+      selected: true,
+      thumbnail: "uniflow.png",
+      summary: "Unifies multiscale temporal information into a shared token sequence and generates time series in parallel with geometry-aware categorical flow matching.",
+      abstract: "UniFlow combines shared-semantic multiscale tokenization with non-autoregressive time-series generation. Shared-index voting consolidates complementary temporal views into one public-ID sequence, while scale-specific codebooks retain reconstruction details. Geometry-aware categorical flow matching starts from learned low-rank anchors and generates the shared identities in parallel. Experiments across four benchmarks evaluate generative fidelity, cross-scale consistency, and inference efficiency.",
+      bibtex: `@misc{feng2026uniflow,
+  title={UniFlow: Unified Multi-Scale Flow Matching for Time Series Generation},
+  author={Feng, Shibo and Li, Wei and Wu, Min and Miao, Chunyan and Zhao, Peilin},
+  year={2026},
+  eprint={2611.04825},
+  archivePrefix={arXiv},
+  primaryClass={stat.ML},
+  url={https://arxiv.org/abs/2611.04825}
+}`
+    },
     {
       title: "Adaptive Prototypical Contrastive Learning for Time Series Clustering",
       display_order: 2,
@@ -96,7 +124,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "ClusterPatchTST: Uncertainty-Aware Causal Clustering for Heterogeneous Time Series Forecasting",
-      display_order: 3,
+      display_order: 4,
       authors: "<strong>Li, W.</strong>",
       venue: "International Conference on Database Systems for Advanced Applications (DASFAA 2026)",
       year: 2026,
@@ -117,7 +145,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "ScatterFusion: A Hierarchical Scattering Transform Framework for Enhanced Time Series Forecasting",
-      display_order: 5,
+      display_order: 6,
       authors: "<strong>Li, W.</strong>",
       venue: "IEEE International Conference on Acoustics, Speech, and Signal Processing (ICASSP 2026)",
       year: 2026,
@@ -136,7 +164,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "AWGFormer: Adaptive Wavelet-Guided Transformer for Multi-resolution Time Series Forecasting",
-      display_order: 6,
+      display_order: 7,
       authors: "<strong>Li, W.</strong>",
       venue: "IEEE International Conference on Acoustics, Speech, and Signal Processing (ICASSP 2026)",
       year: 2026,
@@ -155,7 +183,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "TimeFlowDiffuser: A Hierarchical Diffusion Framework with Adaptive Context Sampling for Multi-Horizon Time Series Forecasting",
-      display_order: 8,
+      display_order: 9,
       authors: "<strong>Li, W.</strong>",
       venue: "International Conference on Artificial Neural Networks (ICANN 2025)",
       year: 2025,
@@ -176,7 +204,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "SWIFT: State-space Wavelet Integrated Forecasting Technology for Enhanced Time Series Prediction",
-      display_order: 7,
+      display_order: 8,
       authors: "<strong>Li, W.</strong>",
       venue: "International Conference on Artificial Neural Networks (ICANN 2025)",
       year: 2025,
@@ -197,7 +225,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "EnergyPatchTST: Multi-scale Time Series Transformers with Uncertainty Estimation for Energy Forecasting",
-      display_order: 4,
+      display_order: 5,
       authors: "<strong>Li, W.</strong>, Wang, Z., Sun, Q., Gao, Q., & Yang, F.",
       venue: "International Conference on Intelligent Computing (ICIC 2025)",
       year: 2025,
@@ -220,7 +248,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "LWSpace: Multi-Scale State Space Framework for Time Series Forecasting",
-      display_order: 9,
+      display_order: 10,
       authors: "<strong>Li, W.</strong>",
       venue: "International Conference on Intelligent Computing (ICIC 2025)",
       year: 2025,
@@ -241,7 +269,7 @@ window.ABOUT_DATA = {
     },
     {
       title: "Olympic Medal Prediction via Adaptive Triple-Fusion: Combining AAC Model with ARIMA-State Space Dynamics",
-      display_order: 10,
+      display_order: 11,
       authors: "<strong>Li, W.</strong>, Wang, Z., Gao, Q., & Yang, F.",
       venue: "International Conference on Applied Mathematics, Modelling and Intelligent Computing (CAMMIC 2025)",
       year: 2025,
