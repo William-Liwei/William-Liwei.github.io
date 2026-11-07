@@ -21,6 +21,7 @@
   CM.Tools = Tools;
 
   Tools.prototype.game = function () { return CM.game; };
+  Tools.prototype.pickingProperty = function () { return this.tool === 'select' && (!!this.ui.propertyPick || this.ui.layer === 'property'); };
   Tools.prototype.setTool = function (t) {
     if (t !== 'select') this.ui.propertyPick = false;
     if (this.tool === t) return;
@@ -104,14 +105,14 @@
     if (e.button === 1) { this.ptr.pan = true; e.preventDefault(); return; }
     if (e.button === 0 && e.shiftKey && this.tool === 'demolish' && !g.jumping) { this.ptr.box = true; return; }   // 拆除工具：Shift + 拖动框选
     // 延长手柄：进入绘线，拖到目标位置松开即连线（只点击则从该端点开始逐站绘制）
-    const ext = e.button === 0 && !this.ui.propertyPick ? this.pickExtend(e.clientX, e.clientY) : null;
+    const ext = e.button === 0 && !this.pickingProperty() ? this.pickExtend(e.clientX, e.clientY) : null;
     if (ext) { this.ui.startDraw(ext.station, ext.line, false); this.ptr.extend = true; return; }
     if (e.button === 0 && (this.tool === 'edit' || this.tool === 'line') && !g.jumping && !e.shiftKey) {
       const h = this.pickHandle(e.clientX, e.clientY);
       if (h && (this.tool === 'edit' || h.kind === 'bend' || h.kind === 'mid')) { this.drag = h; this.drag.changed = false; g.beginLive(); this.ptr.handle = true; }
     }
     // 选择 / 修改工具直接抓取线路：拖到已有车站接入，拖到空地建站；空白处仍然平移地图。
-    if (!this.ui.propertyPick && !this.drag && e.button === 0 && !e.shiftKey && !e.altKey && !g.jumping && !g.pending && (this.tool === 'select' || this.tool === 'edit') && this.startRouteDrag) this.startRouteDrag(e);
+    if (!this.pickingProperty() && !this.drag && e.button === 0 && !e.shiftKey && !e.altKey && !g.jumping && !g.pending && (this.tool === 'select' || this.tool === 'edit') && this.startRouteDrag) this.startRouteDrag(e);
   };
   Tools.prototype.onMove = function (e) {
     const g = this.game(); if (!g) return;
@@ -147,7 +148,7 @@
     if (p.orbit && p.moved) return;   // 拖动旋转结束，不当作点击
     if (p.button === 2) { this.onRight(e); return; }
     // 选择工具下点击行驶中的列车：进入跟随模式（车站优先）
-    if (p.button === 0 && !p.moved && this.tool === 'select' && CM.Follow && !this.R.pickStation(e.clientX, e.clientY)) { const tr = CM.Follow.pick(e.clientX, e.clientY); if (tr) { CM.Follow.start(tr); return; } }
+    if (p.button === 0 && !p.moved && this.tool === 'select' && !this.pickingProperty() && CM.Follow && !this.R.pickStation(e.clientX, e.clientY)) { const tr = CM.Follow.pick(e.clientX, e.clientY); if (tr) { CM.Follow.start(tr); return; } }
     if (p.button === 0 && !p.moved) this.onClick(e.clientX, e.clientY, e.shiftKey || e.altKey, e.ctrlKey || e.metaKey || e.shiftKey);
   };
 
@@ -202,6 +203,11 @@
     let w = this.world(sx, sy, this.buildH());
     this.cursor = { sx: sx, sy: sy, x: w.x, y: w.y, mod: mod }; this.cursorOut = false;
     this.snapPt = null;
+    if (this.pickingProperty()) {
+      this.hover = this.hint = null; this.portalHover = null; this.ui.setTooltip(null);
+      R.cv.style.cursor = 'var(--cur-' + (this.ptr && this.ptr.pan ? 'grabbing' : 'crosshair') + ')';
+      return;
+    }
     const pp = !mod && !R.pickStation(sx, sy) ? this.portalPick(sx, sy) : null;
     if (pp) {
       this.hover = pp.sid ? { kind: 'station', id: pp.sid } : null;
@@ -559,6 +565,17 @@
     const g = this.game(), R = this.R;
     if (g.jumping) return;
     let w = this.world(sx, sy, this.buildH());
+    const ui = this.ui;
+    // 选地时优先使用地面单元格（远景标记对应其真实地块），不被站点、道路或多选截获。
+    if (CM.Property && this.pickingProperty()) {
+      if (!CM.Property.pick(ui, w)) {
+        const hit = R.pickProperty ? R.pickProperty(sx, sy) : -1;
+        const c = hit >= 0 ? hit : g.city.cellAt(w.x, w.y);
+        ui.select(c >= 0 ? { kind: 'zone', id: g.city.zoneOf(c), cell: c } : null);
+      }
+      this.hover = this.hint = null; ui.setTooltip(null);
+      return;
+    }
     let st = R.pickStation(sx, sy);
     let seg = st ? null : R.pickSegment(sx, sy);
     // 地图外设施的接驳口：吸附到接驳口（已有接驳口车站时连接该站）
@@ -568,7 +585,6 @@
       if (r && r.st) { st = r.st; seg = null; }
       else if (r) w = { x: r.sp.x, y: r.sp.y };
     }
-    const ui = this.ui;
     // 多选：Ctrl / Shift + 点击车站或轨道（选择、修改工具）
     if (multiKey && (st || seg) && (this.tool === 'select' || this.tool === 'edit' || this.tool === 'demolish')) { ui.toggleMulti(st ? 'station' : 'seg', st || seg); this.updateHover(sx, sy, mod); return; }
     switch (this.tool) {
@@ -580,7 +596,6 @@
         break;
       }
       case 'select': {
-        if (CM.Property && CM.Property.pick(ui, w)) break;
         if (!st && R.pickTaskPin(sx, sy)) { ui.taskTab = 'active'; ui.openPage('tasks', 'active', { root: true }); break; }
         // 设施图层中优先选中设施圆点；其余情况下道路优先，其次是重要设施的场地（v1.9），再次是片区
         const facLayer = this.ui.layer === 'fac' || this.ui.layer === 'gap';
@@ -916,6 +931,7 @@
   };
   Tools.prototype.escape = function () {
     const ui = this.ui;
+    if (ui.propertyPick) { ui.propertyPick = false; ui.setTooltip(null); ui.toast('已取消地块选择', 'info'); return; }
     if (this.drag && this.drag.kind === 'reroute') { this.cancelDrag(); this.hint = null; ui.setTooltip(null); return; }
     // 快捷操作的气泡或右键菜单打开时，Esc 只关闭它们
     if (CM.Quick && CM.Quick.busy()) { CM.Quick.close(); return; }

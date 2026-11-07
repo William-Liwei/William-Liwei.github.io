@@ -3065,6 +3065,8 @@
     if (this.layer === 'fac' || this.layer === 'gap') this.drawFacilities(ctx);
     if (this.fx.length) this.drawFx(ctx, dt);
     if (under < 0.5) this.drawAtmosphere(ctx);
+    // 地块只遍历有界的持有清单；边界在建筑和天气之上，选中格不被片区标注替代。
+    this.drawProperty(ctx, ui);
     // ---- 标注 ----
     this.drawLabels(ctx, ui);
     if (CM.Grid) CM.Grid.drawLabels(ctx, this);
@@ -5098,6 +5100,82 @@
       if (!inR(i, j - 1)) edges.push([i, j, i + 1, j]); if (!inR(i, j + 1)) edges.push([i, j + 1, i + 1, j + 1]);
     }
     seg(edges); ctx.strokeStyle = TH.halo; ctx.lineWidth = 5; ctx.stroke(); ctx.strokeStyle = '#14a252'; ctx.lineWidth = 2.5; ctx.stroke();
+  };
+
+  // 土地与物业：真实格界始终保持地图尺度，远景的圆点只是定位标记，不代表占地面积。
+  Renderer.prototype.drawProperty = function (ctx, ui) {
+    const g = this.game, P = CM.Property;
+    if (!g || g.preview || !P) return;
+    const city = g.city, sel = ui && ui.selection;
+    const selected = sel && sel.kind === 'zone' && Number.isInteger(sel.cell) && sel.cell >= 0 && sel.cell < city.N ? sel.cell : -1;
+    const snapshot = P.mapSnapshot ? P.mapSnapshot(g) : null, items = snapshot && snapshot.items || [];
+    if (!items.length && selected < 0) return;
+    const layer = this.layer === 'property', colors = P.mapColors || ['#2189a6', '#c28a2c', '#c65b68'];
+    const fade = 1 - 0.65 * U.clamp(this.cam.under || 0, 0, 1), night = TH.night;
+    const points = [{}, {}, {}, {}], center = {}, R = this;
+    const geometry = function (c) {
+      const x = c % city.W, y = Math.floor(c / city.W);
+      R.P(x, y, 0, points[0]); R.P(x + 1, y, 0, points[1]);
+      R.P(x + 1, y + 1, 0, points[2]); R.P(x, y + 1, 0, points[3]);
+      R.P(x + 0.5, y + 0.5, 0, center);
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      for (const p of points) { x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y); }
+      return R.screenVisible(x0, y0, x1 - x0, y1 - y0, 9);
+    };
+    const path = function () {
+      ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < 4; i++) ctx.lineTo(points[i].x, points[i].y);
+      ctx.closePath();
+    };
+    const marker = function (color, chosen) {
+      ctx.beginPath(); ctx.arc(center.x, center.y, chosen ? 5 : 2.8, 0, Math.PI * 2);
+      ctx.fillStyle = color; ctx.globalAlpha = fade * (chosen ? .96 : .88); ctx.fill();
+      ctx.strokeStyle = TH.halo; ctx.lineWidth = chosen ? 2 : 1.3; ctx.stroke();
+      if (chosen) { ctx.beginPath(); ctx.arc(center.x, center.y, 7.5, 0, Math.PI * 2); ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke(); }
+    };
+    ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.setLineDash([]);
+    // 不访问全图土地数组或道路/客流模型；定价快照由 Property 在状态变化时重建。
+    for (let i = 0; i < Math.min(items.length, P.MAX_OWNED || 32); i++) {
+      const item = items[i], c = item.c;
+      if (item.owned === false || !Number.isInteger(c) || c < 0 || c >= city.N || !geometry(c)) continue;
+      const exhausted = item.exhausted || item.area <= 1e-7;
+      const color = exhausted ? (night ? '#9caec0' : '#718091') : layer ? colors[U.clamp(item.band | 0, 0, 2)] : colors[0];
+      path(); ctx.globalAlpha = fade * (layer ? .28 : .075); ctx.fillStyle = color; ctx.fill();
+      ctx.globalAlpha = fade * (layer ? .85 : .55); ctx.strokeStyle = TH.halo; ctx.lineWidth = layer ? 4.5 : 3.2; ctx.stroke();
+      ctx.globalAlpha = fade * (layer ? .98 : .83); ctx.strokeStyle = color; ctx.lineWidth = layer ? 2 : 1.35;
+      if (exhausted) ctx.setLineDash([3, 2]); ctx.stroke(); ctx.setLineDash([]);
+      if (this.z < 6) marker(color, false);
+      else if (item.developed && !exhausted) {
+        // 实心小方点区分已开发物业；不以额外几何假装记录了真实建筑轮廓。
+        const r = U.clamp(this.z * .11, 1.5, 3);
+        ctx.globalAlpha = fade * .95; ctx.fillStyle = color; ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      }
+    }
+    if (selected >= 0 && geometry(selected)) {
+      const color = night ? '#95d8ff' : '#116eb8';
+      path(); ctx.globalAlpha = fade * .18; ctx.fillStyle = color; ctx.fill();
+      ctx.globalAlpha = fade; ctx.strokeStyle = TH.halo; ctx.lineWidth = 6; ctx.stroke();
+      ctx.strokeStyle = color; ctx.lineWidth = 2.7; ctx.stroke();
+      if (this.z < 6) marker(color, true);
+    }
+    ctx.restore();
+  };
+  // 远景定位点的命中范围与绘制位置相同；近景继续使用真实单元格选址。
+  Renderer.prototype.pickProperty = function (sx, sy) {
+    const g = this.game, P = CM.Property;
+    if (!g || g.preview || !P || !P.mapSnapshot || this.z >= 6 || !Number.isFinite(sx) || !Number.isFinite(sy)) return -1;
+    const city = g.city, items = P.mapSnapshot(g).items, selected = CM.ui && CM.ui.selection, tmp = {};
+    let cell = -1, closest = Infinity;
+    for (let i = 0; i < Math.min(items.length, P.MAX_OWNED || 32); i++) {
+      const item = items[i], c = item.c;
+      if (item.owned === false || !Number.isInteger(c) || c < 0 || c >= city.N) continue;
+      this.P(c % city.W + .5, Math.floor(c / city.W) + .5, 0, tmp);
+      if (!this.screenVisible(tmp.x, tmp.y, 0, 0, 9)) continue;
+      const radius = selected && selected.kind === 'zone' && selected.cell === c ? 9 : 5.2;
+      const distance = Math.hypot(tmp.x - sx, tmp.y - sy);
+      if (distance <= radius && distance < closest) { closest = distance; cell = c; }
+    }
+    return cell;
   };
 
   // ---------------- 地图定位高亮：片区（矩形）、区域（范围与边界）、道路（线形）、地点（圆），脉动显示数秒 ----------------

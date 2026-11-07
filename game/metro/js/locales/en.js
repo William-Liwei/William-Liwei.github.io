@@ -7541,3 +7541,27 @@ Object.assign(window.CM.I18N_EN, {
   "点击 / 拖动定位": "Click or drag to navigate",
   "全图雷达，点击或拖动移动视野，方向键微调，Home 回到地图中心": "Overview radar: click or drag to navigate, arrow keys to adjust, Home to center the map"
 });
+
+Object.assign(window.CM.I18N_EN, {
+  '已持有地块的边界、地价与出租物业': 'Owned parcel boundaries, land values and rental properties',
+  '查看地皮图层': 'View land layer',
+  '低地价': 'Lower land value',
+  '中地价': 'Medium land value',
+  '高地价': 'Higher land value',
+  '已全部用于建设，无剩余可交易面积': 'Fully used for construction; no tradable area remains',
+  '当前土地单价：{min} ～ {max} / 公顷': 'Current land value: {min}–{max} per hectare',
+  '仅显示已持有地块；点击边界查看与经营。': 'Owned parcels only. Click a parcel to inspect and manage it.',
+  '还没有持有地块，可在“土地与物业”中到地图选地购买。': 'No owned parcels yet. Open Land and property to choose land on the map.',
+  '颜色按本局持有地块的当前每公顷土地单价相对分级，不含建筑与交易费；同价使用中档颜色。边界表示地块格网，剩余面积见详情；远景小标记不代表实际面积。': 'Colors compare current land values per hectare among your holdings, excluding buildings and transaction fees. Equal values use the middle color. Outlines show parcel grid boundaries; inspect a parcel for its remaining area. Distant markers do not represent its size.',
+  '每月租金': 'Monthly rent',
+  '每月净收入': 'Monthly net income',
+  '每月租金 {amount}': 'Monthly rent {amount}',
+  '每月净收入 {amount}': 'Monthly net income {amount}',
+  '出售净值 {amount} · 剩余 {percent}': 'Net sale value {amount} · {percent} remaining',
+  '开发后预计月租金': 'Estimated monthly rent after development',
+  '开发后预计月持有及维护成本': 'Estimated monthly holding and upkeep costs after development',
+  '开发后预计月净收入': 'Estimated monthly net income after development',
+  '当前没有可步行到达的运营服务，月租金为 0；开发后仍需支付持有及维护成本。': 'There is no operating metro service within walking reach. Monthly rent is zero; holding and upkeep costs still apply after development.',
+  '运营服务刚建立，地价溢价尚未形成；当前预计月租金为 0，后续按实际服务逐步变化。': 'Operating service has just started and the land premium has not formed yet. Estimated monthly rent is currently zero and will develop with actual service.',
+  '月租金按当前运营服务与地价折算，不包含未来增长；实际逐日结算。': 'Monthly rent is estimated from current operating service and land value, excluding future growth. Payments settle daily.'
+});

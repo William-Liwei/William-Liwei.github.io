@@ -949,7 +949,7 @@
       g.compiled = M.compile(g.net, g.city);
       g.model.setNetwork(g.compiled);
       g.econ = CM.Economy.restore(s.econ);
-      if (CM.Property) CM.Property.restore(g, s.property);
+      if (CM.Property) CM.Property.restore(g, s.property, s.startYear);
       g.model.fare = g.econ.fare;
       g.corp = s.corp && Array.isArray(s.corp.contracts) ? s.corp : null;
       g.fleet = s.fleet && Array.isArray(s.fleet.trains) ? s.fleet : null;

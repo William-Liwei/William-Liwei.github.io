@@ -5,12 +5,14 @@
   const U = CM.U, CFG = CM.CFG, D = CM.DATA, M = CM.Metro;
   const h = U.h, I = CM.ICON, ic = CM.icon;
   const snd = function (name) { if (CM.Sound) CM.Sound.play(name); };
+  const propertyLegendKey = function (s) { return [s.min, s.max, s.items.length, s.items.filter(function (p) { return p.exhausted; }).length].join(':'); };
 
   // 分析图层（v1.9 起分为三组）：城市（人口、职住、设施出行需求、发展）· 交通（拥堵、出行方向、通勤时间、乘地铁比例）· 地铁（覆盖、车站客流、服务缺口、商业开发）
   const LAYER_GROUPS = [['city', '城市'], ['traffic', '交通'], ['metro', '地铁']];
   const LAYERS = [
     { id: 'pop', metric: true, group: 'city', name: '人口密度', icon: 'lyPop', color: '#e9641f', desc: '各街区常住人口' },
     { id: 'jobs', group: 'city', name: '住宅与就业', icon: 'lyJobs', color: '#6447dc', desc: '居住与岗位的分布' },
+    { id: 'property', group: 'city', name: '土地与物业', icon: 'bag', color: '#2189a6', desc: '已持有地块的边界、地价与出租物业' },
     { id: 'fac', group: 'city', name: '设施出行需求', icon: 'lyFac', color: '#c2410c', desc: '重要设施与各片区吸引的出行（按目的）' },
     { id: 'cong', metric: true, group: 'traffic', name: '道路拥堵', icon: 'lyCong', color: '#df3030', desc: '主要道路当前的拥堵程度' },
     { id: 'flow', group: 'traffic', name: '出行方向', icon: 'lyFlow', color: '#2557d6', desc: '各片区的主要出行方向' },
@@ -633,6 +635,13 @@
         else this.rerenderPage();
       }
       for (const f of this.live) { try { f(); } catch (e) { /* 页面已变化 */ } }
+      if (this.layer === 'property' && CM.Property) {
+        const snapshot = CM.Property.mapSnapshot(g);
+        if (this._propertyLegendSnapshot !== snapshot) {
+          this._propertyLegendSnapshot = snapshot;
+          if (this._propertyLegendKey !== propertyLegendKey(snapshot)) this.renderDock();
+        }
+      }
       if (CM.Stats && CM.Stats.isOpen()) CM.Stats.tick();
     }
     if (force || now - this.lastSlow > 1000) {
@@ -1590,6 +1599,18 @@
     switch (id) {
       case 'pop': grad(['#ffe296', '#f99e4c', '#de5434'], '0', '6 万人/km²'); note = '每个街区的常住人口密度（每月更新）。'; break;
       case 'jobs': li('#f0963c', '以住宅为主'); li('#9aa0b0', '职住混合'); li('#3468d6', '以就业岗位为主'); note = '颜色越深，人口与岗位越密集。'; break;
+      case 'property': {
+        const snap = CM.Property.mapSnapshot(self.g()); self._propertyLegendSnapshot = snap; self._propertyLegendKey = propertyLegendKey(snap);
+        const cols = CM.Property.mapColors;
+        li(cols[0], '低地价'); li(cols[1], '中地价'); li(cols[2], '高地价');
+        li('#78808c', '已全部用于建设，无剩余可交易面积', 'line');
+        if (snap.items.some(function (p) { return !p.exhausted; })) {
+          box.appendChild(h('div', { class: 'tiny property-price-range' }, '当前土地单价：' + U.fmtMoney(snap.min) + ' ～ ' + U.fmtMoney(snap.max) + ' / 公顷'));
+        }
+        box.appendChild(h('div', { class: 'tiny muted' }, snap.items.length ? '仅显示已持有地块；点击边界查看与经营。' : '还没有持有地块，可在“土地与物业”中到地图选地购买。'));
+        note = '颜色按本局持有地块的当前每公顷土地单价相对分级，不含建筑与交易费；同价使用中档颜色。边界表示地块格网，剩余面积见详情；远景小标记不代表实际面积。';
+        break;
+      }
       case 'cong': {
         // v2.3 重新设计：「拥堵程度」看当前时刻或工作日早高峰；「拥堵变化」与对比基准（最近一次新增车站的建设前、一年前）相比
         const g = self.g(), v = R.layerOpt.cong || 'now', diff = v === 'build' || v === 'year';

@@ -19,6 +19,29 @@
   };
   P.find = find;
   P.owned = owned;
+  P.mapColors = ['#2189a6', '#c28a2c', '#c65b68'];
+  const mapCache = new WeakMap();
+  // 只给可见地皮层提供持有地块的快照。状态版本不变时不重新估价，缓存不进入存档。
+  P.mapSnapshot = function (g) {
+    const city = g.city, s = g.property, m = g.model;
+    const key = [dayKey(g), s && s.rev, s && s.lastDay, city.version, city.terrainVer, city.geoVer,
+      m && m.version, g.netVersion, g.fleet && g.fleet.ver].join(':');
+    const old = mapCache.get(g);
+    if (old && old.key === key && old.city === city && old.state === s && old.model === m && old.compiled === g.compiled && old.net === g.net) return old.snapshot;
+    const hectares = CFG.CELL_M * CFG.CELL_M / 10000;
+    const items = owned(g).map(function (p) {
+      const q = P.quote(g, p.c), exhausted = q.area <= EPS;
+      return { c: p.c, area: q.area, unitPrice: exhausted ? 0 : q.land / q.area / hectares,
+        owned: true, developed: p.devCost > 0, used: 1 - q.area, exhausted: exhausted, band: 1 };
+    });
+    const priced = items.filter(function (p) { return !p.exhausted; });
+    const min = priced.length ? Math.min.apply(null, priced.map(function (p) { return p.unitPrice; })) : 0;
+    const max = priced.length ? Math.max.apply(null, priced.map(function (p) { return p.unitPrice; })) : 0;
+    if (max - min > EPS) for (const p of priced) p.band = Math.min(2, Math.floor((p.unitPrice - min) / (max - min) * 3));
+    const snapshot = { items: items, min: min, max: max };
+    mapCache.set(g, { key: key, city: city, state: s, model: m, compiled: g.compiled, net: g.net, snapshot: snapshot });
+    return snapshot;
+  };
   P.name = function (g, c) {
     const rg = g.city.regions[g.city.region[c]], x = c % g.city.W, y = Math.floor(c / g.city.W);
     return (rg ? rg.name : '地块') + ' · ' + (x + 1) + ',' + (y + 1);
@@ -77,10 +100,13 @@
     const building = dev * Math.max(0.25, 1 - age * 0.025) * (0.5 + access * 0.5) * 0.7;
     const hold = base * area * HOLD_RATE / 365, upkeep = dev * 0.03 / 365;
     // 空地不产租。已开发物业只从实际可达服务取得收入，低客流时净租金可以为负。
-    const rent = dev > 0 ? base * area * 0.14 * access / 365 : 0;
+    const rentIfDeveloped = base * area * 0.14 * access / 365;
+    const develop = base * area * 0.65, upkeepIfDeveloped = develop * 0.03 / 365;
+    const rent = dev > 0 ? rentIfDeveloped : 0;
     return { c: c, p: p, service: service, area: area, base: base, access: access, land: land, building: building,
-      buy: land * (1 + BUY_SPREAD), sell: (land + building) * (1 - SELL_FEE), develop: base * area * 0.65,
-      rent: rent, hold: hold, upkeep: upkeep, net: rent - hold - upkeep };
+      buy: land * (1 + BUY_SPREAD), sell: (land + building) * (1 - SELL_FEE), develop: develop,
+      rent: rent, hold: hold, upkeep: upkeep, net: rent - hold - upkeep,
+      rentIfDeveloped: rentIfDeveloped, upkeepIfDeveloped: upkeepIfDeveloped, netIfDeveloped: rentIfDeveloped - hold - upkeepIfDeveloped };
   };
   const busy = function (g) { return g.pending || g.jumping || g.econ.failed ? '正在结算或本局已结束，请稍候' : ''; };
   const book = function (g, kind, amount, note, incoming) {
@@ -200,10 +226,36 @@
     return true;
   };
   P.serialize = function (g) { if (!g.property) return undefined; P.validate(g.property, g.city.N); return JSON.parse(JSON.stringify(g.property)); };
-  P.restore = function (g, s) {
+  // A later landmark can protect a parcel bought legally before it opened.
+  // This exception only preserves that recorded holding on restore; current
+  // purchase and development checks continue to reject all protected land.
+  const historicalLandmark = function (g, p, startYear) {
+    const city = g.city, c = p.c, LU = CM.LU, rg = city.regions[city.region[c]];
+    const k = (city.protectedId && city.protectedId[c] || 0) - 1;
+    const lm = (CM.DATA.landmarks || [])[k];
+    if (!lm || !Number.isInteger(lm.year) || lm.year > g.clock.y || !city.landmarkOn || !city.landmarkOn[k] ||
+        typeof city.landmarkCells !== 'function' || city.landmarkCells(lm).indexOf(c) < 0) return false;
+    if (city.landFrac[c] < 0.8 || city.lu[c] !== (lm.kind === 'campus' ? LU.INST : LU.LANDMARK) || city.cellLocked(c) ||
+        !rg || rg.scenic || rg.park || city.isPark && city.isPark[c] || city.parkCov && city.parkCov[c] >= 0.45 ||
+        city.heritage && city.heritage[c] === 2) return false;
+    const sy = startYear == null ? (g.startYear == null ? CFG.START.y : g.startYear) : startYear;
+    if (!Number.isInteger(sy) || sy < CFG.START.y || sy > g.clock.y) return false;
+    const first = sy * 372 + (sy === CFG.START.y ? (CFG.START.m - 1) * 31 + CFG.START.d : 1);
+    const opening = lm.year * 372 + 1;
+    const beforeOpening = function (key) {
+      // Dec 31 is exactly the following year's multiple of 372, so decode
+      // key - 1 rather than key when checking actual calendar dates.
+      const year = Math.floor((key - 1) / 372), rem = key - year * 372 - 1;
+      const month = Math.floor(rem / 31) + 1, day = rem % 31 + 1;
+      return key >= first && key < opening && month >= 1 && month <= 12 && day >= 1 && day <= U.daysInMonth(year, month) &&
+        !(city.isAirportCell && city.isAirportCell(c, year));
+    };
+    return beforeOpening(p.bought) && (!p.devCost || p.devAt >= p.bought && beforeOpening(p.devAt));
+  };
+  P.restore = function (g, s, startYear) {
     P.validate(s, g.city.N);
     if (s && (s.lastDay > dayKey(g) || s.records.some(function (p) { return p.bought > dayKey(g) || p.devAt > dayKey(g); }))) throw new Error('存档中的土地交易日期无效');
-    if (s && s.records.some(function (p) { return p.owned && P.unavailable(g, p.c, true); })) throw new Error('存档中的土地位于不可交易的水域、未开放区或保护用地');
+    if (s && s.records.some(function (p) { return p.owned && P.unavailable(g, p.c, true) && !historicalLandmark(g, p, startYear); })) throw new Error('存档中的土地位于不可交易的水域、未开放区或保护用地');
     if (s) g.property = JSON.parse(JSON.stringify(s));
   };
 
@@ -240,7 +292,9 @@
       ['地铁带来的地价溢价', '+' + U.fmtPct(0.8 * q.access, 1)],
       [isOwned ? '出售净到手' : '购入总价（含 8% 交易溢价）', U.fmtMoney(isOwned ? q.sell : q.buy)],
       ['每月持有及维护成本', U.fmtMoney((q.hold + q.upkeep) * 30.4)],
-      isOwned && p.devCost > 0 ? ['每月租金 / 净收入', U.fmtMoney(q.rent * 30.4) + ' / ' + U.fmtMoney(q.net * 30.4)] : null,
+      !isOwned || !p.devCost ? ['开发后预计月持有及维护成本', U.fmtMoney((q.hold + q.upkeepIfDeveloped) * 30.4)] : null,
+      isOwned && p.devCost > 0 ? ['每月租金', U.fmtMoney(q.rent * 30.4)] : ['开发后预计月租金', U.fmtMoney(q.rentIfDeveloped * 30.4)],
+      isOwned && p.devCost > 0 ? ['每月净收入', U.fmtMoney(q.net * 30.4)] : ['开发后预计月净收入', U.fmtMoney(q.netIfDeveloped * 30.4)],
       isOwned && p.saved > 0 ? ['已减免征地费用', U.fmtMoney(p.saved)] : null,
     ]));
     const buttons = h('div', { class: 'property-actions' });
@@ -251,6 +305,9 @@
     buttons.appendChild(h('button', { class: 'btn sm ghost', onclick: function () { P.startPick(ui); } }, '另选地块'));
     el.appendChild(buttons);
     if (reason) el.appendChild(h('div', { class: 'note' }, reason));
+    if (q.service.score <= EPS) el.appendChild(h('div', { class: 'note property-rent-note' }, '当前没有可步行到达的运营服务，月租金为 0；开发后仍需支付持有及维护成本。'));
+    else if (q.access <= EPS) el.appendChild(h('div', { class: 'note property-rent-note' }, '运营服务刚建立，地价溢价尚未形成；当前预计月租金为 0，后续按实际服务逐步变化。'));
+    el.appendChild(h('div', { class: 'tiny muted property-rent-note' }, '月租金按当前运营服务与地价折算，不包含未来增长；实际逐日结算。'));
     el.appendChild(h('div', { class: 'note property-note' }, isOwned ? '卖价已扣 6% 交易费；已划入地铁建设的面积不再出售。开发前可继续持有，空地没有租金。' : '地块为游戏经营单位。可提前储地；以后车站或地面、高架线路用到自有土地时，减免对应征地费。'));
     return el;
   };
@@ -261,13 +318,15 @@
     for (const p of records(g)) total.saved += p.saved;
     el.appendChild(h('div', { class: 'property-intro' }, h('h3', null, '沿线土地与物业'), h('p', { class: 'muted' }, '提前选地，修通地铁，再选择出售或开发出租。只有正式运营且能步行到站的地块会获得地铁溢价；溢价随服务逐步形成，停运后回落。')));
     el.appendChild(ui.kv([['已持有地块', list.length + ' / ' + P.MAX_OWNED], ['全部出售净到手', U.fmtMoney(total.value)], ['每月租金减持有与维护', U.fmtMoney(total.net)], ['累计减免征地费用', U.fmtMoney(total.saved)]]));
-    el.appendChild(h('div', { class: 'property-actions' }, h('button', { class: 'btn primary', onclick: function () { P.startPick(ui); } }, '到地图选地块')));
+    el.appendChild(h('div', { class: 'property-actions' }, h('button', { class: 'btn primary', onclick: function () { P.startPick(ui); } }, '到地图选地块'),
+      h('button', { class: 'btn ghost', onclick: function () { ui.setLayer('property'); if (ui.closePanel) ui.closePanel(); } }, '查看地皮图层')));
     el.appendChild(h('div', { class: 'note property-note' }, '购地和开发只用一般资金；空地每年按基础地价收取 1.2% 持有费，出租物业另有维护费。建设报价只减免拆迁费用中的征地部分（60%），不减免土建、隧道、轨道或实际拆除费用。' + (g.econ.isFree() ? ' 自由建造模式下，所有金额仅作经营参考。' : '')));
     if (!list.length) el.appendChild(h('div', { class: 'property-empty' }, '还没有地块。点击“到地图选地块”，从线路将来经过的街区开始。'));
     for (const p of list) {
       const q = P.quote(g, p.c), row = h('div', { class: 'property-row' });
       row.appendChild(h('div', { class: 'row between' }, h('b', null, P.name(g, p.c)), h('span', { class: 'tag' }, p.devCost > 0 ? '出租物业' : '储备用地')));
-      row.appendChild(h('div', { class: 'small muted' }, '出售净值 ' + U.fmtMoney(q.sell) + ' · 剩余 ' + U.fmtPct(q.area, 0) + ' · 月净额 ' + U.fmtMoney(q.net * 30.4)));
+      row.appendChild(h('div', { class: 'small muted' }, '出售净值 ' + U.fmtMoney(q.sell) + ' · 剩余 ' + U.fmtPct(q.area, 0)));
+      row.appendChild(h('div', { class: 'small property-income' }, h('span', null, '每月租金 ' + U.fmtMoney(q.rent * 30.4)), h('span', null, '每月净收入 ' + U.fmtMoney(q.net * 30.4))));
       row.appendChild(h('button', { class: 'btn sm ghost', onclick: function () { const x = p.c % g.city.W + 0.5, y = Math.floor(p.c / g.city.W) + 0.5; ui.locatePoint(x, y, P.name(g, p.c), 0.5, 3); ui.select({ kind: 'zone', id: g.city.zoneOf(p.c), cell: p.c }); } }, '定位与经营'));
       el.appendChild(row);
     }
