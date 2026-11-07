@@ -47,7 +47,7 @@
   F.restore = function (g, s) { F.validate(s); g.future = F.enabled(g) && s ? JSON.parse(JSON.stringify(s)) : null; };
   F.panel = function (g) {
     const h = U.h, era = F.era(g.clock.y), ep = episode(g, g.ym()), active = ep && g.ym() <= ep.until;
-    return h('section', { class: 'chart-card' }, h('h3', null, '上海的未来模拟'),
+    return h('section', { class: 'chart-card' }, h('h3', null, '城市群的未来模拟'),
       h('p', { class: 'note' }, '产业、生活方式与周期事件独立随时间演变；以下为游戏情景，不是未来事实。'),
       h('b', null, era ? era.name : '2025 年后逐步进入未来情景'),
       h('p', { class: 'note' }, era ? era.desc : '人口与岗位仍会受当前经营和交通影响。'),

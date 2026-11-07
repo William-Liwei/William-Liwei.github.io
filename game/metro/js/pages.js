@@ -11,6 +11,8 @@
   UI.LINE_PALETTE = LINE_PALETTE;   // 地图快捷操作（quick.js）的调色气泡共用
   // 即时显示修改也写入已有撤销点；撤销建设只恢复线网结构，不撤销已经生效的改名、改色。
   function patchDisplay(g, kind, id, patch) {
+    const obj = (g.draft && g.draft.net[kind][id]) || g.net[kind][id];
+    if (obj && obj.ownerId && obj.ownerId !== 'player') return false;
     const apply = function (net) { if (net && net[kind][id]) Object.assign(net[kind][id], patch); };
     apply(g.net);
     const d = g.draft;
@@ -37,6 +39,8 @@
   // 修改线路名称或颜色：只影响显示，运营网络与草案同时更新，立即生效、不产生费用
   UI.prototype.setLineLook = function (lid, patch) {
     const g = this.g(); if (!g || this._replacingPage || this._replacingToolOpts) return;
+    const line = (g.draft && g.draft.net.lines[lid]) || g.net.lines[lid];
+    if (line && line.ownerId && line.ownerId !== 'player') { this.toast('不能修改其他公司的线路', 'info'); return { error: '不能修改其他公司的线路' }; }
     patchDisplay(g, 'lines', lid, patch);
     const R = this.R; R.labelImage = null; R.metroOrder = null; R._smC = null;
     if (CM.NetMap) CM.NetMap.refresh(true);
@@ -52,6 +56,7 @@
     if (!name) return { error: '站名不能为空' };
     const nets = [g.net, g.draft && g.draft.net].filter(Boolean), cur = nets[nets.length - 1].stations[id];
     if (!cur) return { error: '车站已不存在' };
+    if (cur.ownerId && cur.ownerId !== 'player') return { error: '不能修改其他公司的车站' };
     if (cur.name === name) return { same: true };
     for (const n of nets) for (const sid in n.stations) if (sid !== id && n.stations[sid].name === name) return { error: '已有同名车站「' + name + '」，请换一个名称' };
     const old = cur.name;
@@ -216,6 +221,7 @@
   UI.prototype.todBody = function (id, after) {
     const g = this.g(), self = this, T = CM.TOD, I = this.todInfo(id), free = g.econ.isFree();
     if (!I) return h('div', { class: 'note' }, '车站接入运营线路后才能开发商业空间。');
+    if (I.s.ownerId && I.s.ownerId !== 'player') return h('div', { class: 'note' }, '车站商业由产权所属公司经营。');
     const s = I.s, lv = I.lv, b = h('div'), lines = M.stationLines(g.net, id).map(function (l) { return g.net.lines[l]; }).filter(Boolean);
     // 预览：左边是现在，右边是开发后；鼠标移到某一级上时右边换成那一级
     const nextBox = h('div', { class: 'st-artbox' }), nextCap = h('figcaption');
@@ -265,6 +271,7 @@
   UI.decorName = function (key, v) { const o = UI.DECOR[key].find(function (x) { return x[0] === v; }); return o ? o[1] : v; };
   UI.prototype.decorBody = function (id, after) {
     const g = this.g(), self = this, net = g.draft ? g.draft.net : g.net, s = net.stations[id]; if (!s) return h('div');
+    if (s.ownerId && s.ownerId !== 'player') return h('div', { class: 'note' }, '车站装修由产权所属公司管理。');
     const dc = Object.assign({ style: 'auto', color: null, art: 'none', sign: 'std' }, s.decor || {});
     const rg = g.city.regionAt(s.x, s.y), plan = rg && rg.plan;
     const rec = plan === 'oldmix' ? 'heritage' : (plan === 'cbd' || plan === 'newtown' ? 'modern' : (plan === 'campus' ? 'garden' : (plan === 'ind' || plan === 'resind' ? 'industrial' : null)));
@@ -522,6 +529,8 @@
   UI.prototype.startDraw = function (sid, lid, branch) {
     const g = this.g(), T = this.tools, net = g.draft ? g.draft.net : g.net, s = net.stations[sid];
     if (!s) return;
+    if (lid !== 'new' && net.lines[lid] && net.lines[lid].ownerId && net.lines[lid].ownerId !== 'player') { this.toast('不能延长其他公司的线路，请新建本公司线路并申请接入', 'info'); return; }
+    if (s.ownerId && s.ownerId !== 'player' && (!CM.Operators || !CM.Operators.agreed(g, s.ownerId, sid))) { this.toast('请先在该车站页面签订接入协议', 'info'); return; }
     T.setTool('line');
     T.lineChoice = lid; T.chain = sid; T.bends = [];
     T.lineLock = true;

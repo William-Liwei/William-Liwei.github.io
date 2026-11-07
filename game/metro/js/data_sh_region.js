@@ -96,6 +96,11 @@
   [31.161,120.639,9000,7000,2.5],[31.386,120.975,14000,13000,3.4],[31.285,121.094,3500,3500,1.8],
   [31.460,121.129,9000,8500,2.6],[31.654,120.750,11000,10000,3.2],[31.866,120.548,9000,10000,3.2]
  ]){const p=ll(lat,lon);D.centers.push({x:p[0],y:p[1],pop,jobs,r});}
+ // Visible neighbouring urban centres from the loaded OSM places; density parameters are gameplay estimates.
+ for(const [name,pop,jobs,r] of [['无锡市',19000,18000,3.8],['常州市',14500,15000,3.4],['南通市',12000,10000,3.2],['嘉兴市',11000,9500,3.0],['湖州市',9500,8000,2.8]]){
+  const p=G.places.find(p=>p[0]===name&&p[3]===3);
+  if(p)D.centers.push({x:p[1],y:p[2],pop,jobs,r});
+ }
  const facilities=[
   ['sz_station','苏州站','rail',31.3268,120.6067,1990,[[1990,2.5],[2010,5],[2020,9]]],
   ['sz_north','苏州北站','rail',31.4193,120.6431,2011,[[2011,2],[2020,5]]],

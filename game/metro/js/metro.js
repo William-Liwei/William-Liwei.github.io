@@ -7,6 +7,39 @@
 
   M.empty = function () { return { stations: {}, segments: {}, lines: {}, nextId: 1 }; };
   M.clone = function (n) { return JSON.parse(JSON.stringify(n)); };
+  M.ownerId = function (obj, net) { return obj && (obj.ownerId || obj.line && net && net.lines[obj.line] && net.lines[obj.line].ownerId) || 'player'; };
+  M.ownerCity = function (city, ownerId) {
+    const g = city && city.operatorGame;
+    return g && CM.Operators && CM.Operators.cityView ? CM.Operators.cityView(g, ownerId || 'player') : city;
+  };
+  // Final authority for every player edit, including live drags and imported drafts.
+  // Other companies keep their own objects; an agreement only permits a new player
+  // line to meet an unchanged partner station, never transfer its ownership.
+  M.playerOwnershipError = function (off, draft, g) {
+    if (!off || !draft) return '线路数据不完整';
+    for (const kind of ['stations', 'segments', 'lines']) {
+      for (const id in off[kind]) {
+        const obj = off[kind][id];
+        if (M.ownerId(obj, off) !== 'player' && JSON.stringify(obj) !== JSON.stringify(draft[kind][id])) return '这是其他公司的资产，不能改名、移动、拆除或改建';
+      }
+      for (const id in draft[kind]) {
+        const obj = draft[kind][id], old = off[kind][id];
+        if ((!old || M.ownerId(old, off) === 'player') && M.ownerId(obj, draft) !== 'player') return '不能新建或接管其他公司的资产';
+      }
+    }
+    for (const id in draft.segments) {
+      const s = draft.segments[id]; if (M.ownerId(s, draft) !== 'player') continue;
+      if (M.ownerId(draft.lines[s.line]) !== 'player') return '不能编辑其他公司的线路';
+      if ((s.base || []).some(function (base) { return off.segments[base] && M.ownerId(off.segments[base], off) !== 'player'; })) return '不能把其他公司的轨道记为本公司的已付费资产';
+      const old = off.segments[id];
+      for (const sid of [s.a, s.b]) {
+        const st = draft.stations[sid], owner = M.ownerId(st);
+        if (owner === 'player' || old && old.line === s.line && (old.a === sid || old.b === sid)) continue;
+        if (!CM.Operators || !CM.Operators.agreed || !CM.Operators.agreed(g, owner, sid)) return '接入其他公司的车站需要先签订换乘接入协议';
+      }
+    }
+    return null;
+  };
   M.newId = function (net, p) { return p + (net.nextId++); };
   M.idNum = function (id) { return parseInt(id.slice(1), 10); };
   M.sortIds = function (ids) { return ids.sort(function (a, b) { return M.idNum(a) - M.idNum(b); }); };
@@ -250,7 +283,7 @@
   }
   M.geomFromControl = function (ctrl, type, city) {
     // 缓存键含城市实例（地图）、几何相关数据的版本、地形阶段（填海）与可建设范围（区域开放、全图解锁）；月度增长不改变线路几何，不必每月重算
-    const key = type + '|' + (city.uid || 0) + ':' + (city.geoVer || 0) + ':' + (city.terrainVer || 0) + ':' + (city.lockVer || 0) + (city.unlockAll ? 'u' : '') + '|' + (ctrl.plat ? 'p|' : '') + (ctrl.smooth ? 's|' : '') + (ctrl.arc ? 'a|' : '') + ctrl.map(function (p) { return p[0].toFixed(3) + ',' + p[1].toFixed(3); }).join(';');
+    const key = type + '|' + (city.uid || 0) + ':' + (city.geoVer || 0) + ':' + (city.terrainVer || 0) + ':' + (city.lockVer || 0) + ':' + (city.permissionKey || '') + (city.unlockAll ? 'u' : '') + '|' + (ctrl.plat ? 'p|' : '') + (ctrl.smooth ? 's|' : '') + (ctrl.arc ? 'a|' : '') + ctrl.map(function (p) { return p[0].toFixed(3) + ',' + p[1].toFixed(3); }).join(';');
     const hit = geomCache.get(key);
     if (hit) return hit;
     const pts = (ctrl.arc && ctrl.plat && arcCurve(ctrl, STEP)) || (ctrl.smooth && ctrl.length > 2 ? splineCurve(ctrl, !!ctrl.plat, STEP) : trackCurve(ctrl, !!ctrl.plat, STEP));
@@ -314,7 +347,7 @@
     return g;
   };
   M.clearCaches = function () { geomCache.clear(); };
-  M.segGeom = function (net, seg, city) { return M.geomFromControl(M.segControl(net, seg), seg.type, city); };
+  M.segGeom = function (net, seg, city) { return M.geomFromControl(M.segControl(net, seg), seg.type, M.ownerCity(city, M.ownerId(seg, net))); };
 
   // 区间两端坡道长度（米）：按轨面高程差与最大坡度计算
   M.rampNeed = function (tA, tS, tB) {
@@ -879,6 +912,7 @@
     return best ? { id: best.id, name: Fac.shortName(best) } : null;
   };
   M.checkSite = function (city, x, y, type) {
+    city = M.ownerCity(city, city.operatorOwnerId || 'player');
     const c = city.cellAt(x, y);
     if (c < 0) return { ok: false, msg: '超出地图范围', how: '把车站移回地图内。' };
     if (city.waterDistAt(x, y) < 0.05) return { ok: false, msg: '车站不能建在水面上（' + city.riverNameAt(x, y) + '）', how: '把车站移到岸边；跨江请用两岸的车站之间的轨道（地下为隧道、高架为桥梁）。' };
@@ -1205,7 +1239,7 @@
         res.changes.mod.push('车站「' + s.name + '」增设' + CFG.metro.typeName[t] + '站台（天地换乘）');
         item('construction', '增设' + CFG.metro.typeName[t] + '站台 ' + s.name + '（天地换乘）', M.stationCost(t, s.size, year) * lvf, id);
         touchedSt.add(id);
-        const chk = CM.Fac && CM.Fac.isPortalStation(s) ? { ok: true } : M.checkSite(city, s.x, s.y, t);
+        const chk = CM.Fac && CM.Fac.isPortalStation(s) ? { ok: true } : M.checkSite(M.ownerCity(city, M.ownerId(s)), s.x, s.y, t);
         if (!chk.ok) {
           const lid0 = Object.keys(s.lv || {}).find(function (l) { return s.lv[l] === t; });
           conflict({ type: 'site', kind: 'station', ref: id, x: s.x, y: s.y, msg: '车站「' + s.name + '」的' + CFG.metro.typeName[t] + '站台：' + chk.msg, how: chk.how || '把这条线路在本站的站台改为允许的建设方式，或移动车站。',
@@ -1222,7 +1256,7 @@
         }
       }
       if (newSite || relocated) {
-        const chk = CM.Fac && CM.Fac.isPortalStation(s) ? { ok: true } : M.checkSite(city, s.x, s.y, s.type);   // 地图外设施的接驳口不受选址限制
+        const chk = CM.Fac && CM.Fac.isPortalStation(s) ? { ok: true } : M.checkSite(M.ownerCity(city, M.ownerId(s)), s.x, s.y, s.type);   // 地图外设施的接驳口不受选址限制
         if (!chk.ok) {
           const fixes = [{ label: '移动车站', op: 'editStation', station: id }, { label: o ? '撤回移动' : '删除车站', op: o ? 'restoreStation' : 'removeStation', station: id }];
           conflict({ type: 'site', kind: 'station', ref: id, x: s.x, y: s.y, msg: '车站「' + s.name + '」：' + chk.msg, how: chk.how || '用「修改」工具把车站拖到允许建设的位置，或删除该车站。', fixes: fixes });
@@ -1666,6 +1700,7 @@
   // 已建车站锁定站台方向（v2.6.1）：在既有车站接新区段时，本线站台保持原来的方向，新线从站台末端再转出，既有线路不会被带歪
   M.lockPlatform = function (net, off, sid, lid) {
     const s = net.stations[sid]; if (!s || !off.stations[sid] || (s.pd && s.pd[lid] != null)) return;
+    if (M.ownerId(s) !== M.ownerId(net.lines[lid])) return;
     let os = null; for (const id in off.segments) { const o = off.segments[id]; if (o.line === lid && (o.a === sid || o.b === sid)) { os = o; break; } }
     if (!os) return;
     const t = M.stationTangent(off, os, sid);

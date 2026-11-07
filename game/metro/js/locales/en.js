@@ -1,6 +1,7 @@
 'use strict';
 (function(CM){CM.I18N_EN = {
   "社区修改版": "Community edition",
+  "长三角版": "Yangtze Delta edition",
   "各具历史特色的九座城市": "Nine cities, each with its own history",
   "九张地图按真实历史划分发展阶段：新区、商务区与新市镇依次兴起，老城逐步疏解，出行走廊随年代变化。": "All nine maps now follow historical development phases: new districts, business centers and new towns rise in turn, old cores decongest, and travel corridors shift over the decades.",
   "亚运会、世博会带来客流高峰，疫情与灾害使出行减少；每个阶段都有本城目标与阶段总结。": "The Asian Games and World Expos bring ridership peaks, while epidemics and disasters reduce travel; every phase has city goals and a phase summary.",

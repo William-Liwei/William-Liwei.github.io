@@ -108,23 +108,28 @@
       CM.MAPS.tutorial ? h('button', { class: 'start-learn', onclick: function () { self.showMapSelect('tutorial'); } }, ic('help', 16), h('span', null, '第一次玩？先试试'), h('b', null, '新手教程 · 青湾'), ic('chev', 14)) : null,
       !storageOk ? h('div', { class: 'callout bad', style: { marginTop: '14px' } }, ic('error'), h('div', { class: 'ct' }, '当前浏览器禁止本地存储，进度将无法自动保存。')) : null,
       h('div', { class: 'start-foot' }, h('strong', null, '社区修改版 · Wei Li'), h('br'), '规划地铁、改变出行、塑造城市。', h('br'),
-        h('a', { href: 'https://github.com/VinsonFung', target: '_blank', rel: 'noopener' }, '原作者 VinsonFung'), ' · ',
-        h('a', { href: 'https://city-and-metro.pages.dev', target: '_blank', rel: 'noopener' }, '原版游戏'), ' · ',
-        h('a', { href: 'https://github.com/VinsonFung/city-and-metro', target: '_blank', rel: 'noopener' }, '原始源码'), h('br'),
-        h('a', { href: 'LICENSE.txt', target: '_blank', rel: 'noopener' }, '© 2026 VinsonFung · 仅限非商业使用'), h('br'),
-        h('a', { href: 'https://www.openstreetmap.org/copyright', target: '_blank', rel: 'noopener' }, '地图 © OpenStreetMap 贡献者 · ODbL'), ' · v' + CFG.GAME_VERSION));
-    // 右上角：公告、官方社区和主题共用按钮样式；外链保留当前游戏页面。
+        h('button', { class: 'credits-link', onclick: function () { self.showCredits(function () { self.showStart(); }); } }, '致谢与许可'), ' · v' + CFG.GAME_VERSION));
+    // 主界面只保留本版本公告、主题与统一致谢入口。
     const news = h('button', { class: 'corner-btn' + (newsSeen() ? '' : ' dot'), 'data-tip': '更新公告', 'aria-label': '更新公告', onclick: function () { self.showNews(function () { self.showStart(); }); } }, ic('megaphone'));
-    const social = function (icon, label, href) {
-      return h('a', { class: 'corner-btn', href: href, target: '_blank', rel: 'noopener noreferrer', 'data-tip': label, 'aria-label': label }, ic(icon, null, icon === 'xiaohongshu' ? 'brand-wordmark' : ''));
-    };
     this.startTheme = h('button', { class: 'corner-btn', 'aria-label': '切换深浅模式', onclick: function () { self.toggleTheme(); } });
-    const corner = h('div', { class: 'start-corner' }, news,
-      social('bilibili', '游戏官方 B站', 'https://b23.tv/H18TUXD'),
-      social('xiaohongshu', '游戏官方小红书', 'https://xhslink.cn/o/5eRdolGBwyK'),
-      social('douyin', '游戏官方抖音', 'https://v.douyin.com/XdxVSS5NHK8/'), this.startTheme);
+    const corner = h('div', { class: 'start-corner' }, news, this.startTheme);
     this.openScreen(h('div', { class: 'start-root' }, wrap, corner), null, 'start' + (calm ? ' calm' : ''), tr || null);
     this.renderThemeBtns();
+  };
+
+  UI.prototype.showCredits = function (onBack) {
+    const self = this, back = onBack || function () { self.showSettings('about'); };
+    const link = function (label, href) { return h('a', { class: 'btn sm', href: href, target: '_blank', rel: 'noopener noreferrer' }, label, ic('external', 13)); };
+    this.openScreen(h('div', { class: 'card credits-card' },
+      h('h2', null, '致谢与许可'),
+      h('p', null, '城市与地铁 · 社区修改版由 Wei Li 维护，采用独立版本号，当前 v' + CFG.GAME_VERSION + '。本版本基于原作修改，不代表原作者或官方发布。'),
+      h('p', null, '感谢原作者 VinsonFung。原作与相关资源 © 2026 VinsonFung，保留所有权利；本游戏自有代码仅限许可证允许的非商业使用。'),
+      h('p', null, '地图数据 © OpenStreetMap 贡献者，按 ODbL 1.0 提供；第三方组件与数据继续适用各自原有许可。完整声明随本版本保留。'),
+      h('div', { class: 'credits-links' },
+        link('原始项目', 'https://github.com/VinsonFung/city-and-metro'),
+        link('使用许可', 'LICENSE.txt'), link('第三方声明', 'THIRD_PARTY_NOTICES.txt'),
+        link('地图数据署名', 'https://www.openstreetmap.org/copyright')),
+      h('div', { class: 'credits-close' }, h('button', { class: 'btn primary', onclick: back }, '返回'))), back);
   };
 
   // ======================== 选择地图 ========================
@@ -164,7 +169,7 @@
       h('button', { class: 'btn sm', onclick: function () { F.q = ''; F.era = 'all'; F.region = 'all'; self.showMapSelect(sel); } }, '清除筛选'));
     const count = h('span', { class: 'ms2-count' });
     const items = {};
-    const text = function (mp) { const s = [mp.title, mp.name, mp.sub, mp.tagline, mp.region, eraName(eraOf(mp)), String(mp.cfg.START.y), (mp.tags || []).join(' '), mp.data.city].join(' '); return CM.I18n ? CM.I18n.search(s) : s.toLowerCase(); };
+    const text = function (mp) { const s = [mp.title, mp.name, mp.sub, mp.tagline, mp.region, eraName(eraOf(mp)), String(mp.cfg.START.y), (mp.tags || []).join(' '), mp.data.city, mp.id === 'sh' && CM.CompanyRoles ? CM.CompanyRoles.list().map(r => r.name).join(' ') : ''].join(' '); return CM.I18n ? CM.I18n.search(s) : s.toLowerCase(); };
     const match = function (id) {
       const mp = CM.MAPS[id];
       if (F.era !== 'all' && String(eraOf(mp)) !== F.era) return false;
@@ -198,6 +203,7 @@
     const goPrimary = function () { const p = stage.querySelector('.map-mode.primary'); if (p) p.click(); };
     const buildStage = function () {
       const mp = CM.MAPS[sel], games = CM.Save.list(sel), latest = CM.Save.latest(sel), y0 = mp.cfg.START.y;
+      const role = sel === 'sh' && CM.CompanyRoles ? CM.CompanyRoles.get(self._companyRole || 'sh') : null;
       // 自由建造选项（v2.2）：起始年份（默认开局年份至史料截止年份，逐年可选）与解锁全图；按地图记住本次选择
       const fo = freeOpts[sel] || (freeOpts[sel] = { year: y0, unlock: false });
       let poster = null;
@@ -206,7 +212,7 @@
         const free = mode === 'free', yr = free ? fo.year : y0, r = poster && poster.getBoundingClientRect();
         self.stageBg(CM.mapThumb(sel, theme), r && r.width > 40 ? r : null);   // 地图画面放大成载入背景
         if (mp.tutorial) CM.newGame({ map: sel, mode: 'free', tutorial: true, name: '新手教程 · ' + mp.data.city });
-        else CM.newGame({ map: sel, mode: mode, name: (free ? '自由建造' : '经营挑战') + ' · ' + mp.data.city + ' ' + yr, startYear: free && yr > y0 ? yr : null, unlockAll: free && fo.unlock });
+        else CM.newGame({ map: sel, mode: mode, playerCity: role ? role.id : undefined, name: (free ? '自由建造' : '经营挑战') + ' · ' + (role ? role.company : mp.data.city) + ' ' + yr, startYear: free && yr > y0 ? yr : null, unlockAll: free && fo.unlock });
       };
       // 自由建造：点击按钮展开一行选项（起始年份滑块、解锁全图、开始），按钮说明显示当前选择
       const freeParts = function () {
@@ -242,16 +248,16 @@
         CM.thumbInto(h('img', { alt: '' }), sel, theme),
         h('div', { class: 'ms2-ptx' },
           h('div', { class: 'msel-kicker' }, h('span', null, mp.region || ''), h('i'), h('span', null, y0 + ' 年起'), h('i'), h('span', null, mp.kind === 'fictional' || mp.tutorial ? '虚构城市' : '真实地理')),
-          h('h2', null, mp.title || mp.name),
-          h('div', { class: 'ms2-tagline' }, mp.tagline || mp.sub),
-          h('div', { class: 'msel-chips' }, levelEl(mp.difficulty || 2), (mp.tags || []).map(function (t) { return h('span', { class: 'tag glass-tag' }, t); }))),
+          h('h2', null, role ? role.company + ' · ' + y0 : mp.title || mp.name),
+          h('div', { class: 'ms2-tagline' }, role ? '长三角同图经营 · ' + role.progression : mp.tagline || mp.sub),
+          h('div', { class: 'msel-chips' }, levelEl(mp.difficulty || 2), (role ? [role.name + '公司', '城市群', '分期开放'] : mp.tags || []).map(function (t) { return h('span', { class: 'tag glass-tag' }, t); }))),
         h('div', { class: 'ms2-facts' }, fl.map(function (f) { return h('div', null, h('span', null, f[0]), h('b', { title: f[1] }, f[1])); })));
       const feats = h('div', { class: 'ms2-feats' }, (mp.features || []).map(function (f, k) {
         return h('div', { class: 'ms2-feat', style: { animationDelay: (0.04 * k) + 's' } }, h('span', { class: 'badge ' + ['b-blue', 'b-teal', 'b-orange', 'b-violet'][k % 4] }, ic(f[0], 15)), h('div', null, h('b', null, f[1]), h('small', null, f[2])));
       }));
       // 大事年表：开局 + 关键历史节点，按历史阶段（与游戏内阶段同色）分组；没有大事的阶段补一个「阶段开始」节点
-      const eraList = (mp.data && mp.data.eras) || [], eraAt = function (y) { let k = -1; for (let i = 0; i < eraList.length; i++) if (y >= eraList[i].from) k = i; return k; };
-      const hl = [[y0, '开局']].concat(mp.highlights || []);
+      const eraList = role ? [] : (mp.data && mp.data.eras) || [], eraAt = function (y) { let k = -1; for (let i = 0; i < eraList.length; i++) if (y >= eraList[i].from) k = i; return k; };
+      const hl = role ? role.timeline.slice() : [[y0, '开局']].concat(mp.highlights || []);
       eraList.forEach(function (er, i) { if (er.from > y0 && !hl.some(function (e) { return eraAt(+e[0]) === i; })) hl.push([er.from, '「' + er.name.replace(/（.*）/, '') + '」开始']); });
       hl.sort(function (a, b) { return a[0] - b[0]; });
       const tl = h('div', { class: 'ms2-tl' });
@@ -267,7 +273,7 @@
       const acts = h('div', { class: 'ms2-acts' });
       if (mp.tutorial) acts.appendChild(modeBtn('free', 'play', 'b-teal', '开始教程', '主线 13 步、约 12 分钟：规划、管理与经营（不限资金）', true));
       else {
-        const ch = modeBtn('challenge', 'trophy', 'b-gold', '经营挑战', '初始资金 ' + U.fmtMoney(mp.cfg.economy.startFunds, undefined, mp.cfg.money), true);
+        const ch = modeBtn('challenge', 'trophy', 'b-gold', '经营挑战', '初始资金 ' + U.fmtMoney(role ? role.funds : mp.cfg.economy.startFunds, undefined, mp.cfg.money), true);
         ch.dataset.tip = '新游戏 · 拨款随城市经济变化'; acts.appendChild(ch);
         acts.append.apply(acts, freeParts());
       }
@@ -276,12 +282,23 @@
       acts.appendChild(h('button', { class: 'map-mode sub', onclick: function () { self.showSaveManager(false, sel); } },
         h('span', { class: 'badge b-slate' }, ic('folder')), h('span', { class: 'grow' }, h('b', null, '读取存档'), h('small', null, games.length ? games.length + ' 个进度 · 可导入存档文件' : '暂无存档 · 可导入存档文件')), ic('chev', 16)));
       const progress = games.length ? games.length + ' 个进度 · 最近 ' + (latest ? fmtDate(latest) : '—') : (mp.tutorial ? '还没有开始教程' : '还没有进度');
+      const companies = role ? h('section', { class: 'company-select', 'aria-label': '选择经营公司' },
+        h('div', { class: 'ms2-h' }, ic('building', 14), '选择你经营的公司'),
+        h('div', { class: 'company-choices', role: 'group', 'aria-label': '城市公司' }, CM.CompanyRoles.list().map(function (r) {
+          return h('button', { class: 'company-choice' + (r.id === role.id ? ' on' : ''), 'aria-pressed': r.id === role.id ? 'true' : 'false', 'data-company': r.id, style: { '--company-color': r.color }, onclick: function () {
+            if (r.id === role.id) return; self._companyRole = r.id; snd('soft'); drawStage();
+            const selected = stage.querySelector('[data-company="' + r.id + '"]'); if (selected) selected.focus({ preventScroll: true });
+          } }, r.name);
+        })),
+        h('p', { class: 'company-summary' }, role.summary),
+        h('p', { class: 'company-progress' }, '开局范围：' + role.startArea + ' · 首要任务：' + role.firstTask),
+        h('p', { class: 'company-note' }, '7 家公司均从 1990 年起步，各有资金、任务与开放进程。其余城市独立运营。仅限当前地图已覆盖的城市，不扩大地图。')) : null;
       return h('div', { class: 'ms2-sheet' },
         poster,
         h('div', { class: 'ms2-body' },
-          h('div', { class: 'ms2-col' }, h('div', { class: 'ms2-h' }, ic('info', 14), '城市概况'), h('p', { class: 'ms2-intro' }, mp.intro || mp.desc), h('div', { class: 'ms2-h' }, ic('sparkle', 14), '地图特色'), feats),
-          h('div', { class: 'ms2-col ms2-tlcol' }, h('div', { class: 'ms2-h' }, ic('calYear', 14), '大事年表'), tl)),
-        h('div', { class: 'ms2-actbar' }, h('div', { class: 'ms2-acth' }, h('b', null, mp.tutorial ? '开始教程' : '开始规划 ' + (mp.name || '')), h('span', { class: 'tiny muted' }, ic('save', 12), progress)), acts));
+          h('div', { class: 'ms2-col' }, companies, h('div', { class: 'ms2-h' }, ic('info', 14), role ? '共同地图' : '城市概况'), h('p', { class: 'ms2-intro' }, role ? '在 235 × 160 km 的现有长三角地图中，从所选公司的本地核心起步。其他城市持续发展，按本局建设权限逐步参与跨城经营。人口与岗位为模型估算，地理底图来自 OpenStreetMap。' : mp.intro || mp.desc), h('div', { class: 'ms2-h' }, ic('sparkle', 14), '地图特色'), feats),
+          h('div', { class: 'ms2-col ms2-tlcol' }, h('div', { class: 'ms2-h' }, ic('calYear', 14), role ? '模拟经营进程' : '大事年表'), tl)),
+        h('div', { class: 'ms2-actbar' }, h('div', { class: 'ms2-acth' }, h('b', null, mp.tutorial ? '开始教程' : role ? '经营 ' + role.company : '开始规划 ' + (mp.name || '')), h('span', { class: 'tiny muted' }, ic('save', 12), progress)), acts));
     };
     let first = true;
     const drawStage = function () {

@@ -178,7 +178,7 @@
     // 新开局随后要显示简报：载入卡片直接换成简报，不先关掉界面层（v2.3：以前会露出一帧游戏界面再盖上，看起来闪一下）
     const briefNext = isNew && !g.tutorial && CM.DATA.briefing && ui.showBriefing;
     if (!briefNext) ui.closeScreen();
-    const mp = CM.curMap(), cam = mp.cam || { cx: CFG.W / 2, cy: CFG.H / 2, zoom: 18 };
+    const mp = CM.curMap(), cam = (g.mapId === 'sh' && CM.CompanyRoles && CM.CompanyRoles.camera(g.playerCity)) || mp.cam || { cx: CFG.W / 2, cy: CFG.H / 2, zoom: 18 };
     R.cam.cx = cam.cx; R.cam.cy = cam.cy; R.cam.zoom = R.cam.tz = cam.zoom; R.cam.view = 1; R.cam.t = 1; R.cam.under = R.cam.tu = 0; R.cam.anchor = null; R.cam.fly = null;
     g.setSpeed(0);
     if (g.tutorial && CM.Tutorial) {
@@ -266,6 +266,7 @@
         end();
         if (e && e.code === 'LOAD_TIMEOUT') for (const pool of [CM.SkimPool, CM.OdPool, CM.CarPool]) if (pool) pool.fail('载入计算长时间未响应');
         CM.useMap(job.mapId || 'gz');
+        if (prev && CM.CompanyRoles) CM.CompanyRoles.configure(prev.mapId, prev.playerCity);
         if (prev && CM.game === prev) {
           if (prev.model) prev.model.retired = job.prevRetired;
           if (CM.applyMoneyEra) CM.applyMoneyEra(prev.clock.y, prev.clock.m);

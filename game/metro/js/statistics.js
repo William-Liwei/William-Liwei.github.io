@@ -213,6 +213,7 @@
     observe(g);
     const s = ensure(g), current = snapshot(g), sample = current || s._latest, P = options.palette, refresh = options.refresh;
     el.classList.add('ticket-page');
+    if (CM.Operators && CM.Operators.enabled(g)) el.appendChild(h('p', { class: 'callout info' }, '这里统计区域联运全网的完整行程与总票款，包含其他公司的线路。各公司的分账收入、运营成本与估值请查看公司面板。换乘不重复计票。'));
     el.appendChild(h('div', { class: 'ticket-toolbar' }, control(Object.entries(BASIS), basis, v => { basis = v; refresh(); }, '统计日类型'),
       options.ui ? h('button', { class: 'btn sm', onclick: () => { CM.Stats.close(); options.ui.openPage('finance'); } }, CM.icon('ticket', 14), '调整票价') : null));
     const context = sample ? date(sample.at) + ' · ' + BASIS[basis] + ' · 交通需求基准 ' + modelDate(sample.year) : '';
@@ -220,7 +221,7 @@
     el.appendChild(h('p', { class: 'tiny muted ticket-definition' }, '票量 = 完整地铁行程的人次；一次行程中的换乘不重复计票。按实际路径乘车里程分段（不含进出站步行），区间左开右闭。数值为本局模拟结果，非独立人数。周平均按 5 个工作日 + 2 个周末加权。'));
     if (sample) {
       const d = sample.days[basis];
-      el.appendChild(h('div', { class: 'kpi-grid ticket-kpis' }, kpi('典型日票量', U.fmtPeople(d.riders), '人次 / 日'), kpi('典型日票款', money(d.fare), g.econ.isFree() ? '自由建造下的模拟票款' : '日结算使用同口径票款'), kpi('平均乘距', d.riders ? (d.pkm / d.riders).toFixed(1) + ' km' : '—', '实际地铁乘车距离'), kpi('平均每次票价', d.riders ? fareMoney(d.fare / d.riders) : '—', '总票款 ÷ 完整行程数')));
+      el.appendChild(h('div', { class: 'kpi-grid ticket-kpis' }, kpi('典型日票量', U.fmtPeople(d.riders), '人次 / 日'), kpi('典型日票款', money(d.fare), CM.Operators && CM.Operators.enabled(g) ? '全网联运总额，各公司按承运里程分账' : g.econ.isFree() ? '自由建造下的模拟票款' : '日结算使用同口径票款'), kpi('平均乘距', d.riders ? (d.pkm / d.riders).toFixed(1) + ' km' : '—', '实际地铁乘车距离'), kpi('平均每次票价', d.riders ? fareMoney(d.fare / d.riders) : '—', '总票款 ÷ 完整行程数')));
       const grid = h('div', { class: 'chart-grid ticket-grid' });
       const distribution = bars(metric === 'trips' ? '大家坐了多远？' : '各乘距区间的票款', BASIS[basis] + '典型日 · 从实际选中的路径逐条累计', BANDS, metric === 'trips' ? d.trips : d.revenue, P, metric === 'trips' ? people : money);
       distribution.insertBefore(control([['trips', '票量'], ['revenue', '票款']], metric, v => { metric = v; refresh(); }, '乘距图指标'), distribution.querySelector('.ticket-bars'));

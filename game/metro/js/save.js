@@ -206,6 +206,7 @@
     if (payload && payload.rulesRevision != null && (!Number.isSafeInteger(payload.rulesRevision) || payload.rulesRevision < 0 || payload.rulesRevision > (CFG.RULES_REVISION || 0))) throw new Error('存档使用了当前游戏尚不支持的经营与建设规则，请使用对应版本载入');
     const ok = payload && payload.meta && payload.clock && payload.city && payload.net && payload.econ && payload.tasks;
     if (!ok) throw new Error('存档缺少必要数据');
+    if (CM.Operators) { CM.Operators.validate(payload.operators); CM.Operators.validateAssets(payload.operators, payload.net, payload.fleet, payload.meta.playerCity || 'sh'); }
     if (CM.Automation) CM.Automation.validate(payload.automation);
     if (CM.Development) CM.Development.validate(payload.development);
     if (CM.Future) CM.Future.validate(payload.future);
@@ -219,6 +220,7 @@
     // 存档所属地图（1.4 版之前的存档都是广州）：按该地图的网格尺寸校验
     const mp = CM.MAPS && CM.MAPS[payload.meta.map || 'gz'];
     if (!mp) throw new Error('存档使用的地图「' + payload.meta.map + '」在当前版本中不存在');
+    if (CM.Operators) CM.Operators.validate(payload.operators, mp.cfg);
     // 地图数据版本：缺省为 1（1.4 版及更早的广州 / 青湾存档）。存档版本高于当前地图数据时拒绝载入；
     // 低于当前版本时按地图登记的迁移函数处理（迁移只作用于解析出的副本，失败时原存档不受影响）
     const mv = payload.meta.mapVersion || 1;

@@ -1514,7 +1514,7 @@
     for (let c = 0; c < N; c++) {
       const L = this.lu[c];
       if (L === LU.WATER || L === LU.HILL || L === LU.PARK || L === LU.AIRPORT || L === LU.LANDMARK) continue;
-      if (!this.regionOpen[this.region[c]]) continue;
+      if (!this.regionOpen[this.region[c]] && !(ctx.developmentRegions && ctx.developmentRegions[this.region[c]])) continue;
       const lf = this.landFrac[c] * (1 - this.taken[c]);
       if (lf <= 0.05) continue;
       const P = L === LU.RURAL ? this.plan[c] : L;

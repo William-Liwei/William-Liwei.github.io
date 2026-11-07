@@ -89,7 +89,7 @@
       const m = g.model, C = m.net ? m.net.C : null, sd = dt === 'we' ? m.stDailyWe : m.stDailyWk, out = { rev: 0, cost: 0 }; if (!C) return out;
       const y = g.clock.y, live = sd && !m.dailyStale;
       for (let i = 0; i < C.stations.length; i++) {
-        const s = g.net.stations[C.stations[i].id], lv = s && s.tod; if (!lv) continue;
+        const s = g.net.stations[C.stations[i].id], lv = s && s.tod; if (!lv || s.ownerId && s.ownerId !== 'player') continue;
         const hub = C.stationLines[i].size >= 2;
         if (live && i < sd.inn.length) out.rev += TOD.stationDaily(lv, sd.inn[i] + sd.out[i] + sd.xfer[i], hub, y, g);
         out.cost += TOD.stationCost(lv, y, s.size, hub);
@@ -102,14 +102,24 @@
   Economy.prototype.opsIndex = function (year) { return U.priceIndex(year, CFG.ops.inflation, CFG.econBase || 1990); };
 
   // 每日结算：票款与运营费用，按当天的日类型（工作日 / 周末）的模拟结果逐日累计（v1.9 起；之前按典型工作日）
-  Economy.prototype.day = function (daily, compiled, year, dt) {
-    const fareWan = daily && daily.ready ? daily.fare / 10000 : 0;
+  // Independent ledgers share one passenger assignment and one regional fare.
+  Economy.dailyAccount = function (daily, compiled, year, ownerId) {
+    const id = ownerId || 'player', own = x => x && x.ownerId || 'player';
+    const mixed = compiled && ((compiled.lines || []).some(l => own(l) !== 'player') || compiled.stations.some(s => own(s) !== 'player'));
+    const fallback = id === 'player' && !mixed;
+    const fare = daily && daily.ready ? (Number.isFinite(daily['operatorFare:' + id]) ? daily['operatorFare:' + id] : fallback ? daily.fare : 0) / 10000 : 0;
+    const pkm = daily && daily.ready ? (daily['operatorPkm:' + id] || (fallback ? daily.metroPkm : 0) || 0) : 0;
     let ops = 0;
     if (daily && compiled) {
-      const oi = this.opsIndex(year);
-      ops += (daily.carKmW != null ? daily.carKmW : daily.carKm) * CFG.ops.carKmCost * oi;   // v2.5：车厢公里按车型的运营成本系数加权
-      for (const s of compiled.stations) ops += (CFG.ops.stationDaily[s.size] + CM.Metro.hubSpec(s).daily) * oi;
+      const oi = U.priceIndex(year, CFG.ops.inflation, CFG.econBase || 1990);
+      const ck = Number.isFinite(daily['operatorCarKmW:' + id]) ? daily['operatorCarKmW:' + id] : fallback ? (daily.carKmW != null ? daily.carKmW : daily.carKm) : 0;
+      ops += (ck || 0) * CFG.ops.carKmCost * oi;
+      for (const s of compiled.stations) if (own(s) === id) ops += (CFG.ops.stationDaily[s.size] + CM.Metro.hubSpec(s).daily) * oi;
     }
+    return { fare: fare || 0, ops, pkm };
+  };
+  Economy.prototype.day = function (daily, compiled, year, dt) {
+    const account = Economy.dailyAccount(daily, compiled, year, 'player'), fareWan = account.fare, ops = account.ops;
     this.income('fare', fareWan);
     this.spend('ops', ops);
     this.cur.days++;
@@ -514,6 +524,23 @@
     this.nextDyn = 0; this.seq = 1;
   }
   CM.Tasks = Tasks;
+  const taskPlayer = function (obj) { return !obj || !obj.ownerId || obj.ownerId === 'player'; };
+  const playerCompiledCache = new WeakMap();
+  // Preserve station indices for published passenger arrays while restricting
+  // construction and operating obligations to the player's own company.
+  Tasks.playerCompiled = function (g) {
+    const C = g.compiled, baseLines = C && (C.lines || Object.values(g.net && g.net.lines || {})); if (!C || !baseLines.some(function (l) { return !taskPlayer(l); })) return C;
+    if (playerCompiledCache.has(C)) return playerCompiledCache.get(C);
+    const lines = baseLines.filter(taskPlayer), ids = new Set(lines.map(function (l) { return l.id; }));
+    const routes = C.routes.filter(function (r) { return ids.has(r.lineId); });
+    const stationLines = C.stations.map(function () { return new Set(); });
+    for (const r of routes) for (const i of r.stIdx) stationLines[i].add(r.lineId);
+    const out = Object.assign({}, C, { lines: lines, routes: routes, stationLines: stationLines,
+      segs: new Map(Array.from(C.segs).filter(function (x) { return ids.has(x[1].seg.line); })),
+      serviced: C.stations.map(function (s, i) { return taskPlayer(s) && stationLines[i].size > 0; }) });
+    playerCompiledCache.set(C, out); return out;
+  };
+  Tasks.playerKm = function (g) { let km = 0; const seen = new Set(), C = Tasks.playerCompiled(g); if (C) C.segs.forEach(function (cs) { const k = CM.Metro.trackKey(cs.seg); if (!seen.has(k)) { seen.add(k); km += cs.g.lenM / 1000; } }); return km; };
 
   // 网络连通分量（线路 + 站外换乘）
   function stationComponents(C, acc) {
@@ -522,7 +549,7 @@
     const find = function (x) { while (par[x] !== x) { par[x] = par[par[x]]; x = par[x]; } return x; };
     const uni = function (a, b) { a = find(a); b = find(b); if (a !== b) par[a] = b; };
     for (const r of C.routes) for (let k = 1; k < r.stIdx.length; k++) uni(r.stIdx[0], r.stIdx[k]);
-    if (acc) for (const t of acc.transfers) uni(t.a, t.b);
+    if (acc) for (const t of acc.transfers) if (C.serviced[t.a] && C.serviced[t.b]) uni(t.a, t.b);
     return { find: find, serviced: C.serviced };
   }
   Tasks.stationComponents = stationComponents;
@@ -533,7 +560,7 @@
     const find = function (x) { while (par[x] !== x) { par[x] = par[par[x]]; x = par[x]; } return x; };
     const uni = function (a, b) { if (out[a] && out[b]) { a = find(a); b = find(b); if (a !== b) par[a] = b; } };
     for (const r of C.routes) { const st = r.stIdx; for (let k = 1; k < st.length; k++) uni(st[k - 1], st[k]); if (r.loop && st.length > 2) uni(st[st.length - 1], st[0]); }
-    if (acc) for (const t of acc.transfers) uni(t.a, t.b);
+    if (acc) for (const t of acc.transfers) if (C.serviced[t.a] && C.serviced[t.b]) uni(t.a, t.b);
     return { find: find, serviced: C.serviced };
   }
 
@@ -606,7 +633,8 @@
   };
 
   Tasks.prototype.evaluate = function (t, g) {
-    const C = g.compiled, model = g.model, acc = model.net ? model.net.acc : null;
+    const C = Tasks.playerCompiled(g), model = g.model, acc = model.net ? model.net.acc : null;
+    if (t.line && g.net.lines[t.line] && !taskPlayer(g.net.lines[t.line]) || t.station && g.net.stations[t.station] && !taskPlayer(g.net.stations[t.station])) return { ok: false, value: 0, text: '该目标需要本公司拥有并经营的资产' };
     if (t.type === 'connect') {
       const comp = t.avoid ? componentsAvoiding(C, acc, t.avoid) : stationComponents(C, acc);
       const anchorSets = t.anchors.map(function (a) {
@@ -687,7 +715,7 @@
     }
     if (t.type === 'fiscal') {
       const last = g.econ.ledger[g.econ.ledger.length - 1], v = last && last.ops > 0 ? last.fare / last.ops : 0;
-      const km = CM.Milestones ? CM.Milestones.netInfo(g).km : 0, over = km > t.kmCap + 0.05;
+      const km = Tasks.playerKm(g), over = km > t.kmCap + 0.05;
       return { ok: v >= t.target && !over, value: over ? 0 : U.clamp(v / t.target, 0, 1), text: '上月票款/运营费用 ' + U.fmtPct(v, 0) + ' / 目标 ' + U.fmtPct(t.target, 0) + ' · 线网 ' + U.fmtNum(km, 1) + ' km / 上限 ' + U.fmtNum(t.kmCap, 1) + ' km' + (over ? '（超出里程上限，本月不计）' : '') };
     }
     if (t.type === 'lineEff') {
@@ -785,7 +813,7 @@
   };
   // 经过 anchors 各处的路线：优先全部经过，否则取经过最多的；i0、i1 是最靠外两处在路线上的位置
   Tasks.routeThrough = function (g, anchors) {
-    const C = g.compiled; let best = null, bn = -1;
+    const C = Tasks.playerCompiled(g); let best = null, bn = -1;
     for (const r of C.routes) {
       if (r.svc) continue;
       let n = 0;
@@ -827,7 +855,7 @@
     return inside;
   };
   Tasks.prototype.evaluatePart = function (t, g) {
-    const C = g.compiled, model = g.model, acc = model.net ? model.net.acc : null, M = CM.Metro, self = this, pct = function (v, d) { return U.fmtPct(v, d == null ? 0 : d); };
+    const C = Tasks.playerCompiled(g), model = g.model, acc = model.net ? model.net.acc : null, M = CM.Metro, self = this, pct = function (v, d) { return U.fmtPct(v, d == null ? 0 : d); };
     const atMost = function (v, target) { return U.clamp(target / Math.max(v, 1e-6), 0, 1); };
     switch (t.type) {
       case 'combo': {
@@ -936,9 +964,9 @@
         return { ok: cr.lf <= t.target, value: atMost(cr.lf, t.target), text: rt.route.line.name + ' 早高峰最高满载率 ' + pct(cr.lf) + ' / 目标 ≤ ' + pct(t.target) };
       }
       case 'netLoad': {   // 全网最拥挤区段的早高峰满载率
-        const cr = Tasks.crowdOf(g)[0];
+        const cr = Tasks.crowdOf(g).find(function (x) { return taskPlayer(g.net.lines[x.lid]); });
         if (!cr) return { ok: false, value: 0, text: '客流计算中' };
-        return { ok: cr.lf <= t.target, value: atMost(cr.lf, t.target), text: '全网早高峰最高满载率 ' + pct(cr.lf) + ' / 目标 ≤ ' + pct(t.target) };
+        return { ok: cr.lf <= t.target, value: atMost(cr.lf, t.target), text: '本公司早高峰最高满载率 ' + pct(cr.lf) + ' / 目标 ≤ ' + pct(t.target) };
       }
       case 'regionShare': {   // 片区居民的出行乘地铁的比例（工作日全天）
         const v = Tasks.partValue(t, g);
@@ -1249,7 +1277,7 @@
     if (sdw && !model.dailyStale && g.compiled.stations.length && crowdFree) {
       let bs = -1, br = 0;
       g.compiled.stations.forEach(function (s, i) {
-        if (!free('st:' + s.id, 'stationCrowd')) return;
+        if (!taskPlayer(s) || !free('st:' + s.id, 'stationCrowd')) return;
         const r = sdw.peak[i] / CM.Metro.stationCapacity(s);
         if (r > br) { br = r; bs = i; }
       });
@@ -1386,14 +1414,14 @@
         c.target = s.target; if (this.evaluate(c, g).ok) continue;
       } else if (s.type === 'lineCrowd') {
         const lines = s.line === 'inherited' ? Object.keys(g.net.lines).filter(function (lid) { return M_inherited(g, lid); }) : null;
-        const cr = Tasks.crowdOf(g).find(function (x) { return !lines || lines.indexOf(x.lid) >= 0; });
+        const cr = Tasks.crowdOf(g).find(function (x) { return taskPlayer(g.net.lines[x.lid]) && (!lines || lines.indexOf(x.lid) >= 0); });
         if (!cr || cr.lf < (s.minLF || 0.95)) continue;
         Object.assign(c, { line: cr.lid, start: cr.lf, target: s.target || 1, sustain: 3, title: s.title.replace('{line}', g.net.lines[cr.lid].name) });
       } else continue;
       out.push(c);
     }
     // 通用中后期挑战（开局两年后）：只针对现有线网
-    const crowd = Tasks.crowdOf(g);
+    const crowd = Tasks.crowdOf(g).filter(function (x) { return taskPlayer(g.net.lines[x.lid]); });
     const top = crowd[0];
     const crowdFree = !(cool.crowd > ym) && !self.active.some(function (t) { return t.type === 'stationCrowd' || t.type === 'lineCrowd'; }) && !(self.offers || []).some(function (o) { return o.type === 'lineCrowd'; });   // 同动态任务：明显过载才提出，全局冷却 3 年
     if (top && top.lf > 1.2 && crowdFree && free('crowd:' + top.lid)) {
@@ -1410,7 +1438,7 @@
         tips: ['在线路详情的车站列表里找出小型、中型车站', '升级车站进入草案，按差价计费', '客流不大的车站也要升级，否则整条线的编组被它卡住'] });
     }
     if (g.econ.mode === 'challenge' && free('fiscal')) {
-      const last = g.econ.ledger[g.econ.ledger.length - 1], rec = last && last.ops > 0 ? last.fare / last.ops : 1, km = CM.Milestones ? CM.Milestones.netInfo(g).km : 0;
+      const last = g.econ.ledger[g.econ.ledger.length - 1], rec = last && last.ops > 0 ? last.fare / last.ops : 1, km = Tasks.playerKm(g);
       if (rec < 0.6 && km > 15) {
         const target = Math.min(0.9, Math.round((rec + 0.15) * 20) / 20);
         out.push({ type: 'fiscal', target: target, sustain: 3, kmCap: Math.round(km * 1.05 * 10) / 10, coolKey: 'opt:fiscal', months: 30, reward: 3 * gm, theme: Tasks.THEME.fiscal,
@@ -1421,7 +1449,7 @@
     // 城市扩张后的老线路：与 2–4 年前（线路长度基本不变）相比，每公里客流下降 15% 以上
     const stats = Tasks.lineStats(g), hist = this.lineHist || {};
     for (const lid in hist) {
-      const s = stats.get(lid), L = g.net.lines[lid]; if (!s || !L || !free('eff:' + lid)) continue;
+      const s = stats.get(lid), L = g.net.lines[lid]; if (!s || !L || !taskPlayer(L) || !free('eff:' + lid)) continue;
       const old = hist[lid].find(function (r) { return ym - r[0] >= 24 && ym - r[0] <= 48 && Math.abs(r[2] - s.km) <= Math.max(0.5, r[2] * 0.05); });
       if (!old || old[1] <= 0) continue;
       const was = old[1] / Math.max(0.1, old[2]), now = s.riders / Math.max(0.1, s.km);

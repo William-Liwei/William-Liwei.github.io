@@ -1164,6 +1164,7 @@
       else {
         const opts = [['new', T.lineName('new').replace('（新）', ''), '从「' + net.stations[T.chain].name + '」开始一条新线路（与已有线路换乘）', T.nextLineColor()]];
         for (const lid of M.stationLines(net, T.chain)) {
+          if (M.ownerId(net.lines[lid]) !== 'player') continue;
           const tp = M.lineTopo(net, lid), L = net.lines[lid];
           if (tp.topo === 'loop' || tp.topo === 'invalid') continue;
           const end = tp.adj && tp.adj.get(T.chain) && tp.adj.get(T.chain).length === 1;
@@ -2491,19 +2492,10 @@
         const osm = h('a', { href: 'https://www.openstreetmap.org/copyright', target: '_blank', rel: 'noopener' }, 'openstreetmap.org/copyright');
         return [h('div', { class: 'about-head' },
             h('img', { class: 'logo-ink', src: 'img/logo-navy.png', alt: '' }),
-            h('div', null, h('div', { class: 'about-name' }, '城市与地铁'), h('div', { class: 'muted' }, '版本 v' + CFG.GAME_VERSION + ' · 网页版'))),
-          group('版权与许可'),
-          row('shield', '使用许可', doc('使用许可', 'LICENSE.txt'), '© 2026 VinsonFung，保留所有权利'),
-          row('book', '第三方声明', doc('第三方声明', 'THIRD_PARTY_NOTICES.txt'), '游戏使用的开源组件与数据的许可说明'),
-          row('globe', '地图数据', null, h('span', null, '© OpenStreetMap 贡献者，按 ODbL 1.0 授权（', osm, '）')),
+            h('div', null, h('div', { class: 'about-name' }, '城市与地铁 · 长三角版'), h('div', { class: 'muted' }, '版本 v' + CFG.GAME_VERSION + ' · 网页版'))),
+          row('book', '致谢与许可', h('button', { class: 'btn sm', onclick: function () { self.showCredits(); } }, '查看'), '原作致谢、使用许可、第三方组件及地图数据声明'),
           group('版本'),
-          row('megaphone', '更新公告', h('button', { class: 'btn sm', onclick: function () { self.showNews(function () { self.showSettings('about'); }); } }, '查看'), '各版本的主要变化'),
-          link('github', '游戏 GitHub 仓库', 'VinsonFung/city-and-metro', 'https://github.com/VinsonFung/city-and-metro'),
-          group('联系作者'),
-          link('globe', '博客', 'vinsonblog.cn', 'https://vinsonblog.cn/'),
-          link('mail', '邮箱', 'hello@vinsonblog.cn', 'mailto:hello@vinsonblog.cn'),
-          link('youtube', 'YouTube', '@vinson_fung', 'https://youtube.com/@vinson_fung'),
-          link('socialX', 'X', '@vinson_fung', 'https://x.com/vinson_fung')];
+          row('megaphone', '更新公告', h('button', { class: 'btn sm', onclick: function () { self.showNews(function () { self.showSettings('about'); }); } }, '查看'), '各版本的主要变化')];
       },
     };
     const body = h('div', { class: 'set-body' });

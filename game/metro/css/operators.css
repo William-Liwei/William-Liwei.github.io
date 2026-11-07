@@ -1,0 +1,17 @@
+.operators-page .op-company-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0}
+.operators-page .op-company-head b{font-size:1.1em}
+.operators-page .op-ranking .btn{text-align:left;white-space:normal;padding:5px 2px}
+.operators-page .op-ranking td{vertical-align:middle}
+.operators-page .op-score-note{line-height:1.65;margin:12px 0}
+.operators-page .op-project,.op-train{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.operators-page .op-project{display:block}
+.operators-page .op-project small,.op-train small{display:block;color:var(--muted);line-height:1.6;margin-top:4px}
+.op-cooperate{padding:12px 0;margin:8px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.op-cooperate select{width:100%;max-width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:inherit;margin:4px 0 8px}
+.op-cooperate .btn{white-space:normal}
+.op-stops{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.operators-page details{margin:12px 0}
+.operators-page summary{cursor:pointer;font-weight:600;padding:8px 0}
+.op-trend svg{display:block;width:100%;height:auto;max-height:190px;color:var(--text)}
+.operators-page>select{max-width:100%;padding:8px;margin-top:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:inherit}
+@media(max-width:600px){.operators-page .op-ranking{font-size:12px}.operators-page .op-ranking th,.operators-page .op-ranking td{padding:6px 4px}.operators-page .op-ranking td:first-child{min-width:115px}.op-cooperate .btn{width:100%;min-height:40px}}

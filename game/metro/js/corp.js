@@ -48,7 +48,7 @@
   // 履约信誉与拨款：50 分 ×1.00，100 分 ×1.05，0 分 ×0.95
   Corp.grantFactor = function (r) { return 0.95 + 0.1 * U.clamp(r, 0, 100) / 100; };
   Corp.winChance = function (o, r) { return U.clamp(o.win + (r - 60) * 0.004, 0.1, 0.92); };
-  const netKm = function (g) { return CM.Milestones ? CM.Milestones.netInfo(g).km : 0; };
+  const netKm = function (g) { return CM.Tasks.playerKm ? CM.Tasks.playerKm(g) : CM.Milestones ? CM.Milestones.netInfo(g).km : 0; };
   Corp.unlockState = function (g) {
     const F = Corp.flavor(g), S = CFG.START, months = g.ym() - U.ymIndex(S.y, S.m || 1), km = netKm(g);
     const need = [
@@ -115,10 +115,11 @@
     for (const x of CM.Tasks.crowdOf(g)) {
       if (x.lf < 0.95 || x.cars >= 8 || P.cool['l:' + x.lid] > ym) continue;
       if (g.tasks.active.concat(g.tasks.offers || []).some(function (t) { return t.line === x.lid; }) || P.tenders.concat(P.contracts).some(function (t) { return t.line === x.lid; })) continue;
-      const L = g.net.lines[x.lid]; if (!L) continue;
+      const L = g.net.lines[x.lid]; if (!L || L.ownerId && L.ownerId !== 'player') continue;
       let E = 0, n = 0; const seen = new Set();
       for (const r of C.routes) if (r.lineId === x.lid) for (const k of r.stIdx) {
         const s = C.stations[k], tbl = CFG.cost.station[s.type] || CFG.cost.station.underground;
+        if (s.ownerId && s.ownerId !== 'player') continue;
         if (s.size !== 'L' && !seen.has(k)) { seen.add(k); E += (tbl.L - tbl[s.size]) * ci; n++; }
       }
       if (E <= 0) continue;
@@ -163,7 +164,7 @@
 
   // ---------------- 履约 ----------------
   const context = function (g) {
-    const m = g.model, C = m.net ? m.net.C : g.compiled, sd = m.stDaily && !m.dailyStale ? m.stDaily : null;
+    const m = g.model, C = CM.Tasks.playerCompiled ? CM.Tasks.playerCompiled(g) : m.net ? m.net.C : g.compiled, sd = m.stDaily && !m.dailyStale ? m.stDaily : null;
     const crowd = new Map(); for (const x of CM.Tasks.crowdOf(g)) crowd.set(x.lid, Math.max(crowd.get(x.lid) || 0, x.lf));
     const f = CM.Macro && g.macro ? CM.Macro.cityFactors(g) : null;
     return { C: C, sd: sd, crowd: crowd, fare: (m.daily && m.daily.avgFare) || 0, cyc: f ? U.clamp(f.com, 0.7, 1.25) : 1 };

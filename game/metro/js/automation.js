@@ -95,6 +95,7 @@
   A.fleetPlan = function (g) {
     const F = CM.Fleet, services = [], byId = new Map(g.fleet.trains.map(function (t) { return [t.id, t]; }));
     for (const lid of M.sortIds(Object.keys(g.net.lines))) {
+      if (F.isPlayer && !F.isPlayer(g.net.lines[lid])) continue;
       if (manual(g, lid)) continue;
       for (const s of F.lineInfo(g, lid) || []) {
         if (!s.avail && (s.svc || !s.peakNeed)) continue; // Do not activate deliberately unused stop patterns.
@@ -120,7 +121,7 @@
       const safe = donor.group.every(function (x) { if (x === target) return true; const n = need(x, x.units); return x.units.length >= n + Math.ceil(n * reserve); });
       donor.units = old; target.units = targetOld; return safe;
     };
-    const idle = g.fleet.trains.filter(function (t) { return !t.line; }).map(function (t) { return { t: t, from: null }; });
+    const idle = g.fleet.trains.filter(function (t) { return !t.line && (!F.isPlayer || F.isPlayer(t)); }).map(function (t) { return { t: t, from: null }; });
     const sort = function (a, b) { return F.capOf(b.t) - F.capOf(a.t) || a.t.id.localeCompare(b.t.id); };
     idle.sort(sort); spare.sort(sort);
     const moves = [], blocked = new Set();
@@ -147,7 +148,7 @@
       // capital cost per seat avoids buying an expensive brand merely because it is new.
       const ordered = plan.services.slice().sort(function (a, b) { return (need(b, b.units) - b.units.length) - (need(a, a.units) - a.units.length); });
       for (const x of ordered) {
-        const models = F.available(g.mapId, g.clock.y).filter(function (m) { return x.rt.kmh <= 80 || m.kmh >= x.rt.kmh; }).map(function (m) { const cars = Math.min(m.max, x.rt.cars); return { m: m, cars: cars, price: F.price(g, m, cars) }; }).sort(function (a, b) { return a.price / (a.m.cap * a.cars) - b.price / (b.m.cap * b.cars) || a.price - b.price; });
+        const models = F.available(F.cityId ? F.cityId(g) : g.mapId, g.clock.y).filter(function (m) { return x.rt.kmh <= 80 || m.kmh >= x.rt.kmh; }).map(function (m) { const cars = Math.min(m.max, x.rt.cars); return { m: m, cars: cars, price: F.price(g, m, cars) }; }).sort(function (a, b) { return a.price / (a.m.cap * a.cars) - b.price / (b.m.cap * b.cars) || a.price - b.price; });
         const choice = models[0]; if (!choice) continue;
         while (x.units.length < need(x, x.units) && s.bought < p.buyLimit && choice.price <= A.allowance(g) + 1e-7) {
           const result = F.buy(g, x.lid, x.svc, choice.m.id, choice.cars, 1); if (!result.ok) break;
@@ -174,6 +175,7 @@
     const s = state(g), next = {};
     if (s.policy.stations) M.withSegIndex([g.net], function () { for (const sid of Object.keys(g.net.stations)) {
       const st = g.net.stations[sid], lines = M.stationLines(g.net, sid);
+      if (CM.Fleet.isPlayer && !CM.Fleet.isPlayer(st)) continue;
       if (lines.some(function (lid) { return manual(g, lid); }) || stationLoad(g, sid) < CROWD) continue;
       const old = s.crowd[sid], same = old && old.size === st.size && old.hub === M.hubLevel(st);
       next[sid] = { ym: g.ym(), n: same && old.ym < g.ym() ? Math.min(2, old.n + 1) : same ? old.n : 1, size: st.size, hub: M.hubLevel(st) };
@@ -192,7 +194,7 @@
   const station = function (g, fingerprint) {
     const s = state(g); if (!s.policy.stations || s.lastStation === g.ym()) return true;
     if (s.fleetSample && s.fleetSample === fingerprint) { status(g, '调车已完成，等待新客流结果再评估车站'); return false; }
-    const candidates = M.withSegIndex([g.net], function () { return Object.keys(s.crowd).filter(function (sid) { const c = s.crowd[sid], st = g.net.stations[sid]; return st && c.n >= 2 && c.size === st.size && c.hub === M.hubLevel(st) && stationLoad(g, sid) >= CROWD && !M.stationLines(g.net, sid).some(function (lid) { return manual(g, lid); }); }); }).sort(function (a, b) { return stationLoad(g, b) - stationLoad(g, a); });
+    const candidates = M.withSegIndex([g.net], function () { return Object.keys(s.crowd).filter(function (sid) { const c = s.crowd[sid], st = g.net.stations[sid]; return st && (!CM.Fleet.isPlayer || CM.Fleet.isPlayer(st)) && c.n >= 2 && c.size === st.size && c.hub === M.hubLevel(st) && stationLoad(g, sid) >= CROWD && !M.stationLines(g.net, sid).some(function (lid) { return manual(g, lid); }); }); }).sort(function (a, b) { return stationLoad(g, b) - stationLoad(g, a); });
     if (!candidates.length) { status(g, '本月检查完成；车站需两次不同月份的新客流观测持续超 110% 才扩容'); return true; }
     const wait = idleForBuild(g); if (wait) { status(g, wait, true); return false; }
     let reason = '拥挤车站已达大站规模；可手动调整路网或另行允许枢纽扩建';

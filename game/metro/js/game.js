@@ -30,6 +30,8 @@
     let complete=false;
     try {
       g.id = U.uid('g');
+      const role = CM.CompanyRoles ? CM.CompanyRoles.configure(CM.mapId || 'gz', opts.playerCity || 'sh') : null;
+      g.playerCity = role ? role.id : 'sh';
       g.mapId = CM.mapId || 'gz';   // 当前地图（CM.useMap 已切换好数据）
       g.name = opts.name || ((D.city || '广州') + ' ' + CFG.START.y);
       g.mode = opts.mode;
@@ -54,6 +56,7 @@
       g.model.setNetwork(g.compiled);
       lp(0.3, '建立交通模型');
       g.econ = new CM.Economy(g.mode, g.clock.y, g.clock.m);
+      if (CM.Operators) CM.Operators.ensure(g);
       g.model.fare = g.econ.fare;
       g.tasks = new CM.Tasks();
       g.model.onSolveProgress = function (f) { lp(0.3 + (pre ? 0.08 : 0.62) * f, '计算居民出行'); };
@@ -287,6 +290,7 @@
   Game.prototype.endDay = function () {
     const dt = this.dayType();
     this.econ.day(this.model.dailyFor(dt), this.compiled, this.clock.y, dt);
+    if (CM.Operators) CM.Operators.daily(this, this.model.dailyFor(dt), dt);
     // 车站商业开发（TOD，v2.3）：广告与商铺租金，按当天客流逐日计入非票务收入；v2.5 起逐日扣除开发后的运营与维护成本
     if (CM.TOD) { const v = CM.TOD.daily(this, dt); if (v.rev > 0) this.econ.income('commerce', v.rev); if (v.cost > 0) this.econ.spend('todCost', v.cost); }
     if (CM.Property) CM.Property.daily(this);
@@ -421,7 +425,7 @@
     const econF = this.macro && CM.Macro ? CM.Macro.applyFactors(this) : null;
     if (CM.Future) CM.Future.month(this, y, m);
     const development = CM.Development ? CM.Development.month(this, yr) : null;
-    const gr = city.growMonth({ year: yr, monthIndex: this.ym(), zoneAccess: model.zoneAccessNorm, cellWalk: acc ? acc.cellWalk : null, coverage: acc ? acc.coverage : 0, econ: econF, pull: this.metroPull(), development: development });
+    const gr = city.growMonth({ year: yr, monthIndex: this.ym(), zoneAccess: model.zoneAccessNorm, cellWalk: acc ? acc.cellWalk : null, coverage: acc ? acc.coverage : 0, econ: econF, pull: this.metroPull(), development: development, developmentRegions: CM.Operators ? CM.Operators.developmentRegions(this) : null });
     yield;
     // 交通刷新节奏（v2.6）：见 trafficDue。不刷新的月份沿用上次的出行结果（模型年份也不变，结果仍算有效），城市发展与经营照常按月结算
     this._graphsDirty = this._graphsDirty || gr.streetsChanged;
@@ -459,6 +463,7 @@
     this.econ.payGrant(y, m);
     this.econ.serviceDebt(y, m);   // 债券：到期利息与本金、逾期处理（每月一次，不会重复结算）
     if (CM.Automation) CM.Automation.monthly(this);
+    if (CM.Operators) CM.Operators.monthly(this);
     this.recordHistory();
     // 拥堵变化的年度基准：每年 1 月记一次（保留上一年的一份）；还没有时先记下当前月份
     if (m === 1 || !(this.congRef && this.congRef.year)) { const sn = this.congSnapshot(); if (sn) { const R = this.congRef || (this.congRef = {}); if (R.year && R.year.ym < sn.ym) R.yearPrev = R.year; R.year = sn; } }
@@ -592,6 +597,7 @@
     let r;
     try { r = fn(d.net); } catch (e) { console.error(e); r = { error: '操作未能完成，已撤回（' + e.message + '）' }; }
     if (!(r && r.error)) { const bad = M.validate(d.net); if (bad) r = { error: '操作已撤回：' + bad }; }
+    if (!(r && r.error)) { const bad = M.playerOwnershipError(this.net, d.net, this); if (bad) r = { error: bad }; }
     if (r && r.error) { d.net = JSON.parse(snap); return r; }
     d.undo.push(snap); if (d.undo.length > 120) d.undo.shift();
     d.redo = [];
@@ -602,9 +608,17 @@
   };
   // 拖动等连续编辑：开始时记一次撤销点
   Game.prototype.beginLive = function () { const d = this.ensureDraft(); d.liveSnap = JSON.stringify(d.net); };
-  Game.prototype.liveEdit = function (fn) { const d = this.ensureDraft(); fn(d.net); d.ver++; this.invalidatePrediction(); this.emit('draftLive'); };
+  Game.prototype.liveEdit = function (fn) {
+    const d = this.ensureDraft(), snap = JSON.stringify(d.net);
+    let error;
+    try { fn(d.net); error = M.validate(d.net) || M.playerOwnershipError(this.net, d.net, this); }
+    catch (e) { error = e.message || '操作未能完成'; }
+    if (error) { d.net = JSON.parse(snap); return { error: error }; }
+    d.ver++; this.invalidatePrediction(); this.emit('draftLive'); return { ok: true };
+  };
   Game.prototype.endLive = function (changed) {
     const d = this.draft; if (!d || !d.liveSnap) return;
+    if (M.playerOwnershipError(this.net, d.net, this)) changed = false;
     if (changed) { d.undo.push(d.liveSnap); if (d.undo.length > 120) d.undo.shift(); d.redo = []; }
     else d.net = JSON.parse(d.liveSnap);
     d.liveSnap = null; d.ver++; this.invalidatePrediction(); this.emit('draft');
@@ -641,6 +655,7 @@
     return d.compiled;
   };
   Game.prototype.canConfirm = function () {
+    if (this.draft) { const bad = M.playerOwnershipError(this.net, this.draft.net, this); if (bad) return { ok: false, reason: bad }; }
     const ev = this.draftEval();
     if (!ev) return { ok: false, reason: '没有草案' };
     if (this.draft.liveSnap) return { ok: false, reason: '请先松开鼠标或结束当前拖动，再确认建设' };
@@ -661,17 +676,19 @@
     for (const dm of ev.demolitions) this.city.demolish(dm.c, dm.frac);
     for (const id in d.net.stations) if (!this.net.stations[id]) d.net.stations[id].built = [this.clock.y, this.clock.m];
     // 新建、改建与搬迁后的位置成为新的“付费选址”，之后的免费微调以此为基准
-    for (const id in d.net.stations) { const s = d.net.stations[id], o = this.net.stations[id]; if (o && !s.site) s.site = [o.x, o.y]; }
+    for (const id in d.net.stations) { const s = d.net.stations[id], o = this.net.stations[id]; if (o && !s.site && M.ownerId(s) === 'player') s.site = [o.x, o.y]; }
     for (const id of ev.siteReset || []) { const s = d.net.stations[id]; if (s) s.site = [s.x, s.y]; }
     for (const id in d.net.segments) if (!this.net.segments[id]) d.net.segments[id].built = [this.clock.y, this.clock.m];
     // 轨道的“已付费长度”：之后的免费小幅调整以此为基准累计
-    for (const id in d.net.segments) { const v = ev.paidLen && ev.paidLen[id]; if (v != null) d.net.segments[id].paidLen = Math.round(v); }
+    for (const id in d.net.segments) { const v = ev.paidLen && ev.paidLen[id]; if (v != null && M.ownerId(d.net.segments[id], d.net) === 'player') d.net.segments[id].paidLen = Math.round(v); }
     // 收藏：记下被拆除或改名对象的最新名称（读档后已拆除的收藏仍显示原名）
     const fv = this.favs; fv.names = fv.names || {};
     for (const id of fv.stations) { const s = d.net.stations[id] || this.net.stations[id]; if (s) fv.names[id] = s.name; }
     for (const id of fv.lines) { const L = d.net.lines[id] || this.net.lines[id]; if (L) fv.names[id] = L.name; }
     M.normalizeLines(d.net);
-    for (const id in d.net.segments) d.net.segments[id].base = null;
+    // Global normalization must never rewrite another company's unchanged assets.
+    for (const kind of ['stations', 'segments', 'lines']) for (const id in this.net[kind]) if (M.ownerId(this.net[kind][id], this.net) !== 'player') d.net[kind][id] = M.clone(this.net[kind][id]);
+    for (const id in d.net.segments) if (M.ownerId(d.net.segments[id], d.net) === 'player') d.net.segments[id].base = null;
     const summary = ev.changes.add.length + ' 项新建、' + ev.changes.mod.length + ' 项修改、' + ev.changes.del.length + ' 项拆除';
     // 拥堵变化的对比基准：新增车站的建设确认前，记下此刻的工作日早高峰道路拥堵（拥堵图层「建设以来」与之对比）
     const newSt = Object.keys(d.net.stations).filter(function (id) { return !this.net.stations[id]; }, this);
@@ -848,11 +865,12 @@
   // ---------------- 存档 ----------------
   Game.prototype.serialize = function () {
     return {
-      meta: { gameId: this.id, name: this.name, mode: this.mode, seed: this.seed, createdAt: this.createdAt, gameVersion: CFG.GAME_VERSION, map: this.mapId || 'gz', mapVersion: (CM.MAPS[this.mapId || 'gz'] || {}).mapVersion || 1, scenario: (CM.MAPS[this.mapId || 'gz'] || {}).scenario || '', mapFp: (CM.MAPS[this.mapId || 'gz'] || {}).fp || '' },
+      meta: { playerCity: this.playerCity || 'sh', gameId: this.id, name: this.name, mode: this.mode, seed: this.seed, createdAt: this.createdAt, gameVersion: CFG.GAME_VERSION, map: this.mapId || 'gz', mapVersion: (CM.MAPS[this.mapId || 'gz'] || {}).mapVersion || 1, scenario: (CM.MAPS[this.mapId || 'gz'] || {}).scenario || '', mapFp: (CM.MAPS[this.mapId || 'gz'] || {}).fp || '' },
       clock: Object.assign({}, this.clock),
       city: this.city.serialize(),
       net: this.net,
       econ: this.econ.serialize(),
+      operators: CM.Operators ? CM.Operators.serialize(this) : undefined,
       tasks: this.tasks.serialize(),
       corp: this.corp || undefined,   // 地铁公司的政府合同：招标、履约中与已结束的合同、履约信誉（v2.5）
       property: CM.Property ? CM.Property.serialize(this) : undefined,
@@ -885,6 +903,8 @@
     let complete = false;
     try {
       const m = s.meta;
+      const role = CM.CompanyRoles ? CM.CompanyRoles.configure(m.map || 'gz', m.playerCity || s.playerCity || 'sh') : null;
+      g.playerCity = role ? role.id : 'sh';
       g.id = m.gameId; g.name = m.name; g.mode = m.mode; g.seed = m.seed; g.createdAt = m.createdAt;
       g.mapId = m.map || 'gz';   // 调用前 CM.useMap 已切换到该地图
       if (s.tutorial) g.tutorial = s.tutorial;
@@ -906,8 +926,9 @@
       g.unlockAll = !!s.unlockAll && g.mode === 'free'; g.city.unlockAll = g.unlockAll;
       // 先保留已有资产所在片区，再编译线路或验证物业；旧版泛用外围解锁状态不继承到所有新增片区。
       g.net = s.net;
+      if (CM.Operators) CM.Operators.restore(g, s.operators);
       g.tasks = CM.Tasks.restore(s.tasks);
-      const kept = g.city.keepLegacyOpen(g.net, g.tasks, g.clock.y, g.clock.m, s.property).map(k => g.city.regions[k].name).join('、');
+      const kept = g.city.keepLegacyOpen(CM.Operators ? CM.Operators.playerNetwork(g.net) : g.net, g.tasks, g.clock.y, g.clock.m, s.property).map(k => g.city.regions[k].name).join('、');
       lp(0.3, '恢复城市');
       // 交通模型版本：1.8 及更早的存档为 1（典型工作日、通勤与其他两类出行），载入时升级到当前模型
       const tv = (s.traffic && s.traffic.v) || 1, upgrade = tv < CFG.TRAFFIC_MODEL;

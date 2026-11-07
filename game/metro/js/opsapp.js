@@ -17,13 +17,13 @@
     const m = g.model, net = m.net; if (!net || !net.R || !m.trafficReady() || !CM.Tasks) return [];
     const out = [], C = net.C;
     for (const x of OD.crowd(g)) {
-      const L = g.net.lines[x.lid]; if (!L || x.lf < LIMIT.warn) continue;
+      const L = g.net.lines[x.lid]; if (!L || L.ownerId && L.ownerId !== 'player' || x.lf < LIMIT.warn) continue;
       const a = C.stations[x.a], b = C.stations[x.b];
       out.push({ key: 'l:' + x.lid, kind: 'line', id: x.lid, value: x.lf, level: x.lf >= LIMIT.bad ? 'bad' : 'warn', name: L.name, what: '早高峰满载 ' + U.fmtPct(x.lf, 0), title: L.name + ' 早高峰满载 ' + U.fmtPct(x.lf, 0), sub: a && b ? '最拥挤：' + a.name + '—' + b.name : '' });
     }
     const sd = m.stDailyWk || m.stDaily;
     if (sd && !m.dailyStale) C.stations.forEach(function (s, i) {
-      if (!C.serviced[i] || i >= sd.peak.length) return;
+      if (!C.serviced[i] || s.ownerId && s.ownerId !== 'player' || i >= sd.peak.length) return;
       const r = sd.peak[i] / CM.Metro.stationCapacity(s); if (r < LIMIT.warn) return;
       out.push({ key: 's:' + s.id, kind: 'station', id: s.id, value: r, level: r >= LIMIT.bad ? 'bad' : 'warn', name: s.name, what: '高峰负荷 ' + U.fmtPct(r, 0), title: s.name + ' 站高峰负荷 ' + U.fmtPct(r, 0), sub: CFG.metro.sizeName[s.size] + '车站 · 约 ' + U.fmtInt(sd.peak[i]) + ' 人次/时' });
     });
@@ -53,6 +53,8 @@
   // 车站升级一级。返回 { ok, steps, cost, text }，不能自动解决时 ok 为 false 并说明原因
   A.plan = function (g, x) {
     const F = CM.Fleet, y = g.clock.y, steps = [];
+    const asset = x.kind === 'station' ? g.net.stations[x.id] : g.net.lines[x.id];
+    if (asset && asset.ownerId && asset.ownerId !== 'player') return { ok: false, text: '该资产由所属公司独立管理' };
     let cost = 0;
     const station = function (s) { const nx = sizeNext[s.size]; return nx ? (M.stationCost(s.type, nx, y) - M.stationCost(s.type, s.size, y)) * 1.2 : 0; };
     if (x.kind === 'station') {
@@ -64,7 +66,7 @@
     const lid = x.id, L = g.net.lines[lid]; if (!L || !g.fleet) return { ok: false, text: '线路已不存在' };
     const o = g.fleet.ops[lid], info = OD.lineInfo(g, lid), parts = [];
     if (o && o.mode === 'manual') { steps.push({ type: 'auto', line: lid }); parts.push('改为智能调度'); }
-    const idle = g.fleet.trains.filter(function (t) { return !t.line; });
+    const idle = g.fleet.trains.filter(function (t) { return !t.line && (!t.ownerId || t.ownerId === 'player'); });
     let moved = 0, bought = 0;
     for (const s of info) {
       let short = Math.max(0, s.peakNeed - s.avail); if (short <= 0) continue;
@@ -413,8 +415,8 @@
     const setContent = function (nodes) { content.replaceChildren.apply(content, nodes.flat().filter(Boolean)); I18(content); };
 
     // ---------------- 数据 ----------------
-    const lineRows = function () { return OD.lineRows(g); };
-    const stationRows = function () { return OD.stationRows(g); };
+    const lineRows = function () { return OD.lineRows(g).filter(function (r) { return !r.L.ownerId || r.L.ownerId === 'player'; }); };
+    const stationRows = function () { return OD.stationRows(g).filter(function (r) { return !r.s.ownerId || r.s.ownerId === 'player'; }); };
     const ends = function (r, net) {
       const route = r.tp.routes[0], list = route ? route.st : (r.tp.stations || []), a = net.stations[list[0]], b = net.stations[list[list.length - 1]];
       if (!a) return '还没有车站';
