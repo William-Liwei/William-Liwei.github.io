@@ -965,7 +965,7 @@
     }, true, 'sparkle'));
     const x = model.zCx[z], y = model.zCy[z];
     const rg = g.city.regionAt(x, y);
-    if (rg) el.appendChild(h('div', { class: 'note', style: { marginTop: '8px' } }, '所属区域：' + rg.name + (g.city.regionOpen[g.city.regions.indexOf(rg)] ? '（已开放）' : '（尚未开放，' + U.regionLock(rg) + '）')));
+    if (rg) el.appendChild(h('div', { class: 'note', style: { marginTop: '8px' } }, '所属区域：' + rg.name + '（' + g.city.regionLockText(g.city.regions.indexOf(rg)) + '）'));
     el.appendChild(h('div', { class: 'row', style: { marginTop: '8px' } }, h('button', { class: 'btn sm ghost', onclick: function () { self.locateZone(z); } }, '定位')));
     return { title: g.zoneName(z), el: el };
   };

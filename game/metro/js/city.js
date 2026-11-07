@@ -662,6 +662,12 @@
   const LOCK_BRIDGE = 10;
   City.prototype.lockMaskFor = function (open) {
     const W = this.W, N = this.N, reg = this.region, R = this.regions, LF = this.landFrac, host = this.scenicHost, y0 = CFG.START.y;
+    // 跨城地图的片区独立按日期 / 条件开放：不能用包围填洞提前开放，也不能让隔江岛屿永久等待陆地连通。
+    if (D.progressiveRegions) {
+      const mask = new Uint8Array(N);
+      for (let c = 0; c < N; c++) if (LF[c] >= 0.5 && !open[this.lockRegion(c)]) mask[c] = 1;
+      return mask;
+    }
     const air = !!(D.airport && D.airport.buildable);
     const el = new Uint8Array(N), seed = new Uint8Array(N);
     for (let c = 0; c < N; c++) {
@@ -727,7 +733,8 @@
     for (let k = 0; k < n; k++) open[k] = this.regionOpen[k] || (u && R[k].open != null && !R[k].lockNote && !R[k].scenic) ? 1 : 0;
     const mask = this.lockMaskFor(open), year = new Uint16Array(N);
     // 预计开放年份：按尚未开放区域的参考年份依次推演（开放只会让可建设范围变大）
-    const ys = Array.from(new Set(R.filter(function (rg, k) { return !open[k] && rg.open != null; }).map(function (rg) { return rg.open; }))).sort(function (a, b) { return a - b; });
+    const ys = D.progressiveRegions ? [] : Array.from(new Set(R.filter(function (rg, k) { return !open[k] && rg.open != null; }).map(function (rg) { return rg.open; }))).sort(function (a, b) { return a - b; });
+    if (D.progressiveRegions) for (let c = 0; c < N; c++) if (mask[c]) year[c] = R[this.lockRegion(c)].open || 0;
     const sim = open.slice();
     for (const Y of ys) {
       for (let k = 0; k < n; k++) if (!sim[k] && R[k].open != null && R[k].open <= Y) sim[k] = 1;
@@ -761,7 +768,7 @@
   // 不会落在未开放区域——所在区域随之开放，所在的连片保持可以建设。只处理落在不能建设的格上的车站与锚点
   // （规划用地、交通枢纽上的车站本就可以建设，重新载入不提前开放其区域）。任务锚点只在旧存档（没有 lockRule 标记）
   // 首次载入时处理并记下 legacy，之后每次载入沿用，不随重新载入变化。返回因此开放的区域
-  City.prototype.keepLegacyOpen = function (net, tasks, y, m) {
+  City.prototype.keepLegacyOpen = function (net, tasks, y, m, property) {
     const self = this, seeds = [], opened = [], mask = this.lockState().mask;
     const openAt = function (x, y0) {
       const c = self.cellAt(x, y0); if (c < 0 || !mask[c]) return -1;
@@ -770,6 +777,14 @@
       return c;
     };
     for (const id in net.stations) { const s = net.stations[id], c = openAt(s.x, s.y); if (c >= 0) seeds.push(c); }
+    // 现有区段可能只穿过某片区而没有设站；按真实曲线采样保护，避免只保留端点却使整条线路读档后冲突。
+    if (CM.Metro && CM.Metro.segGeom) for (const id in net.segments) {
+      const s = net.segments[id]; if (!net.stations[s.a] || !net.stations[s.b]) continue;
+      for (const p of CM.Metro.segGeom(net, s, this).locked) { const c = openAt(p.x, p.y); if (c >= 0) seeds.push(c); }
+    }
+    for (const p of (property && property.records) || []) if (p.owned && Number.isInteger(p.c) && p.c >= 0 && p.c < this.N) {
+      const c = openAt(p.c % this.W + 0.5, Math.floor(p.c / this.W) + 0.5); if (c >= 0) seeds.push(c);
+    }
     for (const t of (tasks && tasks.active) || []) for (const a of t.anchors || []) {
       if (!a.legacy && !this.lockRuleOld) continue;
       const c = openAt(a.x, a.y); if (c >= 0) { a.legacy = 1; seeds.push(c); }
@@ -784,6 +799,7 @@
   City.prototype.cellLocked = function (c) { return c >= 0 && this.lockState().mask[c] === 1; };
   City.prototype.lockText = function (c) {
     const lk = this.lockState(), y = lk.year[c], k = this.lockRegion(c), rg = this.regions[k];
+    if (D.progressiveRegions) return U.regionLock(rg);
     if (this.regionOpen[k]) return y ? '尚未与已开放城区连成一片，参考 ' + y + ' 年连通' : '尚未与已开放城区连成一片';
     return y ? '参考 ' + y + ' 年开放' : (rg.lockNote || '不开放');
   };
@@ -797,6 +813,7 @@
   // 区域状态（界面文字）：整片可以建设 / 部分可以建设 / 尚未开放；未开放但被城区包围的规划用地可以建设，开发按参考年份
   City.prototype.regionLockText = function (k) {
     const f = this.lockState().info[k], rg = this.regions[k];
+    if (D.progressiveRegions) return this.regionOpen[k] || (this.unlockAll && rg.open != null && !rg.lockNote && !rg.scenic) ? '已开放' : '尚未开放（' + U.regionLock(rg) + '）';
     if (!f.n) return this.regionOpen[k] || rg.open == null ? '已开放' : '可以建设（规划用地，参考 ' + rg.open + ' 年起开发）';
     // 已开放、但与连片城区隔开（不能建设的部分只因尚未连通）
     if (this.regionOpen[k]) {
@@ -1420,6 +1437,15 @@
 
   // ---------------- 区域 ----------------
   City.prototype.regionAt = function (x, y) { const c = this.cellAt(x, y); return c < 0 ? null : this.regions[this.region[c]]; };
+  // 普通月结、跳时和后期年份开局共用同一条件。人口只允许提前 3 年，繁荣时 4 年；衰退时门槛提高 3%。
+  City.prototype.regionUnlock = function (k, year, population, factors) {
+    const rg = this.regions[k];
+    if (!rg || this.regionOpen[k] || rg.open == null) return null;
+    if (rg.id === 'airport' && D.airport && D.airport.closeYear < 9999 && year < D.airport.closeYear + 7 / 12) return null;
+    const byYear = year >= rg.open;
+    const early = rg.pop && population >= rg.pop * (factors && factors.dev < -0.03 ? 1.03 : 1) && year >= rg.open - (factors && factors.dev > 0.02 ? 4 : 3);
+    return byYear || early ? { byYear: byYear, early: !byYear } : null;
+  };
   City.prototype.openRegion = function (k, y, m) {
     if (this.regionOpen[k]) return false;
     this.regionOpen[k] = 1; this.regionOpenDate[k] = [y, m];
@@ -1630,8 +1656,8 @@
     this.filled = { year: year, cells: n, fP: +fP.toFixed(3), fJ: +fJ.toFixed(3) };
     return n;
   };
-  City.prototype.restore = function (s, year) { const it = this.restoreGen(s, year); let r = it.next(); while (!r.done) r = it.next(); };
-  City.prototype.restoreGen = function* (s, year) {
+  City.prototype.restore = function (s, year, opts) { const it = this.restoreGen(s, year, opts); let r = it.next(); while (!r.done) r = it.next(); };
+  City.prototype.restoreGen = function* (s, year, opts) {
     this.lockRuleOld = (s.lockRule || 1) < 2; this.lockVer++; this._lk = null;
     const N = this.N;
     const chk = function (a, n) { if (a.length !== n) throw new Error('城市数据尺寸不符'); return a; };
@@ -1644,11 +1670,15 @@
     // 区域开放状态按 id 恢复；本版本新增、存档中没有的区域按存档年份判断是否已开放
     const rIds = this.regions.map(function (r) { return r.id; });
     const ro = byIds(s.regionIds, rIds, s.regionOpen || []), rd = byIds(s.regionIds, rIds, s.regionOpenDate || []);
-    const fy = s.fillYear || year;
+    const fy = s.fillYear || year, unlockYear = D.progressiveRegions ? year : fy, resets = new Set(s.regionResetIds || []), month = opts && opts.month || 1;
+    let population = 0; if (D.progressiveRegions) for (const p of this.pop) population += p;
     this.regionOpen = new Uint8Array(this.regions.length); this.regionOpenDate = this.regions.map(function () { return null; });
     for (let k = 0; k < this.regions.length; k++) {
-      if (ro[k] !== undefined) { this.regionOpen[k] = ro[k] ? 1 : 0; this.regionOpenDate[k] = rd[k] || null; }
-      else { const rg = this.regions[k]; if (rg.open != null && rg.open <= fy && (rg.id !== 'airport' || !D.airport)) { this.regionOpen[k] = 1; this.regionOpenDate[k] = [rg.open, 1]; } }
+      if (ro[k] !== undefined && !resets.has(this.regions[k].id)) { this.regionOpen[k] = ro[k] ? 1 : 0; this.regionOpenDate[k] = rd[k] || null; }
+      else {
+        const rg = this.regions[k], unlock = D.progressiveRegions ? this.regionUnlock(k, unlockYear + (month - 1) / 12, population, opts && opts.factors) : rg.open != null && rg.open <= unlockYear;
+        if (unlock && (rg.id !== 'airport' || !D.airport)) { this.regionOpen[k] = 1; this.regionOpenDate[k] = rg.open <= unlockYear ? [rg.open, 1] : [unlockYear, month]; }
+      }
       // 同一网页版格网内的展示修订；不接受独立版扩图数据，也不平移玩家线网。
       const rg = this.regions[k];
       if (D.displayRevision && (s.displayRevision || 1) < D.displayRevision && ((CM.mapId === 'hz' && rg.id === 'jianqiao') || (!D.airport && rg.id === 'airport')) && rg.open != null && rg.open <= year && !this.regionOpen[k]) {

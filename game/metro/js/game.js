@@ -144,10 +144,8 @@
       const tot = city.totals();
       for (let k = 0; k < city.regions.length; k++) {
         const rg = city.regions[k];
-        if (city.regionOpen[k] || rg.open == null) continue;
-        if (rg.id === 'airport' && D.airport && D.airport.closeYear < 9999 && yr < D.airport.closeYear + 7 / 12) continue;
-        const byYear = y >= rg.open, early = rg.pop && tot.pop >= rg.pop * (ef && ef.dev < -0.03 ? 1.03 : 1) && y >= rg.open - (ef && ef.dev > 0.02 ? 4 : 3);
-        if (byYear || early) { city.openRegion(k, y, m); this.logEvent({ tag: byYear ? '史实' : '模拟', title: '新区域开放：' + rg.name, desc: (byYear ? '参考 ' + rg.open + ' 年开放' : '城市人口增长，提前开放（参考 ' + rg.open + ' 年）') + (rg.note ? '。' + rg.note : '') + city.openNote(k) }); roads = true; }
+        const unlock = city.regionUnlock(k, yr, tot.pop, ef);
+        if (unlock) { city.openRegion(k, y, m); this.logEvent({ tag: unlock.byYear ? '史实' : '模拟', title: '新区域开放：' + rg.name, desc: (unlock.byYear ? '参考 ' + rg.open + ' 年开放' : '城市人口增长，提前开放（参考 ' + rg.open + ' 年）') + (rg.note ? '。' + rg.note : '') + city.openNote(k) }); roads = true; }
       }
       const econF = this.macro && CM.Macro ? CM.Macro.applyFactors(this) : null;
       city.growMonth({ year: yr, monthIndex: this.ym(), zoneAccess: model.zoneAccessNorm, cellWalk: null, coverage: 0, econ: econF });
@@ -409,15 +407,11 @@
     const tot = city.totals();
     for (let k = 0; k < city.regions.length; k++) {
       const rg = city.regions[k];
-      if (city.regionOpen[k] || rg.open == null) continue;
-      if (rg.id === 'airport' && D.airport && D.airport.closeYear < 9999 && yr < D.airport.closeYear + 7 / 12) continue;
-      const byYear = y >= rg.open;
-      // 人口提前达到门槛时可提前开放；经济繁荣时提前窗口放宽一年，衰退时门槛略为提高
-      const early = rg.pop && tot.pop >= rg.pop * (ef && ef.dev < -0.03 ? 1.03 : 1) && y >= rg.open - (ef && ef.dev > 0.02 ? 4 : 3);
-      if (byYear || early) {
+      const unlock = city.regionUnlock(k, yr, tot.pop, ef);
+      if (unlock) {
         city.openRegion(k, y, m); regionOpened = true;
-        const why = byYear ? '参考 ' + rg.open + ' 年开放' : '城市人口增长，提前开放（参考 ' + rg.open + ' 年）';
-        this.logEvent({ tag: byYear ? '史实' : '模拟', title: '新区域开放：' + rg.name, desc: why + (rg.note ? '。' + rg.note : '') + city.openNote(k) });
+        const why = unlock.byYear ? '参考 ' + rg.open + ' 年开放' : '城市人口增长，提前开放（参考 ' + rg.open + ' 年）';
+        this.logEvent({ tag: unlock.byYear ? '史实' : '模拟', title: '新区域开放：' + rg.name, desc: why + (rg.note ? '。' + rg.note : '') + city.openNote(k) });
         this.emit('toast', { kind: 'info', text: '新区域开放：' + rg.name });
       }
     }
@@ -900,9 +894,20 @@
       if (CM.applyMoneyEra) CM.applyMoneyEra(g.clock.y, g.clock.m);
       g.city = new CM.City();
       yield* g.city.generateGen(g.seed, CFG.START.y, {deferGraphs:true});
-      yield* g.city.restoreGen(s.city, g.clock.y);
+      let regionFactors = null;
+      if (D.progressiveRegions && s.macro && s.macro.v === 1 && s.macro.map === g.mapId && CM.Macro) {
+        // 只读存档中的经济周期，保持与月结的提前窗口一致；正式经济状态稍后统一恢复。
+        const context = Object.create(g);
+        context.macro = Object.assign({}, s.macro, { gaps: s.macro.gaps || {}, fired: s.macro.fired || {} });
+        try { regionFactors = CM.Macro.cityFactors(context); } catch (e) { /* 损坏的经济数据由后续正式恢复流程处理 */ }
+      }
+      yield* g.city.restoreGen(s.city, g.clock.y, { month: g.clock.m, factors: regionFactors });
       // 全图解锁要在编译线网之前恢复：线路几何带有可建设范围的判断（玩家反馈：读档后已建线路在未开放区段报冲突）
       g.unlockAll = !!s.unlockAll && g.mode === 'free'; g.city.unlockAll = g.unlockAll;
+      // 先保留已有资产所在片区，再编译线路或验证物业；旧版泛用外围解锁状态不继承到所有新增片区。
+      g.net = s.net;
+      g.tasks = CM.Tasks.restore(s.tasks);
+      const kept = g.city.keepLegacyOpen(g.net, g.tasks, g.clock.y, g.clock.m, s.property).map(k => g.city.regions[k].name).join('、');
       lp(0.3, '恢复城市');
       // 交通模型版本：1.8 及更早的存档为 1（典型工作日、通勤与其他两类出行），载入时升级到当前模型
       const tv = (s.traffic && s.traffic.v) || 1, upgrade = tv < CFG.TRAFFIC_MODEL;
@@ -925,7 +930,6 @@
       g.econ = CM.Economy.restore(s.econ);
       if (CM.Property) CM.Property.restore(g, s.property);
       g.model.fare = g.econ.fare;
-      g.tasks = CM.Tasks.restore(s.tasks);
       g.corp = s.corp && Array.isArray(s.corp.contracts) ? s.corp : null;
       g.fleet = s.fleet && Array.isArray(s.fleet.trains) ? s.fleet : null;
       if (g.fleet && CM.Fleet) g.model.fleetSource = function (net) { return CM.Fleet.plan(g, net); };
@@ -937,11 +941,10 @@
       g.favs = { stations: (s.favs && s.favs.stations) || [], lines: (s.favs && s.favs.lines) || [], names: (s.favs && s.favs.names) || {} };
       g.mapInit = s.mapInit || null;
       g.unlockAll = !!s.unlockAll && g.mode === 'free'; g.city.unlockAll = g.unlockAll;
-      const kept = g.city.keepLegacyOpen(g.net, g.tasks, g.clock.y, g.clock.m).map(k => g.city.regions[k].name).join('、');
       g.startYear = s.startYear || null; g.eraLog = s.eraLog || null;
       g.eraBase = s.eraBase || null; g.startBase = s.startBase || null;
       g.taskRecheckYM = s.taskRecheckYM ?? null;
-      g.impactReport = !(s.mapUpgrade && !s.mapUpgrade.displayOnly) && Game.validImpact(s.impactReport) ? s.impactReport : null;
+      g.impactReport = !(s.mapUpgrade && !s.mapUpgrade.displayOnly && !s.mapUpgrade.regionOnly) && Game.validImpact(s.impactReport) ? s.impactReport : null;
       g.lastImpactReport = g.impactReport;
       g.milestones = s.milestones || null;
       lp(0.42, '恢复交通模型');
@@ -955,7 +958,7 @@
       if (CM.Milestones) CM.Milestones.backfill(g);
       if (CM.Eras) {
         CM.Eras.attach(g);
-        if (s.mapUpgrade && !s.mapUpgrade.displayOnly) CM.Eras.rebaseMap(g);
+        if (s.mapUpgrade && !s.mapUpgrade.displayOnly && !s.mapUpgrade.regionOnly) CM.Eras.rebaseMap(g);
         CM.Eras.ensureBases(g, true);
       }
       // 城市经济：有数据则恢复；1.7 及更早的存档（或数据不完整）从当前状态接入，不补造过去的记录，不改变已有资金与债务。
@@ -987,7 +990,10 @@
         }
         g.backupFailed = s.__backupFailed || null;
         g.mapUpgradeInfo = mu;
-        if (mu.displayOnly) {
+        if (mu.regionOnly) {
+          g.logEvent({ tag: '版本', title: '区域开放规则更新', desc: mu.note });
+          g.upgradeNote = s.__backupFailed ? '区域开放规则已更新；升级前备份未能建立，不会自动保存，原存档保持不变' : '区域开放规则已更新，原有站线、物业与经营进度保留；升级前的存档已单独备份';
+        } else if (mu.displayOnly) {
           g.logEvent({ tag: '版本', title: '地图展示更新', desc: mu.note });
           g.upgradeNote = s.__backupFailed ? '地图展示已更新；升级前备份未能建立，不会自动保存，原存档保持不变' : '地图展示已更新，原有线网与经营进度保留；升级前的存档已单独备份';
         } else {
@@ -1005,7 +1011,7 @@
         g.logEvent({ tag: '版本', title: '交通模型升级（v' + CFG.GAME_VERSION + '）', desc: '存档来自 v' + g.traffic.from + '。日常交通改为轻量增量更新，重大变化增加计算，交通任务接近奖惩门槛时复核。旧拥堵目标按可替代需求调整，无法改善时不处罚；原有线网、资金、债务和已结算历史保留，升级当月保护满意度与任务。' });
         g.backupFailed = s.__backupFailed || null;
         g.upgradeNote = (s.__backupFailed ? '存档已在内存中升级到 v' + CFG.GAME_VERSION + ' 交通模型；升级前备份未能建立（' + s.__backupFailed + '），不会自动保存，原存档保持不变' :
-          '存档已升级到 v' + CFG.GAME_VERSION + ' 交通模型（升级前的原存档已另存为「升级前备份」，可在存档列表中载入或导出）') + (s.__mapMigratedFrom ? '；地图范围同时扩展' : '');
+          '存档已升级到 v' + CFG.GAME_VERSION + ' 交通模型（升级前的原存档已另存为「升级前备份」，可在存档列表中载入或导出）') + (s.__mapMigratedFrom && s.mapUpgrade && !s.mapUpgrade.regionOnly && !s.mapUpgrade.displayOnly ? '；地图范围同时扩展' : '');
       } else g.traffic = Object.assign({ v: CFG.TRAFFIC_MODEL }, s.traffic);
       if (s.mapUpgrade && !s.mapUpgrade.displayOnly) g.traffic.until = Math.max(g.traffic.until || 0, g.ym() + 1);
       if (rulesUpgrade) {
@@ -1013,7 +1019,7 @@
         g.traffic.until = Math.max(g.traffic.until || 0, g.ym() + 1);
         g.upgradeNote = (g.upgradeNote ? g.upgradeNote + '；' : '') + '经营与任务规则已更新，旧票制、线网及历史账目保留' +
           (g.backupFailed ? '；升级前备份未能建立，不会自动保存，原存档保持不变' : (s.__backupSlot ? '（原存档已另存为升级前备份）' : ''));
-        g.logEvent({ tag: '版本', title: '经营与建设功能更新', desc: (s.mapUpgrade && !s.mapUpgrade.displayOnly ? '地图范围同时扩展，' : '') + '保留原票制、站线、资金、债务、任务与已结算历史；更新后的规则只影响未来经营与任务评估，升级当月提供任务与满意度保护。' });
+        g.logEvent({ tag: '版本', title: '经营与建设功能更新', desc: (s.mapUpgrade && !s.mapUpgrade.displayOnly && !s.mapUpgrade.regionOnly ? '地图范围同时扩展，' : '') + '保留原票制、站线、资金、债务、任务与已结算历史；更新后的规则只影响未来经营与任务评估，升级当月提供任务与满意度保护。' });
       }
       if ((s.city.terrainRevision || 1) < (D.terrainRevision || 1)) {
         const correction = D.terrainCorrection || {};
@@ -1029,8 +1035,8 @@
         g.logEvent({ tag: '版本', title: '地图展示调整', desc: '相关片区按当前地图与存档年份恢复为城市发展用地；保留原有车站、线路、资金、债务及已结算历史。' });
       }
       if (kept) {
-        g.logEvent({ tag: '版本', title: '已有车站所在区域保持开放', desc: kept + '。已有车站及旧任务所在的区域和连片保留建设权限。' });
-        g.upgradeNote = (g.upgradeNote ? g.upgradeNote + '；' : '') + '已有车站与任务所在的区域保持开放：' + kept;
+        g.logEvent({ tag: '版本', title: '已有资产所在区域保持开放', desc: kept + '。已有车站、轨道、自有土地及旧任务所在的区域保留建设权限。' });
+        g.upgradeNote = (g.upgradeNote ? g.upgradeNote + '；' : '') + '已有资产与任务所在的区域保持开放：' + kept;
       }
       if (airportOpened) g.logEvent({ tag: '规则', title: '新区域开放：' + airportOpened.name, desc: (D.airport.name || '机场') + '照常运营，用地不开发；范围内可以地下设站与地下穿越（v1.9 起）。' });
       complete = true;

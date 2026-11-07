@@ -1,5 +1,6 @@
 'use strict';
 (function(CM){CM.I18N_EN = {
+  "社区修改版": "Community edition",
   "各具历史特色的九座城市": "Nine cities, each with its own history",
   "九张地图按真实历史划分发展阶段：新区、商务区与新市镇依次兴起，老城逐步疏解，出行走廊随年代变化。": "All nine maps now follow historical development phases: new districts, business centers and new towns rise in turn, old cores decongest, and travel corridors shift over the decades.",
   "亚运会、世博会带来客流高峰，疫情与灾害使出行减少；每个阶段都有本城目标与阶段总结。": "The Asian Games and World Expos bring ridership peaks, while epidemics and disasters reduce travel; every phase has city goals and a phase summary.",
@@ -4381,6 +4382,15 @@
   "地图向北扩大，天河机场完整位于图内": "The map now extends north so that Tianhe Airport lies fully inside it",
   "地图向北扩大到同和、京溪，向南扩大到市桥与广州南站": "The map now extends north to Tonghe and Jingxi, and south to Shiqiao and Guangzhou South Station",
   "参考 {y} 年开放": "Opens around {y}",
+  "参考 {y} 年开放；人口达到 {p}可从 {early} 年起提前开放（繁荣时再提前 1 年，衰退时人口门槛提高 3%）": "Opens around {y}; a population of {p} allows early opening from {early} (one year earlier in a boom; a 3% higher population threshold in a downturn)",
+  "该区域尚未开放（{condition}）": "This district is locked ({condition})",
+  "已有资产所在区域保持开放": "Districts with existing assets stay unlocked",
+  "已有资产与任务所在的区域保持开放：": "Districts with existing assets or tasks stay unlocked: ",
+  "{list}。已有车站、轨道、自有土地及旧任务所在的区域保留建设权限。": "{list}. Districts with existing stations, track, owned land or legacy tasks retain construction access.",
+  "区域开放规则更新": "District opening rules updated",
+  "区域开放规则已更新；升级前备份未能建立，不会自动保存，原存档保持不变": "District opening rules were updated. The pre-update backup could not be created; automatic saving is disabled and the original save is unchanged.",
+  "区域开放规则已更新，原有站线、物业与经营进度保留；升级前的存档已单独备份": "District opening rules were updated. Existing stations, lines, property and business progress are preserved, with a separate backup of the previous save.",
+  "各片区按年份或人口条件逐步开放，保留已有命名片区和资产": "Districts open progressively by date or population, preserving existing named districts and assets",
   "尚未与已开放城区连成一片，参考 {y} 年连通": "Not yet connected to the unlocked city; expected to connect around {y}",
   "尚未与已开放城区连成一片": "Not yet connected to the unlocked city",
   "可以建设（规划用地，参考 {y} 年起开发）": "Buildable (planned land; development from around {y})",

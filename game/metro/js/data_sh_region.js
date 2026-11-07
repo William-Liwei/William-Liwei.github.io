@@ -10,7 +10,7 @@
  const oldRegions=D.regions.map(r=>r.id).concat(D.defaultRegion.id),oldLandmarks=D.landmarks.map(l=>l.id);
  const first=Object.assign({},m.extent,{newW:152,newH:152,oldZone:4,newZone:4});
  m.extent=[first,{from:2,dx:544,dy:288,oldW:152,oldH:152,oldZone:4,newZone:20,newW:940,newH:640,oldRegionIds:oldRegions,oldLandmarkIds:oldLandmarks,note:'扩展为上海全域与苏州区域地图；原线网平移保留，交通统计改用 5 km 小区'}];
- m.mapVersion=3;m.terrainRevision=1;
+ m.mapVersion=4;m.terrainRevision=1;
  m.name='上海 · 苏州';m.title='上海 · 苏州 · 1990';
  m.sub='上海全域与苏州 · 1990 年起 · 人民币';
  m.desc='从上海中心城区走向金山、奉贤、临港、崇明，再连接昆山和苏州。真实海岸、长江口岛屿、太湖与淀山湖构成建设约束；人口、岗位和区域发展节奏为经营模型估算。';
@@ -40,6 +40,51 @@
  D.defaultRegion={id:'outer',name:'沪苏周边地区',open:1990,plan:'res',note:'地图矩形内的南通、嘉兴等邻接陆域；人口与需求为区域估算'};
  // A named planning area is an approximate development envelope, not an administrative boundary.
  D.regions.unshift({id:'lingang',name:'临港 · 滴水湖',open:2003,plan:'ind',poly:[[30.98,121.81],[30.98,121.98],[30.84,121.98],[30.84,121.81]].map(p=>ll(...p)),note:'临港发展片区为近似规划范围，非行政边界；水面仍严格依照 OSM 地形'});
+ // Version 4 changes region progression only; geography and all cell coordinates stay unchanged.
+ m.regionUpgrade={from:3,note:'按年份或人口条件重评旧版默认全开的扩展片区；原有城区已开放状态、车站、轨道和自有土地保留',oldRegionIds:D.regions.map(r=>r.id).concat(D.defaultRegion.id),resetIds:[]};
+ D.progressiveRegions=true;
+ const stages={
+  songjiang:[1998,23e6],qingpu:[2002,25e6],jinshan:[2008,30e6],fengxian:[2005,28e6],chongming:[2009,31e6],baoshan_outer:[2001,24.5e6],
+  sz_gusu:[2005,28e6],sz_huqiu:[2006,28.5e6],sz_park:[2008,30e6],sz_wuzhong:[2010,32e6],sz_xiangcheng:[2010,32e6],
+  sz_wujiang:[2012,33e6],sz_kunshan:[2003,26e6],sz_taicang:[2013,33.5e6],sz_changshu:[2015,34e6],sz_zhangjiagang:[2018,36e6]
+ };
+ for(const [id,[open,pop]] of Object.entries(stages)){
+  const r=D.regions.find(r=>r.id===id);if(r){r.open=open;r.pop=pop;r.note+='；开放年份与人口提前条件为游戏进程设定，不是现实开发或通车日期';}
+ }
+ m.regionUpgrade.resetIds=Object.keys(stages);
+ const delta=[
+  ['wx_core','无锡城区',['梁溪区','新吴区','锡山区','滨湖区','惠山区','锡山经济技术开发区'],'resind',2010,32e6],
+  ['wx_jiangyin','无锡 · 江阴',['江阴市','江苏江阴临港经济开发区'],'ind',2015,34e6],
+  ['cz_core','常州城区',['钟楼区','新北区','天宁区','武进区','江苏常州钟楼经济开发区','常州滨江经济开发区','江苏常州天宁经济开发区','常州经济开发区','武进高新区'],'resind',2016,35e6],
+  ['nt_core','南通城区',['崇川区','南通经济技术开发区','苏锡通科技产业园区'],'resind',2015,34e6],
+  ['nt_rugao','南通 · 如皋',['如皋市'],'resind',2022,38e6],
+  ['tz_jingjiang','泰州 · 靖江',['靖江市'],'ind',2020,37e6],
+  ['tz_taixing','泰州 · 泰兴',['泰兴市'],'ind',2025,39e6],
+  ['zj_danyang','镇江 · 丹阳',['丹阳市'],'resind',2025,39e6],
+  ['zj_yangzhong','镇江 · 扬中',['扬中市'],'ind',2028,40e6],
+  ['jx_core','嘉兴城区',['南湖区','秀洲区'],'resind',2010,32e6],
+  ['jx_jiashan','嘉兴 · 嘉善',['嘉善县'],'resind',2013,33.5e6],
+  ['jx_pinghu','嘉兴 · 平湖',['平湖市'],'ind',2014,34e6],
+  ['jx_haiyan','嘉兴 · 海盐',['海盐县'],'ind',2018,36e6],
+  ['jx_tongxiang','嘉兴 · 桐乡',['桐乡市'],'resind',2016,35e6],
+  ['hu_core','湖州城区',['吴兴区','南浔区'],'resind',2018,36e6],
+  ['hu_changxing','湖州 · 长兴',['长兴县'],'ind',2022,38e6],
+  ['hu_deqing','湖州 · 德清',['德清县'],'resind',2023,38.5e6],
+  ['hu_anji','湖州 · 安吉',['安吉县'],'res',2025,39e6],
+  ['zs_shengsi','舟山 · 嵊泗（图内部分）',['嵊泗县'],'res',2030,40.5e6]
+ ];
+ for(const [id,name,district,plan,open,pop] of delta)D.regions.push(Object.assign(region(id,name,district,plan,open),{pop,note:'仅包含当前地图矩形内的真实陆域；开放年份与人口提前条件为游戏设定，不代表现实轨道规划'}));
+ for(const r of D.regions){const prefix=r.id.split('_')[0];r.cityId=['sz','wx','cz','nt','tz','zj','jx','hu','zs'].includes(prefix)?prefix:'sh';}
+ D.defaultRegion={id:'delta_outer',name:'长三角其他图内陆域',open:2035,pop:42e6,plan:'res',note:'行政数据未覆盖的边缘陆域也会逐步开放；仅为本游戏建设进程，水域与保护地规则保持'};
+ m.name='上海 · 长三角';m.title='上海 · 长三角 · 1990';m.sub='上海起步的长三角城市群 · 分期开放';
+ D.city='上海 · 长三角';
+ m.tagline='从上海起步，建设长三角城市群网络';m.tags=['上海起步','城市群','分期开放'];
+ m.intro='从上海市内起步，按年份或人口条件逐步解锁沪苏走廊，以及图内无锡、常州、南通、嘉兴、湖州等地区。开放地区无须与上海陆地连片，远端城区和岛屿也可按进程建设。城市开工节奏与人口门槛均为游戏设定。';
+ m.desc='上海起步的长三角区域经营：当前235×160公里地图内的陆域分期开放，年份到达或满足人口提前条件即可建设。';
+ m.facts[3]=['地理','当前矩形内的长三角陆域（城市可能仅部分入图）'];
+ m.features[0]=['map','长三角分期开放','图内上海、苏州、无锡、常州、南通、嘉兴、湖州及周边陆域均有开放进程'];
+ m.features[3]=['flag','年份与发展条件','按年份保证开放，人口增长可在提前窗口内加速解锁；不代表现实通车年份'];
+ D.taskNote+=' 当前图内各陆地区域按年份或人口提前条件开放，不再要求与上海中心城区陆地连片；城市只按本图实际覆盖部分参与。';
  // Named centres locate real towns. Gaussian density / radii are gameplay estimates.
  for(const [lat,lon,pop,jobs,r] of [
   [31.005,121.227,12500,8500,3.0],[31.150,121.117,8500,6000,2.3],[30.917,121.455,11000,7000,2.6],

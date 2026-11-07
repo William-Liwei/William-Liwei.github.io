@@ -213,7 +213,11 @@ window.CM = window.CM || {};
   // ---------- 格式化 ----------
   U.pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
   // 未开放区域的说明：按参考年份开放，或长期不开放（如军用机场，见区域的 lockNote）
-  U.regionLock = function (rg) { return rg.open != null ? '参考 ' + rg.open + ' 年开放' : (rg.lockNote || '不开放'); };
+  U.regionLock = function (rg) {
+    if (rg.open == null) return rg.lockNote || '不开放';
+    const text = '参考 ' + rg.open + ' 年开放';
+    return rg.pop ? text + '；人口达到 ' + U.fmtPeople(rg.pop) + '可从 ' + (rg.open - 3) + ' 年起提前开放（繁荣时再提前 1 年，衰退时人口门槛提高 3%）' : text;
+  };
   // 金额：内部单位为「万 + 本城货币」（广州、杭州为万元，香港为万港元，东京为万日元），显示随当前地图的货币
   // money 可显式指定（地图选择页显示别的地图时用）
   U.fmtMoney = function (wan, digits, money) {

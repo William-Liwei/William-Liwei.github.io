@@ -27,7 +27,7 @@
     const city = g.city, LU = CM.LU;
     if (!Number.isInteger(c) || c < 0 || c >= city.N) return '请选择地图内的地块';
     if (city.landFrac[c] < 0.8 || city.lu[c] === LU.WATER) return '水域与临水碎地不可购买';
-    if (city.cellLocked(c)) return '该区域尚未开放';
+    if (city.cellLocked(c)) return '该区域尚未开放（' + city.lockText(c) + '）';
     const rg = city.regions[city.region[c]];
     if (!rg || rg.scenic || city.protectedId && city.protectedId[c] > 0 || city.heritage && city.heritage[c] === 2 ||
         [LU.PARK, LU.INST, LU.HILL, LU.AIRPORT, LU.LANDMARK].indexOf(city.lu[c]) >= 0) return '公共设施、景区与保护用地不可购买';

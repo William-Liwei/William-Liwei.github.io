@@ -127,6 +127,11 @@
       const sh = function (o) { if (o && typeof o.x === 'number') { o.x += dx; o.y += dy; } if (o && Array.isArray(o.site)) o.site = [o.site[0] + dx, o.site[1] + dy]; };
       for (const id in p.net.stations) sh(p.net.stations[id]);
       for (const id in p.net.segments) { const s = p.net.segments[id]; if (s.pts) s.pts = s.pts.map(function (q) { return [q[0] + dx, q[1] + dy]; }); }
+      // 自有土地同样使用格编号；必须随车站一起平移，保持购地、开发和已占用面积的历史账目。
+      if (p.property) {
+        if (CM.Property) CM.Property.validate(p.property, oW * oH);
+        for (const q of p.property.records || []) q.c = (Math.floor(q.c / oW) + dy) * W + q.c % oW + dx;
+      }
       // 片区编号
       // When enlarging the traffic aggregation grid, map each old zone by its translated centre.
       // Geometry stays at 250 m; only demand aggregation changes.
@@ -148,6 +153,24 @@
   }
   // 声明了范围扩展（extent）的地图：旧版本存档按扩展规格迁移
   for (const id in MAPS) if (MAPS[id].extent && !MAPS[id].migrate) MAPS[id].migrate = CM.extentMigration(MAPS[id].extent);
+  // 同一格网内更新片区开放规则。旧命名片区按稳定 id 恢复；拆掉的泛用外围 id 不映射给新片区。
+  for (const id in MAPS) if (MAPS[id].regionUpgrade) {
+    const mp = MAPS[id], revision = mp.regionUpgrade, extent = mp.migrate;
+    mp.migrate = function (p, from) {
+      if (from < revision.from) {
+        if (!extent) throw new Error('缺少旧地图范围迁移');
+        extent(p, from);
+      } else if (from !== revision.from) throw new Error('不支持的区域规则版本');
+      if (!p.city.regionIds) p.city.regionIds = revision.oldRegionIds.slice();
+      // v3 扩展片区错误地普遍设为开局开放；只重评明确列出的这些片区，其余命名片区的既有状态原样保留。
+      if (revision.resetIds && revision.resetIds.length) p.city.regionResetIds = revision.resetIds.slice();
+      const previous = p.mapUpgrade;
+      p.mapUpgrade = previous || { from: from, to: mp.mapVersion, at: [p.clock.y, p.clock.m, p.clock.d], regionOnly: true };
+      p.mapUpgrade.to = mp.mapVersion;
+      p.mapUpgrade.note = (previous && previous.note ? previous.note + '；' : '') + (revision.note || '各片区按年份或人口条件逐步开放，保留已有命名片区和资产');
+      return p;
+    };
+  }
   // 杭州、武汉：第 2→3 版只调整了展示（格网、区域编号与玩家线网不变），第 2 版存档按第 3 版继续迁移；
   // v2.2 起第 3→4 版向外扩大（萧山机场、天河机场，见各自的 extent）
   for (const id of ['hz','wh']) {
