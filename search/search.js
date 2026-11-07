@@ -8,7 +8,7 @@
   var words=en?{all:'All',paper:'Papers',post:'Articles',page:'Pages & tools',search:'Search',loading:'Loading search…',error:'Search could not load. Please retry.',empty:'No results. Try another keyword.',initial:'Enter a keyword to find papers, articles and tools.',more:'Show more',retry:'Retry'}:{all:'全部',paper:'论文',post:'文章',page:'页面与工具',search:'搜索',loading:'正在准备搜索…',error:'搜索暂时未能加载，请重试。',empty:'没有找到匹配内容，试试其他关键词。',initial:'输入关键词，查找论文、文章或工具。',more:'显示更多',retry:'重试加载'};
   var results=document.getElementById('site-results'),status=document.getElementById('site-search-status'),more=document.getElementById('site-search-more'),retry=document.getElementById('site-search-retry');
   document.getElementById('search-lang').value=lang;
-  if(en){document.documentElement.lang='en';document.getElementById('search-title').firstChild.textContent='Search';document.getElementById('search-intro').textContent='Find papers, articles and everyday tools.';document.getElementById('search-label').textContent='Search this site';input.placeholder='Try UniFlow, Markdown, forecasting…';}
+  if(en){document.documentElement.lang='en';document.getElementById('search-title').firstChild.textContent='Search';document.getElementById('search-intro').textContent='Search papers, articles, pages and tools.';document.getElementById('search-label').textContent='Search this site';input.placeholder='Enter keywords to search…';}
   document.getElementById('site-search-submit').textContent=words.search;more.textContent=words.more;retry.textContent=words.retry;
   var buttons=Array.from(document.querySelectorAll('[data-kind]'));
   buttons.forEach(function(button){button.textContent=words[button.dataset.kind];});

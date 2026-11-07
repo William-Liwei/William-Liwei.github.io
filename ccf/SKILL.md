@@ -24,13 +24,15 @@ Base URL: `https://www.weili.space/ccf/`
 
 | Task | Parameters |
 | --- | --- |
-| Conference deadlines | `tab=conf`; `q` for abbreviation or full name; `sub` for field; `rank=A`, `B`, `C` or `N`; `status=open`, `week`, `month`, `passed` or `tbd`; `latest=1` for the latest edition (default), `latest=0` for all years; `tz=bj` for Beijing time (default), `orig` for original conference time, `local` for the browser's timezone. |
+| Conference deadlines | `tab=conf`; `q` for abbreviation or full name; `sub` for field; `rank=A`, `B`, `C` or `N`; `status=open`, `week`, `month`, `90days`, `registration`, `passed` or `tbd`; `latest=1` for the latest edition (default), `latest=0` for all years; `tz=bj` for Beijing time (default), `orig` for original conference time, `local` for the browser's timezone. |
 | CCF recommended list | `tab=ccf`; `q` for name or publisher; `level=A`, `B` or `C`; `type=会议` or `期刊`; `cat` and `pub` use exact values shown in the field and publisher dropdowns. |
 | Journal partitions | `tab=jcr`; `q` for journal name, ISSN or eISSN; `quart=Q1` through `Q4`; `cas=1` through `4`; `xr=1` through `4`; `ccf=any`, `A`, `B` or `C`; `top=1` for CAS Top; `nowarn=1` to exclude warning-listed journals. |
 
 Conference field codes: `AI` artificial intelligence; `CG` graphics and multimedia; `CT` theory; `DB` databases, data mining and information retrieval; `DS` architecture, parallel/distributed computing and storage; `HI` HCI and ubiquitous computing; `MX` interdisciplinary; `NW` networks; `SC` security; `SE` software engineering, systems and programming languages.
 
-`status=week` means within 7 days; `status=month` means within 30 days. For an arbitrary range such as 90 days, start with `status=open` and inspect the displayed absolute deadlines; there is no `days=90` parameter. `latest=1` is an edition filter, not a guarantee that a conference is still accepting submissions.
+`status=week` means within 7 days; `status=month` means within 30 days; `status=90days` means within 90 days. `status=registration` requires both an explicitly supplied abstract deadline and the displayed round's full-paper deadline to be in the future; unknown abstract dates are excluded. There is no `days=90` parameter. `latest=1` is an edition filter, not a guarantee that a conference is still accepting submissions.
+
+“导出结果 CSV” downloads every result matching the current query, filters, favorites selection and sort order, across all pages. Conference dates use the selected display timezone, named in a separate column; journal metric headers include their dataset years. The download is generated in the browser.
 
 Examples:
 

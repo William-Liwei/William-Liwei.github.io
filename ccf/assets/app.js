@@ -1,10 +1,11 @@
 import {
   conferenceIdentity, createConferenceIndex, findConferenceRows, latestConferenceYears, nextConferenceDeadline,
-  deadlineStage, deadlineRoundsHTML, conferenceCopyText, journalPartitionLines as partitionLines, journalSearchText, searchTerms, esc, formatCountdown, formatInZone, parseTimezone, pickDeadline, processConferences, safeUrl, wallTimeToUtc
+  deadlineStage, deadlineRoundsHTML, conferenceCopyText, matchesConferenceStatus, journalPartitionLines as partitionLines, journalSearchText, searchTerms, esc, formatCountdown, formatInZone, parseTimezone, pickDeadline, processConferences, safeUrl, wallTimeToUtc
 } from './lib.js';
 import {favoriteKey, readStored, writeStored, favoriteSet, serializeFavoritesBackup, importFavoritesBackup, FAVORITES_BACKUP_MAX_BYTES, FAVORITES_KEY, PREFERENCES_KEY} from './preferences.js';
 import {buildConferenceCalendar} from './calendar.js';
 import {paginationHTML,validPage} from './pagination.js';
+import {buildResultsCSV} from './results.js';
 
 let storage;
 try { storage = localStorage; } catch {}
@@ -282,13 +283,13 @@ const copyBtn = (i) => {
 
 const TABS = {
   conf: {
-    placeholder: '搜索会议简称或全称，如 KDD、NeurIPS',
+    placeholder: '搜索会议简称或全称',
     load: loadConferences,
     defaultSort: { key: 'deadline', dir: 'asc' },
     filters: [
       { key: 'sub', label: '领域', options: () => Object.entries(SUB_NAMES) },
       { key: 'rank', label: 'CCF 等级', options: () => [['A', 'A 类'], ['B', 'B 类'], ['C', 'C 类'], ['N', '非 CCF']] },
-      { key: 'status', label: '全文截稿状态', options: () => [['open', '全文未截稿'], ['week', '7 天内截稿'], ['month', '30 天内截稿'], ['passed', '全文已截稿'], ['tbd', '待公布']] },
+      { key: 'status', label: '截稿状态', options: () => [['open', '全文未截稿'], ['week', '7 天内截稿'], ['month', '30 天内截稿'], ['90days', '90 天内截稿'], ['registration', '摘要、全文均未截止'], ['passed', '全文已截稿'], ['tbd', '待公布']] },
       { key: 'tz', label: '截稿时间显示为', def: 'bj', noAll: true, options: () => [['bj', '北京时间'], ['local', '本机时区'], ['orig', '会议原时区']] },
       { key: 'latest', label: '只看每个会议最新一届', offLabel: '显示所有年份', type: 'check', def: '1' }
     ],
@@ -296,15 +297,7 @@ const TABS = {
       if (f.sub !== 'all' && r.sub !== f.sub) return false;
       if (f.rank !== 'all' && r.rank !== f.rank) return false;
       if (f.latest === '1' && !r.latest) return false;
-      const s = r.dl?.status;
-      switch (f.status) {
-        case 'open': return !!r.dl && s !== 'passed';
-        case 'week': return s === 'urgent';
-        case 'month': return s === 'urgent' || s === 'warning';
-        case 'passed': return s === 'passed';
-        case 'tbd': return !r.dl;
-        default: return true;
-      }
+      return matchesConferenceStatus(r,f.status);
     },
     sortValue: {
       title: (r) => r.title.toLowerCase(),
@@ -627,6 +620,7 @@ function render() {
   $('#result-count').textContent = `共 ${state.view.length} 条${pages > 1 ? `，第 ${state.page} / ${pages} 页` : ''}`;
   $('#data-note').textContent = tab.note();
   $('#export-calendar').disabled = !(data.conf || []).some((row) => favorites.has(favoriteKey(row, 'conf')) && hasCalendarDates(row));
+  $('#export-results').disabled = !state.view.length;
   updateDataWarning();
   $('#panel').setAttribute('aria-busy', 'false');
   renderFilterSummary();
@@ -650,6 +644,7 @@ async function showTab(tab, { resetPage = true } = {}) {
   renderTabs();
   $('#data-retry').hidden = true;
   $('#export-calendar').disabled = true;
+  $('#export-results').disabled = true;
   $('#panel').setAttribute('aria-busy', 'true');
   if (!data[tab]) {
     $('#thead').innerHTML = '';
@@ -700,6 +695,18 @@ function downloadCalendar(rows, filename) {
   anchor.remove();
   setTimeout(() => URL.revokeObjectURL(url), 60000);
   toast(`已导出 ${count} 个时间节点，请导入日历并设置提醒`);
+}
+
+function exportResults() {
+  if(!data[state.tab])return;
+  state.q=$('#search').value.trim();
+  refreshDeadlines();render();
+  if(!state.view.length)return;
+  const result=buildResultsCSV(state.tab,state.view,{versions:data.meta||{},conferenceIndex:data.confIndex,timezone:state.filters.conf.tz});
+  const url=URL.createObjectURL(new Blob([result.text],{type:'text/csv;charset=utf-8'}));
+  const link=document.createElement('a');link.href=url;link.download=`ccf-${state.tab}-${formatInZone(Date.now(),null).slice(0,10)}.csv`;
+  document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);
+  toast(`已导出当前筛选的全部 ${result.count} 条结果（含所有分页）`);
 }
 
 function backupStatus(message) {
@@ -966,6 +973,7 @@ function bindEvents() {
   });
 
   $('#refresh-btn').addEventListener('click', () => refreshConferences());
+  $('#export-results').addEventListener('click',exportResults);
   $('#data-retry').addEventListener('click', () => showTab(state.tab, { resetPage: false }));
   $('#export-calendar').addEventListener('click', () => {
     const rows = (data.conf || []).filter((row) => favorites.has(favoriteKey(row, 'conf')));

@@ -111,6 +111,19 @@ export function pickDeadline(timeline, now = Date.now()) {
   return { ...round, rounds: rounds.length, status: deadlineStatus(round.deadline, now) };
 }
 
+export function matchesConferenceStatus(row, status, now = Date.now()) {
+  const deadline = pickDeadline(row.timeline, now);
+  if (status === 'tbd') return !deadline;
+  if (!['open','week','month','90days','registration','passed'].includes(status)) return true;
+  if (!deadline || !Number.isFinite(deadline.deadline)) return false;
+  const remaining = deadline.deadline - now;
+  if (status === 'passed') return remaining < 0;
+  if (remaining < 0) return false;
+  if (status === 'registration') return Number.isFinite(deadline.abstract) && deadline.abstract >= now;
+  const days = {week:7,month:30,'90days':90}[status];
+  return days ? remaining <= days * DAY : true;
+}
+
 export function formatCountdown(ms, now = Date.now()) {
   if (ms == null) return '';
   const diff = ms - now;
