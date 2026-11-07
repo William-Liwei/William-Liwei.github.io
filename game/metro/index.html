@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>城市与地铁 · 社区修改版 | Wei Li</title>
+  <meta name="author" content="VinsonFung">
+  <meta name="copyright" content="Copyright © 2026 VinsonFung. Non-commercial use only. All rights reserved.">
+  <meta name="community-maintainer" content="Wei Li">
+  <link rel="canonical" href="https://www.weili.space/game/metro/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="城市与地铁 · 社区修改版">
+  <meta property="og:description" content="基于 VinsonFung 原作的非商业社区修改版：扩展沪苏地图、线路编辑与换乘枢纽。">
+  <meta property="og:url" content="https://www.weili.space/game/metro/">
+  <meta property="og:image" content="https://www.weili.space/game/metro/img/screenshot-map-selection.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="description" content="单人地铁规划与城市经营游戏：广州、杭州、香港、台北、东京、上海、武汉、巴黎、北京与青湾教程，支持简体中文、繁体中文和英语。">
+  <meta name="theme-color" content="#eaf1f7">
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <script>
+    // 首帧即应用主题，避免浅色闪烁
+    (function () {
+      var s = null, t = 'auto';
+      try { s = JSON.parse(localStorage.getItem('cm1.settings') || 'null'); t = (s && s.theme) || localStorage.getItem('cm1.theme') || 'auto'; } catch (e) {}
+      if (t !== 'light' && t !== 'dark') t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      if (s && s.uiScale) document.documentElement.style.setProperty('--uiz', String(s.uiScale));
+    })();
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/line-edit.css">
+  <link rel="stylesheet" href="css/property.css">
+  <link rel="stylesheet" href="css/statistics.css">
+</head>
+<body>
+  <canvas id="map" aria-label="城市地图"></canvas>
+  <div id="app"></div>
+  <noscript>本游戏需要启用 JavaScript。</noscript>
+  <script src="js/util.js"></script>
+  <script src="js/vendor/opencc/cn2t.js"></script>
+  <script src="js/vendor/pinyin/pinyin-pro.js"></script>
+  <script src="js/locales/en.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/accessibility.js"></script>
+  <script src="js/news.js"></script>
+  <script src="js/legal.js"></script>
+  <script src="js/geo_gz.js"></script>
+  <script src="js/geo.js"></script>
+  <script src="js/data_gz.js"></script>
+  <script src="js/data_tutorial.js"></script>
+  <script src="js/geo_hz.js"></script>
+  <script src="js/data_hz.js"></script>
+  <script src="js/geo_hk.js"></script>
+  <script src="js/data_hk.js"></script>
+  <script src="js/geo_tk.js"></script>
+  <script src="js/data_tk.js"></script>
+  <script src="js/geo_tp.js"></script>
+  <script src="js/data_tp.js"></script>
+  <script src="js/geo_pa.js"></script>
+  <script src="js/data_pa.js"></script>
+  <script src="js/geo_wh.js"></script>
+  <script src="js/data_wh.js"></script>
+  <script src="js/geo_sh.js"></script>
+  <script src="js/geo_sh_region.js"></script>
+  <script src="js/data_sh.js"></script>
+  <script src="js/data_sh_region.js"></script>
+  <script src="js/geo_bj.js"></script>
+  <script src="js/data_bj.js"></script>
+  <script src="js/maps.js"></script>
+  <script src="js/data_eras.js"></script>
+  <script src="js/facility.js"></script>
+  <script src="js/eras.js"></script>
+  <script src="js/city.js"></script>
+  <script src="js/metro.js"></script>
+  <script src="js/road-kernel.js"></script>
+  <script src="js/sim.js"></script>
+  <script src="js/economy.js"></script>
+  <script src="js/property.js"></script>
+  <script src="js/future.js"></script>
+  <script src="js/development.js"></script>
+  <script src="js/taskplans.js"></script>
+  <script src="js/macro.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/milestones.js"></script>
+  <script src="js/sim-stamp.js"></script>
+  <script src="js/traffic-cache.js"></script>
+  <script src="js/save.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/sites.js"></script>
+  <script src="js/scenery.js"></script>
+  <script src="js/agents.js"></script>
+  <script src="js/bgtransit.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/keys.js"></script>
+  <script src="js/grid.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/soundscape.js"></script>
+  <script src="js/tools.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/screens.js"></script>
+  <script src="js/sketch.js"></script>
+  <script src="js/pages.js"></script>
+  <script src="js/corp.js"></script>
+  <script src="js/fleet.js"></script>
+  <script src="js/automation.js"></script>
+  <script src="js/impact.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/voices.js"></script>
+  <script src="js/ops-data.js"></script>
+  <script src="js/opsapp.js"></script>
+  <script src="js/line-edit.js"></script>
+  <script src="js/hubs.js"></script>
+  <script src="js/statistics.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/netmap.js"></script>
+  <script src="js/follow.js"></script>
+  <script src="js/tutorial.js"></script>
+  <script src="js/quick.js"></script>
+  <script src="js/v22-ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

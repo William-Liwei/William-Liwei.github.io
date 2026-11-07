@@ -1,0 +1,6 @@
+.property-card,.property-row{border:1px solid var(--line);border-radius:12px;padding:12px;margin:12px 0;background:var(--surface)}
+.property-heading{gap:8px;margin-bottom:6px}.property-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+.property-actions .btn{white-space:normal;min-height:38px;text-align:center}.property-note{margin-top:10px;line-height:1.65}
+.property-intro h3{margin:8px 0}.property-intro p{line-height:1.65;margin:6px 0 12px}.property-empty{padding:24px 8px;text-align:center;line-height:1.7;color:var(--muted)}
+.property-row .small{line-height:1.6;margin:6px 0}.property-row .row{gap:8px;flex-wrap:wrap}
+@media(max-width:600px){.property-actions .btn{flex:1 1 140px}.property-card,.property-row{padding:10px}.property-heading{flex-wrap:wrap}}

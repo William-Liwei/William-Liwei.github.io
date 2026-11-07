@@ -1,0 +1,60 @@
+/* 票务图表沿用游戏主题；固定 viewBox 的图形随容器缩放，数值同时提供为文字/表格。 */
+.ticket-page { min-width: 0; }
+.ticket-toolbar, .ticket-section-heading, .ticket-event-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; justify-content: space-between; margin-bottom: 12px; }
+.ticket-section-heading { margin-top: 22px; }
+.ticket-section-heading h3 { margin: 0; font-size: 15px; }
+.ticket-control { flex-wrap: wrap; max-width: 100%; }
+.ticket-control button { min-height: 34px; padding: 6px 11px; white-space: nowrap; }
+.ticket-status { border: 1px solid var(--line); background: var(--surface-solid); padding: 10px 12px; border-radius: 10px; font-size: 12px; line-height: 1.6; margin: 0 0 9px; }
+.ticket-status.warn { border-style: dashed; }
+.ticket-definition { line-height: 1.65; margin: 9px 0 15px; }
+.ticket-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ticket-kpis .val { font-size: clamp(18px, 2vw, 23px); overflow-wrap: anywhere; }
+.ticket-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 16px; }
+.ticket-card { min-width: 0; }
+.ticket-card .ch-title { margin: 0; }
+.ticket-card .ch-sub { margin: 5px 0 12px; line-height: 1.6; }
+.ticket-card > .ticket-control { margin-bottom: 12px; }
+.ticket-bars { display: grid; gap: 12px; margin: 12px 0; }
+.ticket-bar-heading { display: flex; gap: 8px; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+.ticket-bar-heading b, .ticket-pair, .ticket-data td { font-variant-numeric: tabular-nums; }
+.ticket-track { width: 100%; height: 10px; background: var(--hover); border-radius: 5px; overflow: hidden; }
+.ticket-track > div { height: 100%; border-radius: inherit; }
+.ticket-svg svg { display: block; width: 100%; height: auto; }
+.ticket-donut { display: grid; grid-template-columns: minmax(120px, 42%) minmax(0, 1fr); align-items: center; gap: 12px; min-height: 205px; }
+.ticket-legend { display: grid; gap: 10px; }
+.ticket-legend > div { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; column-gap: 7px; font-size: 12px; }
+.ticket-legend i { width: 9px; height: 9px; border-radius: 3px; }
+.ticket-legend small { grid-column: 2 / -1; font-size: 11px; }
+.ticket-insight { font-size: 18px; line-height: 1.8; margin-top: 18px; }
+.ticket-card p { overflow-wrap: anywhere; }
+.ticket-data { margin-top: 13px; border-top: 1px solid var(--line); padding-top: 8px; }
+.ticket-data summary { cursor: pointer; color: var(--muted); font-size: 12px; padding: 5px 0; }
+.ticket-table-wrap { overflow-x: auto; max-height: 260px; margin-top: 6px; }
+.ticket-data table { border-collapse: collapse; width: 100%; font-size: 11.5px; white-space: nowrap; }
+.ticket-data td, .ticket-data th { border-bottom: 1px solid var(--line); padding: 7px 8px; text-align: right; font-weight: 400; }
+.ticket-data th:first-child { text-align: left; }
+.ticket-data thead th { font-weight: 600; }
+.ticket-event-tools select { max-width: 100%; min-height: 36px; background: var(--surface-solid); color: var(--text); border: 1px solid var(--line-strong); border-radius: 8px; padding: 5px 9px; }
+.ticket-fare-rule { font-size: 12px; line-height: 1.8; }
+.ticket-compare-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 12px 0 20px; }
+.ticket-comparison { display: grid; gap: 7px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 12px; overflow-wrap: anywhere; }
+.ticket-comparison small { line-height: 1.6; }
+.ticket-up, .ticket-down { color: var(--text); }
+.ticket-change-bars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 24px; margin: 15px 0; }
+.ticket-change-row > b { font-size: 12px; }
+.ticket-pair { display: grid; grid-template-columns: 18px minmax(0, 1fr) 90px; gap: 5px; align-items: center; font-size: 11px; margin-top: 5px; }
+.ticket-pair > span:last-child { text-align: right; }
+.stats-head > .tabs { min-width: 0; overflow-x: auto; scrollbar-width: thin; }
+.ticket-page button:focus-visible, .ticket-page select:focus-visible, .ticket-page summary:focus-visible, .ticket-table-wrap:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 760px) {
+  .ticket-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ticket-grid, .ticket-compare-grid, .ticket-change-bars { grid-template-columns: minmax(0, 1fr); }
+  .ticket-toolbar > .btn { margin-left: auto; }
+  .ticket-section-heading { align-items: flex-start; }
+  .ticket-section-heading h3 { flex-basis: 100%; }
+}
+@media (max-width: 380px) {
+  .ticket-donut { grid-template-columns: minmax(0, 1fr); }
+  .ticket-donut .ticket-svg { width: 170px; margin: 0 auto; }
+}

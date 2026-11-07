@@ -1,0 +1,62 @@
+Third-party notices / 第三方资料与许可
+
+OpenStreetMap geographic data
+----------------------------
+Copyright: (c) OpenStreetMap contributors / © OpenStreetMap 贡献者
+Source: https://www.openstreetmap.org/
+Copyright and attribution: https://www.openstreetmap.org/copyright
+License: Open Data Commons Open Database License (ODbL) 1.0
+License URL: https://opendatacommons.org/licenses/odbl/1-0/
+Included license text: licenses/ODbL-1.0.txt
+
+js/geo_gz.js (Guangzhou), js/geo_hz.js (Hangzhou), js/geo_hk.js (Hong Kong),
+js/geo_tk.js (Tokyo), js/geo_tp.js (Taipei), js/geo_pa.js (Paris),
+js/geo_wh.js (Wuhan) and js/geo_sh.js (Shanghai) contain preprocessed
+OpenStreetMap geographic data,
+including waterways, roads, railways, green areas, boundaries and place names.
+That database remains available under ODbL 1.0. The game's non-commercial
+license does not add restrictions to rights already granted under ODbL.
+The distributed geographic databases can be obtained from those files in the
+repository or the deployed game; retain attribution and applicable ODbL terms.
+
+本项目预处理的 OpenStreetMap 地理数据库继续按 ODbL 1.0 提供。
+游戏的非商业使用条款不限制该数据库原许可授予的权利。
+本游戏自有代码的许可与地理数据库许可分别适用。
+
+OpenCC-JS / offline Simplified and Traditional Chinese display
+-----------------------------------------------------------
+Source: https://github.com/nk2028/opencc-js
+The unchanged cn2t build is included at js/vendor/opencc/cn2t.js.
+The JavaScript implementation is licensed under MIT; dictionary data also
+includes Apache-2.0 licensed material. Full notices and license texts:
+js/vendor/opencc/LICENSE.txt and js/vendor/opencc/Apache-2.0.txt.
+
+pinyin-pro 3.29.5 / offline display-name romanization
+--------------------------------------------------
+Source: https://github.com/zh-lx/pinyin-pro
+License: MIT. The unchanged UMD build is included at
+js/vendor/pinyin/pinyin-pro.js; full notice and license text:
+js/vendor/pinyin/LICENSE.txt.
+
+These third-party components keep their own licenses. The game's
+non-commercial license does not replace or restrict those licenses.
+
+Road WebAssembly kernel / Rust standard library
+---------------------------------------------
+The optional road kernel is compiled from src-sim/road.rs and falls back to
+JavaScript when unavailable. The Rust standard library is MIT OR Apache-2.0;
+full texts and bundled third-party notices are included at:
+licenses/Rust-MIT.txt
+licenses/Rust-Apache-2.0.txt
+licenses/Rust-stdlib-third-party.txt
+These components retain their respective licenses independently of the game.
+
+Xiaohongshu brand wordmark / Simple Icons
+---------------------------------------
+The Xiaohongshu path in js/icons.js is from Simple Icons (CC0 1.0 Universal).
+Icon source: https://github.com/simple-icons/simple-icons/blob/develop/icons/xiaohongshu.svg
+Brand source recorded by Simple Icons: https://pro.xiaohongshu.com
+Included license text: licenses/Simple-Icons-CC0-1.0.txt
+Adaptation: theme-dependent currentColor, cropped empty viewBox margins;
+the original path and proportions are unchanged. Bundled locally; no CDN requests.
+Brand names and marks remain the property of their respective owners.

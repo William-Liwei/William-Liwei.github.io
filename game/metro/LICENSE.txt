@@ -1,0 +1,55 @@
+城市与地铁 / City and Metro
+非商业使用许可证 1.0 / Non-Commercial Use License 1.0
+
+Copyright (c) 2026 VinsonFung. All rights reserved.
+版权所有 (c) 2026 VinsonFung。保留所有权利。
+
+1. 适用范围
+本许可证适用于本项目中 VinsonFung 享有著作权或有权授权的游戏代码、
+文档及自有资源。仓库公开不表示放弃版权，也不授予任何商业使用权。
+第三方代码、数据与素材适用其原有许可，见第 5 条。
+
+2. 允许的非商业使用
+在遵守本许可证的前提下，允许为个人学习、研究、测试、私人娱乐及其他
+不以商业利益为目的的用途查看、复制、运行和修改本项目。
+允许非商业分享原版或修改版，但必须完整保留本许可证、版权声明和
+第三方署名，清楚标明修改，不得冒充原作者或官方发布。
+本许可不转让版权；衍生版本不得授予比本许可证更宽泛的使用权。
+
+3. 禁止商业使用
+本许可证不授予任何商业使用权。禁止直接或间接将本项目或其有权授权的
+部分内容用于商业目的，包括但不限于：
+  a. 销售游戏、源代码、修改版、素材或访问资格；
+  b. 收费游玩、会员或订阅、付费解锁、内购、付费下载或收费托管；
+  c. 在游戏或分发中加入广告、商业赞助、导流、推广或其他变现安排；
+  d. 将代码、资源或修改版纳入商业软件、产品、服务、付费课程或商业交付；
+  e. 以商业经营或预期商业利益为目的部署、分发、再许可或提供服务。
+免费提供、修改、改名、重新打包或仅使用部分代码，不构成商业使用例外。
+
+4. 署名与权利保留
+不得移除、隐藏或伪造适用的版权、作者及许可证声明。
+本许可证不授予对作者姓名、项目名称或标志的商业使用、背书或商标权。
+法律赋予的强制性权利与法定例外不受本许可证限制。
+
+5. 第三方材料
+OpenStreetMap 及其衍生地理数据库（包括 js/geo_gz.js 中的地理数据）
+继续按 Open Database License (ODbL) 1.0 提供。
+本项目的非商业条款不限制第三方原许可已授予的权利，也不能被用来
+对 ODbL 数据追加禁商或其他不兼容条件。
+请参阅 THIRD_PARTY_NOTICES.txt 以及 licenses/ODbL-1.0.txt。
+除另有明确说明外，第三方数据许可不构成对本游戏自有代码的商业授权。
+
+6. 终止与免责
+违反本许可证时，本许可证授予的权限终止，侵权者须停止未经授权的使用。
+在适用法律允许的范围内，本项目按现状提供，不作任何明示或默示保证。
+本条款不限制依法不得排除的责任。
+
+English summary (the Chinese terms above govern):
+Copyright (c) 2026 VinsonFung. All rights reserved.
+Permission is granted only for non-commercial use, study, modification and sharing,
+with this license, copyright notices, third-party notices and change attribution kept.
+No commercial rights are granted, including sales, subscriptions, ads, sponsorship,
+paid hosting, commercial products or services, and commercial redistribution.
+Public availability, renaming or modification does not grant commercial rights.
+Third-party materials retain their own licenses; ODbL data is expressly excluded
+from the non-commercial restriction. Statutory exceptions remain unaffected.
