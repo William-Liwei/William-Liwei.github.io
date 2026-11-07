@@ -31,6 +31,7 @@
   <url><loc>https://www.weili.space/2026/08/09/APCL-Kudos-Research-Showcase/</loc><lastmod>2026-08-09T09:39:38.000Z</lastmod></url>
   <url><loc>https://www.weili.space/2026/08/26/%E5%9C%A8AI%E6%97%B6%E4%BB%A3%E6%89%BE%E5%88%B0%E8%87%AA%E5%B7%B1%E7%9A%84vibe/</loc><lastmod>2026-08-26T11:05:16.000Z</lastmod></url>
   <url><loc>https://www.weili.space/2026/10/07/CS%E4%BF%9D%E7%A0%94%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/</loc><lastmod>2026-10-07T08:42:34.000Z</lastmod></url>
+  <url><loc>https://www.weili.space/2026/11/07/SDFlow-UniFlow/</loc><lastmod>2026-11-06T16:00:00.000Z</lastmod></url>
   <url><loc>https://www.weili.space/about/</loc></url>
   <url><loc>https://www.weili.space/about/publications/</loc></url>
   <url><loc>https://www.weili.space/archives/</loc></url>
@@ -50,9 +51,13 @@
   <url><loc>https://www.weili.space/archives/2026/05/</loc></url>
   <url><loc>https://www.weili.space/archives/2026/08/</loc></url>
   <url><loc>https://www.weili.space/archives/2026/10/</loc></url>
+  <url><loc>https://www.weili.space/archives/2026/11/</loc></url>
+  <url><loc>https://www.weili.space/archives/page/2/</loc></url>
   <url><loc>https://www.weili.space/blog/</loc></url>
+  <url><loc>https://www.weili.space/blog/page/2/</loc></url>
   <url><loc>https://www.weili.space/ccf/</loc></url>
   <url><loc>https://www.weili.space/links/</loc></url>
+  <url><loc>https://www.weili.space/search/</loc></url>
   <url><loc>https://www.weili.space/tags/%E4%BF%9D%E7%A0%94/</loc></url>
   <url><loc>https://www.weili.space/tags/%E5%88%9B%E4%B8%9A/</loc></url>
   <url><loc>https://www.weili.space/tags/%E5%AD%A6%E6%9C%AF/</loc></url>
@@ -82,6 +87,7 @@
   <url><loc>https://www.weili.space/tags/DASFAA/</loc></url>
   <url><loc>https://www.weili.space/tags/DeepSeek/</loc></url>
   <url><loc>https://www.weili.space/tags/flask/</loc></url>
+  <url><loc>https://www.weili.space/tags/Flow-Matching/</loc></url>
   <url><loc>https://www.weili.space/tags/GitHub/</loc></url>
   <url><loc>https://www.weili.space/tags/hexo/</loc></url>
   <url><loc>https://www.weili.space/tags/ICASSP/</loc></url>
@@ -90,9 +96,11 @@
   <url><loc>https://www.weili.space/tags/Ollama/</loc></url>
   <url><loc>https://www.weili.space/tags/playwright/</loc></url>
   <url><loc>https://www.weili.space/tags/Python/</loc></url>
+  <url><loc>https://www.weili.space/tags/SDFlow/</loc></url>
   <url><loc>https://www.weili.space/tags/SQLite/</loc></url>
   <url><loc>https://www.weili.space/tags/Streamlit/</loc></url>
   <url><loc>https://www.weili.space/tags/Time-Series/</loc></url>
+  <url><loc>https://www.weili.space/tags/UniFlow/</loc></url>
   <url><loc>https://www.weili.space/tools/</loc></url>
   <url><loc>https://www.weili.space/zh/</loc></url>
   <url><loc>https://www.weili.space/zh/about/</loc></url>

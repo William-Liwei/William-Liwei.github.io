@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><script id="site-asset-versions" type="application/json">{"/about/data/about-data.js":"b66ff8895fba","/about/data/about-zh.js":"065328f8994c","/assets/blog-search.js":"1e700bdfddab","/assets/fonts/fonts.css":"192edc81ba05","/assets/gateway.css":"5f6a615b4f77","/assets/journal.css":"ac291d776d73","/assets/journal.js":"6801f16d19e6","/assets/profile.css":"00898ea1f819","/assets/profile.js":"529fbb9690b2","/assets/reading-progress.js":"933e2527048a","/assets/site-language.js":"4392f59b1055","/assets/site-motion.js":"3a0ed70e3cf0","/assets/site-search.css":"e988e92234fd","/assets/site-theme.js":"48a444080ff4","/assets/site.css":"d9cd2af970f3","/ccf/assets/analytics.js":"db5c2765bc92","/ccf/assets/app.js":"cb76f22df9c5","/ccf/assets/calendar.js":"9cc9e73f682e","/ccf/assets/lib.js":"0626b56f17ad","/ccf/assets/pagination.js":"63bb20fa2306","/ccf/assets/preferences.js":"cd32b39aa554","/ccf/assets/style.css":"5637e94e085c","/ccf/assets/theme.js":"58b5dec67d7a","/ccf/assets/vendor/js-yaml.js":"16f210b939b3","/links/directory.css":"56adbced808f","/search/search.js":"ebd9d409337c","/tais/assets/app.js":"1b69da9e7cf2","/tais/assets/style.css":"2fbd0e7492ce","/tools/document-tools.js":"b1dd533e2782","/tools/drafts.js":"1a041b81b0d2","/tools/local-images.js":"378ede34e5e1","/tools/markdown-preview.css":"fad00f37617e","/tools/markdown-renderer.js":"f1aff55c0519","/tools/markdown.js":"99f3c10b6d2e","/tools/text-tools.js":"1bead16ebbd5","/tools/toolbox.css":"4c31aeb30713","/tools/toolbox.js":"cc61b5ba6f7c","/tools/vendor/katex/katex.min.css":"d4ab5b8ee169","/tools/vendor/katex/katex.min.js":"103a53763cc0","/tools/vendor/marked.umd.js":"954a1f4b768e","/tools/vendor/purify.min.js":"1bb973289c6a"}</script><script id="site-asset-runtime">(function(){'use strict';var versions=JSON.parse(document.getElementById('site-asset-versions').textContent);window.siteAssetUrl=function(value){try{var url=new URL(value,document.baseURI);if(url.origin!==location.origin||!versions[url.pathname])return value;url.searchParams.set('v',versions[url.pathname]);return url.href;}catch(error){return value;}};})();</script>
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <title>SDFlow 与 UniFlow：面向高效、多尺度时间序列生成的两项近期工作 | Wei Li</title>
+  <meta name="generator" content="hexo-theme-yilia-plus">
+<meta name="description" content="介绍我们在时间序列生成方向的两项近期工作：基于相似性驱动流匹配的 SDFlow，以及统一多尺度表示与生成的 UniFlow。">
+<meta name="author" content="Wei Li">
+<link rel="canonical" href="https://www.weili.space/2026/11/07/SDFlow-UniFlow/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SDFlow 与 UniFlow：面向高效、多尺度时间序列生成的两项近期工作 | Wei Li">
+<meta property="og:url" content="https://www.weili.space/2026/11/07/SDFlow-UniFlow/">
+<meta property="og:site_name" content="Wei Li">
+<meta property="og:description" content="介绍我们在时间序列生成方向的两项近期工作：基于相似性驱动流匹配的 SDFlow，以及统一多尺度表示与生成的 UniFlow。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.weili.space/assets/social/fd57383bed9d9925f951.png">
+<meta property="og:image:alt" content="Wei Li — Blog">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SDFlow 与 UniFlow：面向高效、多尺度时间序列生成的两项近期工作 | Wei Li">
+<meta name="twitter:description" content="介绍我们在时间序列生成方向的两项近期工作：基于相似性驱动流匹配的 SDFlow，以及统一多尺度表示与生成的 UniFlow。">
+<meta name="twitter:image" content="https://www.weili.space/assets/social/fd57383bed9d9925f951.png">
+<link rel="alternate" type="application/atom+xml" title="Wei Li — Blog" href="https://www.weili.space/atom.xml">
+<meta property="article:author" content="Wei Li">
+<meta property="article:published_time" content="2026-11-06T16:00:00.000Z">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"SDFlow 与 UniFlow：面向高效、多尺度时间序列生成的两项近期工作","description":"介绍我们在时间序列生成方向的两项近期工作：基于相似性驱动流匹配的 SDFlow，以及统一多尺度表示与生成的 UniFlow。","url":"https://www.weili.space/2026/11/07/SDFlow-UniFlow/","mainEntityOfPage":"https://www.weili.space/2026/11/07/SDFlow-UniFlow/","image":"https://www.weili.space/assets/social/fd57383bed9d9925f951.png","datePublished":"2026-11-06T16:00:00.000Z","author":{"@type":"Person","@id":"https://www.weili.space/#person","name":"Wei Li","alternateName":"William","url":"https://www.weili.space/about/","jobTitle":"Incoming PhD Student in Computer Science","sameAs":["https://github.com/William-Liwei","https://scholar.google.com/citations?user=jLPVuhoAAAAJ","https://orcid.org/0009-0008-8108-4854"]}}</script>
+  <link rel="icon" href="/favicon.ico">
+  <script src="/assets/site-theme.js?v=48a444080ff4"></script>
+  <link rel="stylesheet" href="/assets/fonts/fonts.css?v=192edc81ba05">
+  <link rel="stylesheet" href="/assets/site.css?v=d9cd2af970f3">
+  <link rel="stylesheet" href="/assets/journal.css?v=ac291d776d73">
+  
+  <script src="/assets/journal.js?v=6801f16d19e6" defer></script>
+  <script src="/assets/reading-progress.js?v=933e2527048a" defer></script>
+  
+<link rel="stylesheet" href="/assets/site-search.css?v=e988e92234fd"></head>
+
+<body class="journal">
+  <a class="skip-link" href="#main">跳至正文</a>
+  <nav class="site-nav" aria-label="Primary"><div class="wrap nav-inner"><a class="brand" href="/" aria-label="Wei Li, home"><span class="brand-mark">WL</span><span class="brand-name">Wei Li</span></a><div class="nav-links"><a href="/about/">About</a><a href="/blog/" aria-current="page">Blog</a><a href="/ccf/">CCF Online</a></div><a class="site-search-link" href="/search/?lang=zh" aria-label="全站搜索" title="全站搜索"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></a><button class="theme-toggle " id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><svg class="icon-sun" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg><svg class="icon-moon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button></div></nav>
+  <main id="main" class="wrap journal-main"><article class="journal-post">
+  <header class="post-heading">
+    <a class="back-link" href="/blog/">← Blog</a>
+    <h1>SDFlow 与 UniFlow：面向高效、多尺度时间序列生成的两项近期工作</h1>
+    <div class="post-meta"><time datetime="2026-11-06T16:00:00.000Z">2026.11.07</time><span>Wei Li</span><span class="reading-time">约 3 分钟阅读</span></div>
+    
+    <div class="post-tags"><a class="tag" href="/tags/%E8%AE%BA%E6%96%87/">论文</a><a class="tag" href="/tags/%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97/">时间序列</a><a class="tag" href="/tags/Flow-Matching/">Flow Matching</a><a class="tag" href="/tags/SDFlow/">SDFlow</a><a class="tag" href="/tags/UniFlow/">UniFlow</a></div>
+  </header>
+  
+  <div class="post-reading">
+  
+  <details class="post-toc"><summary>文章目录</summary><nav aria-label="Table of contents"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#SDFlow-Similarity-Driven-Flow-Matching-for-Time-Series-Generation"><span class="toc-text">SDFlow: Similarity-Driven Flow Matching for Time Series Generation</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#UniFlow-Unified-Multi-Scale-Flow-Matching-for-Time-Series-Generation"><span class="toc-text">UniFlow: Unified Multi-Scale Flow Matching for Time Series Generation</span></a></li></ol></nav></details>
+  <div class="post-body"><p>时间序列生成需要同时处理长序列建模、生成效率与多尺度结构。围绕这些问题，我们近期开展了两项研究：已被 <strong>NeurIPS 2026</strong> 接收的 <strong>SDFlow</strong>，以及最新发布的 arXiv 预印本 <strong>UniFlow</strong>。两篇工作分别从潜空间生成动力学和多尺度表示出发，探索高效的非自回归时间序列生成。</p>
+<span id="more"></span>
+
+<h2 id="SDFlow-Similarity-Driven-Flow-Matching-for-Time-Series-Generation"><a href="#SDFlow-Similarity-Driven-Flow-Matching-for-Time-Series-Generation" class="headerlink" title="SDFlow: Similarity-Driven Flow Matching for Time Series Generation"></a>SDFlow: Similarity-Driven Flow Matching for Time Series Generation</h2><p><strong>NeurIPS 2026 · Poster</strong>　<a target="_blank" rel="noopener" href="https://arxiv.org/abs/2605.05736">论文</a> · <a target="_blank" rel="noopener" href="https://github.com/William-Liwei/SDFlow">代码</a></p>
+<p>SDFlow 是一个在冻结 VQ 潜空间中进行时间序列生成的<strong>非自回归流匹配框架</strong>。针对自回归 token 建模中训练与推理条件不一致所带来的误差累积，以及高维潜空间与数据内在低维结构之间的几何失配，该方法结合低秩流形分解与锚点初始化，为生成过程提供具有数据几何结构的起点，并通过整体传输实现序列的并行生成。</p>
+<p>在建模上，SDFlow 引入码本索引上的类别后验，将离散 token 的监督信号与连续潜空间中的流匹配相连接。该设计保留了 VQ 表示的离散结构，同时利用连续生成动力学对整段序列进行联合建模。论文在短序列与长序列生成任务中评估了生成质量，并分析了相对于自回归基线的推理效率。</p>
+<p><img src="/assets/media/c8fa59f26b37b11af481.webp" alt="SDFlow 方法框架" decoding="async" data-full="/about/images/sdflow.png" width="1400" height="670"></p>
+<h2 id="UniFlow-Unified-Multi-Scale-Flow-Matching-for-Time-Series-Generation"><a href="#UniFlow-Unified-Multi-Scale-Flow-Matching-for-Time-Series-Generation" class="headerlink" title="UniFlow: Unified Multi-Scale Flow Matching for Time Series Generation"></a>UniFlow: Unified Multi-Scale Flow Matching for Time Series Generation</h2><p><strong>arXiv 预印本 · 2026.11</strong>　<a target="_blank" rel="noopener" href="https://arxiv.org/abs/2611.04825">论文</a> · <a target="_blank" rel="noopener" href="https://github.com/William-Liwei/uniflow">代码</a></p>
+<p>UniFlow 研究如何在控制生成复杂度的同时，将互补的多尺度时序信息引入生成建模。其多尺度 tokenizer 通过<strong>共享索引投票</strong>，将对齐的多尺度表示整合为<strong>单一公共 ID 序列</strong>；各尺度保留独立码本，以保存重建所需的尺度特定信息。由此，生成器能够通过统一的 token 接口使用多尺度信息，无需为不同尺度分别建模多条生成序列。</p>
+<p>在统一表示的基础上，UniFlow 采用几何感知的类别流匹配，以学习得到的低秩锚点初始化传输，并非自回归地生成公共 ID，再检索各尺度的码本表示完成解码。论文在四个基准数据集的短序列与长序列设置下，从生成保真度、跨尺度一致性与推理效率等方面进行了实验评估。</p>
+<p><img src="/assets/media/c94ccf1abdb11d90092c.webp" alt="UniFlow 整体框架（Fig. 1）" decoding="async" loading="lazy" data-full="/about/images/uniflow.png" width="1350" height="512"></p>
+<p>如果你正在开展<strong>时间序列生成、离散潜空间建模或多尺度生成研究</strong>，欢迎阅读这两篇论文。如果相关方法和思路对你的研究有所帮助，也欢迎引用。</p>
+<p>引用信息与 BibTeX：<a href="/zh/about/publications/#sdflow">SDFlow</a> · <a href="/zh/about/publications/#uniflow">UniFlow</a>。更多研究工作可见<a href="/zh/about/publications/">完整论文列表</a>。</p>
+</div>
+  </div>
+  
+  <section class="related-posts" aria-labelledby="related-heading"><h2 id="related-heading">继续阅读</h2><ul><li><a href="/2026/08/09/APCL-Kudos-Research-Showcase/"><span>科研</span><strong>APCL 上线 Kudos Research Showcase</strong><span aria-hidden="true">→</span></a></li><li><a href="/2026/05/31/KDD2026-APCL/"><span>科研</span><strong>KDD2026-APCL</strong><span aria-hidden="true">→</span></a></li><li><a href="/2026/04/05/%E9%87%8D%E8%AF%86%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%EF%BC%9A%E7%AE%97%E6%B3%95%E4%B8%8E%E5%89%8D%E6%B2%BF/"><span>科研</span><strong>重识时间序列：算法与前沿</strong><span aria-hidden="true">→</span></a></li></ul></section>
+  
+  <nav class="post-neighbors" aria-label="Adjacent posts">
+    <div></div>
+    <div><span class="muted">下一篇</span><a href="/2026/10/07/CS%E4%BF%9D%E7%A0%94%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/">CS保研经验分享</a></div>
+  </nav>
+</article>
+
+</main>
+  <footer class="site-footer"><div class="wrap footer-inner"><span>© 2026 Wei Li</span><nav class="footer-links" aria-label="Footer"><a href="/">Home</a><a href="/about/">About</a><a href="/blog/">Blog</a><a href="/atom.xml">RSS</a></nav></div></footer>
+</body>
+</html>

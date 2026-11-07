@@ -32,7 +32,7 @@
   }
   function renderMarkdown(input,dependencies,options){
     if(input.length>50000) throw new RangeError('文本超过 50,000 字符，请分段处理。');
-    var settings=options||{}, math=[], errors=0;
+    var settings=options||{}, math=[], errors=0, missingImages=[];
     function placeholder(token){
       var index=math.push(token)-1;
       return '<span data-toolbox-math="'+index+'"></span>';
@@ -41,8 +41,11 @@
       html:function(token){return escape(token.text);},
       image:function(token){
         var raster=/^data:image\/(?:png|jpeg|gif|webp|avif);base64,/i.test(token.href), remote=/^https?:\/\//i.test(token.href);
+        var local=!raster&&!remote&&settings.resolveImage?settings.resolveImage(token.href):'';
+        if(local&&/^data:image\/(?:png|jpeg|gif|webp|avif);base64,/i.test(local))return '<img src="'+escape(local)+'" alt="'+escape(token.text)+'">';
         if(raster || (settings.images && remote)) return '<img src="'+escape(token.href)+'" alt="'+escape(token.text)+'" referrerpolicy="no-referrer">';
-        return '<span class="image-placeholder">图片：'+escape(token.text||'未命名图片')+'（'+(remote?'未加载网络图片':'请使用完整图片网址或内嵌图片')+'）</span>';
+        if(!remote)missingImages.push(token.href);
+        return '<span class="image-placeholder">图片：'+escape(token.text||'未命名图片')+'（'+(remote?'未加载网络图片':'请添加本地配图：'+escape(token.href))+'）</span>';
       },
       link:function(token){return '<a href="'+escape(token.href)+'" target="_blank" rel="noopener noreferrer">'+this.parser.parseInline(token.tokens)+'</a>';}
     };
@@ -68,7 +71,7 @@
         return token.display?'<span class="math-block">'+result+'</span>':result;
       }catch(error){errors++;return '<code class="math-error" title="'+escape(error.message)+'">'+escape(token.raw.trim())+'</code>';}
     });
-    return {html:html,mathCount:math.length,mathErrors:errors,needsMath:math.length>0 && !dependencies.katex};
+    return {html:html,mathCount:math.length,mathErrors:errors,needsMath:math.length>0 && !dependencies.katex,missingImages:Array.from(new Set(missingImages))};
   }
   return {renderMarkdown:renderMarkdown};
 });

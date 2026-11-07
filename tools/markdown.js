@@ -10,6 +10,9 @@
   var retry=document.getElementById('retry-markdown'), timer, libraries, mathLibrary, lastHTML='', ready=false, renderVersion=0, lastRender={};
   var fileInput=document.getElementById('markdown-file'), openFile=document.getElementById('open-markdown-file');
   var fileLabel=document.getElementById('markdown-file-name'), dropZone=document.getElementById('markdown-import'), undoButton=document.getElementById('undo-markdown');
+  var local=window.ToolboxImages, localPictures=[], documentPath='';
+  var imageInput=document.getElementById('markdown-image-files'), addImages=document.getElementById('add-markdown-images');
+  var pictureLabel=document.getElementById('markdown-local-images'), clearImages=document.getElementById('clear-markdown-images');
   var undo=documents.createUndo(), fileName='', documentNotice='', importVersion=0, editVersion=0, importing=false, dragDepth=0;
   var sample='# 一份简单的 Markdown 文档\n\n在左侧编辑，右侧会**实时更新**。\n\n## 今天要做的事\n\n- 整理一段文字\n- 对比修改前后的内容\n- 把笔记保存为 PDF\n\n## 一张表格\n\n| 工具 | 用途 |\n| --- | --- |\n| 文本整理 | 清理 PDF 复制的断行 |\n| 文本对比 | 查看新增和删除 |\n\n## 一段代码\n\n```python\ndef hello(name):\n    return f"你好，{name}！"\n```\n\n> 小工具，也可以解决日常的小问题。\n';
   sample+='\n## 数学公式\n\n行内公式：$E=mc^2$，以及 $\\alpha+\\beta=\\gamma$。\n\n$$\n\\mathcal{L}=\\frac{1}{N}\\sum_{i=1}^{N}(y_i-\\hat{y}_i)^2\n$$\n\n$$\nA=\\begin{bmatrix}1 & 2 \\\\ 3 & 4\\end{bmatrix}\n$$\n';
@@ -50,13 +53,14 @@
     if(input.value.length>50000){status('文本超过 50,000 字符，请分段处理。',true);renderState.textContent='文本过长';return;}
     try {
       var dependencies={marked:window.marked,purify:window.DOMPurify,katex:window.katex};
-      var result=window.ToolboxMarkdown.renderMarkdown(input.value,dependencies,{images:images.checked});
+      var options={images:images.checked,resolveImage:local?local.resolver(localPictures,documentPath):undefined};
+      var result=window.ToolboxMarkdown.renderMarkdown(input.value,dependencies,options);
       if(result.needsMath){
         renderState.textContent='正在准备公式…';
         try {
           await ensureMath();if(version!==renderVersion)return;
           dependencies.katex=window.katex;
-          result=window.ToolboxMarkdown.renderMarkdown(input.value,dependencies,{images:images.checked});
+          result=window.ToolboxMarkdown.renderMarkdown(input.value,dependencies,options);
         }catch(error){if(version!==renderVersion)return;result.mathUnavailable=true;retry.hidden=false;}
       }
       if(version!==renderVersion)return;
@@ -78,6 +82,7 @@
       ready=true;renderState.textContent='预览已更新';updateButtons();
       if(lastRender.mathUnavailable)status('公式组件未能加载，公式暂以源码显示；可点击重试。',true);
       else if(lastRender.mathErrors)status(lastRender.mathErrors+' 处公式无法解析或超过限制，已保留源码供检查。',true);
+      else if(lastRender.missingImages&&lastRender.missingImages.length)status('缺少本地配图：'+lastRender.missingImages.slice(0,3).join('、')+'。可点击「添加配图」。',true);
       else if(documentNotice)status(documentNotice);
     });
   });
@@ -86,28 +91,39 @@
     importVersion++;importing=false;openFile.disabled=false;
   }
   function snapshot() {
-    return {text:input.value,fileName:fileName,start:input.selectionStart,end:input.selectionEnd};
+    return {text:input.value,fileName:fileName,pictures:localPictures,documentPath:documentPath,start:input.selectionStart,end:input.selectionEnd};
   }
   function applyDocument(next,notice) {
     cancelImport();editVersion++;renderVersion++;clearTimeout(timer);ready=false;
     input.value=next.text;fileName=next.fileName||'';documentNotice=notice;
+    localPictures=next.pictures||[];documentPath=next.documentPath||'';
+    if(pictureLabel)pictureLabel.textContent=localPictures.length?'已添加 '+localPictures.length+' 张本地配图':'未添加本地配图';
+    if(clearImages)clearImages.hidden=!localPictures.length;
     fileLabel.textContent=fileName ? '当前文件：'+fileName : '未命名文档';
     counts();updateButtons();renderState.textContent='正在准备…';status(notice);
     if(Number.isInteger(next.start))input.setSelectionRange(next.start,next.end);
     ensureLibraries().then(render).catch(function(){renderState.textContent='加载失败';status('组件加载失败，原文已保留；请点击重试。',true);retry.hidden=false;});
   }
   function replaceDocument(next,notice) {
-    if(next.text===input.value && (next.fileName||'')===fileName){cancelImport();status('内容未改变。');return;}
+    if(next.text===input.value && (next.fileName||'')===fileName && (next.pictures||[]).length===localPictures.length && (next.pictures||[]).every(function(image,i){return image===localPictures[i];})){cancelImport();status('内容未改变。');return;}
     undo.remember(snapshot());applyDocument(next,notice);
   }
-  async function importDocument(file) {
+  async function importFiles(files) {
+    var list=Array.from(files||[]), texts=list.filter(function(file){return /\.(md|markdown|txt)$/i.test(file.name);});
+    var pictures=list.filter(function(file){return local&&local.imageFile(file);});
+    if(texts.length>1){cancelImport();status('每次请选择一个 Markdown / TXT 文档，可同时添加多张配图；原文已保留。',true);return;}
+    if(!list.length)return;
+    if(pictures.length+texts.length!==list.length){cancelImport();status('请选择 .md、.markdown、.txt 文档或 PNG / JPEG / WebP / GIF / AVIF 配图。',true);return;}
     var request=++importVersion, revision=editVersion;
     importing=true;openFile.disabled=true;status('正在本地读取文件…');
     try {
-      var next=await documents.readDocument(file);
+      var next=texts.length?await documents.readDocument(texts[0]):snapshot();
+      var added=pictures.length?await local.readImages(pictures):[];
+      next.pictures=texts.length?added:local.merge(localPictures,added);
+      next.documentPath=texts.length?(texts[0].webkitRelativePath||texts[0].name):documentPath;
       if(request!==importVersion)return;
       if(revision!==editVersion){status('读取期间原文发生变化，已取消导入；请重新选择文件。');return;}
-      replaceDocument(next,'已导入 '+next.fileName+'；可撤销上一步。');
+      replaceDocument(next,(texts.length?'已导入 '+next.fileName:'已添加配图')+(next.pictures.length?'，共 '+next.pictures.length+' 张本地图片':'')+'；可撤销上一步。');
     } catch(error) {
       if(request===importVersion)status(error.message||'无法读取文件，原文已保留。',true);
     } finally {
@@ -115,7 +131,10 @@
     }
   }
   openFile.addEventListener('click',function(){fileInput.value='';fileInput.click();});
-  fileInput.addEventListener('change',function(){var file=fileInput.files && fileInput.files[0];fileInput.value='';if(file)importDocument(file);});
+  fileInput.addEventListener('change',function(){var files=Array.from(fileInput.files||[]);fileInput.value='';if(files.length)importFiles(files);});
+  if(addImages)addImages.addEventListener('click',function(){imageInput.value='';imageInput.click();});
+  if(imageInput)imageInput.addEventListener('change',function(){var files=Array.from(imageInput.files||[]);imageInput.value='';if(files.length)importFiles(files);});
+  if(clearImages)clearImages.addEventListener('click',function(){var next=snapshot();next.pictures=[];replaceDocument(next,'已移除配图；可撤销上一步。');});
   function draggingFile(event) { return event.dataTransfer && Array.from(event.dataTransfer.types||[]).includes('Files'); }
   panel.addEventListener('dragenter',function(event){if(!draggingFile(event))return;event.preventDefault();dragDepth++;dropZone.classList.add('is-dragging');});
   panel.addEventListener('dragover',function(event){if(!draggingFile(event))return;event.preventDefault();event.dataTransfer.dropEffect='copy';});
@@ -123,8 +142,7 @@
   panel.addEventListener('drop',function(event){
     if(!draggingFile(event))return;event.preventDefault();dragDepth=0;dropZone.classList.remove('is-dragging');
     var files=Array.from(event.dataTransfer.files||[]);
-    if(files.length!==1){cancelImport();status('每次请选择或拖入一个文件，原文已保留。',true);return;}
-    importDocument(files[0]);
+    importFiles(files);
   });
   function selected(){
     if(panel.hidden) return;
@@ -153,6 +171,7 @@
     if(!ready) return;
     var pending=Array.from(frame.contentDocument.images).some(function(image){return !image.complete;});
     if(pending){status('图片仍在加载，请稍候再导出；也可以关闭网络图片后导出。');return;}
+    if(Array.from(frame.contentDocument.images).some(function(image){return image.complete&&image.naturalWidth===0;})){status('有图片未能读取，请补充或替换配图后再导出。',true);return;}
     try {frame.contentWindow.focus();frame.contentWindow.print();status('请在打印窗口中选择“另存为 PDF”；保存名称由浏览器决定。');}
     catch(error){status('浏览器未能打开打印窗口，请允许打印后重试。',true);}
   });
