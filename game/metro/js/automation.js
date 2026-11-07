@@ -3,11 +3,11 @@
 // the ordinary fleet, construction evaluation and accounting remain authoritative.
 (function (CM) {
   const A = CM.Automation = {}, M = CM.Metro, U = CM.U, CFG = CM.CFG, h = U.h;
-  const DEFAULTS = A.DEFAULTS = Object.freeze({ enabled: false, buy: false, stations: false, hubs: false, reserve: 100000, monthlyLimit: 50000, buyLimit: 4, sparePct: 10 });
+  const DEFAULTS = A.DEFAULTS = Object.freeze({ enabled: false, buy: false, stations: false, hubs: false, tod: false, land: false, reserve: 100000, monthlyLimit: 50000, buyLimit: 4, sparePct: 10, todLimit: 2, landLimit: 2 });
   const runtime = new WeakMap(), MAX_LOG = 24, CROWD = 1.1;
   A.MAX_TRANSFERS = 64;
   const rt = function (g) { let r = runtime.get(g); if (!r) { r = { due: -1, notices: new Set(), status: '托管已关闭' }; runtime.set(g, r); } return r; };
-  const freshState = function () { return { v: 1, policy: Object.assign({}, DEFAULTS), lastRun: -1, lastStation: -1, budgetYM: -1, spent: 0, bought: 0, sample: '', fleetSample: '', crowd: {}, log: [] }; };
+  const freshState = function () { return { v: 1, policy: Object.assign({}, DEFAULTS), lastRun: -1, lastStation: -1, budgetYM: -1, spent: 0, bought: 0, todCount: 0, landCount: 0, todStations: [], sample: '', fleetSample: '', crowd: {}, log: [] }; };
   const state = function (g) { return g.automation || (g.automation = freshState()); };
   A.enabled = function (g) { return !!(g.automation && g.automation.policy.enabled); };
   A.policy = function (g) { return g.automation ? g.automation.policy : DEFAULTS; };
@@ -19,9 +19,14 @@
     if (!s || typeof s !== 'object' || s.v !== 1 || !s.policy || !s.crowd || Array.isArray(s.crowd) || !Array.isArray(s.log) || s.log.length > MAX_LOG) fail();
     const p = s.policy;
     for (const k of ['enabled', 'buy', 'stations', 'hubs']) if (typeof p[k] !== 'boolean') fail();
+    for (const k of ['tod', 'land']) if (Object.prototype.hasOwnProperty.call(p, k) && typeof p[k] !== 'boolean') fail();
+    for (const k of ['todLimit', 'landLimit']) if (Object.prototype.hasOwnProperty.call(p, k) && !integer(p[k], 0, 8)) fail();
     if (!integer(p.reserve, 0, 100000000) || !integer(p.monthlyLimit, 0, 100000000) || !integer(p.buyLimit, 0, 24) || !integer(p.sparePct, 0, 50)) fail();
     for (const k of ['lastRun', 'lastStation', 'budgetYM']) if (!integer(s[k], -1, 120000)) fail();
     if (!Number.isFinite(s.spent) || s.spent < 0 || s.spent > 100000000 || !integer(s.bought, 0, 24) || !text(s.sample, 80) || !text(s.fleetSample, 80)) fail();
+    for (const k of ['todCount', 'landCount']) if (s[k] !== undefined && !integer(s[k], 0, 8)) fail();
+    if (s.todStations !== undefined && (!Array.isArray(s.todStations) || s.todStations.length > 8 || s.todStations.some(function (id) { return !text(id, 80) || !id; }) || new Set(s.todStations).size !== s.todStations.length)) fail();
+    if ((s.todCount || 0) !== (s.todStations || []).length) fail();
     if (Object.keys(s.crowd).length > 10000) fail();
     for (const id of Object.keys(s.crowd)) {
       const c = s.crowd[id];
@@ -31,8 +36,9 @@
   };
   const clean = function (s) {
     const out = freshState();
-    for (const k of Object.keys(DEFAULTS)) out.policy[k] = s.policy[k];
+    for (const k of Object.keys(DEFAULTS)) if (Object.prototype.hasOwnProperty.call(s.policy, k)) out.policy[k] = s.policy[k];
     for (const k of ['lastRun', 'lastStation', 'budgetYM', 'spent', 'bought', 'sample', 'fleetSample']) out[k] = s[k];
+    out.todCount = s.todCount || 0; out.landCount = s.landCount || 0; out.todStations = (s.todStations || []).slice();
     // Explicit fields keep imported extensions small and discard unknown data.
     for (const id of Object.keys(s.crowd)) { const c = s.crowd[id]; Object.defineProperty(out.crowd, id, { value: { ym: c.ym, n: c.n, size: c.size, hub: c.hub }, enumerable: true, writable: true, configurable: true }); }
     out.log = s.log.map(function (e) { return { ym: e.ym, kind: e.kind, title: e.title, desc: e.desc, cost: e.cost }; });
@@ -55,15 +61,26 @@
     for (const k of Object.keys(DEFAULTS)) if (Object.prototype.hasOwnProperty.call(patch, k)) next.policy[k] = patch[k];
     A.validate(next); s.policy = next.policy;
     rt(g).due = s.policy.enabled ? g.ym() : -1;
-    status(g, s.policy.enabled ? '将在交通结果完整且无玩家草稿时检查；每月最多决策一次' : '托管已关闭');
-    log(g, 'policy', s.policy.enabled ? '已更新运营托管规则' : '已关闭运营托管', '自动调车' + (s.policy.enabled ? '已开启' : '已关闭') + '；自动购车' + (s.policy.buy ? '允许' : '关闭') + '；自动扩站' + (s.policy.stations ? '允许' : '关闭') + '。月支出上限 ' + U.fmtMoney(s.policy.monthlyLimit) + '，一般资金保留 ' + U.fmtMoney(s.policy.reserve) + '。');
+    status(g, s.policy.enabled ? '交通结果完整且无玩家草稿时检查调度和商业；提前购地单独按有效草案检查' : '托管已关闭');
+    log(g, 'policy', s.policy.enabled ? '已更新运营托管规则' : '已关闭运营托管', '自动调车' + (s.policy.enabled ? '已开启' : '已关闭') + '；自动购车' + (s.policy.buy ? '允许' : '关闭') + '；自动扩站' + (s.policy.stations ? '允许' : '关闭') + '；自动车站商业' + (s.policy.tod ? '允许' : '关闭') + '；规划地块预购' + (s.policy.land ? '允许' : '关闭') + '。月支出上限 ' + U.fmtMoney(s.policy.monthlyLimit) + '，一般资金保留 ' + U.fmtMoney(s.policy.reserve) + '。');
     g.emit('fleet'); g.emit('autosave', 'automation');
   };
-  const resetBudget = function (g) { const s = state(g); if (s.budgetYM !== g.ym()) { s.budgetYM = g.ym(); s.spent = 0; s.bought = 0; } };
-  A.allowance = function (g) {
+  const resetBudget = function (g) { const s = state(g); if (s.budgetYM !== g.ym()) { s.budgetYM = g.ym(); s.spent = 0; s.bought = 0; s.todCount = 0; s.landCount = 0; s.todStations = []; } };
+  A.prepareBudget = resetBudget;
+  A.count = function (g, kind) { const s = g.automation; return s && s.budgetYM === g.ym() ? s[kind === 'tod' ? 'todCount' : 'landCount'] || 0 : 0; };
+  A.allowance = function (g, kind) {
     const s = state(g), p = s.policy, used = s.budgetYM === g.ym() ? s.spent : 0;
-    const available = g.econ.isFree() ? Infinity : (g.econ.funds >= p.reserve ? Math.max(0, g.econ.funds - p.reserve) + Math.max(0, g.econ.capex || 0) : 0);
+    const available = g.econ.isFree() ? Infinity : (g.econ.funds >= p.reserve ? Math.max(0, g.econ.funds - p.reserve) + (kind === 'general' ? 0 : Math.max(0, g.econ.capex || 0)) : 0);
     return Math.max(0, Math.min(p.monthlyLimit - used, available));
+  };
+  A.noteInvestment = function (g, kind, message) { rt(g)[kind + 'Status'] = String(message || '').slice(0, 400); };
+  A.recordInvestment = function (g, kind, cost, title, desc, sid) {
+    resetBudget(g); const s = state(g);
+    if (!['tod', 'land'].includes(kind) || !Number.isFinite(cost) || cost < 0 || cost > 100000000) throw Error('无效的托管投资记录');
+    if (kind === 'tod' && (!text(sid, 80) || !sid || s.todStations.includes(sid) || s.todCount >= s.policy.todLimit) || kind === 'land' && s.landCount >= s.policy.landLimit) throw Error('已达到本月托管投资数量上限');
+    s.spent += cost;
+    if (kind === 'tod') { s.todCount++; s.todStations.push(sid); } else s.landCount++;
+    A.noteInvestment(g, kind, title); log(g, kind, title, desc, cost); g.emit('finance'); g.emit('autosave', 'automation');
   };
   const manual = function (g, lid) { return !!(g.fleet.ops[lid] && g.fleet.ops[lid].mode === 'manual'); };
   const ready = function (g) { const m = g.model; return !!(g.fleet && m && m.net && m.net.C === g.compiled && m.trafficReady() && !m.dailyStale && !m.predJob && !m.hasReviewWork()); };
@@ -239,10 +256,26 @@
     }
     // Monthly settlement may dispatch trains, but construction waits until the
     // settlement generator and the player's editing operation have both finished.
-    if (station(g, sample(g))) rt(g).due = -1;
+    if (!station(g, sample(g))) return;
+    if (s.policy.tod && CM.AutoTOD) {
+      const wait = idleForBuild(g);
+      if (wait || !ready(g) || CM.AutoTOD.ready && !CM.AutoTOD.ready(g)) {
+        A.noteInvestment(g, 'tod', wait || '等待当前编辑结束或完整运营结果后检查商业');
+        return;
+      }
+      CM.AutoTOD.run(g);
+    }
+    rt(g).due = -1;
   };
   A.monthly = function (g) { if (!A.enabled(g)) return; const r = rt(g); r.due = g.ym(); r.notices.clear(); run(g, true); };
-  A.poll = function (g) { run(g, false); };
+  A.poll = function (g) {
+    if (!A.enabled(g)) return;
+    resetBudget(g);
+    // Land acquisition uses the player's stable quote without altering their
+    // draft. Other managed work keeps waiting until the draft is finished.
+    if (CM.AutoLand && A.policy(g).land) CM.AutoLand.poll(g);
+    run(g, false);
+  };
   A.status = function (g) { return A.enabled(g) ? rt(g).status : '托管已关闭'; };
 
   // Uses existing fleet-page components; a saved policy is changed only by explicit
@@ -253,22 +286,29 @@
     const toggle = function (key, label, hint, disabled) {
       box.appendChild(h('div', { class: 'fo-auto' }, h('span', { class: 'grow' }, h('b', null, label), h('small', null, hint)), h('button', { class: 'switch' + (p[key] ? ' on' : ''), role: 'switch', 'aria-checked': String(p[key]), 'aria-label': label, disabled: disabled ? true : null, onclick: function () { A.setPolicy(g, { [key]: !p[key] }); ui.markUnsaved(); ui.scheduleAutosave(); ui.rerenderPage(); } }, h('i'))));
     };
-    toggle('enabled', '托管智能线路', '每月按工作日与周末高峰需求自动调车：先用车辆段，再调其他智能交路的富余车，最多调拨 64 列。手动线路保留原计划。');
+    toggle('enabled', '启用运营与投资托管', '统一启用自动调车和下方授权项目。调车先用车辆段，再调其他智能交路的富余车，每月最多调拨 64 列；手动线路保留原计划。');
     toggle('buy', '允许自动购车', '没有合适余车时，在本月限额内实际购车并扣费；不会出售列车或借债。', !p.enabled);
     toggle('stations', '允许自动扩站并支付建设费', '两次不同月份的新观测持续超 110% 时按 S→M→L 扩容；每月最多一站，涉及手动线路的站点不扩建。', !p.enabled);
     toggle('hubs', '允许大站继续扩建换乘大厅', '仅在大站仍拥挤、汇集线路数量达标时升级一级大厅，继续受共享月预算约束。', !p.enabled || !p.stations);
+    toggle('tod', '允许自动开发车站商业（TOD）', '只开发已运营的自有车站；按工作日与周末客流估算增量净收益，优先选择预计 10 年内回本的项目，每站每月最多升级一级。', !p.enabled);
+    toggle('land', '允许提前购买规划用地', '按稳定有效草案中的实际征地需求选地；购地只用一般资金，并给草案施工留够资金。地下隧道沿线不会盲目购地，取消草案后保留已购地块。', !p.enabled);
     const fields = h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '8px' } });
     const number = function (key, label, max, step) {
       const input = h('input', { type: 'number', min: '0', max: String(max), step: String(step || 1), value: String(p[key]), disabled: !p.enabled ? true : null, style: { width: '100%', boxSizing: 'border-box' }, 'aria-label': label, onchange: function () { const value = Number(input.value); if (!integer(value, 0, max)) { input.value = String(p[key]); ui.toast('请输入范围内的整数', 'warn'); return; } A.setPolicy(g, { [key]: value }); ui.markUnsaved(); ui.scheduleAutosave(); ui.rerenderPage(); } });
       fields.appendChild(h('label', { class: 'field' }, h('span', null, label), input));
     };
     number('monthlyLimit', '每月总支出上限（万元）', 100000000, 1000); number('reserve', '一般资金保留（万元）', 100000000, 1000); number('buyLimit', '每月最多购车（列）', 24); number('sparePct', '调出线路备用比例（%）', 50);
+    number('todLimit', '每月最多商业开发（站）', 8); number('landLimit', '每月最多购地（块）', 8);
     box.appendChild(fields);
-    box.appendChild(h('div', { class: 'note' }, '购车与扩站共用支出上限；建设先用专项资金。自由建造也保留月额度限制。正在编辑草稿或交通结果尚未更新时会等待。'));
-    box.appendChild(h('div', { class: 'callout info', role: 'status' }, A.status(g), s ? h('div', { class: 'tiny' }, '本月已支出 ' + U.fmtMoney(s.budgetYM === g.ym() ? s.spent : 0) + ' · 购车 ' + (s.budgetYM === g.ym() ? s.bought : 0) + ' 列') : null));
+    box.appendChild(h('div', { class: 'note' }, '购车、扩站、车站商业与购地共用月支出上限；购地只用一般资金，其他建设优先用专项资金。新功能默认关闭，自由建造也保留月额度限制。'));
+    const live = function (fn) { return ui.liveText ? ui.liveText(fn) : h('span', null, fn()); };
+    box.appendChild(h('div', { class: 'callout info', role: 'status' }, live(function () { return A.status(g); }),
+      p.tod ? h('div', { class: 'tiny' }, live(function () { return rt(g).todStatus || '商业开发将在本月调度与扩站检查完成后进行'; })) : null,
+      p.land ? h('div', { class: 'tiny' }, live(function () { return CM.AutoLand && CM.AutoLand.status ? CM.AutoLand.status(g) : rt(g).landStatus || '等待稳定有效的建设草案后预购地块'; })) : null,
+      s ? h('div', { class: 'tiny' }, live(function () { return '本月已支出 ' + U.fmtMoney(s.budgetYM === g.ym() ? s.spent : 0) + ' · 购车 ' + (s.budgetYM === g.ym() ? s.bought : 0) + ' 列 · 商业 ' + A.count(g, 'tod') + ' 站 · 购地 ' + A.count(g, 'land') + ' 块'; })) : null));
     const details = h('details', null, h('summary', null, '最近托管记录' + (s && s.log.length ? '（' + s.log.length + '）' : '')));
     if (!s || !s.log.length) details.appendChild(h('p', { class: 'note' }, '尚未启用。所有调拨、实际支出及等待原因会保存在本局进度中。'));
-    else for (const e of s.log.slice().reverse()) details.appendChild(h('div', { class: 'note', style: { borderBottom: '1px solid var(--line)', padding: '8px 0' } }, h('b', null, Math.floor(e.ym / 12) + '年' + (e.ym % 12 + 1) + '月 · ' + e.title), h('div', null, e.desc)));
+    else for (const e of s.log.slice().reverse()) details.appendChild(h('div', { class: 'note', style: { borderBottom: '1px solid var(--line)', padding: '8px 0' } }, h('b', null, h('span', null, Math.floor(e.ym / 12) + '年' + (e.ym % 12 + 1) + '月'), ' · ', h('span', null, e.title)), h('div', null, e.desc)));
     box.appendChild(details); return box;
   };
 })(window.CM);
