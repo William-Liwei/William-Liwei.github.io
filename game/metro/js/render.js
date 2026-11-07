@@ -9,6 +9,7 @@
   const LEVELS = [8, 16, 32, 64];
   const CHUNK_PX = 512;
   const MAX_H = 5.0;                          // 世界单位（建筑最大高度，含广州塔天线）
+  const MAX_ZOOM = 384;                       // 相机倍率与地面缓存分辨率分离；近景复用已有 64 级图块
   const FONT = '"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif';
   // 地图文字层级（v2.4 统一）：区名 > 地名（车站、地标、设施与图层标注同一字号字重）> 说明与数值 > 道路名。地名与普通站名用常规字重、
   // 低调不抢画面，只有换乘站加粗。同一种地点在普通地图、分析图层与说明卡上用同一种字
@@ -651,6 +652,28 @@
   };
 
   // ---------------- 相机 ----------------
+  // 所有输入共用同一倍率范围。最远处随屏幕和两种投影变化，区域大地图在手机上也能完整看见。
+  Renderer.prototype.fitZoom = function (view, viewport) {
+    const w = Math.max(1, this.w || window.innerWidth || 1), h = Math.max(1, this.h || window.innerHeight || 1);
+    const vp = viewport || { x0: 0, y0: 0, x1: w, y1: h };
+    const vw = Math.max(1, vp.x1 - vp.x0), vh = Math.max(1, vp.y1 - vp.y0), pad = Math.min(32, vw * 0.08, vh * 0.08);
+    const t = U.easeInOut(view == null ? this.cam.view : U.clamp(view, 0, 1));
+    const m00 = U.lerp(1, ISO[0], t), m01 = U.lerp(0, ISO[1], t), m10 = U.lerp(0, ISO[2], t), m11 = U.lerp(1, ISO[3], t);
+    return Math.min(MAX_ZOOM, (vw - 2 * pad) / (Math.abs(m00) * CFG.W + Math.abs(m01) * CFG.H),
+      (vh - 2 * pad) / (Math.abs(m10) * CFG.W + Math.abs(m11) * CFG.H));
+  };
+  Renderer.prototype.zoomLimits = function () {
+    const key = [this.w || window.innerWidth, this.h || window.innerHeight, CFG.W, CFG.H].join(':');
+    if (this._zoomLimitsKey !== key) {
+      this._zoomLimitsKey = key;
+      this._zoomLimits = { min: Math.max(0.01, Math.min(1, this.fitZoom(0), this.fitZoom(1)) * 0.45), max: MAX_ZOOM };
+    }
+    return this._zoomLimits;
+  };
+  Renderer.prototype.clampZoom = function (zoom) {
+    const lim = this.zoomLimits();
+    return U.clamp(typeof zoom !== 'number' || Number.isNaN(zoom) ? 13 : zoom, lim.min, lim.max);
+  };
   Renderer.prototype.computeTransform = function () {
     const c = this.cam, t = U.easeInOut(c.t);
     const m00 = U.lerp(1, ISO[0], t), m01 = U.lerp(0, ISO[1], t), m10 = U.lerp(0, ISO[2], t), m11 = U.lerp(1, ISO[3], t);
@@ -678,18 +701,22 @@
   };
   Renderer.prototype.panBy = function (dx, dy) {
     const d = this.screenToWorldDelta(dx, dy);
-    this.cam.cx -= d.x; this.cam.cy -= d.y; this.cam.fly = null; this.clampCam(); this.computeTransform();
+    this.cam.cx -= d.x; this.cam.cy -= d.y; this.cam.fly = null; this.cam.anchor = null; this.clampCam(); this.computeTransform();
   };
-  Renderer.prototype.zoomAt = function (sx, sy, factor) {
+  Renderer.prototype.setZoomAt = function (sx, sy, zoom) {
     const c = this.cam;
-    c.tz = U.clamp(c.tz * factor, 5, 96);
+    if (CM.Follow && CM.Follow.active()) CM.Follow.stop();
+    c.tz = this.clampZoom(zoom);
     const w = this.unproject(sx, sy);
     c.anchor = { sx: sx, sy: sy, wx: w.x, wy: w.y };
     c.fly = null;
   };
+  Renderer.prototype.zoomAt = function (sx, sy, factor) {
+    this.setZoomAt(sx, sy, this.cam.tz * factor);
+  };
   Renderer.prototype.flyTo = function (x, y, zoom) {
     const c = this.cam;
-    c.fly = { fx: c.cx, fy: c.cy, fz: c.zoom, tx: x, ty: y, tzm: zoom || Math.max(c.zoom, 20), t: 0 };
+    c.fly = { fx: c.cx, fy: c.cy, fz: this.clampZoom(c.zoom), tx: x, ty: y, tzm: this.clampZoom(zoom == null ? Math.max(c.zoom, 20) : zoom), t: 0 };
     c.anchor = null;
   };
   Renderer.prototype.setView = function (iso) { this.cam.view = iso ? 1 : 0; };
@@ -700,8 +727,10 @@
   };
   Renderer.prototype.updateCamera = function (dt) {
     const c = this.cam;
+    c.zoom = this.clampZoom(c.zoom); c.tz = this.clampZoom(c.tz);
     if (c.fly) {
       const f = c.fly; f.t = Math.min(1, f.t + dt / (f.duration || 0.65));
+      f.fz = this.clampZoom(f.fz); f.tzm = this.clampZoom(f.tzm);
       const e = U.easeInOut(f.t);
       c.cx = U.lerp(f.fx, f.tx, e); c.cy = U.lerp(f.fy, f.ty, e);
       c.zoom = Math.exp(U.lerp(Math.log(f.fz), Math.log(f.tzm), e)); c.tz = c.zoom;
@@ -5335,9 +5364,12 @@
       const a = U.clamp((16 - z) / 5, 0, 1) * 0.75, font = TYPE.district(z);
       for (const dl of (city.districtLabels || [])) {
         const p = this.P(dl[1], dl[2], 0, tmp), px = p.x, py = p.y;
+        // 全图远景使用已有总览缓存；区名也按屏幕避让，避免数百个地名堆在几个像素上。
+        const tw = this.textW(font, dl[0]);
+        if (z < 5 && (px + tw / 2 < 0 || px - tw / 2 > this.w || py < -11 || py > this.h + 11 || !fits(px - tw / 2 - 3, py - 11, px + tw / 2 + 3, py + 11))) continue;
         put(dl[0], px, py, font, TH.district, true, 1, a, -1, dl[1], dl[2], 0);
         // 占位：之后的未开放区域标签避开区名
-        const tw = this.textW(font, dl[0]); fits(px - tw / 2 - 2, py - 11, px + tw / 2 + 2, py + 11);
+        if (z >= 5) fits(px - tw / 2 - 2, py - 11, px + tw / 2 + 2, py + 11);
       }
     }
     // 未开放区域标签
@@ -5408,9 +5440,15 @@
     for (const L of arr) { const d = U.distToPoly(wx, wy, L.pts); if (d < bd) { bd = d; best = L; } }
     return best;
   };
-  Renderer.prototype.fitAllSmooth = function () {
-    const z = U.clamp(Math.min(this.w / (CFG.W + 4), this.h / (CFG.H + 4)) * 1.05, 5, 96);
-    this.flyTo(CFG.W / 2, CFG.H / 2, z); this.cam.fly.duration = 0.9;
+  Renderer.prototype.fitAllSmooth = function (viewport) {
+    if (CM.Follow && CM.Follow.active()) CM.Follow.stop();
+    const ui = CM.ui;
+    const vp = viewport || (ui && ui.R === this && ui.mapViewport ? ui.mapViewport() : { x0: 0, y0: 0, x1: this.w, y1: this.h });
+    const z = this.clampZoom(this.fitZoom(this.cam.view, vp)), t = U.easeInOut(this.cam.view);
+    const M = [U.lerp(1, ISO[0], t), U.lerp(0, ISO[1], t), U.lerp(0, ISO[2], t), U.lerp(1, ISO[3], t)];
+    const dx = this.w / 2 - (vp.x0 + vp.x1) / 2, dy = this.h / 2 - (vp.y0 + vp.y1) / 2, det = M[0] * M[3] - M[1] * M[2];
+    this.flyTo(CFG.W / 2 + (M[3] * dx - M[1] * dy) / det / z, CFG.H / 2 + (M[0] * dy - M[2] * dx) / det / z, z);
+    this.cam.fly.duration = 0.9;
   };
   CM.RENDER_CONST = { EX: EX, HSF: HSF, ISO: ISO, UNDER_DEPTH: UNDER_DEPTH };
 })(window.CM);

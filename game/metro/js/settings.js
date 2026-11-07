@@ -20,6 +20,8 @@
     nightFast: true, peakSlow: false, curveMode: 'smooth',
     grid: false, gridSnap: true,  // 视图工具及设置「游戏」页中的网格吸附
     gridUnit: 'km', scaleBar: true,
+    edgePan: false, edgePanSpeed: 1, // 鼠标停在画面边缘时移动地图；默认关闭
+    minimapOpen: 'auto',   // 初次打开：电脑展开、手机收起；之后保留玩家选择
     keys: {},             // 自定义物理键位
     recentColors: [],      // 最近使用的自定义线路颜色
     lineTags: false, taskPins: false,
@@ -40,6 +42,9 @@
   if (!['auto','standard','high'].includes(cur.gfx)) cur.gfx='auto';
   cur.immersive = cur.immersive === true;
   cur.autoImpactReport = cur.autoImpactReport === true;
+  cur.edgePan = cur.edgePan === true;
+  if (![0.6, 1, 1.6].includes(cur.edgePanSpeed)) cur.edgePanSpeed = 1;
+  if (cur.minimapOpen !== 'auto' && typeof cur.minimapOpen !== 'boolean') cur.minimapOpen = 'auto';
   if (!['km', 'deg'].includes(cur.gridUnit)) cur.gridUnit = 'km';
   if (!['zh-CN', 'zh-TW', 'en'].includes(cur.language)) cur.language = 'zh-CN';
   const recent = function (v) { return Array.isArray(v) ? v.filter(function (c) { return typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c); }).map(function (c) { return c.toLowerCase(); }).filter(function (c, i, a) { return a.indexOf(c) === i; }).slice(0, 8) : []; };
@@ -56,7 +61,9 @@
     all: function () { return Object.assign({}, cur); },
     set: function (k, v) {
       if (k === 'language' && !['zh-CN', 'zh-TW', 'en'].includes(v)) v = 'zh-CN';
-      if (k === 'colorBlind' || k === 'immersive' || k === 'autoImpactReport') v = v === true;
+      if (k === 'colorBlind' || k === 'immersive' || k === 'autoImpactReport' || k === 'edgePan') v = v === true;
+      if (k === 'edgePanSpeed' && ![0.6, 1, 1.6].includes(v)) v = 1;
+      if (k === 'minimapOpen' && v !== 'auto' && typeof v !== 'boolean') v = 'auto';
       if (k === 'recentColors') v = recent(v);
       if (cur[k] === v) return;
       cur[k] = v; save();

@@ -9,6 +9,7 @@
   ui.tools = tools;
   if (CM.Quick) CM.Quick.init(ui);
   CM.R = R; CM.ui = ui; CM.tools = tools;
+  if (CM.EdgePan) CM.EdgePan.init(tools, ui);
   CM.Follow.init(ui);
   CM.agents = new CM.Agents();
   CM.game = null;
@@ -342,6 +343,7 @@
       try { CM.Follow.tick(dt); } catch (e) { console.error(e); }
       try { CM.Tutorial.tick(dt); } catch (e) { console.error(e); }
       tools.tick(dt);
+      if (CM.EdgePan && CM.EdgePan.tick(tools, ui, dt)) inputAt = t;
     } else if (preview && R.game === preview) {
       previewCamera(dt);
       try { CM.agents.updatePreview(dt, preview, R); } catch (e) { console.error(e); }
@@ -364,6 +366,7 @@
     if (!R.interacting || uiDt >= 0.05) {
       try { CM.Soundscape.tick(uiDt); } catch (e) { console.error(e); }
       ui.tick(uiDt);
+      if (CM.ZoomControls) CM.ZoomControls.update(ui);
       uiDt = 0;
     }
     if (paint) R.noteFrameTime(performance.now() - workStarted);   // 暂停期间的空帧不计入画质自适应

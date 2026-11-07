@@ -132,6 +132,7 @@
       // 2D 与 2.5D 都平滑回到全图。
       this.compass = h('button', { class: 'compass', 'data-tip': '视角复位：回到全图', 'data-act': 'cam.fit', 'data-side': 'right', 'aria-label': '视角复位', onclick: function () { self.resetView(); },
         html: '<svg class="needle" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.2" fill="none" stroke="currentColor" stroke-opacity=".35" stroke-width="1.4"/><path d="M12 3.6 15.1 12H8.9Z" fill="#e0483e"/><path d="M12 20.4 8.9 12h6.2Z" fill="currentColor" fill-opacity=".55"/></svg>' }));
+    if (CM.ZoomControls) CM.ZoomControls.init(this);
     this.dock = h('aside', { id: 'dock', class: 'hud glass hidden' },
       this.layerBtn,
       h('div', { class: 'dock-sep' }),
@@ -2108,8 +2109,7 @@
     if (!pts.length) return;
     let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
     for (const p of pts) { x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y); }
-    const z = U.clamp(Math.min(this.R.w * 0.55 / (x1 - x0 + 2), this.R.h * 0.55 / (y1 - y0 + 2)), 8, 30);
-    this.R.flyTo((x0 + x1) / 2, (y0 + y1) / 2, z);
+    this.fitBox(x0 - 1, y0 - 1, x1 + 1, y1 + 1, 30);
   };
   // ---------------- 在地图上定位并高亮（片区、区域、道路、地点） ----------------
   // 地图上未被遮挡的区域（除去左侧图层栏、右侧详情面板、顶栏与底部工具栏）
@@ -2134,7 +2134,7 @@
       const sx = M[0] * c[0] + M[1] * c[1], sy = M[2] * c[0] + M[3] * c[1];
       sx0 = Math.min(sx0, sx); sx1 = Math.max(sx1, sx); sy0 = Math.min(sy0, sy); sy1 = Math.max(sy1, sy);
     }
-    const z = U.clamp(Math.min((vp.x1 - vp.x0) * 0.7 / (sx1 - sx0 + 1), (vp.y1 - vp.y0 - 50) * 0.75 / (sy1 - sy0 + 1)), 7, maxZ || 30);
+    const z = R.clampZoom(Math.min((vp.x1 - vp.x0) * 0.7 / (sx1 - sx0 + 1), (vp.y1 - vp.y0 - 50) * 0.75 / (sy1 - sy0 + 1), maxZ || 30));
     const dx = R.w / 2 - (vp.x0 + vp.x1) / 2, dy = R.h / 2 - ((vp.y0 + vp.y1) / 2 + 18), det = M[0] * M[3] - M[1] * M[2] || 1;
     R.flyTo((x0 + x1) / 2 + (M[3] * dx - M[1] * dy) / det / z, (y0 + y1) / 2 + (M[0] * dy - M[2] * dx) / det / z, z);
   };

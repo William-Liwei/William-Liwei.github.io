@@ -7521,3 +7521,23 @@ Object.assign(window.CM.I18N_EN, {
   '自有地减免 {amount}': 'Owned-land deduction {amount}',
   '自有土地减免征地费用 {amount}；对应面积永久划入地铁用地，土建与拆除费用照付。': 'Owned land saves {amount} in acquisition fees. That area is permanently reserved for metro works; civil works and demolition are charged in full.'
 });
+
+Object.assign(window.CM.I18N_EN, {
+  "地图缩放": "Map zoom",
+  "拖动滑条调整地图缩放": "Drag the slider to adjust map zoom",
+  "全域": "Overview",
+  "细节": "Detail",
+  "查看全图": "View entire map",
+  "回到起始位置": "Return to starting view",
+  "鼠标移到边缘时移动地图": "Pan at screen edges",
+  "将鼠标停在画面边缘片刻即可移动地图；拖动、操作界面和触屏时不会启用。": "Hold the mouse near an edge to pan; disabled while dragging, using controls, or using touch.",
+  "边缘移动速度": "Edge pan speed",
+  "慢": "Slow",
+  "标准": "Standard",
+  "快": "Fast",
+  "全图雷达": "Overview radar",
+  "收起全图雷达": "Collapse overview radar",
+  "展开全图雷达": "Expand overview radar",
+  "点击 / 拖动定位": "Click or drag to navigate",
+  "全图雷达，点击或拖动移动视野，方向键微调，Home 回到地图中心": "Overview radar: click or drag to navigate, arrow keys to adjust, Home to center the map"
+});

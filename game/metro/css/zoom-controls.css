@@ -1,0 +1,13 @@
+/* 镜头面板独立于可滚动的地图栏；横向滑条在手机和横屏中保留可拖动宽度。 */
+#dock #zoomCtl .zoom-value { font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; min-height: 34px; color: var(--accent); }
+#zoomPanel { position: fixed; z-index: 45; width: min(244px, calc(100vw - 16px)); box-sizing: border-box; padding: 14px; border-radius: 15px; color: var(--text); overscroll-behavior: contain; }
+#zoomPanel[hidden] { display: none; }
+.zoom-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; font-weight: 700; }
+.zoom-readout { color: var(--accent); font-variant-numeric: tabular-nums; }
+#zoomPanel .zoom-range { display: block; width: 100%; min-width: 0; height: 40px; margin: 5px 0 0; padding: 0; cursor: ew-resize; accent-color: var(--accent); touch-action: none; }
+.zoom-ends { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin: -2px 0 12px; }
+.zoom-actions { display: flex; gap: 6px; }
+#zoomPanel .zoom-actions button { flex: 1; min-height: 36px; white-space: normal; line-height: 1.25; }
+#zoomPanel :focus-visible, #zoomCtl .zoom-value:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+body.cinema #zoomPanel, .panel-editing #zoomPanel { display: none; }
+@media (pointer: coarse) { #zoomPanel .zoom-range { height: 44px; } #zoomPanel .zoom-actions button { min-height: 44px; } }
