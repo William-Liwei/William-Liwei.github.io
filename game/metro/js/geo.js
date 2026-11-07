@@ -138,21 +138,33 @@
       const D1 = 1, D2 = 1.4142;
       for (let y = 0; y < FH; y++) for (let x = 0; x < FW; x++) {
         const i = y * FW + x; let v = d[i];
-        if (x > 0) v = Math.min(v, d[i - 1] + D1);
-        if (y > 0) { v = Math.min(v, d[i - FW] + D1); if (x > 0) v = Math.min(v, d[i - FW - 1] + D2); if (x < FW - 1) v = Math.min(v, d[i - FW + 1] + D2); }
+        if (v === 0) continue;   // 距离源不会被正距离邻居改变
+        let q;
+        if (x > 0) { q = d[i - 1] + D1; if (q < v) v = q; }
+        if (y > 0) {
+          q = d[i - FW] + D1; if (q < v) v = q;
+          if (x > 0) { q = d[i - FW - 1] + D2; if (q < v) v = q; }
+          if (x < FW - 1) { q = d[i - FW + 1] + D2; if (q < v) v = q; }
+        }
         d[i] = v;
       }
       for (let y = FH - 1; y >= 0; y--) for (let x = FW - 1; x >= 0; x--) {
         const i = y * FW + x; let v = d[i];
-        if (x < FW - 1) v = Math.min(v, d[i + 1] + D1);
-        if (y < FH - 1) { v = Math.min(v, d[i + FW] + D1); if (x < FW - 1) v = Math.min(v, d[i + FW + 1] + D2); if (x > 0) v = Math.min(v, d[i + FW - 1] + D2); }
+        if (v === 0) continue;
+        let q;
+        if (x < FW - 1) { q = d[i + 1] + D1; if (q < v) v = q; }
+        if (y < FH - 1) {
+          q = d[i + FW] + D1; if (q < v) v = q;
+          if (x < FW - 1) { q = d[i + FW + 1] + D2; if (q < v) v = q; }
+          if (x > 0) { q = d[i + FW - 1] + D2; if (q < v) v = q; }
+        }
         d[i] = v;
       }
     };
     pass(a); pass(b);
-    const out = new Float32Array(FW * FH);
-    for (let i = 0; i < out.length; i++) out[i] = mask[i] > 0 ? -(b[i] - 0.5) : (a[i] - 0.5);
-    return out;
+    // 两趟距离已完成，原陆地距离数组可以直接作为输出，省去全图的第三份浮点缓冲。
+    for (let i = 0; i < a.length; i++) a[i] = mask[i] > 0 ? -(b[i] - 0.5) : (a[i] - 0.5);
+    return a;
   };
   // 每格覆盖率（0..1）
   Geo.coverage = function (mask, FW, S, W, H, test) {

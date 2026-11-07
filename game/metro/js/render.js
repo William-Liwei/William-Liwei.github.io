@@ -744,6 +744,38 @@
     this.syncMetroMask();
     if (!city.dirty.size) return;
     this.cancelIsoJob();
+    // 大片区域开放时只检查现有图块。逐格生成四档、九邻域的字符串键，会为
+    // 从未缓存的远处图块产生数百万个临时字符串。积分表保留原来的精确覆盖范围。
+    if (city.dirty.size > 512) {
+      const W = city.W, H = city.H, stride = W + 1, len = stride * (H + 1);
+      let sums = this._dirtySums;
+      if (!sums || sums.length !== len) sums = this._dirtySums = new Uint32Array(len);
+      else sums.fill(0);
+      for (const c of city.dirty) sums[(((c / W) | 0) + 1) * stride + c % W + 1] = 1;
+      for (let j = 1; j <= H; j++) {
+        const row = j * stride, prev = row - stride; let n = 0;
+        for (let i = 1; i <= W; i++) { n += sums[row + i]; sums[row + i] = sums[prev + i] + n; }
+      }
+      const affected = function (x0, y0, x1, y1) {
+        x0 = Math.max(0, Math.ceil(x0)); y0 = Math.max(0, Math.ceil(y0));
+        x1 = Math.min(W, Math.ceil(x1)); y1 = Math.min(H, Math.ceil(y1));
+        return x0 < x1 && y0 < y1 && sums[y1 * stride + x1] - sums[y0 * stride + x1] - sums[y1 * stride + x0] + sums[y0 * stride + x0] > 0;
+      };
+      for (const [key, e] of this.ground) {
+        if (e.stale) continue;
+        const p = key.split(':'), lvl = +p[0]; if (LEVELS.indexOf(lvl) < 0) continue;
+        const C = CHUNK_PX / lvl, x = +p[1] * C, y = +p[2] * C;
+        if (affected(x - 0.6, y - 0.6, x + C + 0.6, y + C + 0.6)) e.stale = true;
+      }
+      for (const [key, e] of this.iso) {
+        if (e.stale || key.charAt(0) !== 'i') continue;
+        const p = key.slice(1).split(':'), lvl = +p[0]; if (LEVELS.indexOf(lvl) < 0) continue;
+        const C = this.isoChunkGeom(lvl), x = +p[1] * C, y = +p[2] * C;
+        if (affected(x, y, x + C, y + C)) e.stale = true;
+      }
+      city.dirty.clear(); this.overviewStale = true; this.heatKey = '';
+      return;
+    }
     const keys = new Set(), ikeys = new Set(), self = this;
     city.dirty.forEach(function (c) {
       const i = c % city.W, j = (c / city.W) | 0;

@@ -125,10 +125,15 @@
     const add = function (p) { for (let q = 0; q + 3 < p.length; q += 2) { const i = Math.floor((p[q] + p[q + 2]) / 2), j = Math.floor((p[q + 1] + p[q + 3]) / 2); if (i >= 0 && j >= 0 && i < W && j < H) raw[j * W + i] += U.dist(p[q], p[q + 1], p[q + 2], p[q + 3]); } };
     for (const w of city.roadWays || []) { const g = city.roadGroups[w.g]; if (g.cls !== 4 && !(g.flags & 3)) add(w.p); }
     for (const s of (CM.Geo && CM.Geo.streets) || []) add(s.p);
-    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
-      let v = 0;
-      for (let b = Math.max(0, j - 2); b <= Math.min(H - 1, j + 2); b++) for (let a = Math.max(0, i - 2); a <= Math.min(W - 1, i + 2); a++) v += raw[b * W + a];
-      F[j * W + i] = v;
+    for (let j = 0; j < H; j++) {
+      const y0 = j > 1 ? j - 2 : 0, y1 = j + 2 < H ? j + 2 : H - 1;
+      for (let i = 0; i < W; i++) {
+        const x0 = i > 1 ? i - 2 : 0, x1 = i + 2 < W ? i + 2 : W - 1;
+        let v = 0;
+        // 保留原来的累加顺序与浮点结果，边界无需在 25 个邻居上重复计算。
+        for (let b = y0; b <= y1; b++) { const row = b * W; for (let a = x0; a <= x1; a++) v += raw[row + a]; }
+        F[j * W + i] = v;
+      }
     }
     return (city._roadField = F);
   }
@@ -137,8 +142,14 @@
   const GEN_MIN_ROAD = 6;
   function genSite(city, k, ct) {
     const W = city.W, F = roadField(city), reg = city.region, LM = city.landMax;
+    // buildTerrain 的范围同样按 landMax（含未来填海）计算；读档与填海只恢复
+    // 当前 landFrac / 用地，不会缩掉这里的候选格。没有范围的旧调用仍扫描全图。
+    const bb = city.regions[k].bbox;
+    const x0 = bb ? Math.max(0, Math.floor(bb[0])) : 0, y0 = bb ? Math.max(0, Math.floor(bb[1])) : 0;
+    const x1 = bb ? Math.min(W, Math.ceil(bb[2])) : W, y1 = bb ? Math.min(city.H, Math.ceil(bb[3])) : city.H;
     let mx = 0, sx = 0, sy = 0, sw = 0, n = 0;
-    for (let c = 0; c < city.N; c++) {
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+      const c = y * W + x;
       if (reg[c] !== k || LM[c] < 0.5) continue;
       const v = F[c], i = c % W + 0.5, j = ((c / W) | 0) + 0.5; n++;
       if (v > mx) mx = v;
@@ -148,7 +159,8 @@
     if (ct) { const c0 = city.cellAt(ct[0], ct[1]); if (c0 >= 0 && F[c0] >= mx * 0.4 && LM[c0] >= 0.5) return ct; }
     const rx = ct ? ct[0] : sx / sw, ry = ct ? ct[1] : sy / sw, sig = ct ? 8 : Math.max(8, Math.sqrt(n) * 0.6);
     let best = -1, at = null;
-    for (let c = 0; c < city.N; c++) {
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+      const c = y * W + x;
       if (reg[c] !== k || LM[c] < 0.5) continue;
       const i = c % W + 0.5, j = ((c / W) | 0) + 0.5, s = F[c] * Math.exp(-U.dist(i, j, rx, ry) / sig);
       if (s > best) { best = s; at = [i, j]; }

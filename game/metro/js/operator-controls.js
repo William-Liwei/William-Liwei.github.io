@@ -15,16 +15,33 @@
   const locked = function (ui, g, id) { return h('div', { class: 'callout info' }, h('b', null, nameOf(g, id)), h('p', null, '资产由该公司独立经营。可查看客流、列车和合作进度。'), companyLink(ui, id)); };
   const refuse = function (ui) { const error = '这是其他公司的资产，只能查看运营情况'; if (ui && ui.toast) ui.toast(error, 'info'); return { error: error }; };
 
-  X.snapshot = function (g, id) {
-    const d = defOf(g, id), c = id === 'player' ? null : CM.Operators.company(g, id), C = g.compiled;
-    const lines = Object.values(g.net.lines).filter(function (l) { return owner(l) === id; });
-    const stations = Object.values(g.net.stations).filter(function (s) { return owner(s) === id; });
-    const trains = (g.fleet && g.fleet.trains || []).filter(function (t) { return owner(t) === id; });
-    const daily = g.model.stDaily, fresh = daily && !g.model.dailyStale && g.model.net && g.model.net.C === C;
-    let km = 0, riders = 0, available = 0, needed = 0;
-    if (C) C.segs.forEach(function (cs) { if (owner(g.net.lines[cs.seg.line]) === id) km += cs.g.lenM / 1000; });
-    if (fresh) C.routes.forEach(function (r, i) { if (owner(r.line) === id) riders += daily.routeBoard && daily.routeBoard[i] || 0; });
-    for (const l of lines) for (const s of F.lineInfo(g, l.id) || []) { available += s.avail; needed += Math.max(s.floor || 0, s.peakNeed || 0); }
+  const operating = function (g) {
+    const build = function () {
+      const C = g.compiled, daily = g.model.stDaily, fresh = !!(daily && !g.model.dailyStale && g.model.net && g.model.net.C === C), rows = new Map();
+      const row = function (id) {
+        if (!rows.has(id)) rows.set(id, { lines: [], stations: [], trains: [], km: 0, riders: 0, available: 0, needed: 0, fresh: fresh });
+        return rows.get(id);
+      };
+      for (const d of CM.Operators.DEFINITIONS) row(d.id === (g.playerCity || 'sh') ? 'player' : d.id);
+      for (const l of Object.values(g.net.lines)) {
+        const r = row(owner(l)); r.lines.push(l);
+        const info = CM.OpsData && g.fleet ? CM.OpsData.lineInfo(g, l.id) : F.lineInfo(g, l.id) || [];
+        for (const s of info) { r.available += s.avail; r.needed += Math.max(s.floor || 0, s.peakNeed || 0); }
+      }
+      for (const s of Object.values(g.net.stations)) row(owner(s)).stations.push(s);
+      for (const t of g.fleet && g.fleet.trains || []) row(owner(t)).trains.push(t);
+      if (C) C.segs.forEach(function (cs) { row(owner(g.net.lines[cs.seg.line])).km += cs.g.lenM / 1000; });
+      if (fresh) C.routes.forEach(function (r, i) { row(owner(r.line)).riders += daily.routeBoard && daily.routeBoard[i] || 0; });
+      return rows;
+    };
+    return CM.OpsData ? CM.OpsData.memo(g, 'company-operating', build) : build();
+  };
+  const snapshot = function (g, id, metrics) {
+    const d = defOf(g, id), c = id === 'player' ? null : CM.Operators.company(g, id);
+    const r = metrics.get(id) || { lines: [], stations: [], trains: [], km: 0, riders: 0, available: 0, needed: 0, fresh: false };
+    const lines = r.lines, stations = r.stations, trains = r.trains, km = r.km, riders = r.riders, available = r.available, needed = r.needed, fresh = r.fresh;
+    // Only published operating data is cached. Cash, debt, company state and the
+    // latest ledger entry are read live, including changes within the same day.
     const history = id === 'player' ? g.econ.ledger || [] : c && c.history || [];
     const last = history.length ? history[history.length - 1] : null;
     const annualProfit = last ? ((last.fare || 0) - (last.ops || 0)) * 12 : 0;
@@ -35,9 +52,10 @@
       annualProfit: annualProfit, monthProfit: annualProfit / 12, last: last, debt: debt, service: service, available: available, needed: needed, score: score,
       funds: id === 'player' ? g.econ.funds : c ? c.funds : 0, fare: last && last.fare || 0, ops: last && last.ops || 0 };
   };
+  X.snapshot = function (g, id) { return snapshot(g, id, operating(g)); };
   X.rows = function (g) {
-    const selected = g.playerCity || 'sh';
-    return CM.Operators.DEFINITIONS.map(function (d) { return X.snapshot(g, d.id === selected ? 'player' : d.id); });
+    const selected = g.playerCity || 'sh', metrics = operating(g);
+    return CM.Operators.DEFINITIONS.map(function (d) { return snapshot(g, d.id === selected ? 'player' : d.id, metrics); });
   };
   X.recordMonth = function (g) {
     if (!enabled(g) || !g.operators || !g.model || g.model.dailyStale || !g.model.stDaily || !g.model.net || g.model.net.C !== g.compiled || !g.model.trafficReady()) return false;
@@ -70,7 +88,7 @@
   };
 
   function fleetReadOnly(ui, g, lid) {
-    const box = h('div'), rows = F.lineInfo(g, lid) || [], trains = F.trainsOf(g, lid);
+    const box = h('div'), rows = CM.OpsData ? CM.OpsData.lineInfo(g, lid) : F.lineInfo(g, lid) || [], trains = F.trainsOf(g, lid);
     box.appendChild(locked(ui, g, owner(g.net.lines[lid])));
     const table = h('table', { class: 'tbl' }, h('tr', null, h('th', null, '交路'), h('th', null, '可用列车'), h('th', null, '高峰需要')));
     for (const r of rows) table.appendChild(h('tr', null, h('td', null, r.name), h('td', null, r.avail + ' 列'), h('td', null, r.peakNeed + ' 列')));
@@ -166,9 +184,17 @@
   };
   const attach = UI.prototype.attachGame;
   UI.prototype.attachGame = function (g) {
-    const result = attach.apply(this, arguments), self = this;
+    const result = attach.apply(this, arguments), self = this; let refresh = 0;
     if (this.operatorDock) this.operatorDock.classList.toggle('hidden', !enabled(g));
-    g.on('operators', function () { const top = self.stack[self.stack.length - 1]; if (top && top.kind === 'operators') self.rerenderPage(); });
+    g.on('operators', function () {
+      const top = self.stack[self.stack.length - 1]; if (refresh || !top || top.kind !== 'operators') return;
+      // A monthly decision can publish several company log/fleet/project changes.
+      // Draw their final state once, and ignore pending work after a game switch.
+      refresh = requestAnimationFrame(function () {
+        refresh = 0; const current = self.stack[self.stack.length - 1];
+        if (self.g() === g && current && current.kind === 'operators') self.rerenderPage();
+      });
+    });
     return result;
   };
   const fleetPage = UI.prototype.page_fleet;

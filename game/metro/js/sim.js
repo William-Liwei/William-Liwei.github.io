@@ -230,7 +230,7 @@
   const SKIM_BLOCKS = 16;
   const OD_OUT = ['carDem', 'hasCar', 'S', 'pT', 'pM', 'zTrips', 'zMetro', 'zAccess', 'zCW', 'zCT', 'desTot', 'desMetro',
     'zDest', 'zDestM', 'fIn', 'fInM', 'fOut', 'fOutM', 'fP', 'fPM', 'DS', 'choices'];
-  const OD_FIXED = ['Z', 'NZ', 'B', 'odStart', 'odDest', 't0', 't1', 't2', 't3', 't4', 't5', 'hostZ', 'nx', 'ny', 'kmPerCell', 'blocks'];
+  const OD_FIXED = ['Z', 'NZ', 'B', 'odStart', 'odDest', 'odDistance', 't0', 't1', 't2', 't3', 't4', 't5', 'hostZ', 'nx', 'ny', 'kmPerCell', 'blocks'];
   const OD_MOVE = { gtS: 1, tmS: 1, kmS: 1 };
   const OD_INPUT = ['N', 'co', 'cr', 'facW', 'facWe', 'odOk', 'skT', 'skK', 'zJ', 'cpk', 'park', 'vot', 'carAccess',
     'walkW', 'occ', 'theta', 'fareFlat', 'fareKm0', 'fareStep', 'fareInc', 'fareCap', 'fareTab', 'bgShare', 'bgSpeed', 'bgWait', 'bgFare', 'roadKeep', 'accOk', 'gtS', 'tmS', 'kmS', 'perMin', 'capSh', 'capLz', 'habit', 'habAsc', 'habLite'];
@@ -292,8 +292,8 @@
     },
     submit: function (model, K, od, fn, alive) {
       let version = model._odWorkerVersion;
-      if (!version || version.od !== od || version.fn !== fn || version.acc !== K.acc) {
-        version = model._odWorkerVersion = { id: ++this.keySeq, od: od, fn: fn, acc: K.acc };
+      if (!version || version.od !== od || version.fn !== fn || version.acc !== K.acc || version.distance !== K.odDistance) {
+        version = model._odWorkerVersion = { id: ++this.keySeq, od: od, fn: fn, acc: K.acc, distance: K.odDistance };
       }
       const r = { id: ++this.seq, key: version.id, K: K, alive: alive, done: false, failed: false };
       this.queue.push(r); this.pump(); return r;
@@ -471,7 +471,7 @@
   // 需要的数组一次性读入局部变量；运算与累加顺序固定，结果与逐次调用完全相同
   function odOrigin(K, i) {
     const Z = K.Z, NZ = K.NZ, N = K.N, B = K.B;
-    const odStart = K.odStart, odDest = K.odDest, t0 = K.t0, t1 = K.t1, t2 = K.t2, t3 = K.t3, t4 = K.t4, t5 = K.t5;
+    const odStart = K.odStart, odDest = K.odDest, odDistance = K.odDistance, t0 = K.t0, t1 = K.t1, t2 = K.t2, t3 = K.t3, t4 = K.t4, t5 = K.t5;
     const co = K.co, cr = K.cr, cO = K.cO, cR = K.cR, facW = K.facW, facWe = K.facWe, odOk = K.odOk;
     const hostZ = K.hostZ, nx = K.nx, ny = K.ny, skT = K.skT, skK = K.skK, kmPerCell = K.kmPerCell;
     const cpk = K.cpk, park = K.park, vot = K.vot, carAccess = K.carAccess, walkW = K.walkW, occ = K.occ, theta = K.theta, fareFlat = K.fareFlat;
@@ -499,12 +499,12 @@
         if (F0 <= 0) continue;
         const ho = hostZ[o], hd = hostZ[d];
         let ct = skT[ho * Z + hd], ck = skK[ho * Z + hd];
-        if (!(ct > 0) || ct >= INF) { const straight = U.dist(nx[o], ny[o], nx[d], ny[d]) * kmPerCell * 1.3; ct = straight / 16 * 60 + 3; ck = straight; }
+        if (!(ct > 0) || ct >= INF) { const straight = (odDistance ? odDistance[k] : U.dist(nx[o], ny[o], nx[d], ny[d]) * kmPerCell) * 1.3; ct = straight / 16 * 60 + 3; ck = straight; }
         const carMoney = ck * cpk + park;
         let gtCar = ct + carAccess + carMoney / vot * 60, roadF = 1, tBg = 0;
         // 背景交通（v2.2）：非地铁出行中有 bgShare 比例乘坐电车、普通铁路、渡轮或步行，不占用道路；广义成本按比例混合
         if (bgShare > 0) {
-          const dk = U.dist(nx[o], ny[o], nx[d], ny[d]) * kmPerCell * 1.25;
+          const dk = (odDistance ? odDistance[k] : U.dist(nx[o], ny[o], nx[d], ny[d]) * kmPerCell) * 1.25;
           tBg = dk / bgSpeed * 60 + bgWait;
           gtCar = (1 - bgShare) * gtCar + bgShare * (tBg + bgFare / vot * 60); roadF = 1 - bgShare;
         }
@@ -1028,7 +1028,10 @@
     if (!ob || ob.cap < Z * 120) ob = this._odBufs[this._odFlip] = odBuffer(Z * 160);
     // 距离衰减表（见 demandOrigin）：覆盖整张地图的对角距离，步长 5 m
     const LH = 0.005, nT = Math.ceil(Math.hypot(CFG.W, CFG.H) * kmPerCell / LH) + 1;
-    const lut = { inv: 1 / LH, n: nT, t: Ls.map(function (Lk) { const t = new Float64Array(nT + 1); for (let k = 0; k <= nT; k++) t[k] = Math.exp(-k * LH / Lk); return t; }) };
+    let lut = this._demandLut;
+    if (!lut || lut.n !== nT || Ls.some(function (Lk, k) { return Lk !== lut.Ls[k]; })) {
+      lut = this._demandLut = { inv: 1 / LH, n: nT, Ls: Ls.slice(), t: Ls.map(function (Lk) { const t = new Float64Array(nT + 1); for (let k = 0; k <= nT; k++) t[k] = Math.exp(-k * LH / Lk); return t; }) };
+    }
     const D = { Z: Z, F: F, A: A, Ls: Ls, lut: lut, corr: corr, RN: RN, zReg: this.zReg, fA: fA, fL: fL, rate: rate, rw: rate.map(function (r) { return r / rsum; }), zPop: this.zPop, zJobs: this.zJobs, zAsum: zAsum,
       zCx: this.zCx, zCy: this.zCy, nx: fn.nx, ny: fn.ny, hostZ: fn.hostZ, kmPerCell: kmPerCell, hubs: hubs, hubTours: hubTours,
       w: [new Float64Array(Z), new Float64Array(Z), new Float64Array(Z), new Float64Array(Z), new Float64Array(Z)],
@@ -1043,7 +1046,19 @@
       start[i + 1] = D.n;
     }
     const n = D.n, o = D.out;
+    // 一条 OD 的直线距离在需求/设施坐标不变时，对去返程、八个时段与全部迭代相同。
+    // 只缓存实际 OD 的 Float64 结果，保留原乘法顺序；分段计算避免大城市月结长帧。
+    // 不缓存方式选择或最短路，路况、票价、班次与习惯的每次变化仍完整重算。
+    const distance = new Float64Array(n), pairs = new Int32Array(n * 2), cellKm = CFG.CELL_M / 1000;
+    for (let i = 0; i < Z; i++) {
+      if (i > 0 && (i & 31) === 0) yield;
+      for (let k = start[i]; k < start[i + 1]; k++) { const j = o.dest[k], hz = fn.hostZ[j]; distance[k] = U.dist(fn.nx[i], fn.ny[i], fn.nx[j], fn.ny[j]) * cellKm; pairs[2 * k] = i * Z + hz; pairs[2 * k + 1] = hz * Z + i; }
+    }
+    // 需求只会写入这些小区对；按原矩阵顺序去重后求和，跳过零项而不改变浮点累加顺序。
+    pairs.sort(); let pairCount = 0;
+    for (let k = 0; k < pairs.length; k++) if (!k || pairs[k] !== pairs[k - 1]) pairs[pairCount++] = pairs[k];
     this.od = { start: start, dest: o.dest.subarray(0, n), t: o.t.map(function (a) { return a.subarray(0, n); }), tot: D.tot, F: F, NZ: NZ, key: fn.key };
+    this._odGeometry = { od: this.od, fn: fn, cellKm: cellKm, distance: distance, pairs: pairs.subarray(0, pairCount) };
     this.version++;
   };
   // 分步版本（月度处理中使用，避免单帧长时间停顿）。进行期间暂停实时求解与预测（见 step），
@@ -1595,7 +1610,10 @@
     const t = od.t;
     // 方式选择的输入与统计数组（每次迭代一次性组装，见 odOrigin）
     const S = new Float64Array(24), fp = Model.fareParams(this.fare), bg = CM.Eras ? CM.Eras.bg(this.year) : null;
-    const K = { Z: Z, NZ: NZ, N: N, B: this.B, odStart: od.start, odDest: od.dest, t0: t[0], t1: t[1], t2: t[2], t3: t[3], t4: t[4], t5: t[5],
+    const geometry = this._odGeometry;
+    const K = { Z: Z, NZ: NZ, N: N, B: this.B, odStart: od.start, odDest: od.dest,
+      odDistance: geometry && geometry.od === od && geometry.fn === fn && geometry.cellKm === kmPerCell ? geometry.distance : null,
+      t0: t[0], t1: t[1], t2: t[2], t3: t[3], t4: t[4], t5: t[5],
       co: co, cr: cr, cO: new Float64Array(NPK), cR: new Float64Array(NPK), facW: facW, facWe: facWe, odOk: od.F === F && od.key === fn.key,
       hostZ: hostZ, nx: nx, ny: ny, skT: skT, skK: skK, kmPerCell: kmPerCell,
       cpk: prm.cpk, park: prm.park, vot: prm.vot, carAccess: prm.carAccess, walkW: prm.walkW, occ: prm.occ, theta: prm.theta, fareFlat: this.fareFor(0),
@@ -1785,14 +1803,16 @@
     }
     const A = CFG.road.bprA, capF = this.capF || 1;
     // 弹性需求先按总量投影，再对实际 BPR 成本做线搜索。固定 0.4 混合会使近似等价道路反复抢走整股客流。
-    let demand=0;for(let k=0;k<carDem.length;k++)demand+=carDem[k];
+    let demand=0;
+    if(K.odDistance){const pairs=geometry.pairs;for(let k=0;k<pairs.length;k++)demand+=carDem[pairs[k]];}
+    else for(let k=0;k<carDem.length;k++)demand+=carDem[k];
     const scale=P.demandTotal>1e-6?demand/P.demandTotal:1;
-    const travel=(a,v)=>{const x=v/(road.arcCap[a]*capF);return road.arcT0[a]*Math.min(8,1+A*x*x*x*x);};
     let lam=1;
     if(P.iters>0&&demand>0){
-      let line=buf.lineSearch;if(!line||line.base.length!==nA)line=buf.lineSearch={base:new Float64Array(nA),delta:new Float64Array(nA),active:new Int32Array(nA)};
-      let count=0;for(let a=0;a<nA;a++){const base=P.arcVol[a]*scale,delta=aux[a]-base;line.base[a]=base;line.delta[a]=delta;if(delta!==0||!(road.arcCap[a]*capF>0)||!Number.isFinite(road.arcT0[a]))line.active[count++]=a;}
-      const derivative=t=>{let v=0;for(let i=0;i<count;i++){const a=line.active[i],base=line.base[a],delta=line.delta[a];v+=delta*travel(a,base+delta*t);}return v;};
+      let line=buf.lineSearch;if(!line||line.base.length!==nA)line=buf.lineSearch={base:new Float64Array(nA),delta:new Float64Array(nA),capacity:new Float64Array(nA),freeTime:new Float64Array(nA)};
+      // 线搜索重复读取相同路段最多 22 次；只整理一次活动项，保留原路段顺序和全部 20 次二分。
+      let count=0;for(let a=0;a<nA;a++){const base=P.arcVol[a]*scale,delta=aux[a]-base,capacity=road.arcCap[a]*capF,freeTime=road.arcT0[a];if(delta!==0||!(capacity>0)||!Number.isFinite(freeTime)){line.base[count]=base;line.delta[count]=delta;line.capacity[count]=capacity;line.freeTime[count]=freeTime;count++;}}
+      const derivative=t=>{let v=0;const base=line.base,delta=line.delta,capacity=line.capacity,freeTime=line.freeTime;for(let i=0;i<count;i++){const d=delta[i],x=(base[i]+d*t)/capacity[i];v+=d*(freeTime[i]*Math.min(8,1+A*x*x*x*x));}return v;};
       const first=derivative(0);
       yield;   // 线搜索每次都遍历全部路段，大城市分多帧做（v2.3，结果不变）
       if(first>=0){

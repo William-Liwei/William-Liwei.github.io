@@ -132,7 +132,15 @@
   // 普通线路与支线：每条路线一个全程交路（以终点站标识）；环线：顺行 cw、逆行 ccw 两个交路；玩家加开的交路以 v 开头（环线另带方向）
   F.svcId = function (rt, d) { if (rt.svc) return rt.loop ? rt.svc + (d ? ':ccw' : ':cw') : rt.svc; return rt.loop ? (d ? 'ccw' : 'cw') : rt.stIds[rt.stIds.length - 1]; };
   F.svcName = function (rt, d) { return rt.loop ? rt.label + (d ? '（逆行）' : '（顺行）') : rt.label; };
-  const routesOfLine = function (C) { const m = new Map(); C.routes.forEach(function (rt, r) { let a = m.get(rt.lineId); if (!a) m.set(rt.lineId, a = []); a.push(r); }); return m; };
+  // Compiled routes are immutable between compilations. Share their line index
+  // across fleet plans and line inspections, including branch/express routes.
+  const routeIndexes = new WeakMap();
+  const routesOfLine = function (C) {
+    const hit = routeIndexes.get(C);
+    if (hit && hit.routes === C.routes && hit.length === C.routes.length) return hit.index;
+    const m = new Map(); C.routes.forEach(function (rt, r) { let a = m.get(rt.lineId); if (!a) m.set(rt.lineId, a = []); a.push(r); });
+    routeIndexes.set(C, { routes: C.routes, length: C.routes.length, index: m }); return m;
+  };
   // 列车所在的交路：环线按方向；其他按终点站，终点改了（延长）就找经过原终点的路线，再找不到视为失去交路，退回车辆段
   const placeOf = function (C, rs, t) {
     const r0 = C.routes[rs[0]];
@@ -441,8 +449,8 @@
   F.lineInfo = function (g, lid) {
     const net = g.model.net; if (!net) return null;
     const C = net.C, plan = F.plan(g, net), res = g.model.resultsFor('wd'), out = [];
-    C.routes.forEach(function (rt, r) {
-      if (rt.lineId !== lid) return;
+    (routesOfLine(C).get(lid) || []).forEach(function (r) {
+      const rt = C.routes[r];
       const fp = plan && plan[r], re = net.rideEdge[r];
       for (let d = 0; d < (rt.loop ? 2 : 1); d++) {
         const per = [0, 1, 2, 3].map(function (p) {

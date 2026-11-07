@@ -148,7 +148,7 @@
       points.push({ x: pair.b.x, y: pair.b.y, stationId: pair.b.id });
       return evaluatePoints(g, c, points, kind, pair.b.id);
     }
-    const a = anchor(g, d); let best = null;
+    const a = anchor(g, d), candidates = [];
     for (const ang of [0, Math.PI / 2, Math.PI / 4, -Math.PI / 4]) {
       const points = []; let score = 0;
       for (const q of [-12, -4, 4, 12]) {
@@ -157,9 +157,18 @@
         score += (g.city.pop[k] + g.city.jobs[k]) * (.15 + .85 * Math.min(1, nearest / CFG.walk.maxAccessM)); points.push(p);
       }
       if (points.length !== 4) continue;
-      const result = evaluatePoints(g, c, points, 'local'); if (result && (!best || score > best.score)) best = Object.assign(result, { score });
+      candidates.push({ points, score });
     }
-    return best;
+    // Site scores do not depend on the construction evaluation. Validate in score
+    // order and stop at the first legal corridor instead of cloning, costing and
+    // compiling the whole network for every lower-ranked alternative. Stable sort
+    // keeps the original angle preference on ties, including invalid top choices.
+    candidates.sort((a, b) => b.score - a.score);
+    for (const candidate of candidates) {
+      const result = evaluatePoints(g, c, candidate.points, 'local');
+      if (result) return Object.assign(result, { score: candidate.score });
+    }
+    return null;
   };
   function startProject(g, c, plan) {
     const p = { id: c.id + ':' + (c.projects.length + 1), kind: plan.kind, phase: 'funding', points: plan.points, target: plan.target,

@@ -8,7 +8,8 @@
   const stamp = function (g) {
     const m = g.model;
     return [g.net, g.netVersion, g.compiled, m, m.net, m.results, m.version, m.stDaily, m.stDailyWk,
-      !!m.dailyStale, !!m.trafficReady(), g.fleet, g.fleet && g.fleet.ver, g.ym(), g.city, g.city.geoVer, g.city.terrainVer];
+      !!m.dailyStale, !!m.trafficReady(), g.fleet, g.fleet && g.fleet.ver, g.ym(), g.mapId, g.playerCity,
+      g.city, g.city.geoVer, g.city.terrainVer, g.city.lockVer];
   };
   const same = function (a, b) { return a && a.length === b.length && a.every(function (v, i) { return v === b[i]; }); };
   D.memo = function (g, key, build) {
