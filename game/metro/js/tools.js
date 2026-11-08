@@ -295,7 +295,7 @@
     if (c < 0 || city.landFrac[c] < 0.5 || !city.cellLocked(c)) return null;
     const k = city.lockRegion(c), rg = city.regions[k], f = city.lockState().info[k], yr = city.lockState().year[c];
     const lines = [city.lockText(c) + ' · 未开放部分约 ' + U.fmtNum(f.n * CFG.CELL_M * CFG.CELL_M / 1e6, 0) + ' km²'];
-    if (yr && rg.pop && !city.regionOpen[k]) lines.push('城市人口达到约 ' + U.fmtPeople(rg.pop) + '时可能提前开放');
+    if (!city.regionUnlockInfo(rg) && yr && rg.pop && !city.regionOpen[k]) lines.push('城市人口达到约 ' + U.fmtPeople(rg.pop) + '时可能提前开放');
     if (rg.note) lines.push(rg.note.length > 64 ? rg.note.slice(0, 62) + '…' : rg.note);
     lines.push(building ? '开放前不能建站或铺设轨道，可推进时间等待开放' : (yr ? '开放后可以建站与铺设轨道' : '该区域不开放建设'));
     return { title: '🔒 ' + rg.name, lines: lines, bad: !!building };

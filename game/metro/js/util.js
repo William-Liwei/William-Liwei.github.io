@@ -213,8 +213,11 @@ window.CM = window.CM || {};
   // ---------- 格式化 ----------
   U.pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
   // 未开放区域的说明：按参考年份开放，或长期不开放（如军用机场，见区域的 lockNote）
-  U.regionLock = function (rg) {
+  U.regionLock = function (rg, city) {
     if (rg.open == null) return rg.lockNote || '不开放';
+    const local = city && city.regionUnlockInfo && city.regionUnlockInfo(rg);
+    if (local && !(local.threshold > 0)) return '参考 ' + local.open + ' 年自动开放；暂无主城起始人口，不采用人口提前条件';
+    if (local) return '参考 ' + local.open + ' 年自动开放；主城已开放人口 ' + U.fmtPeople(local.population) + ' / 提前开放门槛 ' + U.fmtPeople(local.threshold) + '；达到门槛可从 ' + local.earlyYear + ' 年起提前开放（繁荣时再提前 1 年，衰退时门槛提高 3%）。到年不要求人口达标';
     const text = '参考 ' + rg.open + ' 年开放';
     return rg.pop ? text + '；人口达到 ' + U.fmtPeople(rg.pop) + '可从 ' + (rg.open - 3) + ' 年起提前开放（繁荣时再提前 1 年，衰退时人口门槛提高 3%）' : text;
   };

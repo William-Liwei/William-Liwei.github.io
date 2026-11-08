@@ -111,8 +111,7 @@
           const other = byId[reg.cityId], localYear = other && other.open && other.open[reg.id];
           reg.open = Math.max(localYear == null ? reg.open : localYear, r.partners[reg.cityId] || 2025);
         }
-        if (reg.open > 1990) reg.pop = Math.max(reg.pop || 0, CM.U.interp(m.cfg.growth.popCurve, reg.open) * .98);
-        else delete reg.pop;
+        if (reg.open <= 1990) delete reg.pop;
         reg.note = (reg.note ? reg.note + '；' : '') + '本局公司建设权限按模拟经营阶段开放，不代表城市现实开发年份';
       }
       const E = CM.CFG.economy;

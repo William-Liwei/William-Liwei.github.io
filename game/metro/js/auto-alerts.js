@@ -113,7 +113,9 @@
     const max = CM.RailSystems ? CM.RailSystems.get(g.net.lines[lid]).cars : 8;
     const min = routes.reduce(function (v, r) { return Math.min(v, r.cars); }, max), ids = new Set();
     for (const r of routes) if (r.cars === min && min < max) for (const sid of r.stIds) {
-      const st = g.net.stations[sid]; if (owner(st) && CM.CFG.metro.carsBySize[st.size] === min) ids.add(sid);
+      const st = g.net.stations[sid];
+      if (!st || CM.CFG.metro.carsBySize[st.size] === min && !owner(st)) return { reason: '扩编受其他公司车站限制，需先协调站台扩建。' };
+      if (CM.CFG.metro.carsBySize[st.size] === min) ids.add(sid);
     }
     let reason = '发车频率和编组已到上限，需要手动分流';
     for (const sid of ids) { const result = station(g, sid); if (!result.reason) return result; reason = result.reason; }

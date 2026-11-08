@@ -156,10 +156,10 @@
       for (const r of city.applyReclaim(y)) { roads = true; this.logEvent({ tag: r.tag || '史实', title: '填海成陆：' + r.name, desc: r.desc || '' }); }
       if (city.applyRoads(y)) roads = true;
       city.activateLandmarks(y);
-      const tot = city.totals();
+      const unlockPopulation = city.regionUnlockPopulation();
       for (let k = 0; k < city.regions.length; k++) {
         const rg = city.regions[k];
-        const unlock = city.regionUnlock(k, yr, tot.pop, ef);
+        const unlock = city.regionUnlock(k, yr, unlockPopulation, ef);
         if (unlock) { city.openRegion(k, y, m); this.logEvent({ tag: unlock.byYear ? '史实' : '模拟', title: '新区域开放：' + rg.name, desc: (unlock.byYear ? '参考 ' + rg.open + ' 年开放' : '城市人口增长，提前开放（参考 ' + rg.open + ' 年）') + (rg.note ? '。' + rg.note : '') + city.openNote(k) }); roads = true; }
       }
       const econF = this.macro && CM.Macro ? CM.Macro.applyFactors(this) : null;
@@ -420,10 +420,10 @@
     if (CM.Milestones) CM.Milestones.onLandmarks(this, lmBefore);
     // 区域开放
     let regionOpened = false;
-    const tot = city.totals();
+    const unlockPopulation = city.regionUnlockPopulation();
     for (let k = 0; k < city.regions.length; k++) {
       const rg = city.regions[k];
-      const unlock = city.regionUnlock(k, yr, tot.pop, ef);
+      const unlock = city.regionUnlock(k, yr, unlockPopulation, ef);
       if (unlock) {
         city.openRegion(k, y, m); regionOpened = true;
         const why = unlock.byYear ? '参考 ' + rg.open + ' 年开放' : '城市人口增长，提前开放（参考 ' + rg.open + ' 年）';

@@ -106,7 +106,9 @@
       for (let i = idle.length - 1; i >= 0 && short > 0; i--) { const t = idle[i]; if (F.compatible(t, s.rt)) { use.push(t.id); idle.splice(i, 1); short--; } }
       if (use.length) { steps.push({ type: 'move', ids: use, line: lid, svc: s.id }); moved += use.length; }
       if (short > 0) {
-        const m = F.recommend(F.cityId ? F.cityId(g) : g.mapId, y, s.rt.kmh, s.rt.railSystem), cars = Math.min(s.rt.cars, m.max), each = F.price(g, m, cars, y);
+        const m = F.recommend(F.cityId ? F.cityId(g) : g.mapId, y, s.rt.kmh, s.rt.railSystem);
+        if (!m) return { ok: false, text: '当前年代没有兼容车型；可等待新车型或手动降低运行速度' };
+        const cars = Math.min(s.rt.cars, m.max), each = F.price(g, m, cars, y);
         steps.push({ type: 'buy', line: lid, svc: s.id, model: m.id, cars: cars, n: short, name: F.shortOf(m) });
         cost += each * short; bought += short;
       }
@@ -117,9 +119,17 @@
     if (!moved && !bought) {
       const C = g.compiled, rts = C.routes.filter(function (r) { return r.lineId === lid && !r.svc; }), min = rts.reduce(function (a, r) { return Math.min(a, r.cars); }, 8);
       if (min < (CM.RailSystems ? CM.RailSystems.get(L).cars : 8)) {
-        const ids = []; for (const r of rts) if (r.cars === min) for (const sid of r.stIds) { const s = g.net.stations[sid]; if (OD.owned(s) && CFG.metro.carsBySize[s.size] === min && ids.indexOf(sid) < 0) ids.push(sid); }
-        for (const sid of ids) cost += station(g.net.stations[sid]);
-        if (ids.length) { steps.push({ type: 'upgrade', ids: ids }); parts.push('升级 ' + ids.length + ' 座车站以加长编组'); }
+        const ids = []; let blocked = false;
+        for (const r of rts) if (r.cars === min) for (const sid of r.stIds) {
+          const s = g.net.stations[sid];
+          if (!s || CFG.metro.carsBySize[s.size] === min && !OD.owned(s)) blocked = true;
+          else if (CFG.metro.carsBySize[s.size] === min && ids.indexOf(sid) < 0) ids.push(sid);
+        }
+        if (blocked && !steps.length) return { ok: false, text: '扩编受其他公司车站限制，需先协调站台扩建。' };
+        if (!blocked) {
+          for (const sid of ids) cost += station(g.net.stations[sid]);
+          if (ids.length) { steps.push({ type: 'upgrade', ids: ids }); parts.push('升级 ' + ids.length + ' 座车站以加长编组'); }
+        }
       }
     }
     if (!steps.length) return { ok: false, text: '发车频率与编组都到上限：需要分流，例如修平行线路或加开交路' };

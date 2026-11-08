@@ -30,8 +30,7 @@
   const regionIds = new Set(D.regions.map(function (r) { return r.id; }));
   for (const r of D.regions) {
     if (r.poly) r.poly = shiftPoly(r.poly);
-    if (r.open > 1990) r.pop = CM.U.interp(cfg.growth.popCurve, r.open) * .98;
-    else delete r.pop;
+    if (r.open <= 1990) delete r.pop;
   }
   // Every Shanghai district has an OSM administrative match. Context land at the
   // rectangular edges stays real land, but cannot generate people or be built on.

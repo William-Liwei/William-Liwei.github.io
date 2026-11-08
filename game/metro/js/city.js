@@ -113,6 +113,7 @@
     }
     const tP = U.interp(CFG.growth.popCurve, startYear), tJ = tP * U.interp(CFG.growth.jobsRatio, startYear);
     for (let c = 0; c < N; c++) { this.pop[c] *= tP / sumP; this.jobs[c] *= tJ / sumJ; }
+    this.initUnlockPopulationBase(startYear);
     for (let c = 0; c < N; c++) this.bh[c] = this.heightFor(c, startYear);
     yield;
 
@@ -804,7 +805,7 @@
   City.prototype.cellLocked = function (c) { return c >= 0 && this.lockState().mask[c] === 1; };
   City.prototype.lockText = function (c) {
     const lk = this.lockState(), y = lk.year[c], k = this.lockRegion(c), rg = this.regions[k];
-    if (D.progressiveRegions) return U.regionLock(rg);
+    if (D.progressiveRegions) return U.regionLock(rg, this);
     if (this.regionOpen[k]) return y ? '尚未与已开放城区连成一片，参考 ' + y + ' 年连通' : '尚未与已开放城区连成一片';
     return y ? '参考 ' + y + ' 年开放' : (rg.lockNote || '不开放');
   };
@@ -818,7 +819,7 @@
   // 区域状态（界面文字）：整片可以建设 / 部分可以建设 / 尚未开放；未开放但被城区包围的规划用地可以建设，开发按参考年份
   City.prototype.regionLockText = function (k) {
     const f = this.lockState().info[k], rg = this.regions[k];
-    if (D.progressiveRegions) return this.regionOpen[k] || (this.unlockAll && rg.open != null && !rg.lockNote && !rg.scenic) ? '已开放' : '尚未开放（' + U.regionLock(rg) + '）';
+    if (D.progressiveRegions) return this.regionOpen[k] || (this.unlockAll && rg.open != null && !rg.lockNote && !rg.scenic) ? '已开放' : '尚未开放（' + U.regionLock(rg, this) + '）';
     if (!f.n) return this.regionOpen[k] || rg.open == null ? '已开放' : '可以建设（规划用地，参考 ' + rg.open + ' 年起开发）';
     // 已开放、但与连片城区隔开（不能建设的部分只因尚未连通）
     if (this.regionOpen[k]) {
@@ -1444,13 +1445,57 @@
 
   // ---------------- 区域 ----------------
   City.prototype.regionAt = function (x, y) { const c = this.cellAt(x, y); return c < 0 ? null : this.regions[this.region[c]]; };
+  // Fixed, seed-derived 1990 baseline. Restore generates this before saved
+  // demographics are applied, so reopening an old save cannot move its target.
+  City.prototype.initUnlockPopulationBase = function (year) {
+    if (!D.unlockPopulationRule) return;
+    const home = D.playerCity || 'sh', start = CFG.START.y; let pop = 0;
+    for (let c = 0; c < this.N; c++) {
+      const rg = this.regions[this.lockRegion(c)];
+      if (rg && !rg.outside && rg.cityId === home && rg.open != null && rg.open <= start) pop += this.pop[c];
+    }
+    const ratio = U.interp(CFG.growth.popCurve, start) / Math.max(1, U.interp(CFG.growth.popCurve, year));
+    this.unlockPopulationBase = { cityId: home, year: start, pop: pop * ratio };
+    this._unlockPopulation = null;
+  };
+  // One cached cell pass; the monthly driver passes this immutable observation
+  // to every gate, so newly opened areas only count in the following assessment.
+  City.prototype.regionUnlockPopulation = function () {
+    const base = this.unlockPopulationBase, home = D.playerCity || 'sh';
+    if (!D.unlockPopulationRule || !base || base.cityId !== home) return this.totals().pop;
+    const old = this._unlockPopulation;
+    if (old && old.version === this.version && old.lockVer === this.lockVer && old.source === this.pop && old.open === this.regionOpen && old.regions === this.regions && old.region === this.region && old.home === home) return old.value;
+    let pop = 0;
+    for (let c = 0; c < this.N; c++) {
+      const k = this.lockRegion(c), rg = this.regions[k];
+      if (rg && !rg.outside && rg.cityId === home && this.regionOpen[k]) pop += this.pop[c];
+    }
+    const value = Object.freeze({ local: true, cityId: home, pop: pop });
+    this._unlockPopulation = { version: this.version, lockVer: this.lockVer, source: this.pop, open: this.regionOpen, regions: this.regions, region: this.region, home: home, value: value };
+    return value;
+  };
+  City.prototype.regionUnlockThreshold = function (region) {
+    const rg = typeof region === 'number' ? this.regions[region] : region;
+    const base = this.unlockPopulationBase, rule = D.unlockPopulationRule;
+    if (!rule || !base || base.cityId !== (D.playerCity || 'sh') || !rg || rg.open == null || rg.lockNote || rg.scenic) return null;
+    return base.pop > 0 ? base.pop * (1 + U.clamp((rg.open - base.year) * rule.annual, rule.min, rule.max)) : 0;
+  };
+  City.prototype.regionUnlockInfo = function (region) {
+    const rg = typeof region === 'number' ? this.regions[region] : region && this.regions.find(r => r.id === (region.regionId || region.id));
+    const threshold = this.regionUnlockThreshold(rg);
+    if (threshold == null) return null;
+    const observation = this.regionUnlockPopulation();
+    return { local: true, population: observation.pop, threshold: threshold, open: rg.open, earlyYear: rg.open - 3, boomYear: rg.open - 4, cityId: observation.cityId };
+  };
   // 普通月结、跳时和后期年份开局共用同一条件。人口只允许提前 3 年，繁荣时 4 年；衰退时门槛提高 3%。
   City.prototype.regionUnlock = function (k, year, population, factors) {
     const rg = this.regions[k];
     if (!rg || this.regionOpen[k] || rg.open == null) return null;
     if (rg.id === 'airport' && D.airport && D.airport.closeYear < 9999 && year < D.airport.closeYear + 7 / 12) return null;
     const byYear = year >= rg.open;
-    const early = rg.pop && population >= rg.pop * (factors && factors.dev < -0.03 ? 1.03 : 1) && year >= rg.open - (factors && factors.dev > 0.02 ? 4 : 3);
+    const local = this.regionUnlockThreshold(k), observed = local == null ? population : population && population.local && population.cityId === (D.playerCity || 'sh') ? population : this.regionUnlockPopulation();
+    const threshold = local == null ? rg.pop : local, count = typeof observed === 'number' ? observed : observed && observed.pop || 0;
+    const early = threshold && count >= threshold * (factors && factors.dev < -0.03 ? 1.03 : 1) && year >= rg.open - (factors && factors.dev > 0.02 ? 4 : 3);
     return byYear || early ? { byYear: byYear, early: !byYear } : null;
   };
   City.prototype.openRegion = function (k, y, m) {
@@ -1730,8 +1775,11 @@
     const rIds = this.regions.map(function (r) { return r.id; });
     const ro = byIds(s.regionIds, rIds, s.regionOpen || []), rd = byIds(s.regionIds, rIds, s.regionOpenDate || []);
     const fy = s.fillYear || year, unlockYear = D.progressiveRegions ? year : fy, resets = new Set(s.regionResetIds || []), month = opts && opts.month || 1;
-    let population = 0; if (D.progressiveRegions) for (const p of this.pop) population += p;
-    this.regionOpen = new Uint8Array(this.regions.length); this.regionOpenDate = this.regions.map(function () { return null; });
+    // Restore all known permissions before computing the local population once;
+    // the order of a newly added region must not change its prerequisites.
+    this.regionOpen = Uint8Array.from(this.regions, (rg, k) => ro[k] !== undefined && !resets.has(rg.id) ? (ro[k] ? 1 : 0) : rg.open != null && rg.open <= unlockYear && (rg.id !== 'airport' || !D.airport) ? 1 : 0);
+    this.regionOpenDate = this.regions.map((rg, k) => ro[k] !== undefined && !resets.has(rg.id) ? rd[k] || null : this.regionOpen[k] ? [rg.open, 1] : null);
+    const population = D.progressiveRegions ? this.regionUnlockPopulation() : 0;
     for (let k = 0; k < this.regions.length; k++) {
       if (ro[k] !== undefined && !resets.has(this.regions[k].id)) { this.regionOpen[k] = ro[k] ? 1 : 0; this.regionOpenDate[k] = rd[k] || null; }
       else {

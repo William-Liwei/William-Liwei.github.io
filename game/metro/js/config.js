@@ -4,7 +4,7 @@
   CM.CFG = {
     GAME_VERSION: '1.2.3',
     TRAFFIC_MODEL: 4,      // 轻量交通更新；与显示版本独立，确保 v3 存档仍触发安全迁移
-    RULES_REVISION: 11,    // Regional development, rail systems and advanced station commerce.
+    RULES_REVISION: 12,    // Home-city opening gates; permissions and traffic assessments stay separate.
     SAVE_FORMAT: 'city-metro-save',
     SAVE_VERSION: 2,
     SAVE_MIN_VERSION: 2,   // 1.1 起地图改为真实地理，旧版存档的城市数据与之不兼容

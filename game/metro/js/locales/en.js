@@ -1,5 +1,15 @@
 'use strict';
 (function(CM){CM.I18N_EN = {
+  "人口、覆盖、通勤、拥堵、票价和拥挤统一采用对应经营范围；区域提前解锁也按主城已开放人口计算门槛，到参考年份仍自动开放。": "Population, coverage, commuting, congestion, fares and crowding use the corresponding operating area. Early region opening also uses open home-city population, while the reference year still guarantees access.",
+  "复用已发布交通结果与地理权重缓存，分城预热减少集中停顿。修复有轨电车换乘站诊断、无兼容车型时报错、受其他公司站台限制时无效付费扩编等问题。": "Published traffic and geographic caches are reused, with city-by-city preparation reducing concentrated pauses. Fixes tram interchange diagnostics, unavailable rolling stock errors, and ineffective paid expansion when another company's platforms limit train length.",
+  "参考 {year} 年自动开放；暂无主城起始人口，不采用人口提前条件": "Opens automatically in {year}; no home-city starting population is available, so early population-based opening is disabled.",
+  " 年自动开放；暂无主城起始人口，不采用人口提前条件": "; no home-city starting population is available, so early population-based opening is disabled.",
+  "参考 {open} 年自动开放；主城已开放人口 {population} / 提前开放门槛 {threshold}；达到门槛可从 {early} 年起提前开放（繁荣时再提前 1 年，衰退时门槛提高 3%）。到年不要求人口达标": "Opens automatically in {open}; open home-city population {population} / early-opening target {threshold}. Meeting the target allows opening from {early} (one year earlier in a boom; the target is 3% higher in a downturn). No population target is required at the reference year.",
+  " 年自动开放；主城已开放人口 ": "; open home-city population ",
+  " / 提前开放门槛 ": " / early-opening target ",
+  "；达到门槛可从 ": "; meeting the target allows opening from ",
+  " 年起提前开放（繁荣时再提前 1 年，衰退时门槛提高 3%）。到年不要求人口达标": " (one year earlier in a boom; the target is 3% higher in a downturn). No population target is required at the reference year.",
+  "区域提前解锁改按本公司主城已开放人口设置门槛，显示当前人数与所需人数，到参考年份仍自动开放。修复有轨电车换乘站诊断、没有兼容车型时报错，以及被其他公司站台限制时无效付费扩编的问题。": "Early region opening now uses the population of the open home city, showing both current and required residents; the reference year still opens the region automatically. Fixes tram interchange diagnostics, unavailable rolling stock errors, and ineffective paid expansion when another company's platforms limit train length.",
   "已达到本制式最长 {cars} 节编组，可增加运力或修建平行线路分流。": "This system is limited to {cars} cars. Add service capacity or a parallel line to relieve demand.",
   "该交路由其他公司经营，扩编需由所属公司处理。": "This service belongs to another company. Its operator must arrange longer trains.",
   "扩编受其他公司车站限制，需先协调站台扩建。": "Another company's platforms limit train length. Coordinate platform expansion first.",
