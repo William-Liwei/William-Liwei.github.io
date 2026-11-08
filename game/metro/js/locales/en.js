@@ -7795,3 +7795,11 @@ Object.assign(window.CM.I18N_EN, {
   "上海 · 全市 · 1990": "Shanghai · Entire city · 1990",
   "完整上海行政范围 · 单城市经营": "Full Shanghai administrative area · Single-city management"
 });
+Object.assign(window.CM.I18N_EN, {
+  '轨道纪元': 'Rail Epoch',
+  '轨道纪元 · Rail Epoch': 'Rail Epoch',
+  '以轨道连接城市，让城市生长。': 'Connect cities by rail. Let cities grow.',
+  '文件格式不正确：不是《轨道纪元》兼容存档': 'Incorrect file format: not a compatible Rail Epoch save',
+  '轨道纪元 · 社区修改版由 Wei Li 维护，采用独立版本号，当前 v': 'Rail Epoch is a community edition maintained by Wei Li, with its own version numbers. Current version: v',
+  '。本版本基于《城市与地铁》修改，不代表原作者或官方发布。': '. This edition is based on City & Metro and is not an official release by its original creator.'
+});

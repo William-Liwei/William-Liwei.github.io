@@ -2081,7 +2081,7 @@
     const narrowItem = function (icon, label, fn) { const b = item(icon, label, fn); b.classList.add('dd-narrow'); return b; };
     const g = this.g();
     const dd = h('div', { class: 'dropdown' },
-      h('div', { class: 'dd-head' }, h('img', { src: 'img/logo-white.png', alt: '' }), h('div', null, h('b', null, g ? g.name : '城市与地铁'), h('div', { class: 'tiny muted' }, g ? (g.econ.isFree() ? '自由建造' : '经营挑战') + ' · ' + g.clock.y + '年' + g.clock.m + '月' : ''), g ? h('div', { class: 'tiny ' + (self.save.state === 'error' ? 'bad' : (self.isSaved() ? 'good' : 'muted')) }, self.saveStatusText()) : null)),
+      h('div', { class: 'dd-head' }, h('img', { src: 'img/rail-epoch-mark-white.svg', alt: '' }), h('div', null, h('b', null, g ? g.name : '轨道纪元'), h('div', { class: 'tiny muted' }, g ? (g.econ.isFree() ? '自由建造' : '经营挑战') + ' · ' + g.clock.y + '年' + g.clock.m + '月' : ''), g ? h('div', { class: 'tiny ' + (self.save.state === 'error' ? 'bad' : (self.isSaved() ? 'good' : 'muted')) }, self.saveStatusText()) : null)),
       item('save', '保存进度', function () { self.manualSave(); }),
       item('folder', '读取存档', function () { self.showSaveManager(true); }),
       h('hr'),
@@ -2383,7 +2383,7 @@
     const self = this;
     this.confirm('退出游戏？', '进度已自动保存在本浏览器中，下次打开 index.html 可点击「继续游戏」。', '退出', function () {
       try { window.close(); } catch (e) { /* ignore */ }
-      setTimeout(function () { if (!window.closed) self.openScreen(h('div', { class: 'card', style: { width: 'min(420px, calc(100vw - 32px))', textAlign: 'center' } }, h('img', { class: 'logo-ink', src: 'img/logo-navy.png', alt: '', style: { width: '72px', margin: '6px auto 12px', display: 'block' } }), h('h2', { style: { justifyContent: 'center' } }, '感谢游玩'), h('div', { class: 'note' }, '浏览器不允许网页自行关闭此标签页，请直接关闭它。'), h('div', { class: 'modal-actions', style: { justifyContent: 'center' } }, h('button', { class: 'btn primary', onclick: function () { self.showStart(); } }, '返回主菜单'))), function () { self.showStart(); }); }, 120);
+      setTimeout(function () { if (!window.closed) self.openScreen(h('div', { class: 'card', style: { width: 'min(420px, calc(100vw - 32px))', textAlign: 'center' } }, h('img', { class: 'logo-ink', src: 'img/rail-epoch-mark.svg', alt: '', style: { width: '72px', margin: '6px auto 12px', display: 'block' } }), h('h2', { style: { justifyContent: 'center' } }, '感谢游玩'), h('div', { class: 'note' }, '浏览器不允许网页自行关闭此标签页，请直接关闭它。'), h('div', { class: 'modal-actions', style: { justifyContent: 'center' } }, h('button', { class: 'btn primary', onclick: function () { self.showStart(); } }, '返回主菜单'))), function () { self.showStart(); }); }, 120);
     }, false, 'power');
   };
   // ======================== 设置 ========================
@@ -2521,8 +2521,8 @@
         };
         const osm = h('a', { href: 'https://www.openstreetmap.org/copyright', target: '_blank', rel: 'noopener' }, 'openstreetmap.org/copyright');
         return [h('div', { class: 'about-head' },
-            h('img', { class: 'logo-ink', src: 'img/logo-navy.png', alt: '' }),
-            h('div', null, h('div', { class: 'about-name' }, '城市与地铁 · 长三角版'), h('div', { class: 'muted' }, '版本 v' + CFG.GAME_VERSION + ' · 网页版'))),
+            h('img', { class: 'logo-ink', src: 'img/rail-epoch-mark.svg', alt: '' }),
+            h('div', null, h('div', { class: 'about-name' }, '轨道纪元 · Rail Epoch'), h('div', { class: 'muted' }, '版本 v' + CFG.GAME_VERSION + ' · 网页版'))),
           row('book', '致谢与许可', h('button', { class: 'btn sm', onclick: function () { self.showCredits(); } }, '查看'), '原作致谢、使用许可、第三方组件及地图数据声明'),
           group('版本'),
           row('megaphone', '更新公告', h('button', { class: 'btn sm', onclick: function () { self.showNews(function () { self.showSettings('about'); }); } }, '查看'), '各版本的主要变化')];

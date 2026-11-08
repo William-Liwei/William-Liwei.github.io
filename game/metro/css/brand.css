@@ -1,0 +1,48 @@
+/* Rail Epoch brand presentation. Keep the shared glass controls and map canvas. */
+.rail-epoch-start { width: min(420px, calc(100vw - 56px)); }
+.rail-epoch-start .start-brand { display: flex; align-items: center; gap: 17px; }
+.rail-epoch-start .start-mark { display: block; width: 68px; height: 68px; flex: none; object-fit: contain; }
+.rail-epoch-start .start-wordmark { min-width: 0; }
+.rail-epoch-start .start-brand-en { margin-bottom: 7px; color: var(--muted); font-size: 11px; font-weight: 750; letter-spacing: .24em; line-height: 1; }
+.rail-epoch-start .start-title { font-size: 54px; letter-spacing: .055em; line-height: 1.1; }
+.rail-epoch-start .start-tagline { margin: 21px 0 29px; color: var(--muted); font-size: 14px; line-height: 1.7; letter-spacing: .025em; }
+.rail-epoch-start .start-menu { gap: 11px; }
+.rail-epoch-start .start-btn { min-width: 0; min-height: 58px; height: auto; padding: 15px 18px; font-size: 17px; letter-spacing: .035em; }
+.rail-epoch-start .start-btn.primary { min-height: 64px; }
+.rail-epoch-start .start-btn .lb { flex: 1; white-space: nowrap; }
+.rail-epoch-start .start-btn .sub { flex: 0 1 auto; margin-left: auto; max-width: 54%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rail-epoch-start .start-btn .chev { margin-left: 0; flex: none; }
+.rail-epoch-start .start-utilities { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 11px; }
+.rail-epoch-start .start-btn.utility { min-height: 44px; padding: 11px 15px; font-size: 13px; gap: 10px; color: var(--muted); border-color: var(--line); background: transparent; box-shadow: none; }
+.rail-epoch-start .start-btn.utility > .ico { width: 18px; height: 18px; color: inherit; }
+.rail-epoch-start .start-btn.utility .chev { display: none; }
+.rail-epoch-start .start-btn.utility:hover:not([disabled]) { color: var(--text); background: var(--surface); transform: none; box-shadow: none; }
+.rail-epoch-start .start-learn { margin-top: 16px; padding: 13px 14px; border-style: solid; border-color: var(--line); font-size: 12px; gap: 7px; }
+.rail-epoch-start .start-foot { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-top: 25px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 10.5px; }
+.rail-epoch-start .start-edition { letter-spacing: .02em; }
+.rail-epoch-start .start-links { display: flex; align-items: center; gap: 12px; flex: none; }
+.rail-epoch-start .start-version { color: var(--faint); font-variant-numeric: tabular-nums; }
+:root[data-language="en"] .rail-epoch-start .start-brand-en { display: none; }
+:root[data-language="en"] .rail-epoch-start .start-title { font-size: 47px; letter-spacing: -.035em; white-space: nowrap; }
+:root[data-language="en"] .rail-epoch-start .start-tagline { letter-spacing: 0; }
+@media (max-width: 760px), (max-width: 1024px) and (max-height: 520px) and (pointer: coarse) {
+  .rail-epoch-start { width: min(420px, calc(var(--view-width, 100vw) - var(--safe-left, 0px) - var(--safe-right, 0px) - 40px)); margin-inline: auto; }
+  .rail-epoch-start .start-brand { gap: 14px; }
+  .rail-epoch-start .start-mark { width: 54px; height: 54px; }
+  .rail-epoch-start .start-title { font-size: clamp(32px, 10.5vw, 46px); letter-spacing: .025em; }
+  .rail-epoch-start .start-brand-en { font-size: 9px; margin-bottom: 6px; }
+  .rail-epoch-start .start-tagline { margin: 17px 0 23px; font-size: 12px; }
+  .rail-epoch-start .start-btn { min-height: 54px; padding: 13px 15px; font-size: 15px; gap: 11px; }
+  .rail-epoch-start .start-btn.primary { min-height: 58px; }
+  .rail-epoch-start .start-btn .sub { max-width: 48%; font-size: 10px; }
+  .rail-epoch-start .start-learn { flex-wrap: wrap; }
+  .rail-epoch-start .start-foot { flex-wrap: wrap; margin-top: 21px; padding-top: 13px; }
+  :root[data-language="en"] .rail-epoch-start .start-title { font-size: clamp(29px, 9.6vw, 42px); }
+}
+@media (max-height: 620px) {
+  .rail-epoch-start .start-tagline { margin-block: 12px 18px; }
+  .rail-epoch-start .start-foot { margin-top: 17px; padding-top: 11px; }
+  .rail-epoch-start .start-learn { margin-top: 11px; }
+}
+
+.ld-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }

@@ -197,7 +197,7 @@
   Save.parseEnvelope = function (text) {
     let env;
     try { env = JSON.parse(text); } catch (e) { throw new Error('文件不是有效的存档（JSON 解析失败）'); }
-    if (!env || env.format !== CFG.SAVE_FORMAT) throw new Error('文件格式不正确：不是《城市与地铁》存档');
+    if (!env || env.format !== CFG.SAVE_FORMAT) throw new Error('文件格式不正确：不是《轨道纪元》兼容存档');
     if (typeof env.version !== 'number' || env.version > CFG.SAVE_VERSION) throw new Error('存档版本（' + env.version + '）高于当前游戏支持的版本（' + CFG.SAVE_VERSION + '），无法导入');
     if (env.version < CFG.SAVE_MIN_VERSION) throw new Error('该存档来自 1.0 版（旧示意地图）。1.1 版起改用真实的广州地理，旧存档的城市数据无法对应，请开始新游戏。');
     if (typeof env.body !== 'string' || U.fnv(env.body) !== env.checksum) throw new Error('存档校验失败：文件可能已损坏或被修改');
@@ -342,7 +342,7 @@
   };
   Save.fileName = function (meta) {
     const d = meta.date || [0, 0];
-    return '城市与地铁_' + (meta.name || '存档').replace(/[\\/:*?"<>|]/g, '_') + '_' + d[0] + '年' + d[1] + '月.cmsave.json';
+    return '轨道纪元_' + (meta.name || '存档').replace(/[\\/:*?"<>|]/g, '_') + '_' + d[0] + '年' + d[1] + '月.cmsave.json';
   };
   Save.download = function (text, filename) {
     const blob = new Blob([text], { type: 'application/json' });

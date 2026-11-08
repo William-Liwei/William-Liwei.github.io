@@ -82,12 +82,6 @@
 
 
   // ======================== 开始界面 ========================
-  // 标题装饰：线路、车站与城市剪影
-  const TITLE_DECO = '<svg class="title-deco" viewBox="0 0 400 34" preserveAspectRatio="xMinYMid meet" aria-hidden="true"><path d="M150 22 H222 M290 22 H392" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".55"/>' +
-    '<circle cx="168" cy="22" r="4.5" style="fill:var(--bg)" stroke="currentColor" stroke-width="2.4"/><circle cx="208" cy="22" r="4.5" style="fill:var(--bg)" stroke="currentColor" stroke-width="2.4"/>' +
-    '<g fill="currentColor"><rect x="228" y="12" width="7" height="12" rx="1"/><rect x="237" y="6" width="8" height="18" rx="1"/><rect x="247" y="0" width="8" height="24" rx="1"/><rect x="257" y="8" width="7" height="16" rx="1"/><rect x="266" y="3" width="8" height="21" rx="1"/><rect x="276" y="13" width="7" height="11" rx="1"/></g>' +
-    '<circle cx="308" cy="22" r="4.5" style="fill:var(--bg)" stroke="currentColor" stroke-width="2.4"/><circle cx="348" cy="22" r="4.5" style="fill:var(--bg)" stroke="currentColor" stroke-width="2.4"/></svg>';
-
   // calm：从游戏回到主菜单时整体淡入（v2.3），标题与按钮不逐个重新弹出
   UI.prototype.showStart = function (tr, calm) {
     const self = this;
@@ -95,21 +89,23 @@
     const storageOk = CM.Save.available();
     const btn = function (icon, label, onclick, opts) {
       opts = opts || {};
-      return h('button', { class: 'start-btn' + (opts.primary ? ' primary' : ''), disabled: opts.disabled ? true : null, onclick: onclick },
+      return h('button', { class: 'start-btn' + (opts.primary ? ' primary' : '') + (opts.utility ? ' utility' : ''), disabled: opts.disabled ? true : null, onclick: onclick },
         ic(icon), h('span', { class: 'lb' }, label), opts.sub ? h('span', { class: 'sub' }, opts.sub) : null, ic('chev', 18, 'chev'));
     };
-    const title = CM.I18n && CM.I18n.get() === 'en' ? h('h1', { class: 'start-title' }, '城市与地铁') : h('h1', { class: 'start-title' }, '城市', h('span', { class: 'yu' }, '与'), '地铁');
-    const wrap = h('div', { class: 'start-wrap' },
-      title, h('div', { html: TITLE_DECO }),
+    const title = h('h1', { class: 'start-title' }, '轨道纪元');
+    const wrap = h('div', { class: 'start-wrap rail-epoch-start' },
+      h('div', { class: 'start-brand' }, h('img', { class: 'start-mark logo-ink', src: 'img/rail-epoch-mark.svg', alt: '', width: '68', height: '68', draggable: 'false' }),
+        h('div', { class: 'start-wordmark' }, h('div', { class: 'start-brand-en', lang: 'en', 'aria-hidden': 'true' }, 'RAIL EPOCH'), title)),
+      h('p', { class: 'start-tagline' }, '以轨道连接城市，让城市生长。'),
       h('div', { class: 'start-menu' },
         btn('play', '开始游戏', function () { self.showMapSelect(null, 'fwd'); }, { primary: true, sub: '选择地图' }),
         btn('clock', '继续游戏', function () { if (latest) self.loadSlot(latest.slotId); }, { disabled: !latest, sub: latest ? ((CM.MAPS[latest.map || 'gz'] || {}).name || '') + ' · ' + latest.date[0] + '年' + latest.date[1] + '月' : '暂无存档' }),
-        btn('gear', '设置', function () { self.showSettings(); }),
-        btn('power', '退出', function () { self.quitGame(); })),
+        h('div', { class: 'start-utilities' }, btn('gear', '设置', function () { self.showSettings(); }, { utility: true }),
+          btn('power', '退出', function () { self.quitGame(); }, { utility: true }))),
       CM.MAPS.tutorial ? h('button', { class: 'start-learn', onclick: function () { self.showMapSelect('tutorial'); } }, ic('help', 16), h('span', null, '第一次玩？先试试'), h('b', null, '新手教程 · 青湾'), ic('chev', 14)) : null,
       !storageOk ? h('div', { class: 'callout bad', style: { marginTop: '14px' } }, ic('error'), h('div', { class: 'ct' }, '当前浏览器禁止本地存储，进度将无法自动保存。')) : null,
-      h('div', { class: 'start-foot' }, h('strong', null, '社区修改版 · Wei Li'), h('br'), '规划地铁、改变出行、塑造城市。', h('br'),
-        h('button', { class: 'credits-link', onclick: function () { self.showCredits(function () { self.showStart(); }); } }, '致谢与许可'), ' · v' + CFG.GAME_VERSION));
+      h('div', { class: 'start-foot' }, h('span', { class: 'start-edition' }, '社区修改版 · Wei Li'),
+        h('div', { class: 'start-links' }, h('button', { class: 'credits-link', onclick: function () { self.showCredits(function () { self.showStart(); }); } }, '致谢与许可'), h('span', { class: 'start-version' }, 'v' + CFG.GAME_VERSION))));
     // 主界面只保留本版本公告、主题与统一致谢入口。
     const news = h('button', { class: 'corner-btn' + (newsSeen() ? '' : ' dot'), 'data-tip': '更新公告', 'aria-label': '更新公告', onclick: function () { self.showNews(function () { self.showStart(); }); } }, ic('megaphone'));
     this.startTheme = h('button', { class: 'corner-btn', 'aria-label': '切换深浅模式', onclick: function () { self.toggleTheme(); } });
@@ -123,7 +119,7 @@
     const link = function (label, href) { return h('a', { class: 'btn sm', href: href, target: '_blank', rel: 'noopener noreferrer' }, label, ic('external', 13)); };
     this.openScreen(h('div', { class: 'card credits-card' },
       h('h2', null, '致谢与许可'),
-      h('p', null, '城市与地铁 · 社区修改版由 Wei Li 维护，采用独立版本号，当前 v' + CFG.GAME_VERSION + '。本版本基于原作修改，不代表原作者或官方发布。'),
+      h('p', null, '轨道纪元 · 社区修改版由 Wei Li 维护，采用独立版本号，当前 v' + CFG.GAME_VERSION + '。本版本基于《城市与地铁》修改，不代表原作者或官方发布。'),
       h('p', null, '感谢原作者 VinsonFung。原作与相关资源 © 2026 VinsonFung，保留所有权利；本游戏自有代码仅限许可证允许的非商业使用。'),
       h('p', null, '地图数据 © OpenStreetMap 贡献者，按 ODbL 1.0 提供；第三方组件与数据继续适用各自原有许可。完整声明随本版本保留。'),
       h('div', { class: 'credits-links' },

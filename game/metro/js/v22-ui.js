@@ -23,21 +23,7 @@
     chip.classList.toggle('on', !!this.topIs(['era']) && !this.right.classList.contains('closed'));
   };
 
-  // 载入动画（v2.2 第三次重做）：严格以 LOGO 原图为准，循环播放、不旋转。画面就是 LOGO 图片本身，由沿笔画走向的遮罩逐段显出——
-  // 外环像列车绕行一圈画出，楼群自左向右依次升起，地铁线穿过车站画出、车站随之亮起，成形后一道光扫过，再柔和地淡出，周而复始。
-  // 笔画位置量自 LOGO 原图（384 × 384）。下方进度条为一段线路，沿途车站逐个点亮
-  const LD_LOOP = 4200;
-  let ldSerial = 0;
-  const LD_RING = { cx: 192.5, cy: 212.3, r: 158, a0: -73, a1: 253 };
-  // [x, 底, 顶, 宽]：六座楼
-  const LD_BARS = [[80.5, 211, 150, 44], [127.5, 211, 108, 46], [171.5, 211, 18, 38], [214, 238, 0, 38], [257.5, 245, 80, 45], [305, 245, 140, 45]];
-  // 地铁线（遮罩中心线，宽约为线宽加车站外圈）与车站 [x, y, 半径]
-  const LD_LINES = [{ d: 'M30 224 L183 224 L193 236 L212 256 L356 256', w: 32 }, { d: 'M84 287 L158 288 Q182 295 188 322', w: 32 }, { d: 'M192 238 L192 330', w: 28 }];
-  const LD_STATIONS = [[38, 224.5, 25], [92, 287, 25], [192, 149, 21], [345, 256, 25], [192.5, 343.5, 27]];
-  // 各笔画在一个循环中的开始时刻与时长（0–1）
-  const LD_T = { ring: [0.02, 0.24], bars: [0.18, 0.05, 0.16], lines: [[0.36, 0.2], [0.46, 0.14], [0.44, 0.1]], st: [0.38, 0.5, 0.33, 0.54, 0.56], shine: [0.62, 0.16], fade: [0.82, 0.12] };
-  // 进度条以下与原先相同；进度由开局、读档与推演过程报告（CM.loadProgress），两次报告之间缓慢前移，不会停住不动
-  // mapId（v2.2）：载入的城市——以该城市的地图画面为全屏背景（从选择地图放大过来时沿用放大的画面）
+  // Loading uses the same scalable mark as the start screen; progress remains live.
   UI.prototype.showLoading = function (text, kind, mapId) {
     const self = this;
     const stops = kind === 'load' ? [[0.3, '城市'], [0.42, '交通'], [0.95, '出行']] : kind === 'pre' ? [[0.2, '城市'], [0.83, '推演'], [0.96, '出行']] : [[0.2, '城市'], [0.3, '交通'], [0.92, '出行']];
@@ -45,44 +31,12 @@
     const fill = h('i', { class: 'ld-fill' }), head = h('span', { class: 'ld-head' }), pct = h('b', { class: 'ld-pct' }, '0%'), stage = h('span', { class: 'ld-stage' }, '准备');
     const track = h('div', { class: 'ld-track' }, h('i', { class: 'ld-rail' }), fill,
       stops.map(function (s) { return h('span', { class: 'ld-stop', style: { left: (s[0] * 100) + '%' } }, h('i'), h('em', null, s[1])); }), head);
-    // LOGO 图片 + 沿笔画的遮罩（描边按 pathLength=1 的虚线偏移逐段显出）；光带只落在 LOGO 的不透明像素上
-    const NS = 'http://www.w3.org/2000/svg', uid = 'ld' + (++ldSerial), dark = document.documentElement.dataset.theme === 'dark', src = dark ? 'img/logo-white.png' : 'img/logo-navy.png';
-    const el = function (tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
-    const svg = el('svg', { viewBox: '0 0 384 384', 'aria-hidden': 'true' }), defs = el('defs', {}, svg);
-    const mask = el('mask', { id: uid + 'm', maskUnits: 'userSpaceOnUse', x: 0, y: 0, width: 384, height: 384 }, defs);
-    const stroke = function (d, w) { return el('path', { d: d, fill: 'none', stroke: '#fff', 'stroke-width': w, 'stroke-linecap': 'butt', 'stroke-linejoin': 'round', pathLength: 1, 'stroke-dasharray': '1 2', 'stroke-dashoffset': 1 }, mask); };
-    const RG = LD_RING, pt = function (a) { a *= Math.PI / 180; return (RG.cx + Math.cos(a) * RG.r).toFixed(1) + ' ' + (RG.cy + Math.sin(a) * RG.r).toFixed(1); };
-    const ring = stroke('M' + pt(RG.a0) + ' A' + RG.r + ' ' + RG.r + ' 0 1 1 ' + pt(RG.a1), 29);
-    const bars = LD_BARS.map(function (b) { return stroke('M' + b[0] + ' ' + b[1] + ' L' + b[0] + ' ' + b[2], b[3]); });
-    const lines = LD_LINES.map(function (l) { return stroke(l.d, l.w); });
-    const stations = LD_STATIONS.map(function (s) { return el('circle', { cx: s[0], cy: s[1], r: 0, fill: '#fff' }, mask); });
-    const alpha = el('mask', { id: uid + 'a', style: 'mask-type:alpha', maskUnits: 'userSpaceOnUse', x: 0, y: 0, width: 384, height: 384 }, defs);
-    el('image', { href: src, x: 0, y: 0, width: 384, height: 384 }, alpha);
-    const grad = el('linearGradient', { id: uid + 'g', x1: 0, x2: 1, y1: 0, y2: 0 }, defs);
-    for (const s of [[0, 0], [0.5, dark ? 0.35 : 0.55], [1, 0]]) el('stop', { offset: s[0], 'stop-color': '#fff', 'stop-opacity': s[1] }, grad);
-    const mark = el('g', {}, svg);
-    el('image', { href: src, x: 0, y: 0, width: 384, height: 384, mask: 'url(#' + uid + 'm)' }, mark);
-    const shineG = el('g', { mask: 'url(#' + uid + 'a)' }, mark), shine = el('rect', { x: -260, y: -40, width: 150, height: 464, fill: 'url(#' + uid + 'g)', transform: 'skewX(-16)' }, shineG);
-    const logo = h('div', { class: 'ld-logo' }); logo.appendChild(svg);
-    const bgOn = !!(this._stageBg && this._stageBg.classList.contains('on')), mp = mapId && CM.MAPS[mapId];
-    const again = /ld-screen/.test(this.screen.className) && this.screen.className.indexOf('hidden') < 0;   // 读档的第二段载入：原地更新，不再播放入场
+    const logo = h('div', { class: 'ld-logo' }, h('img', { class: 'logo-ink', src: 'img/rail-epoch-mark.svg', alt: '', width: '132', height: '132', draggable: 'false' }));
+    const dark = document.documentElement.dataset.theme === 'dark', bgOn = !!(this._stageBg && this._stageBg.classList.contains('on')), mp = mapId && CM.MAPS[mapId];
+    const again = /\bld-screen\b/.test(this.screen.className) && this.screen.className.indexOf('hidden') < 0;   // 读档的第二段载入：原地更新，不再播放入场
     this.openScreen(h('div', { class: 'card ld-card' }, logo, this._loadNote, track, h('div', { class: 'ld-row' }, stage, pct)), null, mp ? 'ld-screen' + (again ? ' noanim' : '') : '', mp && !again ? (bgOn ? 'zoom' : 'fade') : null);
     if (mp && !bgOn) this.stageBg(CM.mapThumb(mapId, dark ? 'dark' : 'light'));
     const L = this._ld = { goal: 0.02, disp: 0, cap: 0.08, done: false, t: performance.now(), t0: performance.now(), fill: fill, head: head, pct: pct, stage: stage, stops: track.querySelectorAll('.ld-stop'), at: stops };
-    const still = CM.Settings.reducedMotion(), T = LD_T;
-    const ease = function (x) { x = U.clamp(x, 0, 1); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };   // 三次缓入缓出
-    const draw = function (e, u) { e.setAttribute('stroke-dashoffset', (1 - u).toFixed(4)); };
-    const anim = function (now) {
-      const t = still ? 0.7 : ((now - L.t0) % LD_LOOP) / LD_LOOP, at = function (s, d) { return still ? 1 : ease((t - s) / d); };
-      draw(ring, at(T.ring[0], T.ring[1]));
-      bars.forEach(function (b, i) { draw(b, at(T.bars[0] + i * T.bars[1], T.bars[2])); });
-      lines.forEach(function (l, i) { draw(l, at(T.lines[i][0], T.lines[i][1])); });
-      stations.forEach(function (c, i) { c.setAttribute('r', (LD_STATIONS[i][2] * at(T.st[i], 0.08)).toFixed(2)); });
-      const s = still ? 0 : U.clamp((t - T.shine[0]) / T.shine[1], 0, 1);
-      shine.setAttribute('x', (-260 + s * 700).toFixed(1)); shine.style.opacity = s > 0 && s < 1 ? 1 : 0;
-      mark.style.opacity = still ? 1 : (1 - ease((t - T.fade[0]) / T.fade[1])).toFixed(4);
-    };
-    anim(performance.now());
     const tick = function (now) {
       if (self._ld !== L || !fill.isConnected) return;
       const dt = Math.min(0.1, (now - L.t) / 1000); L.t = now;
@@ -94,7 +48,7 @@
       fill.style.transform = 'scaleX(' + p.toFixed(4) + ')'; head.style.left = (p * 100).toFixed(2) + '%';
       pct.textContent = Math.floor(p * 100 + (L.done && p > 0.995 ? 0.5 : 0)) + '%';
       for (let i = 0; i < L.stops.length; i++) L.stops[i].classList.toggle('on', p >= L.at[i][0] - 0.002);
-      anim(now);
+
       requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
