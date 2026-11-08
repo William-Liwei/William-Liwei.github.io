@@ -480,12 +480,12 @@
   };
   // 拥挤诊断：区分车站容量不足与列车运力不足，给出对应的处理入口
   UI.prototype.crowdBlock = function (id, k) {
-    const g = this.g(), self = this, model = g.model, mnet = model.net, C = mnet.C, sd = model.dailyStale ? null : (model.stDailyWk || model.stDaily), mc = CFG.metro;
-    if (!sd || k >= sd.peak.length) return null;
+    const g = this.g(), self = this, model = g.model, mnet = model.net, C = mnet && mnet.C, sd = model.dailyStale ? null : (model.stDailyWk || model.stDaily), mc = CFG.metro;
+    if (!C || C !== g.compiled || !Number.isInteger(k) || !C.stations[k] || C.stations[k].id !== id || !sd || k >= sd.peak.length) return null;
     const st = C.stations[k], cap = CM.Metro.stationCapacity(st), stR = sd.peak[k] / cap;
     const ord = ['S', 'M', 'L'], next = function (sz) { return ord[Math.min(2, ord.indexOf(sz) + 1)]; };
     const trains = [];
-    for (const r of C.stationRoutes[k]) {
+    for (const r of C.stationRoutes[k] || []) {
       const rt = C.routes[r], re = mnet.rideEdge[r], n = rt.stIdx.length;
       let worst = null;
       for (const p of [0, 2]) {
@@ -504,22 +504,35 @@
     const item = function (level, title, text, actions) { box.appendChild(h('div', { class: 'diag-item lv-' + level }, h('b', null, title), h('div', { class: 'small' }, text), actions.filter(Boolean).length ? h('div', { class: 'row', style: { flexWrap: 'wrap', gap: '6px', marginTop: '6px' } }, actions.filter(Boolean)) : null)); };
     const divert = h('button', { class: 'btn sm ghost', onclick: function () { self.showDiversion(st); } }, '查看可分流方向');
     if (stR > 0.8) {
-      const up = st.size !== 'L' ? h('button', { class: 'btn sm primary', onclick: function () { g.edit(function (n) { if (n.stations[id]) n.stations[id].size = next(st.size); }); self.toast('已在草案中把「' + st.name + '」升级为' + mc.sizeName[next(st.size)] + '车站', 'info'); } }, '升级为' + mc.sizeName[next(st.size)] + '车站') : null;
+      const up = st.size !== 'L' && (!st.ownerId || st.ownerId === 'player') ? h('button', { class: 'btn sm primary', onclick: function () { g.edit(function (n) { if (n.stations[id]) n.stations[id].size = next(st.size); }); self.toast('已在草案中把「' + st.name + '」升级为' + mc.sizeName[next(st.size)] + '车站', 'info'); } }, '升级为' + mc.sizeName[next(st.size)] + '车站') : null;
       item(stR > 1 ? 'bad' : 'warn', stR > 1 ? '车站容量不足' : '车站接近饱和', '工作日高峰小时进出站与换乘约 ' + U.fmtInt(sd.peak[k]) + ' 人次，' + mc.sizeName[st.size] + '车站能力 ' + U.fmtInt(cap) + ' 人次/时（' + U.fmtPct(stR, 0) + '）。' + (stR > 1 ? '乘客在闸机、楼梯与换乘通道排队，进出站变慢。' : '') + (st.size === 'L' ? '已是大型车站，只能通过新线路分流。' : ''), [up, divert]);
     }
     for (const t of trains) {
       const rt = t.rt, w = t.w, A = C.stations[w.a], B = C.stations[w.b];
-      const minCars = rt.cars, limiting = rt.stIds.filter(function (sid) { return mc.carsBySize[C.stations[C.sIndex.get(sid)].size] === minCars; });
+      if (!A || !B) continue;
+      const minCars = rt.cars, maxCars = CM.RailSystems ? CM.RailSystems.get(rt.line).cars : 8;
+      const routeStations = rt.stIds.map(function (sid) { return C.stations[C.sIndex.get(sid)]; });
+      const limiting = routeStations.filter(function (s) { return s && mc.carsBySize[s.size] === minCars; });
+      const owned = function (s) { return s && (!s.ownerId || s.ownerId === 'player'); };
+      const ownLine = owned(rt.line), ownPlatforms = limiting.every(owned);
+      const canLengthen = minCars < maxCars && routeStations.every(Boolean) && limiting.length > 0 && ownLine && ownPlatforms;
+      const nextSize = canLengthen ? next(limiting[0].size) : null, nextCars = nextSize ? Math.min(maxCars, mc.carsBySize[nextSize]) : minCars;
       const atMax = w.freq >= mc.fMax - 0.5;
-      const helpsHere = limiting.indexOf(id) >= 0;
+      const helpsHere = limiting.some(function (s) { return s.id === id; });
       const segRef = rt.segRefs[w.leg];
       const locate = h('button', { class: 'btn sm', onclick: function () { self.flyTo((A.x + B.x) / 2, (A.y + B.y) / 2, Math.max(self.R.cam.zoom, 20)); if (segRef) self.select({ kind: 'seg', id: segRef.id }); } }, '定位瓶颈区间');
-      const lengthen = minCars < 8 ? h('button', { class: 'btn sm primary', onclick: function () {
-        g.edit(function (n) { for (const sid of limiting) if (n.stations[sid]) n.stations[sid].size = next(n.stations[sid].size); });
-        self.toast('已在草案中升级 ' + limiting.length + ' 座车站，' + rt.line.name + ' 可加长到 ' + mc.carsBySize[next(C.stations[C.sIndex.get(limiting[0])].size)] + ' 节编组', 'info');
-      } }, '加长编组：升级 ' + limiting.length + ' 座' + mc.sizeName[C.stations[C.sIndex.get(limiting[0])].size] + '车站') : null;
-      item('bad', '列车运力不足 · ' + rt.label, A.name + '—' + B.name + ' 区间工作日' + (w.p === 0 ? '早' : '晚') + '高峰断面约 ' + U.fmtInt(w.load) + ' 人/时，超过运力 ' + U.fmtInt(w.capH) + ' 人/时（' + U.fmtNum(w.freq, 1) + ' 列/时' + (atMax ? '，已达发车上限' : '') + '，' + minCars + ' 节编组）。' +
-        (minCars < 8 ? '编组受沿线最小车站限制，' + (helpsHere ? '本站是限制编组的车站之一，需与其余 ' + (limiting.length - 1) + ' 座同时升级。' : '只升级本站不能解决，需要升级限制编组的车站。') : '已是最长编组，只能修建平行线路分流。'), [locate, lengthen, divert]);
+      const lengthen = canLengthen ? h('button', { class: 'btn sm primary', onclick: function () {
+        const result = g.edit(function (n) { for (const st of limiting) { const s = n.stations[st.id]; if (owned(s) && s.size === st.size) s.size = next(s.size); } });
+        if (result && result.error) { self.toast(result.error, 'warn'); return; }
+        self.toast('已在草案中升级 ' + limiting.length + ' 座车站，' + rt.line.name + ' 可加长到 ' + nextCars + ' 节编组', 'info');
+      } }, '加长编组：升级 ' + limiting.length + ' 座' + mc.sizeName[limiting[0].size] + '车站') : null;
+      const advice = minCars >= maxCars ? '已达到本制式最长 ' + maxCars + ' 节编组，可增加运力或修建平行线路分流。' :
+        !ownLine ? '该交路由其他公司经营，扩编需由所属公司处理。' :
+        !ownPlatforms ? '扩编受其他公司车站限制，需先协调站台扩建。' :
+        canLengthen ? '编组受沿线最小车站限制，' + (helpsHere ? '本站是限制编组的车站之一，需与其余 ' + (limiting.length - 1) + ' 座同时升级。' : '只升级本站不能解决，需要升级限制编组的车站。') :
+        '当前没有可扩编的站台升级方案，可增加运力或调整线路分流。';
+      item('bad', '列车运力不足 · ' + rt.label, [A.name + '—' + B.name + ' 区间工作日' + (w.p === 0 ? '早' : '晚') + '高峰断面约 ' + U.fmtInt(w.load) + ' 人/时，超过运力 ' + U.fmtInt(w.capH) + ' 人/时（' + U.fmtNum(w.freq, 1) + ' 列/时' + (atMax ? '，已达发车上限' : '') + '，' + minCars + ' 节编组）。',
+        h('span', null, advice)], [locate, lengthen, divert]);
     }
     return box;
   };

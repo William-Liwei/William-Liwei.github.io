@@ -1,5 +1,9 @@
 'use strict';
 (function(CM){CM.I18N_EN = {
+  "已达到本制式最长 {cars} 节编组，可增加运力或修建平行线路分流。": "This system is limited to {cars} cars. Add service capacity or a parallel line to relieve demand.",
+  "该交路由其他公司经营，扩编需由所属公司处理。": "This service belongs to another company. Its operator must arrange longer trains.",
+  "扩编受其他公司车站限制，需先协调站台扩建。": "Another company's platforms limit train length. Coordinate platform expansion first.",
+  "当前没有可扩编的站台升级方案，可增加运力或调整线路分流。": "No platform upgrade can currently lengthen these trains. Add capacity or adjust routes to relieve demand.",
   "地铁出行的目的（全地图参考，人次/日）": "Metro trip purposes (whole-map reference, trips/day)",
   "重点设施的地铁客流（全地图参考）": "Facility metro trips (whole-map reference)",
   "社区修改版": "Community edition",
