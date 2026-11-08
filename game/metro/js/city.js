@@ -113,7 +113,7 @@
     }
     const tP = U.interp(CFG.growth.popCurve, startYear), tJ = tP * U.interp(CFG.growth.jobsRatio, startYear);
     for (let c = 0; c < N; c++) { this.pop[c] *= tP / sumP; this.jobs[c] *= tJ / sumJ; }
-    this.initUnlockPopulationBase(startYear);
+    this.initUnlockPopulationReferences(startYear);
     for (let c = 0; c < N; c++) this.bh[c] = this.heightFor(c, startYear);
     yield;
 
@@ -1445,57 +1445,121 @@
 
   // ---------------- 区域 ----------------
   City.prototype.regionAt = function (x, y) { const c = this.cellAt(x, y); return c < 0 ? null : this.regions[this.region[c]]; };
-  // Fixed, seed-derived 1990 baseline. Restore generates this before saved
-  // demographics are applied, so reopening an old save cannot move its target.
-  City.prototype.initUnlockPopulationBase = function (year) {
+  // Actual observations, captured explicitly by game settlement. UI reads never
+  // create a reference or substitute a forecast for unavailable history.
+  City.prototype.initUnlockPopulationReferences = function (year) {
     if (!D.unlockPopulationRule) return;
-    const home = D.playerCity || 'sh', start = CFG.START.y; let pop = 0;
-    for (let c = 0; c < this.N; c++) {
-      const rg = this.regions[this.lockRegion(c)];
-      if (rg && !rg.outside && rg.cityId === home && rg.open != null && rg.open <= start) pop += this.pop[c];
-    }
-    const ratio = U.interp(CFG.growth.popCurve, start) / Math.max(1, U.interp(CFG.growth.popCurve, year));
-    this.unlockPopulationBase = { cityId: home, year: start, pop: pop * ratio };
-    this._unlockPopulation = null;
+    this.unlockPopulationRefs = { v: 1, rows: [] };
+    this._unlockReferenceYM = U.ymIndex(year, 1); this._unlockPopulation = null;
   };
-  // One cached cell pass; the monthly driver passes this immutable observation
-  // to every gate, so newly opened areas only count in the following assessment.
+  City.validateUnlockPopulationRefs = function (saved, options) {
+    if (saved == null) return;
+    const fail = function () { throw new Error('存档中的区域人口基准无效'); };
+    const ids = CM.CompanyRoles ? CM.CompanyRoles.list().map(function (r) { return r.id; }) : ['sh', 'sz', 'wx', 'cz', 'nt', 'jx', 'hu'];
+    if (!saved || saved.v !== 1 || !Array.isArray(saved.rows) || saved.rows.length > 100) fail();
+    const seen = new Set();
+    for (const r of saved.rows) {
+      if (!r || !ids.includes(r.cityId) || options && options.cityId && r.cityId !== options.cityId ||
+        !Number.isSafeInteger(r.year) || r.year < 0 || r.year > 9999 || !Number.isSafeInteger(r.ym) ||
+        r.ym < U.ymIndex(r.year, 1) || r.ym > 120000 || options && Number.isFinite(options.ym) && r.ym > options.ym ||
+        !Number.isFinite(r.pop) || r.pop <= 0 || r.pop > 1e12 || !['observed', 'history', 'migration'].includes(r.source)) fail();
+      const key = r.cityId + ':' + r.year; if (seen.has(key)) fail(); seen.add(key);
+    }
+  };
+  City.prototype.restoreUnlockPopulationRefs = function (saved, year, month) {
+    const home = D.playerCity || 'sh', ym = U.ymIndex(year, month || 1);
+    City.validateUnlockPopulationRefs(saved, { cityId: D.unlockPopulationRule ? home : null, ym: ym });
+    if (!D.unlockPopulationRule) return;
+    this.unlockPopulationRefs = saved ? { v: 1, rows: saved.rows.map(function (r) { return Object.assign({}, r); }) } : { v: 1, rows: [] };
+    this._unlockReferenceYM = ym; this._unlockPopulation = null;
+  };
+  City.prototype.regionUnlockReferenceYear = function (region) {
+    const rule = D.unlockPopulationRule;
+    return Math.max(CFG.START.y, region.open - (rule.earlyYears == null ? 3 : rule.earlyYears) - (rule.lookbackYears == null ? 3 : rule.lookbackYears));
+  };
+  // One cached cell pass, shared by all gates in the same monthly assessment.
   City.prototype.regionUnlockPopulation = function () {
-    const base = this.unlockPopulationBase, home = D.playerCity || 'sh';
-    if (!D.unlockPopulationRule || !base || base.cityId !== home) return this.totals().pop;
-    const old = this._unlockPopulation;
-    if (old && old.version === this.version && old.lockVer === this.lockVer && old.source === this.pop && old.open === this.regionOpen && old.regions === this.regions && old.region === this.region && old.home === home) return old.value;
+    const home = D.playerCity || 'sh';
+    if (!D.unlockPopulationRule || !this.unlockPopulationRefs) return this.totals().pop;
+    const old = this._unlockPopulation, unlocked = !!this.unlockAll;
+    if (old && old.version === this.version && old.lockVer === this.lockVer && old.source === this.pop && old.open === this.regionOpen && old.regions === this.regions && old.region === this.region && old.home === home && old.unlocked === unlocked) return old.value;
     let pop = 0;
     for (let c = 0; c < this.N; c++) {
       const k = this.lockRegion(c), rg = this.regions[k];
-      if (rg && !rg.outside && rg.cityId === home && this.regionOpen[k]) pop += this.pop[c];
+      if (rg && !rg.outside && rg.cityId === home && (this.regionOpen[k] || unlocked && rg.open != null && !rg.lockNote && !rg.scenic)) pop += this.pop[c];
     }
     const value = Object.freeze({ local: true, cityId: home, pop: pop });
-    this._unlockPopulation = { version: this.version, lockVer: this.lockVer, source: this.pop, open: this.regionOpen, regions: this.regions, region: this.region, home: home, value: value };
+    this._unlockPopulation = { version: this.version, lockVer: this.lockVer, source: this.pop, open: this.regionOpen, regions: this.regions, region: this.region, home: home, unlocked: unlocked, value: value };
     return value;
   };
+  City.prototype.captureUnlockPopulation = function (year, month, history, options) {
+    if (!D.unlockPopulationRule || !this.unlockPopulationRefs) return false;
+    const home = D.playerCity || 'sh', ym = U.ymIndex(year, month), rows = this.unlockPopulationRefs.rows;
+    this._unlockReferenceYM = ym;
+    const years = Array.from(new Set(this.regions.filter(function (r) { return r.open != null && r.open > CFG.START.y && !r.outside && !r.lockNote && !r.scenic; }).map(r => this.regionUnlockReferenceYear(r)))).sort(function (a, b) { return a - b; });
+    // Population arrays may change without a topology/version change. Explicit
+    // sampling always refreshes the observation; UI reads continue to use cache.
+    this._unlockPopulation = null;
+    const current = this.regionUnlockPopulation();
+    let changed = false;
+    for (const refYear of years) {
+      if (refYear > year || rows.some(function (r) { return r.cityId === home && r.year === refYear; })) continue;
+      const aliases = this.mapId === 'sh-city' ? [home, 'sh-city'] : [home];
+      const candidates = (Array.isArray(history) ? history : []).filter(function (r) {
+        if (!r || r.metricScope !== 'player' || r.y !== refYear || !Number.isSafeInteger(r.m) || r.m < 1 || r.m > 12) return false;
+        const pop = Object.prototype.hasOwnProperty.call(r, 'unlockPopulation') ? r.unlockPopulation : r.pop;
+        if (!Number.isFinite(pop) || pop <= 0 || pop > 1e12) return false;
+        if (!aliases.includes(r.cityId || r.satCityId) || r.cityId && r.satCityId && r.cityId !== r.satCityId && !(aliases.includes(r.cityId) && aliases.includes(r.satCityId))) return false;
+        return U.ymIndex(r.y, r.m) <= ym;
+      }).sort(function (a, b) { return a.m - b.m; });
+      const observed = candidates[0], pop = observed ? Object.prototype.hasOwnProperty.call(observed, 'unlockPopulation') ? observed.unlockPopulation : observed.pop : current.pop;
+      if (!(Number.isFinite(pop) && pop > 0 && pop <= 1e12) || rows.length >= 100) continue;
+      rows.push({ cityId: home, year: refYear, ym: observed ? U.ymIndex(observed.y, observed.m) : ym,
+        pop: pop, source: observed ? 'history' : refYear < year ? 'migration' : 'observed' });
+      changed = true;
+    }
+    rows.sort(function (a, b) { return a.year - b.year || a.cityId.localeCompare(b.cityId); });
+    return changed;
+  };
+  City.prototype.regionUnlockReference = function (region) {
+    const rg = typeof region === 'number' ? this.regions[region] : region, rule = D.unlockPopulationRule;
+    if (!rule || !this.unlockPopulationRefs || !rg || rg.open == null || rg.lockNote || rg.scenic) return null;
+    const year = this.regionUnlockReferenceYear(rg), home = D.playerCity || 'sh';
+    return { region: rg, year: year, row: this.unlockPopulationRefs.rows.find(function (r) { return r.cityId === home && r.year === year; }) || null };
+  };
+  City.unlockPopulationReached = function (population, threshold) {
+    return Number.isFinite(population) && Number.isFinite(threshold) && threshold > 0 && population + Math.max(1e-7, Math.abs(threshold) * 1e-12) >= threshold;
+  };
   City.prototype.regionUnlockThreshold = function (region) {
-    const rg = typeof region === 'number' ? this.regions[region] : region;
-    const base = this.unlockPopulationBase, rule = D.unlockPopulationRule;
-    if (!rule || !base || base.cityId !== (D.playerCity || 'sh') || !rg || rg.open == null || rg.lockNote || rg.scenic) return null;
-    return base.pop > 0 ? base.pop * (1 + U.clamp((rg.open - base.year) * rule.annual, rule.min, rule.max)) : 0;
+    const reference = this.regionUnlockReference(region), rule = D.unlockPopulationRule;
+    const growth = rule && Number.isFinite(rule.growth) ? rule.growth : .1;
+    return reference ? reference.row ? reference.row.pop * (1 + growth) : 0 : null;
   };
-  City.prototype.regionUnlockInfo = function (region) {
+  City.prototype.regionUnlockInfo = function (region, factors) {
     const rg = typeof region === 'number' ? this.regions[region] : region && this.regions.find(r => r.id === (region.regionId || region.id));
-    const threshold = this.regionUnlockThreshold(rg);
-    if (threshold == null) return null;
-    const observation = this.regionUnlockPopulation();
-    return { local: true, population: observation.pop, threshold: threshold, open: rg.open, earlyYear: rg.open - 3, boomYear: rg.open - 4, cityId: observation.cityId };
+    const reference = this.regionUnlockReference(rg); if (!reference) return null;
+    const observation = this.regionUnlockPopulation(), rule = D.unlockPopulationRule, row = reference.row;
+    if (factors === undefined && this.operatorGame && this.operatorGame.macro && CM.Macro) factors = CM.Macro.cityFactors(this.operatorGame);
+    const now = this.operatorGame && this.operatorGame.clock, ym = now ? U.ymIndex(now.y, now.m) : this._unlockReferenceYM;
+    const referenceDue = Number.isFinite(ym) && ym >= U.ymIndex(reference.year, 1), growth = Number.isFinite(rule.growth) ? rule.growth : .1, earlyYears = rule.earlyYears == null ? 3 : rule.earlyYears, boomYears = rule.boomEarlyYears == null ? 4 : rule.boomEarlyYears;
+    return { local: true, population: observation.pop, threshold: row ? row.pop * (1 + growth) : null, baseThreshold: row ? row.pop * (1 + growth) : null,
+      baselinePopulation: row ? row.pop : null, baselineYear: row ? Math.floor(row.ym / 12) : null, baselineYm: row ? row.ym : null,
+      referenceYear: reference.year, growthPercent: row ? observation.pop / row.pop - 1 : null, requiredGrowth: growth,
+      populationReady: !!row && City.unlockPopulationReached(observation.pop, row.pop * (1 + growth)),
+      pending: !row, referenceDue: referenceDue, reason: row ? null : !referenceDue ? 'future' : observation.pop > 0 ? 'unrecorded' : 'no-population',
+      earlyYear: rg.open - (factors && factors.dev > .02 ? boomYears : earlyYears), boomYear: rg.open - boomYears,
+      open: rg.open, cityId: observation.cityId, source: row ? row.source : null };
   };
-  // 普通月结、跳时和后期年份开局共用同一条件。人口只允许提前 3 年，繁荣时 4 年；衰退时门槛提高 3%。
   City.prototype.regionUnlock = function (k, year, population, factors) {
     const rg = this.regions[k];
     if (!rg || this.regionOpen[k] || rg.open == null) return null;
     if (rg.id === 'airport' && D.airport && D.airport.closeYear < 9999 && year < D.airport.closeYear + 7 / 12) return null;
-    const byYear = year >= rg.open;
-    const local = this.regionUnlockThreshold(k), observed = local == null ? population : population && population.local && population.cityId === (D.playerCity || 'sh') ? population : this.regionUnlockPopulation();
+    const byYear = year >= rg.open, local = this.regionUnlockThreshold(k);
+    const observed = local == null ? population : population && population.local && population.cityId === (D.playerCity || 'sh') ? population : this.regionUnlockPopulation();
     const threshold = local == null ? rg.pop : local, count = typeof observed === 'number' ? observed : observed && observed.pop || 0;
-    const early = threshold && count >= threshold * (factors && factors.dev < -0.03 ? 1.03 : 1) && year >= rg.open - (factors && factors.dev > 0.02 ? 4 : 3);
+    const rule = local == null ? null : D.unlockPopulationRule, earlyYears = rule && rule.earlyYears != null ? rule.earlyYears : 3, boomYears = rule && rule.boomEarlyYears != null ? rule.boomEarlyYears : 4;
+    const adjustment = local == null && factors && factors.dev < -.03 ? 1.03 : 1;
+    const early = City.unlockPopulationReached(count, threshold * adjustment) && year >= rg.open - (factors && factors.dev > .02 ? boomYears : earlyYears);
     return byYear || early ? { byYear: byYear, early: !byYear } : null;
   };
   City.prototype.openRegion = function (k, y, m) {
@@ -1728,6 +1792,10 @@
       // 稳定标识（v2.1 起）：区域与地标按 id 对应，地图版本增删区域或地标后旧存档仍能正确恢复
       regionIds: this.regions.map(function (r) { return r.id; }), landmarkIds: D.landmarks.map(function (l) { return l.id; }),
     };
+    if (this.unlockPopulationRefs && this.unlockPopulationRefs.rows.length) {
+      City.validateUnlockPopulationRefs(this.unlockPopulationRefs);
+      out.unlockPopulationRefs = { v: 1, rows: this.unlockPopulationRefs.rows.map(function (r) { return Object.assign({}, r); }) };
+    }
     if (D.terrainRevision) out.terrainRevision = D.terrainRevision;
     if (D.displayRevision) out.displayRevision = D.displayRevision;
     out.lockRule = 2;
@@ -1762,6 +1830,7 @@
   };
   City.prototype.restore = function (s, year, opts) { const it = this.restoreGen(s, year, opts); let r = it.next(); while (!r.done) r = it.next(); };
   City.prototype.restoreGen = function* (s, year, opts) {
+    this.restoreUnlockPopulationRefs(s.unlockPopulationRefs, year, opts && opts.month || 1);
     this.lockRuleOld = (s.lockRule || 1) < 2; this.lockVer++; this._lk = null;
     const N = this.N;
     const chk = function (a, n) { if (a.length !== n) throw new Error('城市数据尺寸不符'); return a; };

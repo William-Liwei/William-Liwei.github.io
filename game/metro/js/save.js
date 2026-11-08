@@ -238,6 +238,7 @@
       const a = payload.city[k];
       if (!a || !a.b || a.n !== mp.cfg.W * mp.cfg.H) throw new Error('城市数据不完整或尺寸不符');
     }
+    if (CM.City && CM.City.validateUnlockPopulationRefs) CM.City.validateUnlockPopulationRefs(payload.city.unlockPopulationRefs, { ym: U.ymIndex(payload.clock.y, payload.clock.m), cityId: mp.id === 'sh-city' ? 'sh' : (payload.meta.playerCity || payload.playerCity || 'sh') });
     if (CM.Property) CM.Property.validate(payload.property, mp.cfg.W * mp.cfg.H);
     return { env: env, payload: payload };
   };

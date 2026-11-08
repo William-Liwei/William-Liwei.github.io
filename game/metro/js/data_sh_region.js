@@ -44,7 +44,7 @@
  m.regionUpgrade={from:3,note:'按年份或人口条件重评旧版默认全开的扩展片区；原有城区已开放状态、车站、轨道和自有土地保留',oldRegionIds:D.regions.map(r=>r.id).concat(D.defaultRegion.id),resetIds:[]};
  D.progressiveRegions=true;
  // Local company growth can accelerate access; dates always guarantee opening.
- D.unlockPopulationRule={annual:.018,min:.05,max:.6};
+ D.unlockPopulationRule={growth:.1,lookbackYears:3,earlyYears:3,boomEarlyYears:4};
  const stages={
   songjiang:[1998,23e6],qingpu:[2002,25e6],jinshan:[2008,30e6],fengxian:[2005,28e6],chongming:[2009,31e6],baoshan_outer:[2001,24.5e6],
   sz_gusu:[2005,28e6],sz_huqiu:[2006,28.5e6],sz_park:[2008,30e6],sz_wuzhong:[2010,32e6],sz_xiangcheng:[2010,32e6],

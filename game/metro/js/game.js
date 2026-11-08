@@ -46,6 +46,7 @@
       yield* g.city.generateGen(g.seed, g.clock.y);
       // 开局统计与建设权限采用同一范围，包含自由建造的全图解锁选项。
       g.unlockAll = opts.mode === 'free' && !opts.tutorial && !!opts.unlockAll; g.city.unlockAll = g.unlockAll;
+      g.city.captureUnlockPopulation(g.clock.y, g.clock.m, g.history);
       lp(0.2, '生成城市与道路');
       g.model = new CM.Model(g.city);
       g.model.habitAge = Game.habitAge(g);
@@ -164,6 +165,7 @@
       }
       const econF = this.macro && CM.Macro ? CM.Macro.applyFactors(this) : null;
       city.growMonth({ year: yr, monthIndex: this.ym(), zoneAccess: model.zoneAccessNorm, cellWalk: null, coverage: 0, econ: econF });
+      city.captureUnlockPopulation(y, m, this.history);
       if (roads) city.updateStreets();
       if (this.macro && CM.Macro) CM.Macro.sample(this);
       if (CM.Eras) { const er = CM.Eras.month(this); if (er) this.logEra(er, false); }
@@ -479,6 +481,7 @@
     this.econ.serviceDebt(y, m);   // 债券：到期利息与本金、逾期处理（每月一次，不会重复结算）
     if (CM.Automation) CM.Automation.monthly(this);
     if (CM.Operators) CM.Operators.monthly(this);
+    city.captureUnlockPopulation(y, m, this.history);
     this.recordHistory();
     // 拥堵变化的年度基准：每年 1 月记一次（保留上一年的一份）；还没有时先记下当前月份
     if (m === 1 || !(this.congRef && this.congRef.year)) { const sn = this.congSnapshot(); if (sn) { const R = this.congRef || (this.congRef = {}); if (R.year && R.year.ym < sn.ym) R.yearPrev = R.year; R.year = sn; } }
@@ -519,8 +522,9 @@
       stations: scoped ? this.compiled.stations.reduce((n, s) => n + (!s.ownerId || s.ownerId === 'player' ? 1 : 0), 0) : this.compiled.stations.length,
       trips: metric(d.trips, 0), crowd: metric(d.crowdShare, 0), ridersWk: metric(dw.metro, 0), ridersWe: metric(de.metro, 0), tm: CFG.TRAFFIC_MODEL,
     };
-    if (scoped) Object.assign(row, { metricScope: 'player', scopeKey: d.scopeKey || null, scopeLabel: d.scopeLabel, ready: ready,
+    if (scoped) Object.assign(row, { metricScope: 'player', cityId: home, scopeKey: d.scopeKey || null, scopeLabel: d.scopeLabel, ready: ready,
       satCityId: home || this.econ.satFactors && this.econ.satFactors.cityId || null, satScopeKey: this.econ.satScope && this.econ.satScope.scopeKey || null });
+    if (scoped && D.unlockPopulationRule) { const observed = this.city.regionUnlockPopulation(); if (observed.local && Number.isFinite(observed.pop)) row.unlockPopulation = observed.pop; }
     this.history.push(row);
     if (this.history.length > 1200) this.history.shift();
     if(CM.Statistics)CM.Statistics.recordMonth(this);
@@ -965,6 +969,7 @@
       if (CM.Operators) CM.Operators.restore(g, s.operators);
       g.tasks = CM.Tasks.restore(s.tasks);
       const kept = g.city.keepLegacyOpen(CM.Operators ? CM.Operators.playerNetwork(g.net) : g.net, g.tasks, g.clock.y, g.clock.m, s.property).map(k => g.city.regions[k].name).join('、');
+      g.city.captureUnlockPopulation(g.clock.y, g.clock.m, s.history);
       lp(0.3, '恢复城市');
       // 交通模型版本：1.8 及更早的存档为 1（典型工作日、通勤与其他两类出行），载入时升级到当前模型
       const tv = (s.traffic && s.traffic.v) || 1, upgrade = tv < CFG.TRAFFIC_MODEL;

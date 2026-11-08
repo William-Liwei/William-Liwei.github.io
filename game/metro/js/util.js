@@ -216,8 +216,10 @@ window.CM = window.CM || {};
   U.regionLock = function (rg, city) {
     if (rg.open == null) return rg.lockNote || '不开放';
     const local = city && city.regionUnlockInfo && city.regionUnlockInfo(rg);
-    if (local && !(local.threshold > 0)) return '参考 ' + local.open + ' 年自动开放；暂无主城起始人口，不采用人口提前条件';
-    if (local) return '参考 ' + local.open + ' 年自动开放；主城已开放人口 ' + U.fmtPeople(local.population) + ' / 提前开放门槛 ' + U.fmtPeople(local.threshold) + '；达到门槛可从 ' + local.earlyYear + ' 年起提前开放（繁荣时再提前 1 年，衰退时门槛提高 3%）。到年不要求人口达标';
+    if (local && local.pending) return local.reason === 'future' || local.referenceDue === false ?
+      '将在 ' + local.referenceYear + ' 年记录主城已开放人口；之后增长 ' + U.fmtPct(local.requiredGrowth, 0) + ' 可提前开放。最早 ' + local.earlyYear + ' 年评估，' + local.open + ' 年自动开放' :
+      '暂无有效的主城人口基准；有实际人口记录后计算增长，' + local.open + ' 年仍自动开放';
+    if (local) return '基准（' + local.baselineYear + ' 年实际记录）：' + U.fmtPeople(local.baselinePopulation) + '；当前主城已开放人口 ' + U.fmtPeople(local.population) + '，增长 ' + U.fmtPct(local.growthPercent, 1) + ' / 目标 ' + U.fmtPct(local.requiredGrowth, 0) + '（' + (local.populationReady ? '增长已达标' : '增长未达标') + '）；最早 ' + local.earlyYear + ' 年可提前开放，' + local.open + ' 年自动开放（每月评估，到年不要求增长达标）';
     const text = '参考 ' + rg.open + ' 年开放';
     return rg.pop ? text + '；人口达到 ' + U.fmtPeople(rg.pop) + '可从 ' + (rg.open - 3) + ' 年起提前开放（繁荣时再提前 1 年，衰退时人口门槛提高 3%）' : text;
   };
