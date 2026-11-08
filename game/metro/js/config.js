@@ -4,7 +4,7 @@
   CM.CFG = {
     GAME_VERSION: '1.2.3',
     TRAFFIC_MODEL: 4,      // 轻量交通更新；与显示版本独立，确保 v3 存档仍触发安全迁移
-    RULES_REVISION: 13,    // Early opening rewards actual growth against persisted home-city history.
+    RULES_REVISION: 14,    // Recover overdue company projects without duplicate charges or hidden delays.
     SAVE_FORMAT: 'city-metro-save',
     SAVE_VERSION: 2,
     SAVE_MIN_VERSION: 2,   // 1.1 起地图改为真实地理，旧版存档的城市数据与之不兼容

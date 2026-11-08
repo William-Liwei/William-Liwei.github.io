@@ -154,7 +154,10 @@
       return { title: '城市轨道公司', el: el };
     }
     const c = row.company, d = row.def;
-    el.append(action('← 全部公司与排行', function () { go(null); }, 'ghost'), h('div', { class: 'op-company-head' }, h('span', { class: 'swatch', style: { background: d.color } }), h('b', null, row.name), h('span', { class: 'tag' }, row.id === 'player' ? '你的公司' : c ? c.note : d.year + ' 年起筹备')));
+    const activeProject = c && c.projects.find(function (p) { return p.phase !== 'open'; });
+    const projectStatus = activeProject && CM.Operators.projectStatus && CM.Operators.projectStatus(g, c, activeProject);
+    const companyStatus = projectStatus && (projectStatus.overdue || activeProject.phase === 'building' && activeProject.due === g.ym()) ? projectStatus.label : c && c.note;
+    el.append(action('← 全部公司与排行', function () { go(null); }, 'ghost'), h('div', { class: 'op-company-head' }, h('span', { class: 'swatch', style: { background: d.color } }), h('b', null, row.name), h('span', { class: 'tag' }, row.id === 'player' ? '你的公司' : c ? companyStatus : d.year + ' 年起筹备')));
     el.appendChild(this.kv([['所属城市', d.city], ['主城满意度', row.sat == null ? '更新中' : Math.round(row.sat) + ' / 100'], ['线网 / 自有车站 / 列车', U.fmtNum(row.km, 1) + ' km / ' + row.stations.length + ' 站 / ' + row.trains.length + ' 列'], ['公司资金', U.fmtMoney(row.funds)], ['公司债务', U.fmtMoney(row.debt)], ['上月票款 / 运营费', row.last ? U.fmtMoney(row.fare) + ' / ' + U.fmtMoney(row.ops) : '尚无完整月账'], ['上月运营结余', row.last ? U.fmtMoney(row.monthProfit) : '尚无完整月账'], ['日上车人次', row.fresh ? U.fmtPeople(row.riders) : '等待客流更新'], ['高峰运力充足率', U.fmtPct(row.service, 0) + '（可用 ' + row.available + ' / 需要 ' + row.needed + ' 列）'], ['经营指数', U.fmtNum(row.score, 1) + ' · 游戏比较指标']]));
     el.appendChild(h('p', { class: 'note' }, '筹建年份、资本强度与工程进度为游戏规则；不代表现实公司的财务或历史线路。城市经济阶段不同，资金与当地需求决定实际开工。'));
     el.appendChild(X.trend(g, row.id));
@@ -163,7 +166,15 @@
     if (c) {
       el.appendChild(h('div', { class: 'fl-h' }, '工程进度'));
       if (!c.projects.length) el.appendChild(h('p', { class: 'note' }, c.note));
-      for (const p of c.projects) { const phase = { funding: '筹资', building: '施工', open: '运营' }[p.phase] || p.phase; el.appendChild(h('div', { class: 'op-project' }, h('b', null, (p.kind === 'cross' ? '跨城联络线' : '本城城区线') + ' · ' + phase), h('small', null, p.phase === 'open' ? when(p.opened) + ' 开通 · 建设与购车实际支出 ' + U.fmtMoney(p.construction + p.fleet) : '概算 ' + U.fmtMoney(p.estimate) + (p.phase === 'building' ? ' · 预计 ' + when(p.due) + ' 开通' : ' · 资金齐备后开工')))); }
+      for (const p of c.projects) {
+        const status = CM.Operators.projectStatus ? CM.Operators.projectStatus(g, c, p) : null;
+        const phase = status ? status.label : { funding: '筹资', building: '施工', open: '运营' }[p.phase] || p.phase;
+        const late = p.phase === 'building' && g.ym() > p.due;
+        const timing = p.phase === 'building' ? (late ? ' · 原预计 ' + when(p.due) + ' 开通，已延期 ' + (g.ym() - p.due) + ' 个月' : ' · 预计 ' + when(p.due) + ' 开通') : ' · 资金齐备后开工';
+        const card = h('div', { class: 'op-project' }, h('b', null, (p.kind === 'cross' ? '跨城联络线' : '本城城区线') + ' · ' + phase), h('small', null, p.phase === 'open' ? when(p.opened) + ' 开通 · 建设与购车实际支出 ' + U.fmtMoney(p.construction + p.fleet) : '概算 ' + U.fmtMoney(p.estimate) + timing));
+        if (status && status.text && p.phase !== 'open') card.appendChild(h('p', { class: 'note' + (late ? ' warn' : '') }, status.text));
+        el.appendChild(card);
+      }
       const ownStations = Object.values(g.net.stations).filter(function (s) { return mine(s) && g.compiled.serviced[g.compiled.sIndex.get(s.id)]; });
       const target = h('select', { 'aria-label': '合作接驳的本公司车站' }, ownStations.map(function (s) { return h('option', { value: s.id }, s.name); }));
       const invite = action(c.crossPermit ? '更新接驳目标' : '授权进入本城并申请接驳', function () { const r = CM.Operators.requestConnection(g, row.id, target.value); self.toast(r.error || '接驳申请已提交，工程由该公司独立出资', r.error ? 'warn' : 'good'); if (r.ok) { self.markUnsaved(); self.scheduleAutosave(); self.rerenderPage(); } });

@@ -107,6 +107,7 @@
     for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
       const px = x + dx, py = y + dy, c = g.city.cellAt(px, py);
       if (c < 0 || !O.canBuildCell(g, c, owner) || homeOnly && O.cityAt(g, c) !== owner || !M.checkSite(view, px, py, 'underground').ok) continue;
+      if (CM.Property && CM.Property.find && CM.Property.find(g, c)?.owned) continue;
       if (used.some(s => U.dist(s.x, s.y, px, py) * CFG.CELL_M < Math.max(250, CFG.metro.minSpacingM))) continue;
       const val = Math.log1p(g.city.pop[c] + g.city.jobs[c]) - Math.hypot(dx, dy) * .8;
       if (val > score) { score = val; best = { x: +px.toFixed(3), y: +py.toFixed(3) }; }
@@ -191,6 +192,101 @@
       c.satYM = ym;
     }
   };
+  // Engineering advances share one monthly slot; overdue completions precede
+  // new proposals. Live retries never rotate ledgers or issue another grant.
+  function advance(g, onlyOverdue) {
+    const s = g.operators, ym = g.ym(), ci = g.econ.costIndex(g.clock.y);
+    if (g.draft || s.lastBuild === ym || !CM.Fleet || !CM.Fleet.quoteOwned) return;
+    const count = Object.values(g.net.stations).filter(st => !O.isPlayer(st)).length;
+    const entries = DEFINITIONS.map((d, index) => ({ d, index, c: s.companies[d.id] })).filter(x => x.c);
+    entries.forEach(x => { x.p = x.c.projects.find(p => p.phase !== 'open'); });
+    entries.sort((a, b) => { const ad = a.p && a.p.phase === 'building' && a.p.due <= ym, bd = b.p && b.p.phase === 'building' && b.p.due <= ym; return Number(bd) - Number(ad) || (ad && bd ? a.p.due - b.p.due : 0) || a.index - b.index; });
+    for (const entry of entries) {
+      const d = entry.d, c = entry.c; let p = entry.p;
+      if (onlyOverdue && (!p || p.phase !== 'building' || p.due > ym)) continue;
+      if (!p) {
+        if (c.projects.length >= MAX_PROJECTS || count + 4 > MAX_STATIONS) continue;
+        const kind = c.projects.length ? 'cross' : 'local';
+        if (kind === 'cross' && (g.clock.y < 2018 || ym < c.projects[0].opened + 36)) continue;
+        const plan = O.plan(g, c.id, kind); if (!plan) { c.note = '等待合适走廊与可建设场地'; continue; }
+        p = startProject(g, c, plan); s.lastBuild = ym; return true;
+      }
+      if (p.phase === 'building' && ym < p.due) continue;
+      const plan = evaluatePoints(g, c, p.points, p.kind, p.target);
+      if (!plan) { c.note = '走廊需重新评估，暂缓施工';
+        if (!onlyOverdue && ym % 6 === 0 || onlyOverdue && p.phase === 'building' && p.due < ym) {
+          const alternative = O.plan(g, c.id, p.kind);
+          if (alternative && c.funds >= alternative.cost) {
+            p.points = alternative.points; p.target = alternative.target; p.estimate = alternative.cost;
+            if (p.phase === 'building') {
+              p.due = ym + 3; c.note = '调整走廊，延长三个月完成复核'; s.lastBuild = ym;
+              log(g, c.id, '工程走廊调整', '保留已完成施工进度，采用重新验证的合法走廊，追加三个月完成开通复核；建设和购车款仍在实际开通时结算。');
+              return true;
+            }
+            c.note = '调整走廊后重新筹资';
+          }
+        }
+        continue; }
+      p.estimate = plan.cost;
+      if (p.phase === 'funding') {
+        if (c.funds < plan.cost + 20000 * ci) { c.note = '筹资中，尚缺 ' + U.fmtMoney(Math.max(0, plan.cost + 20000 * ci - c.funds)); continue; }
+        // Construction capital is reserved and paid at opening against the latest
+        // validated bill, so a stale plan never charges for assets that did not open.
+        p.phase = 'building'; p.start = ym; p.due = ym + (p.kind === 'cross' ? 30 : 24); c.note = '施工中';
+        log(g, c.id, defOf(c.id).city + (p.kind === 'cross' ? '联络线' : '城区线') + '开工', '预计 ' + Math.floor(p.due / 12) + ' 年 ' + (p.due % 12 + 1) + ' 月开通；建设款预留在公司账内。'); s.lastBuild = ym; return true;
+      }
+      if (c.funds + 1e-7 < plan.cost) { c.note = '等待追加资金'; continue; }
+      if (count + plan.ids.length > MAX_STATIONS) { c.note = '区域公司站点数量已达上限'; continue; }
+      book(g, c, 'construction', plan.ev.total, false); book(g, c, 'fleet', plan.quote.cost, false);
+      for (const dm of plan.ev.demolitions) g.city.demolish(dm.c, dm.frac);
+      for (const id of plan.ids) { plan.draft.stations[id].built = [g.clock.y, g.clock.m]; plan.draft.stations[id].site = [plan.draft.stations[id].x, plan.draft.stations[id].y]; }
+      for (const [id, seg] of Object.entries(plan.draft.segments)) if (!g.net.segments[id]) { seg.built = [g.clock.y, g.clock.m]; seg.paidLen = Math.round(plan.ev.paidLen[id] || 0); seg.base = null; }
+      g.net = plan.draft; g.netVersion++; g.compiled = plan.C; g._compKey = null;
+      CM.Fleet.applyOwned(g, plan.quote);
+      g.model.cancelPredict(); if (plan.ev.demolitions.length) { g.model.buildZones(); g.model.buildDemand(); }
+      g.model.fleetSource = net => CM.Fleet.plan(g, net);
+      g.model.setNetwork(g.compiled);
+      p.phase = 'open'; p.opened = ym; p.line = plan.lid; p.construction = plan.ev.total; p.fleet = plan.quote.cost; c.note = '运营中';
+      s.lastBuild = ym; log(g, c.id, g.net.lines[plan.lid].name + '开通运营', '建设 ' + U.fmtMoney(p.construction) + '、列车 ' + U.fmtMoney(p.fleet) + '，均由本公司支付；乘客按真实线路与换乘选择出行。');
+      g.emit('network'); g.emit('fleet'); g.emit('autosave', 'operators'); return true;
+    }
+    return false;
+  }
+  O.projectStatus = function (g, c, p) {
+    if (!p) return { phase: null, label: '尚无工程', text: '尚无工程', reason: null, overdue: false, due: -1, monthsLate: 0 };
+    const overdue = p.phase === 'building' && p.due < g.ym();
+    let reason = null, label = p.phase === 'open' ? '已开通' : p.phase === 'funding' ? '筹资中' : '施工中';
+    if (p.phase === 'building' && p.due === g.ym()) { label = '待开通复核'; reason = g.draft ? '等待玩家草案确认后进行开通复核' : c && /走廊|追加资金|站点数量|调整/.test(c.note) ? c.note : '等待完工复核'; }
+    if (p.phase === 'building' && c && /调整走廊/.test(c.note)) reason = c.note;
+    if (overdue) {
+      label = '开通延期';
+      if (g.draft) reason = '等待玩家草案确认后进行开通复核';
+      else if (c && /走廊|追加资金|站点数量|调整/.test(c.note)) reason = c.note;
+      else if (g.operators && g.operators.lastBuild === g.ym()) reason = '等待下一月工程窗口';
+      else reason = '等待完工复核';
+    }
+    return { phase: p.phase, label, text: reason ? label + '：' + reason : label, reason, overdue, due: p.due, monthsLate: overdue ? Math.max(0, g.ym() - p.due) : 0 };
+  };
+  function retryKey(g) {
+    const due = Object.values(g.operators.companies).flatMap(c => c.projects.filter(p => p.phase === 'building' && p.due <= g.ym()).map(p => [c.id, c.funds + 1e-7 >= p.estimate, c.crossPermit, c.request, p.id, p.phase, p.due, p.estimate, p.target, p.points]));
+    return due.length ? JSON.stringify([g.ym(), g.netVersion, g.city.geoVer, g.city.terrainVer, g.city.roadVersion, g.property && g.property.rev, g.fleet && g.fleet.ver, due]) : null;
+  }
+  O.poll = function (g) {
+    if (!O.enabled(g) || !g.operators || !g.model) return false;
+    let r = runtime.get(g); if (!r) { r = { views: new Map() }; runtime.set(g, r); }
+    if (g.draft) { r.poll = null; return false; }
+    if (g.pending || g.jumping || !g.model.trafficReady || !g.model.trafficReady()) return false;
+    const s = g.operators, ym = g.ym(); if (s.lastBuild === ym) return false;
+    const key = retryKey(g); if (!key) return false;
+    if (r.poll === key) return false;
+    r.poll = key;
+    const notes = Object.values(s.companies).map(c => c.note).join('\0');
+    const progressed = advance(g, true);
+    if (!progressed) r.poll = retryKey(g);
+    if (progressed && CM.OperatorControls && CM.OperatorControls.recordMonth) CM.OperatorControls.recordMonth(g);
+    if (progressed || notes !== Object.values(s.companies).map(c => c.note).join('\0')) emit(g);
+    return !!progressed;
+  };
   O.monthly = function (g) {
     const s = O.ensure(g); if (!s || s.lastMonth === g.ym()) return; s.lastMonth = g.ym();
     const ym = g.ym(), ci = g.econ.costIndex(g.clock.y);
@@ -205,46 +301,7 @@
     }
     O.updateSatisfaction(g);
     if (!g.fleet && CM.Fleet) CM.Fleet.ensure(g);
-    // At most one project advances per month. No NPC mutation can overwrite a player draft.
-    if (g.draft || s.lastBuild === ym || !CM.Fleet || !CM.Fleet.quoteOwned) return;
-    const count = Object.values(g.net.stations).filter(st => !O.isPlayer(st)).length;
-    for (const d of DEFINITIONS) {
-      const c = s.companies[d.id]; if (!c) continue;
-      let p = c.projects.find(p => p.phase !== 'open');
-      if (!p) {
-        if (c.projects.length >= MAX_PROJECTS || count + 4 > MAX_STATIONS) continue;
-        const kind = c.projects.length ? 'cross' : 'local';
-        if (kind === 'cross' && (g.clock.y < 2018 || ym < c.projects[0].opened + 36)) continue;
-        const plan = O.plan(g, c.id, kind); if (!plan) { c.note = '等待合适走廊与可建设场地'; continue; }
-        p = startProject(g, c, plan); s.lastBuild = ym; break;
-      }
-      if (p.phase === 'building' && ym < p.due) continue;
-      const plan = evaluatePoints(g, c, p.points, p.kind, p.target);
-      if (!plan) { c.note = '走廊需重新评估，暂缓施工';
-        if (ym % 6 === 0) { const alternative = O.plan(g, c.id, p.kind); if (alternative) { p.points = alternative.points; p.target = alternative.target; p.estimate = alternative.cost; p.phase = 'funding'; p.start = p.due = -1; c.note = '调整走廊后重新筹资'; } }
-        continue; }
-      p.estimate = plan.cost;
-      if (p.phase === 'funding') {
-        if (c.funds < plan.cost + 20000 * ci) { c.note = '筹资中，尚缺 ' + U.fmtMoney(Math.max(0, plan.cost + 20000 * ci - c.funds)); continue; }
-        // Construction capital is reserved and paid at opening against the latest
-        // validated bill, so a stale plan never charges for assets that did not open.
-        p.phase = 'building'; p.start = ym; p.due = ym + (p.kind === 'cross' ? 30 : 24); c.note = '施工中';
-        log(g, c.id, defOf(c.id).city + (p.kind === 'cross' ? '联络线' : '城区线') + '开工', '预计 ' + Math.floor(p.due / 12) + ' 年 ' + (p.due % 12 + 1) + ' 月开通；建设款预留在公司账内。'); s.lastBuild = ym; break;
-      }
-      if (c.funds + 1e-7 < plan.cost || count + plan.ids.length > MAX_STATIONS) { c.note = '等待追加资金'; continue; }
-      book(g, c, 'construction', plan.ev.total, false); book(g, c, 'fleet', plan.quote.cost, false);
-      for (const dm of plan.ev.demolitions) g.city.demolish(dm.c, dm.frac);
-      for (const id of plan.ids) { plan.draft.stations[id].built = [g.clock.y, g.clock.m]; plan.draft.stations[id].site = [plan.draft.stations[id].x, plan.draft.stations[id].y]; }
-      for (const [id, seg] of Object.entries(plan.draft.segments)) if (!g.net.segments[id]) { seg.built = [g.clock.y, g.clock.m]; seg.paidLen = Math.round(plan.ev.paidLen[id] || 0); seg.base = null; }
-      g.net = plan.draft; g.netVersion++; g.compiled = plan.C; g._compKey = null;
-      CM.Fleet.applyOwned(g, plan.quote);
-      g.model.cancelPredict(); if (plan.ev.demolitions.length) { g.model.buildZones(); g.model.buildDemand(); }
-      g.model.fleetSource = net => CM.Fleet.plan(g, net);
-      g.model.setNetwork(g.compiled);
-      p.phase = 'open'; p.opened = ym; p.line = plan.lid; p.construction = plan.ev.total; p.fleet = plan.quote.cost; c.note = '运营中';
-      s.lastBuild = ym; log(g, c.id, g.net.lines[plan.lid].name + '开通运营', '建设 ' + U.fmtMoney(p.construction) + '、列车 ' + U.fmtMoney(p.fleet) + '，均由本公司支付；乘客按真实线路与换乘选择出行。');
-      g.emit('network'); g.emit('fleet'); g.emit('autosave', 'operators'); break;
-    }
+    advance(g, false);
     if (CM.OperatorControls && CM.OperatorControls.recordMonth) CM.OperatorControls.recordMonth(g);
     emit(g);
   };

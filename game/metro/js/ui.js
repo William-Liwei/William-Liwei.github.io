@@ -582,6 +582,7 @@
     g.on('jump', function () { snd('whoosh'); self.showJump(); });
     g.on('jumpProgress', function (p) { self.updateJump(p); });
     g.on('jumpDone', function (r) { snd('chime'); self.rerenderPage(); self.showJumpResult(r); self.scheduleAutosave(); if (r.failed) self.showFailure(r.failed); });
+    g.on('jumpError', function (r) { clearTimeout(self._autoT); self._jp = null; self.showJumpError(r); });
     g.on('speed', function () { self.renderToolbar(); });
     // 里程碑：消息提示；重大节点弹出庆祝横幅（跳月 / 跳年期间只记录）
     // 乘客之声：每月结算与建设效果更新后重新生成反馈（结果按月份与线网缓存）
@@ -1060,6 +1061,7 @@
   UI.prototype.setSpeed = function (s) {
     this.closeTimeOptions();
     const g = this.g(); if (!g || g.jumping) return;
+    if (g.jumpError && s > 0) { this.showJumpError(g.jumpError); return; }
     s = U.clamp(s, 0, CFG.time.speeds.length);
     if (g.econ.failed && s > 0) { this.toast('经营挑战已失败，请选择后续操作', 'bad'); this.showFailure(g.econ.failed); return; }
     if (s > 0) this.prevSpeed = s;
@@ -1115,6 +1117,7 @@
   UI.prototype.jump = function (n) {
     this.closeTimeOptions();
     const g = this.g(); if (!g) return;
+    if (g.jumpError) { this.showJumpError(g.jumpError); return; }
     if (g.econ.failed) { this.showFailure(g.econ.failed); return; }
     if (!g.startJump(n)) this.toast('正在结算，请稍候', 'info');
   };
@@ -2801,6 +2804,7 @@
   UI.prototype.markSaved = function (g, at, snap) { this.save = Object.assign({ state: 'saved', at: at, msg: '' }, snap || this.saveSnap(g)); };
   UI.prototype.scheduleAutosave = function () {
     const self = this;
+    if (this.g() && this.g().jumpError) { clearTimeout(this._autoT); return; }
     if (!CM.Settings.get('autosave')) return;
     clearTimeout(this._autoT);
     this._autoT = setTimeout(function () { const g = self.g(); if (g && !g.jumping && !g.pending) self.doAutosave(); else if (g) self.scheduleAutosave(); }, 700);
@@ -2809,6 +2813,7 @@
   UI.prototype.doAutosave = function (force) {
     if (CM.isLoading && CM.isLoading()) return Promise.resolve({ ok: false, error: '正在载入游戏，请稍后保存' });
     const g = this.g(); if (!g) return Promise.resolve({ ok: true });
+    if (g.jumpError) return Promise.resolve({ ok: false, error: '时间推进中断，请读取最近存档后继续' });
     this.lastAuto = performance.now();
     const self = this;
     // 旧存档升级但升级前备份未能建立：暂停自动保存，避免自动存档轮换覆盖原存档（手动保存为新存档不受影响）
@@ -2831,6 +2836,7 @@
   UI.prototype.manualSave = function (slotId, label) {
     if (CM.isLoading && CM.isLoading()) return Promise.resolve({ ok: false, error: '正在载入游戏，请稍后保存' });
     const g = this.g(); if (!g) return Promise.resolve();
+    if (g.jumpError) { this.toast('时间推进中断，请读取最近存档后继续', 'warn'); return Promise.resolve({ ok: false, error: '时间推进中断，请读取最近存档后继续' }); }
     if (g.pending || g.jumping) { this.toast('正在进行月度结算，请稍候再保存', 'info'); return Promise.resolve({ ok: false, error: '正在结算' }); }
     const self = this, snap = this.saveSnap(g);
     const pending = CM.Save.save(g, 'manual', { slotId: slotId, label: label || ('手动存档 ' + g.clock.y + '年' + g.clock.m + '月') }).then(function (r) {
@@ -2846,6 +2852,17 @@
   };
 
   // ======================== 跳月/跳年 与 失败 ========================
+  UI.prototype.showJumpError = function (r) {
+    const self = this, g = this.g(); r = r || g && g.jumpError; if (!r) return;
+    const date = function (a) { return a[0] + '年' + a[1] + '月' + a[2] + '日'; };
+    const detail = h('details', null, h('summary', null, '错误详情'), h('p', { class: 'note' }, r.error && r.error.message || '未到达所选目标日期'));
+    this.openScreen(h('div', { class: 'card' }, this.cardHead('warn', 'b-orange', '时间推进中断'),
+      h('p', null, '本次选择推进 ' + r.months + ' 个月，原目标 ' + date(r.target) + '。当前停在 ' + date(r.to) + '。'),
+      h('p', { class: 'note' }, '未完成的推进不会记为成功，已暂停模拟且不会覆盖最近存档。请读取最近存档后继续。'), detail,
+      h('div', { class: 'row', style: { marginTop: '14px', gap: '8px' } },
+        h('button', { class: 'btn primary', onclick: function () { self.showSaveManager(true, g.mapId); } }, '读取存档'),
+        h('button', { class: 'btn ghost', onclick: function () { self.closeScreen(); } }, '查看暂停画面'))), null);
+  };
   UI.prototype.showJump = function () {
     const g = this.g(), j = g.jumping;
     this.jumpBar = h('i', { style: { width: '2%' } });

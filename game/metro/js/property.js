@@ -50,7 +50,28 @@
     const rg = g.city.regions[g.city.region[c]], x = c % g.city.W, y = Math.floor(c / g.city.W);
     return (rg ? rg.name : '地块') + ' · ' + (x + 1) + ',' + (y + 1);
   };
-  P.unavailable = function (g, c, allowExhausted) {
+  const constructionCache = new WeakMap();
+  // Station acquisition uses its containing cell. Reserve only new stations in
+  // actual NPC construction, never a speculative corridor or a radius around it.
+  const constructionCells = function (g) {
+    const companies = g.operators, city = g.city;
+    if (g.mapId !== 'sh' || g.tutorial || !companies) return null;
+    const key = [companies, city, companies.lastMonth, companies.lastBuild, g.rev, g.netVersion, g.clock.y, g.clock.m, g.playerCity];
+    const cached = constructionCache.get(g);
+    if (cached && cached.key.every(function (value, i) { return value === key[i]; })) return cached.cells;
+    const cells = new Set();
+    for (const company of Object.values(companies.companies || {})) {
+      if (company.id === 'player' || company.id === (g.playerCity || 'sh')) continue;
+      for (const project of company.projects || []) if (project.phase === 'building') {
+        for (const point of project.points || []) {
+          if (point.stationId || !Number.isFinite(point.x) || !Number.isFinite(point.y)) continue;
+          const cell = city.cellAt(point.x, point.y); if (cell >= 0) cells.add(cell);
+        }
+      }
+    }
+    constructionCache.set(g, { key: key, cells: cells }); return cells;
+  };
+  P.unavailable = function (g, c, allowExhausted, options) {
     const city = g.city, LU = CM.LU;
     if (!Number.isInteger(c) || c < 0 || c >= city.N) return '请选择地图内的地块';
     if (city.landFrac[c] < 0.8 || city.lu[c] === LU.WATER) return '水域与临水碎地不可购买';
@@ -59,6 +80,7 @@
     if (!rg || rg.scenic || city.protectedId && city.protectedId[c] > 0 || city.heritage && city.heritage[c] === 2 ||
         [LU.PARK, LU.INST, LU.HILL, LU.AIRPORT, LU.LANDMARK].indexOf(city.lu[c]) >= 0) return '公共设施、景区与保护用地不可购买';
     const p = find(g, c), used = Math.max(p ? p.used : 0, city.taken[c] || 0);
+    if (!(options && options.restoring) && (!p || !p.owned) && constructionCells(g)?.has(c)) return '该地块已有其他公司的车站施工，暂不能购买';
     if (!allowExhausted && used >= 0.98) return '地块已用于公共建设，没有可交易面积';
     return '';
   };
@@ -286,7 +308,7 @@
   P.restore = function (g, s, startYear) {
     P.validate(s, g.city.N);
     if (s && (s.lastDay > dayKey(g) || s.records.some(function (p) { return p.bought > dayKey(g) || p.devAt > dayKey(g); }))) throw new Error('存档中的土地交易日期无效');
-    if (s && s.records.some(function (p) { return p.owned && P.unavailable(g, p.c, true) && !historicalLandmark(g, p, startYear); })) throw new Error('存档中的土地位于不可交易的水域、未开放区或保护用地');
+    if (s && s.records.some(function (p) { return p.owned && P.unavailable(g, p.c, true, { restoring: true }) && !historicalLandmark(g, p, startYear); })) throw new Error('存档中的土地位于不可交易的水域、未开放区或保护用地');
     if (s) g.property = JSON.parse(JSON.stringify(s));
   };
 

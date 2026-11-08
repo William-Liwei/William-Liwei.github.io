@@ -270,6 +270,7 @@
     }, beforeC, this);
   };
   Game.prototype.update = function (dt) {
+    if (this.jumpError) return;   // A partial settlement must be restored, never resumed.
     // 交通求解的每帧预算（v2.3 高密度线网）：上一帧除求解外的主线程耗时较少时，把余量让给求解（最多 solverBudgetMaxMs），
     // 大线网改线后更快收敛；画面吃紧时回到基础预算，不降低帧率
     // 镜头移动、拖动时（v2.5 性能）优先保证画面与输入：求解和月结只拿最低预算。只改调度，计算轮次与结果不变
@@ -287,6 +288,7 @@
       return;
     }
     if (this.speed > 0 && !this.econ.failed) this.advanceClock(dt);
+    if (CM.Operators && CM.Operators.poll) CM.Operators.poll(this);
     const ts = performance.now();
     this.model.step(budget);
     this._solveMs = performance.now() - ts;
@@ -532,7 +534,7 @@
 
   // ---------------- 跳月 / 跳年 ----------------
   Game.prototype.startJump = function (months) {
-    if (this.jumping || this.pending) return false;
+    if (this.jumpError || this.jumping || this.pending) return false;
     if (this.draft) this.invalidatePrediction();
     const t = U.ymIndex(this.clock.y, this.clock.m) + months;
     const ty = Math.floor(t / 12), tm = t % 12 + 1;
@@ -569,12 +571,23 @@
     ch.port1.onmessage = function () { const f = fn; fn = null; if (f) f(); };
     return function (f) { fn = f; ch.port2.postMessage(0); };
   })();
+  Game.prototype.failJump = function (j, error) {
+    if (!j || this.jumping !== j) return;
+    if (CM.CarPool && CM.CarPool.onReq === j.resume) CM.CarPool.onReq = null;
+    j.waiting = false; j.next = false;
+    this.jumping = null; this.pending = null; this.speed = 0;
+    const report = { from: j.from.slice(), to: [this.clock.y, this.clock.m, this.clock.d],
+      target: j.target.slice(), months: j.months, error: { message: String(error && error.message || error || '时间推进未完成').slice(0, 1000) } };
+    this.jumpError = report;
+    this.emit('jumpError', report);
+  };
   Game.prototype.stepJump = function () {
     const j = this.jumping, t0 = performance.now();
     if (!j || this.model.retired) return;
     j.waiting = false;
     while (performance.now() - t0 < CFG.perf.jumpSliceMs) {
-      const r = j.gen.next();
+      let r;
+      try { r = j.gen.next(); } catch (error) { this.failJump(j, error); return; }
       if (!r.done && r.value === CM.SIM_WAIT) {
         j.waiting = true;
         const self = this;
@@ -583,11 +596,16 @@
         break;
       }
       if (r.done) {
+        const reached = this.clock.y === j.target[0] && this.clock.m === j.target[1] && this.clock.d === j.target[2];
+        if (!reached && !this.econ.failed) { this.failJump(j, new Error('时间推进提前结束，尚未到达目标日期')); return; }
+        let after;
+        try { this.recordHistoryIfNeeded(); after = this.snapshotMetrics(); }
+        catch (error) { this.failJump(j, error); return; }
         if (CM.CarPool && CM.CarPool.onReq === j.resume) CM.CarPool.onReq = null;
+        j.waiting = false; j.next = false;
         this.jumping = null;
         this.speed = 0;
-        this.recordHistoryIfNeeded();
-        const res = { from: j.from, to: [this.clock.y, this.clock.m, this.clock.d], before: j.snap, after: this.snapshotMetrics(), failed: this.econ.failed };
+        const res = { from: j.from, to: [this.clock.y, this.clock.m, this.clock.d], target: j.target.slice(), months: j.months, before: j.snap, after: after, failed: this.econ.failed };
         this.emit('jumpDone', res);
         return;
       }
@@ -904,6 +922,7 @@
 
   // ---------------- 存档 ----------------
   Game.prototype.serialize = function () {
+    if (this.jumpError) throw new Error('时间推进发生错误，请重新读取存档后再保存');
     return {
       meta: { playerCity: this.playerCity || 'sh', gameId: this.id, name: this.name, mode: this.mode, seed: this.seed, createdAt: this.createdAt, gameVersion: CFG.GAME_VERSION, map: this.mapId || 'gz', mapVersion: (CM.MAPS[this.mapId || 'gz'] || {}).mapVersion || 1, scenario: (CM.MAPS[this.mapId || 'gz'] || {}).scenario || '', mapFp: (CM.MAPS[this.mapId || 'gz'] || {}).fp || '' },
       clock: Object.assign({}, this.clock),
