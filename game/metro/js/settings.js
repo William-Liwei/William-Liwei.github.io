@@ -4,6 +4,7 @@
   const KEY = 'cm1.settings';
   const DEF = {
     language: 'zh-CN',    // 仅切换显示语言，不改地图、模拟与存档中的原文
+    buildTod: 0,         // New stations only; construction quote includes this commercial tier.
     lighting: true, // Directional light for Canvas ground and buildings.
     stationModels: true, // Canvas station architecture and decoration in 2.5D.
     immersive: false, // 城市中隐藏界面；键位和触屏按钮均可恢复。
@@ -20,7 +21,7 @@
     nightFast: true, peakSlow: false, curveMode: 'smooth',
     grid: false, gridSnap: true,  // 视图工具及设置「游戏」页中的网格吸附
     gridUnit: 'km', scaleBar: true,
-    edgePan: false, edgePanSpeed: 1, // 鼠标停在画面边缘时移动地图；默认关闭
+    edgePan: false, edgePanSpeed: 1, edgePanBand: 72, // 边缘感应宽度为实际屏幕像素；默认关闭移动
     minimapOpen: 'auto',   // 初次打开：电脑展开、手机收起；之后保留玩家选择
     keys: {},             // 自定义物理键位
     recentColors: [],      // 最近使用的自定义线路颜色
@@ -39,11 +40,13 @@
     }
   } catch (e) { /* 存储不可用时使用默认值 */ }
   cur.colorBlind = cur.colorBlind === true;
+  if (!Number.isInteger(cur.buildTod) || cur.buildTod < 0 || cur.buildTod > 3) cur.buildTod = 0;
   if (!['auto','standard','high'].includes(cur.gfx)) cur.gfx='auto';
   cur.immersive = cur.immersive === true;
   cur.autoImpactReport = cur.autoImpactReport === true;
   cur.edgePan = cur.edgePan === true;
   if (![0.6, 1, 1.6].includes(cur.edgePanSpeed)) cur.edgePanSpeed = 1;
+  if (!Number.isInteger(cur.edgePanBand) || cur.edgePanBand < 32 || cur.edgePanBand > 128) cur.edgePanBand = 72;
   if (cur.minimapOpen !== 'auto' && typeof cur.minimapOpen !== 'boolean') cur.minimapOpen = 'auto';
   if (!['km', 'deg'].includes(cur.gridUnit)) cur.gridUnit = 'km';
   if (!['zh-CN', 'zh-TW', 'en'].includes(cur.language)) cur.language = 'zh-CN';
@@ -60,9 +63,11 @@
     get: function (k) { return cur[k]; },
     all: function () { return Object.assign({}, cur); },
     set: function (k, v) {
+      if (k === 'buildTod' && (!Number.isInteger(v) || v < 0 || v > 3)) v = 0;
       if (k === 'language' && !['zh-CN', 'zh-TW', 'en'].includes(v)) v = 'zh-CN';
       if (k === 'colorBlind' || k === 'immersive' || k === 'autoImpactReport' || k === 'edgePan') v = v === true;
       if (k === 'edgePanSpeed' && ![0.6, 1, 1.6].includes(v)) v = 1;
+      if (k === 'edgePanBand' && (!Number.isInteger(v) || v < 32 || v > 128)) v = 72;
       if (k === 'minimapOpen' && v !== 'auto' && typeof v !== 'boolean') v = 'auto';
       if (k === 'recentColors') v = recent(v);
       if (cur[k] === v) return;

@@ -9,7 +9,7 @@
     light: ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#e34948'],
     dark: ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#008300', '#9085e9', '#e66767'],
   };
-  const TABS = [['overview', '概览', 'chart'], ['traffic', '交通', 'metro'], ['tickets', '票务', 'ticket'], ['econ', '经济', 'trend'], ['finance', '财政', 'wallet'], ['milestones', '城市纪事', 'book']];
+  const TABS = [['overview', '概览', 'chart'], ['regional', '城市与区域', 'map'], ['traffic', '交通', 'metro'], ['tickets', '票务', 'ticket'], ['econ', '经济', 'trend'], ['finance', '财政', 'wallet'], ['milestones', '城市纪事', 'book']];
   let ui = null, tab = 'overview', range = 'all', isOpen = false, charts = [], body = null, sig = '';
 
   function pal() { return AX.enabled() ? AX.palette() : PALETTE[document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light']; }
@@ -595,7 +595,7 @@
     } });
     else el.appendChild(h('div', { class: 'empty-chart' }, '票务统计尚未载入。'));
   }
-  const PAGES = { overview: pageOverview, traffic: pageTraffic, tickets: pageTickets, econ: pageEcon, finance: pageFinance, milestones: pageMilestones };
+  const PAGES = { regional: function (g, el) { if (CM.RegionalMetrics && CM.RegionalMetrics.enabled(g)) el.appendChild(CM.RegionalMetrics.panel(ui, g, function () { renderBody(g, false, true); })); }, overview: pageOverview, traffic: pageTraffic, tickets: pageTickets, econ: pageEcon, finance: pageFinance, milestones: pageMilestones };
   const NOTES = {
     tickets: '所有票量与票款分段来自实际选中的乘车路径；图表不把平均乘距推算成客票分布。',
     milestones: '只记录关键节点：地铁建设的「第一次」与里程关口、客流与分担率关口、人口关口、本地图的重大历史事件、地标落成与填海成陆。',
@@ -625,9 +625,10 @@
   }
   function syncTabs(g, instant) {
     const free = g.econ.isFree(), eco = !!(g.macro && CM.Macro);
-    if ((tab === 'finance' && free) || (tab === 'econ' && !eco)) tab = 'overview';
+    const regional = CM.RegionalMetrics && CM.RegionalMetrics.enabled(g);
+    if ((tab === 'finance' && free) || (tab === 'econ' && !eco) || (tab === 'regional' && !regional)) tab = 'overview';
     for (const k in tabBtns) {
-      tabBtns[k].style.display = (k === 'finance' && free) || (k === 'econ' && !eco) ? 'none' : '';
+      tabBtns[k].style.display = (k === 'finance' && free) || (k === 'econ' && !eco) || (k === 'regional' && !regional) ? 'none' : '';
       tabBtns[k].classList.toggle('on', k === tab); tabBtns[k].setAttribute('aria-selected', k === tab ? 'true' : 'false');
     }
     const b = tabBtns[tab];
@@ -641,7 +642,9 @@
     charts = [];
     if (!PAGES[tab]) tab = 'overview';
     const page = h('div', { class: 'stats-page' + (swap ? ' swap-in' : '') });
+    if (CM.RegionalMetrics && CM.RegionalMetrics.enabled(g) && tab !== 'regional' && tab !== 'milestones') page.appendChild(h('div', { class: 'note' }, '本页历史图表为区域全图口径；分城市数据请切换“城市与区域”。财政与票务属于玩家公司。'));
     PAGES[tab](g, page);
+    if ((tab === 'overview' || tab === 'regional') && CM.CityDynamics) page.appendChild(CM.CityDynamics.panel(ui, g));
     page.appendChild(h('div', { class: 'tiny muted stats-note' }, NOTES[tab] || NOTES._));
     const st = keepScroll ? body.scrollTop : 0;
     body.replaceChildren(page);
@@ -666,6 +669,7 @@
   // 需要重画的条件：图表最后一点是“当前”值（标注到日）；纪事页只随里程碑与主题变化
   function signature(g) {
     const th = document.documentElement.dataset.theme + '|' + AX.flag(), n = g.milestones ? g.milestones.list.length : 0;
+    if (tab === 'regional') return ['regional', g.clock.y, g.clock.m, g.clock.d, g.city.version, g.model.version, g.model.dailyStale, CM.RegionalMetrics.scope(g), n, th].join('|');
     if (tab === 'tickets') return ['tickets', g.clock.y, g.clock.m, g.clock.d, g.model.version, g.model.trafficReady(), CM.Model.fareKey(g.econ.fare), g.netVersion, g.fleet ? g.fleet.ver : 0, g.statistics ? g.statistics.events.length : 0, th].join('|');
     if (tab === 'milestones') return 'ms|' + n + '|' + th + '|' + (window.innerWidth < 820 ? 1 : 2);
     if (tab === 'econ') return 'ec|' + g.clock.y + '-' + g.clock.m + '|' + (g.macro ? g.macro.rec.length + '|' + g.macro.gv : '') + '|' + th;

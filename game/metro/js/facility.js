@@ -10,6 +10,9 @@
   const TYPES = {
     rail: { name: '铁路客运站', icon: 'train', p: { hb: 1 }, hub: true, we: 1, L: 0, r: 0.6, group: '交通枢纽' },
     air: { name: '机场', icon: 'plane', p: { hb: 1 }, hub: true, we: 1, L: 0, r: 1.2, group: '交通枢纽' },
+    coach: { name: '长途客运站', icon: 'bus', p: { hb: 1 }, hub: true, we: 1.15, L: 0, r: .5, group: '交通枢纽' },
+    port: { name: '客运码头', icon: 'ferry', p: { hb: 1 }, hub: true, we: 1.3, L: 0, r: .5, group: '交通枢纽' },
+    freight: { name: '港区员工接驳', icon: 'building', p: { hb: 1 }, hub: true, we: .45, L: 0, r: .7, group: '交通枢纽' },
     uni: { name: '大学', icon: 'school', p: { sc: 1 }, we: 3, L: 1.8, r: 1.0, group: '教育' },
     hosp: { name: '医院', icon: 'hospital', p: { md: 1 }, we: 1, L: 1.8, r: 0.5, group: '医疗' },
     shop: { name: '商圈', icon: 'bag', p: { sh: 0.8, lz: 0.2 }, we: 1.1, L: 1.5, r: 1.0, group: '商业' },
@@ -194,10 +197,10 @@
   // 片区人口（按城市版本缓存）
   Fac.regionPop = function (city, k) {
     let c = city._regPop;
-    if (!c || c.v !== city.version) {
+    if (!c || c.v !== city.version || c.region !== city.region || c.popRef !== city.pop) {
       const pop = new Float64Array(city.regions.length);
       for (let i = 0; i < city.N; i++) { const r = city.region[i]; if (r < pop.length) pop[r] += city.pop[i]; }
-      c = city._regPop = { v: city.version, pop: pop };
+      c = city._regPop = { v: city.version, region: city.region, popRef: city.pop, pop: pop };
     }
     return c.pop[k] || 0;
   };

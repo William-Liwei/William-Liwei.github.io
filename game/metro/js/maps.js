@@ -57,6 +57,9 @@
   // 地图数据指纹：格网、要素数量与名称表；范围修订提高 mapVersion，原范围内的地形校正由 terrainRevision 识别。
   for (const id in MAPS) {
     const m = MAPS[id], G = m.geo;
+    // Map type describes the simulated territory; company selection remains a
+    // regional scenario feature and never changes a saved map's identity.
+    m.mapType = m.mapType === 'region' || id === 'sh' ? 'region' : 'city';
     m.mapVersion = m.mapVersion || 1;
     m.fp = U.fnv([id, m.cfg.W, m.cfg.H, (G.water || []).length, (G.roads || []).length, (G.names || []).length, (m.data.regions || []).map(function (r) { return r.id; }).join(',')].join('|'));
   }
@@ -182,7 +185,7 @@
   }
   CM.MAPS = MAPS;
   // 选择列表由易到难；同难度保留既有城市顺序，新地图按登记顺序接在同档末尾。
-  const mapOrder = ['tutorial', 'gz', 'hz', 'hk', 'tp', 'tk'];
+  const mapOrder = ['tutorial', 'gz', 'hz', 'hk', 'tp', 'tk', 'sh-city'];
   for (const id of Object.keys(MAPS)) if (mapOrder.indexOf(id) < 0) mapOrder.push(id);
   const mapRank = new Map(mapOrder.map(function (id, i) { return [id, i]; }));
   CM.MAP_ORDER = mapOrder.filter(function (id) { return MAPS[id]; }).sort(function (a, b) {

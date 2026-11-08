@@ -19,10 +19,11 @@
 
   function state(g) { if (!g.milestones) g.milestones = { list: [], done: {} }; return g.milestones; }
   function add(g, id, o, when) {
+    if (typeof id !== 'string' || !id || id.length > 160 || ['__proto__', 'constructor', 'prototype'].includes(id) || !o || !Object.prototype.hasOwnProperty.call(CAT, o.cat) || typeof o.title !== 'string') return null;
     const st = state(g); if (st.done[id]) return null;
     st.done[id] = 1;
     const w = when || g.clock;
-    const r = Object.assign({ id: id, y: w.y, m: w.m, d: w.d || 1 }, o);
+    const r = Object.assign({}, o, { id: id, y: w.y, m: w.m, d: w.d || 1 });
     st.list.push(r);
     st.list.sort(function (a, b) { return (a.y - b.y) || (a.m - b.m) || ((a.d || 1) - (b.d || 1)); });
     if (!when && g.emit) g.emit('milestone', r);
@@ -35,11 +36,13 @@
     hit.forEach(function (k, i) { add(g, id + k, make(k), i < hit.length - 1 ? g.clock : undefined); });
   }
   // ---------- 网络状态 ----------
+  const owned = function (asset) { return !!asset && (!asset.ownerId || asset.ownerId === 'player'); };
   function netInfo(g) {
     const C = g.compiled, net = g.net;
+    return M.withSegIndex([net], function () {
     let km = 0, crossM = 0, river = null;
     if (C && C.segs) C.segs.forEach(function (cs) {
-      if (!cs.g) return;
+      if (!cs.g || !cs.seg || !owned(net.lines[cs.seg.line]) || !owned(cs.seg)) return;
       km += cs.g.lenM / 1000;
       if (cs.g.waterM > 30 && cs.g.waterM > crossM) {
         crossM = cs.g.waterM;
@@ -49,14 +52,70 @@
     });
     let lines = 0, loop = null, xfer = null, first = null;
     for (const lid of M.sortIds(Object.keys(net.lines))) {
-      const tp = M.lineTopo(net, lid);
+      if (!owned(net.lines[lid])) continue;
+      const tp = C && C.topo && C.topo.get(lid) || M.lineTopo(net, lid);
       if (!tp.stations || tp.stations.length < 2 || tp.topo === 'invalid' || tp.topo === 'empty') continue;
       lines++;
       if (!first) first = { L: net.lines[lid], tp: tp };
       if (tp.topo === 'loop' && !loop) loop = net.lines[lid];
     }
-    for (const id in net.stations) if (M.stationLines(net, id).length >= 2) { xfer = net.stations[id]; break; }
+    for (const id in net.stations) if (owned(net.stations[id]) && M.stationLines(net, id).filter(lid => owned(net.lines[lid])).length >= 2) { xfer = net.stations[id]; break; }
     return { km: km, lines: lines, river: river, crossM: crossM, loop: loop, xfer: xfer, first: first };
+    });
+  }
+
+  // Small published-network summary only: no geographic raster, OD scan or new
+  // traffic solve. Stops and active frequencies distinguish service from track.
+  const operatingCache = new WeakMap();
+  function operatingInfo(g) {
+    const m = g.model, C = g.compiled;
+    if (!m || !C || !m.net || m.net.C !== C || m.dailyStale || m.settled === false || !m.trafficReady || !m.trafficReady() || m.hasReviewWork && m.hasReviewWork()) return null;
+    const stamp = [g.netVersion, g.rev, g.fleet && g.fleet.ver, m.version, m.cycles, g.clock.y, g.clock.m].join('|'), cached = operatingCache.get(g);
+    if (cached && cached.stamp === stamp) return cached.info;
+    const stations = new Map(), lines = new Set(); let crossCity = null;
+    const regional = g.mapId === 'sh' && CM.RegionalMetrics && CM.RegionalMetrics.enabled(g);
+    for (let ri = 0; ri < C.routes.length; ri++) {
+      const r = C.routes[ri], L = g.net.lines[r.lineId]; if (!owned(L) || r.stIds.length < 2) continue;
+      const active = ['wd', 'we'].some(function (dt) { const data = m.resultsFor ? m.resultsFor(dt) : m.results && m.results[dt] || m.ctxs && m.ctxs[dt]; return data && data.per && data.per.some(P => P.freq && P.freq[ri] > 1e-7); });
+      if (!active) continue;
+      lines.add(r.lineId); const cities = new Set(), system = CM.RailSystems ? CM.RailSystems.id(L) : 'metro';
+      for (const sid of r.stIds) {
+        const st = g.net.stations[sid]; if (!st) continue;
+        if (regional) { const cell = g.city.cellAt(st.x, st.y), id = cell >= 0 ? CM.RegionalMetrics.cityOf(g, cell) : null; if (id && id !== 'other') cities.add(id); }
+        if (!owned(st)) continue;
+        let row = stations.get(sid); if (!row) { row = { id: sid, lines: new Set(), systems: new Set() }; stations.set(sid, row); }
+        row.lines.add(r.lineId); row.systems.add(system);
+      }
+      if (cities.size >= 2 && !crossCity) crossCity = { line: r.lineId, cities: Array.from(cities) };
+    }
+    const info = { stations, lines: lines.size, crossCity }; operatingCache.set(g, { stamp, info }); return info;
+  }
+  function operatingMilestones(g) {
+    const info = operatingInfo(g); if (!info) return;
+    const hit = [], st = state(g), now = g.clock.y + (g.clock.m - 1) / 12;
+    const candidate = function (id, value) { if (!st.done[id]) hit.push({ id, value }); };
+    if (info.crossCity) {
+      const x = info.crossCity, defs = CM.Operators && CM.Operators.DEFINITIONS || [], names = x.cities.map(id => { const d = defs.find(x => x.id === id); return d ? d.city : id; });
+      candidate('first-intercity-service', { cat: 'metro', icon: 'route', big: true, title: '首次开行跨城线路', desc: '自营「' + g.net.lines[x.line].name + '」已运营，实际停靠站连接 ' + names.join('、') + '。' });
+    }
+    let hall = null, commerce = null, modes = null;
+    for (const row of info.stations.values()) {
+      const s = g.net.stations[row.id];
+      if (!hall && M.hubLevel(s) >= 2 && row.lines.size >= 3) hall = s;
+      if (!modes && row.systems.size >= 2 && ['tram', 'light'].some(id => row.systems.has(id)) && ['metro', 'commuter', 'regional', 'highspeed', 'maglev'].some(id => row.systems.has(id))) modes = { station: s, count: row.systems.size };
+      if (!commerce && (s.tod || 0) >= 4 && s.size === 'L' && M.hubLevel(s) >= 1 && row.lines.size >= 2) {
+        const k = g.compiled.sIndex.get(s.id), a = g.model.stDailyWk, b = g.model.stDailyWe;
+        const flow = d => d && k !== undefined ? (d.inn[k] || 0) + (d.out[k] || 0) + (d.xfer[k] || 0) : 0;
+        const age = s.built ? Math.max(0, now - s.built[0] - (s.built[1] - 1) / 12) : 0, x = U.clamp(age / (CFG.metroLed.years || 4), 0, 1), maturity = 1 - (1 - x) * (1 - x);
+        if (maturity >= .75 && (flow(a) * 5 + flow(b) * 2) / 7 >= 60000) commerce = s;
+      }
+    }
+    if (hall) candidate('first-super-hub', { cat: 'metro', icon: 'network', big: true, title: '首座超级换乘枢纽', desc: '「' + hall.name + '」已建成二级换乘大厅，并有至少三条自营线路实际停靠运营。' });
+    if (modes) candidate('first-multimodal-service', { cat: 'metro', icon: 'train', title: '骨干与接驳协同运营', desc: '「' + modes.station.name + '」已连接自营骨干铁路与轻轨或有轨电车，乘客可以换乘不同制式。' });
+    if (commerce) candidate('first-mature-tod', { cat: 'city', icon: 'building', big: true, title: '首个成熟枢纽商业中心', desc: '「' + commerce.name + '」的四级以上商业已具备成熟运营和日均六万人次客流支撑。' });
+    // A developed legacy save can meet several conditions at once. Preserve the
+    // real records but show one celebration, using the existing silent-date path.
+    hit.forEach(function (x, i) { add(g, x.id, x.value, i < hit.length - 1 ? g.clock : undefined); });
   }
 
   // 建设确认后：地铁建设类里程碑
@@ -66,7 +125,7 @@
       const tp = n.first.tp, a = g.net.stations[tp.stations[0]], b = g.net.stations[tp.stations[tp.stations.length - 1]];
       add(g, 'first-line', { cat: 'metro', icon: 'train', big: true, title: (D.city || '城市') + '第一条地铁开通', desc: n.first.L.name + (a && b ? ' ' + a.name + '—' + b.name : '') + '，' + tp.stations.length + ' 座车站' });
     }
-    if (n.xfer) add(g, 'first-xfer', { cat: 'metro', icon: 'network', title: '第一座换乘站', desc: '「' + n.xfer.name + '」连接 ' + M.stationLines(g.net, n.xfer.id).map(function (l) { return g.net.lines[l].name; }).join('、') });
+    if (n.xfer) add(g, 'first-xfer', { cat: 'metro', icon: 'network', title: '第一座换乘站', desc: '「' + n.xfer.name + '」连接 ' + M.stationLines(g.net, n.xfer.id).filter(lid => owned(g.net.lines[lid])).map(function (l) { return g.net.lines[l].name; }).join('、') });
     if (n.river) add(g, 'first-cross', { cat: 'metro', icon: 'route', big: true, title: '地铁首次跨越' + n.river, desc: '跨水区段约 ' + U.fmtKm(n.crossM) + '，两岸由地铁直接相连' });
     if (n.loop) add(g, 'first-loop', { cat: 'metro', icon: 'route', title: '第一条环线建成', desc: n.loop.name + '首尾相接，形成环线' });
     series(g, KM, function (k) { return n.km >= k; }, 'km-', function (k) { return { cat: 'metro', icon: 'metro', big: k >= 100, title: '地铁总里程突破 ' + k + ' 公里', desc: '目前 ' + n.lines + ' 条线路，共 ' + U.fmtNum(n.km, 1) + ' km' }; });
@@ -89,6 +148,7 @@
       series(g, SHARE, function (k) { return (d.metroShare || 0) >= k; }, 'share-', function (k) { return { cat: 'ride', icon: 'metro', title: '地铁分担率达到 ' + Math.round(k * 100) + '%', desc: '每 ' + Math.round(1 / k) + ' 次出行就有 1 次乘地铁' }; });
       if ((d.coverage || 0) >= 0.5) add(g, 'cover-50', { cat: 'ride', icon: 'station', title: '地铁覆盖过半人口', desc: U.fmtPct(d.coverage, 0) + ' 的居民步行 15 分钟可到达地铁站' });
     }
+    operatingMilestones(g);
   }
   // 历史事件（本地图事件表中的重大事件）
   function onEvent(g, e, k) {
@@ -122,14 +182,14 @@
   // 旧存档：按月度历史补记可推断的里程碑（日期取首次达到的月份），其余按当前状态补记
   function backfill(g) {
     if (g.milestones) return;
-    const st = state(g), H = g.history || [];
+    const st = state(g), H = g.history || [], n = netInfo(g);
     const t0 = H.length ? { y: H[0].y, m: H[0].m, d: 1 } : g.clock;
     add(g, 'start', { cat: 'history', icon: 'flag', title: (H.length ? H[0].y : CFG.START.y) + ' 年 · ' + (D.city || '城市') + '，从这里开始', desc: '' }, t0);
     st.pop0 = H.length ? H[0].pop : g.city.totals().pop;
     for (const r of H) {
       const w = { y: r.y, m: r.m, d: 1 };
       for (const k of POP) if (k > st.pop0 * 1.04 && r.pop >= k) add(g, 'pop-' + k, { cat: 'city', icon: 'people', title: '城市人口突破 ' + fmtN(k), desc: '地图范围内常住人口约 ' + U.fmtPeople(r.pop) }, w);
-      if (r.stations > 1) add(g, 'first-line', { cat: 'metro', icon: 'train', big: true, title: (D.city || '城市') + '第一条地铁开通', desc: '' }, w);
+      if (r.stations > 1 && n.first) add(g, 'first-line', { cat: 'metro', icon: 'train', big: true, title: (D.city || '城市') + '第一条地铁开通', desc: '' }, w);
       for (const k of RIDE) if ((r.riders || 0) >= k) add(g, 'ride-' + k, { cat: 'ride', icon: 'people', title: '地铁日客运量突破 ' + fmtN(k) + ' 人次', desc: '' }, w);
       for (const k of SHARE) if ((r.share || 0) >= k) add(g, 'share-' + k, { cat: 'ride', icon: 'metro', title: '地铁分担率达到 ' + Math.round(k * 100) + '%', desc: '' }, w);
       if ((r.coverage || 0) >= 0.5) add(g, 'cover-50', { cat: 'ride', icon: 'station', title: '地铁覆盖过半人口', desc: '' }, w);
@@ -139,7 +199,7 @@
       add(g, 'ev-' + (e.id || k), { cat: 'history', icon: 'flag', tag: e.tag, title: e.title, desc: e.desc || '' }, { y: e.y, m: e.m, d: 1 });
     });
     // 网络类：无法推断日期的按读档时补记（不弹出提示）
-    const n = netInfo(g), now = { y: g.clock.y, m: g.clock.m, d: g.clock.d };
+    const now = { y: g.clock.y, m: g.clock.m, d: g.clock.d };
     if (n.xfer) add(g, 'first-xfer', { cat: 'metro', icon: 'network', title: '第一座换乘站', desc: '「' + n.xfer.name + '」（读档时补记）' }, now);
     if (n.river) add(g, 'first-cross', { cat: 'metro', icon: 'route', title: '地铁首次跨越' + n.river, desc: '（读档时补记）' }, now);
     if (n.loop) add(g, 'first-loop', { cat: 'metro', icon: 'route', title: '第一条环线建成', desc: n.loop.name + '（读档时补记）' }, now);
@@ -153,8 +213,15 @@
     const k = nx(KM, n.km, 'km-'); if (k) out.push({ icon: 'metro', label: '地铁里程', cur: n.km, goal: k, text: U.fmtNum(n.km, 1) + ' / ' + k + ' km', color: CAT.metro.color });
     const r = nx(RIDE, d.metro || 0, 'ride-'); if (r) out.push({ icon: 'train', label: '日客运量', cur: d.metro || 0, goal: r, text: U.fmtPeople(d.metro || 0) + ' / ' + fmtN(r), color: CAT.ride.color });
     const s = nx(SHARE, d.metroShare || 0, 'share-'); if (s) out.push({ icon: 'chart', label: '分担率', cur: d.metroShare || 0, goal: s, text: U.fmtPct(d.metroShare || 0, 1) + ' / ' + Math.round(s * 100) + '%', color: CAT.ride.color });
+    const service = operatingInfo(g);
+    if (service && service.stations.size) {
+      let hall = 0, connections = 0, tod = 0;
+      for (const row of service.stations.values()) { const s = g.net.stations[row.id]; if (M.hubLevel(s) > hall || M.hubLevel(s) === hall && row.lines.size > connections) { hall = M.hubLevel(s); connections = row.lines.size; } tod = Math.max(tod, s.tod || 0); }
+      if (!st.done['first-super-hub']) out.push({ icon: 'network', label: '超级换乘枢纽', cur: (Math.min(2, hall) / 2 + Math.min(3, connections) / 3) / 2, goal: 1, text: '大厅 ' + hall + '/2 级 · 自营运营线路 ' + connections + '/3 条', color: CAT.metro.color });
+      if (!st.done['first-mature-tod']) out.push({ icon: 'building', label: '成熟枢纽商业中心', cur: Math.min(4, tod), goal: 4, text: '商业 ' + Math.min(4, tod) + '/4 级 · 成熟运营并达到日均六万人次', color: CAT.city.color });
+    }
     return out;
   }
 
-  CM.Milestones = { CAT: CAT, state: state, onNetwork: onNetwork, onMonth: onMonth, onEvent: onEvent, onLandmarks: onLandmarks, onReclaim: onReclaim, onStart: onStart, onEra: onEra, backfill: backfill, next: next, netInfo: netInfo };
+  CM.Milestones = { CAT: CAT, state: state, register: add, onNetwork: onNetwork, onMonth: onMonth, onEvent: onEvent, onLandmarks: onLandmarks, onReclaim: onReclaim, onStart: onStart, onEra: onEra, backfill: backfill, next: next, netInfo: netInfo };
 })(window.CM);

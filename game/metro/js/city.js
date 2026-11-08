@@ -87,6 +87,7 @@
       if ((c & 4095) === 4095) yield;
       const L = this.lu[c];
       if (L === LU.WATER || L === LU.HILL || L === LU.PARK || L === LU.AIRPORT) continue;
+      if (this.regions[this.region[c]].outside) continue;
       const i = c % W, j = (c / W) | 0, cx = i + 0.5, cy = j + 0.5;
       let p = D.rural.pop, jb = D.rural.jobs;
       for (const ct of D.centers) {
@@ -849,6 +850,7 @@
     }
     for (const p of comps) {
       const n = p.cells.length, rg = regions[p.k];
+      if (rg.outside) continue;
       if (n >= largest[p.k] || (rg.scenic ? n >= 4 || !rg.woodMin : n >= 12)) continue;
       const cnt = new Map(), alt = new Map();   // alt：四周只有风景区时并入风景区
       for (const c of p.cells) {
@@ -856,6 +858,7 @@
         for (const nb of [i > 0 ? c - 1 : -1, i < W - 1 ? c + 1 : -1, c - W, c + W]) {
           if (nb < 0 || nb >= N || comp[nb] === -2) continue;
           const k2 = reg[nb]; if (k2 === p.k) continue;
+          if (regions[k2].outside) continue;
           const m = regions[k2].scenic ? alt : cnt; m.set(k2, (m.get(k2) || 0) + 1);
         }
       }
@@ -1496,11 +1499,21 @@
     dJ = Math.max(dJ, -0.002 * tot.jobs);
     // Shanghai's endogenous total growth is independent of the spatial allocation below.
     if (ctx.development) { dP = ctx.development.dPop; dJ = ctx.development.dJobs; }
+    // A regional map has one allocation budget per geographic city. Build its
+    // compact index once; every pass below remains linear in the raster size.
+    const regional = ctx.development && ctx.development.byCity && typeof ctx.development.cityOf === 'function';
+    const groups = regional ? Object.keys(ctx.development.byCity).map(id => ({ id, dP: ctx.development.byCity[id].dPop, dJ: ctx.development.byCity[id].dJobs, pop: 0, jobs: 0 })) : null;
+    let bucket = null, sumR = null, sumJ = null, moveP = null, moveJ = null, movedP = null, movedJ = null;
+    if (groups) {
+      const index = new Map(groups.map((x, i) => [x.id, i])); bucket = new Int16Array(N); bucket.fill(-1);
+      sumR = new Float64Array(groups.length); sumJ = new Float64Array(groups.length);
+      for (let c = 0; c < N; c++) { const k = index.get(ctx.development.cityOf(c)); if (k !== undefined) { bucket[c] = k; groups[k].pop += this.pop[c]; groups[k].jobs += this.jobs[c]; } }
+    }
     const eraMul = year < 2000 ? 0.8 : (year < 2010 ? 0.8 + 0.2 * (year - 2000) / 10 : Math.min(1.15, 1 + 0.15 * (year - 2010) / 20));
     // 历史发展阶段（v2.2，eras.js）：片区增长权重与疏解。疏解把成熟片区的一小部分岗位 / 人口放回本月的分配量，
     // 总量不变（就业中心迁移、旧城疏解），再按增长权重分配到其他地方
     const EF = CM.Eras && CM.Eras.enabled() ? CM.Eras.regionFactors(this, year) : null;
-    if (EF) {
+    if (EF && !groups) {
       let mJ = 0, mP = 0;
       for (let c = 0; c < N; c++) {
         const k = this.region[c], rj = EF.relocJ[k], rp = EF.relocP[k];
@@ -1516,6 +1529,7 @@
     let sR = 0, sJ = 0;
     const mi = ctx.monthIndex;
     for (let c = 0; c < N; c++) {
+      if (groups && bucket[c] < 0) continue;
       const L = this.lu[c];
       if (L === LU.WATER || L === LU.HILL || L === LU.PARK || L === LU.AIRPORT || L === LU.LANDMARK) continue;
       if (!this.regionOpen[this.region[c]] && !(ctx.developmentRegions && ctx.developmentRegions[this.region[c]])) continue;
@@ -1544,10 +1558,19 @@
       const rnd = 0.6 + 0.8 * U.hash2(c, mi, this.seed + 31);
       const remR = cr - this.pop[c], remJ = cj - this.jobs[c];
       const kR = EF ? Math.pow(EF.pop[this.region[c]], flat) : 1, kJ = EF ? Math.pow(EF.jobs[this.region[c]], flat) : 1;
-      if (remR > 0) { wR[c] = remR * (0.25 + acc) * (1 + 1.6 * st) * (0.3 + nb) * rnd * seed * kR * (1 + GL.res * pw * pf); sR += wR[c]; }
+      if (remR > 0) { wR[c] = remR * (0.25 + acc) * (1 + 1.6 * st) * (0.3 + nb) * rnd * seed * kR * (1 + GL.res * pw * pf); sR += wR[c]; if (groups) sumR[bucket[c]] += wR[c]; }
       if (remJ > 0) {
         const comBoost = (P === LU.COM || P === LU.MIX) ? 2.0 * ecom : 1;
-        wJ[c] = remJ * (0.2 + acc * 1.2) * (1 + 1.6 * st * comBoost) * (0.3 + nb) * rnd * seed * kJ * (1 + GL.jobs * pw * pf * (comBoost > 1 ? 1.3 : 1)); sJ += wJ[c];
+        wJ[c] = remJ * (0.2 + acc * 1.2) * (1 + 1.6 * st * comBoost) * (0.3 + nb) * rnd * seed * kJ * (1 + GL.jobs * pw * pf * (comBoost > 1 ? 1.3 : 1)); sJ += wJ[c]; if (groups) sumJ[bucket[c]] += wJ[c];
+      }
+    }
+    if (groups && EF) {
+      moveP = new Float64Array(N); moveJ = new Float64Array(N); movedP = new Float64Array(groups.length); movedJ = new Float64Array(groups.length);
+      for (let c = 0; c < N; c++) {
+        const k = bucket[c]; if (k < 0) continue;
+        const r = this.region[c], rp = EF.relocP[r], rj = EF.relocJ[r];
+        if (rp > 0 && this.pop[c] > 0 && sumR[k] > 0) { const before = this.pop[c]; this.pop[c] -= before * rp; const v = before - this.pop[c]; moveP[c] = v; movedP[k] += v; groups[k].dP += v; }
+        if (rj > 0 && this.jobs[c] > 0 && sumJ[k] > 0) { const before = this.jobs[c]; this.jobs[c] -= before * rj; const v = before - this.jobs[c]; moveJ[c] = v; movedJ[k] += v; groups[k].dJ += v; }
       }
     }
     const changed = [];
@@ -1572,8 +1595,32 @@
         for (let c = 0; c < N; c++) arr[c] *= f;
       }
     };
-    add(this.pop, capR, wR, sR, dP);
-    add(this.jobs, capJ, wJ, sJ, dJ);
+    const addRegional = (arr, cap, w, sums, field, moves, moved) => {
+      const left = new Float64Array(groups.map(x => Math.max(0, x[field]))), mass = new Float64Array(sums);
+      for (let pass = 0; pass < 2; pass++) {
+        const used = new Float64Array(groups.length), next = new Float64Array(groups.length);
+        for (let c = 0; c < N; c++) {
+          const k = bucket[c]; if (k < 0 || w[c] <= 0 || left[k] <= 1 || mass[k] <= 0) continue;
+          const inc = Math.min(cap[c] - arr[c], w[c] * left[k] / mass[k], Math.max(60, cap[c] * .05));
+          if (inc > 0) { arr[c] += inc; used[k] += inc; changed.push(c); }
+          if (cap[c] - arr[c] > 1) next[k] += w[c]; else w[c] = 0;
+        }
+        for (let k = 0; k < groups.length; k++) { left[k] = Math.max(0, left[k] - used[k]); mass[k] = next[k]; }
+      }
+      const totals = new Float64Array(groups.length);
+      for (let c = 0; c < N; c++) if (bucket[c] >= 0) totals[bucket[c]] += arr[c];
+      for (let c = 0; c < N; c++) {
+        const k = bucket[c]; if (k < 0) continue;
+        if (groups[k][field] < 0) arr[c] *= Math.max(0, 1 + groups[k][field] / Math.max(1, totals[k]));
+        // If a historical move cannot fit locally, return the unplaced share
+        // to its original blocks. It never spills into a neighbouring city.
+        if (moves && moved[k] > 0 && moves[c] > 0) arr[c] += moves[c] * Math.min(1, left[k] / moved[k]);
+      }
+    };
+    if (groups) {
+      addRegional(this.pop, capR, wR, sumR, 'dP', moveP, movedP);
+      addRegional(this.jobs, capJ, wJ, sumJ, 'dJ', moveJ, movedJ);
+    } else { add(this.pop, capR, wR, sR, dP); add(this.jobs, capJ, wJ, sJ, dJ); }
     let newUrban = 0, streetsChanged = false;
     const seen = new Set();
     // 工地（只用于画面上的塔吊，不参与模拟、不存档）：新城市化或明显加高的街区，记录开工月份
@@ -1590,9 +1637,17 @@
       if (nh > this.bh[c] * 1.12 + 1) { if (nh - this.bh[c] >= 6) sites.set(c, mi); this.bh[c] = nh; this.dirty.add(c); }
     }
     if (streetsChanged) { this.updateStreets(); }
-    if (changed.length) this.version++;
     const actual = ctx.development ? this.totals() : null;
-    return { dPop: actual ? actual.pop - tot.pop : dP, dJobs: actual ? actual.jobs - tot.jobs : dJ, newUrban: newUrban, streetsChanged: streetsChanged };
+    if (changed.length || groups && (actual.pop !== tot.pop || actual.jobs !== tot.jobs)) this.version++;
+    const result = { dPop: actual ? actual.pop - tot.pop : dP, dJobs: actual ? actual.jobs - tot.jobs : dJ, newUrban: newUrban, streetsChanged: streetsChanged };
+    if (groups) {
+      const totals = groups.map(() => ({ pop: 0, jobs: 0 }));
+      for (let c = 0; c < N; c++) { const k = bucket[c]; if (k >= 0) { totals[k].pop += this.pop[c]; totals[k].jobs += this.jobs[c]; } }
+      result.byCity = Object.fromEntries(groups.map((x, k) => [x.id, { dPop: totals[k].pop - x.pop, dJobs: totals[k].jobs - x.jobs }]));
+      result.dPop = Object.values(result.byCity).reduce((sum, x) => sum + x.dPop, 0);
+      result.dJobs = Object.values(result.byCity).reduce((sum, x) => sum + x.dJobs, 0);
+    }
+    return result;
   };
   function resCap(L) {
     switch (L) { case LU.RES: return 3000; case LU.MIX: return 2200; case LU.COM: return 600; case LU.IND: return 160; case LU.INST: return 700; default: return 300; }

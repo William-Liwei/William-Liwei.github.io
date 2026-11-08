@@ -4,9 +4,10 @@
   const M = CM.Metro, U = CM.U, h = U.h, E = CM.LineEdit = {};
 
   // 只替换拖动的线路区段；共轨的其他线路保持原路，避免一次手势意外改掉多条线。
-  E.insertStation = function (net, segId, target, grab, city, size) {
+  E.insertStation = function (net, segId, target, grab, city, size, tod) {
     const seg = net.segments[segId];
     if (!seg) return { error: '这段轨道已不存在，请重新拖动' };
+    if (M.ownerId(net.lines[seg.line]) !== 'player') return { error: '该线路由所属公司独立管理' };
     let sid = target.station;
     if (sid) {
       if (!net.stations[sid]) return { error: '目标车站已不存在' };
@@ -14,7 +15,7 @@
     } else {
       const check = M.checkSite(city, target.x, target.y, seg.type);
       if (!check.ok) return { error: check.msg };
-      sid = M.addStation(net, target.x, target.y, { size: size || 'M', type: seg.type }, city);
+      sid = M.addStation(net, target.x, target.y, { size: size || 'M', type: seg.type, tod: tod || 0 }, city);
     }
     const ctrl = M.userControl(net, seg);
     U.distToPoly(grab.x, grab.y, ctrl);
@@ -33,10 +34,12 @@
 
   const T = CM.Tools.prototype;
   T.startRouteDrag = function (e) {
+    if (this.tool !== 'line' || this.pickingProperty()) return;
     if (this.R.pickStation(e.clientX, e.clientY)) return;
     if (this.tool === 'select' && CM.Follow && CM.Follow.pick(e.clientX, e.clientY)) return;
     const id = this.R.pickSegment(e.clientX, e.clientY), seg = id && this.net().segments[id];
     if (!seg) return;
+    if (M.ownerId(this.net().lines[seg.line]) !== 'player') return;
     const height = this.R.trackH(seg.type), grab = this.world(e.clientX, e.clientY, height);
     this.drag = { kind: 'reroute', seg: id, h: height, grab: grab, target: grab, touch: e.pointerType === 'touch' };
   };
@@ -56,10 +59,11 @@
     this.ui.setTooltip(this.hint, sx, sy); this.R.cv.style.cursor = 'var(--cur-grabbing)';
   };
   T.finishRouteDrag = function (e) {
+    if (this.tool !== 'line') { this.drag = null; this.snapPt = null; this.ui.setTooltip(null); return; }
     this.moveRouteDrag(e.clientX, e.clientY);
     const d = this.drag, g = this.game(); this.drag = null; this.snapPt = null; this.ui.setTooltip(null);
     if (d.error) { this.ui.toast(d.error, 'bad'); return; }
-    const result = g.edit(function (net) { return E.insertStation(net, d.seg, d.target, d.grab, g.city, this.stationSize); }.bind(this));
+    const result = g.edit(function (net) { return E.insertStation(net, d.seg, d.target, d.grab, g.city, this.stationSize, this.stationTod); }.bind(this));
     if (result.error) { this.ui.toast(result.error, 'bad'); return; }
     this.ui.select({ kind: 'station', id: result.station });
     this.ui.toast('已接入车站，确认建设后生效；可撤销或继续调整线形', 'good');

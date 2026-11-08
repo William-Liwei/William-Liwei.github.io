@@ -236,11 +236,14 @@
       if (!l) return;
       // 回本按净收益（收入 − 运营与维护成本）；升级的净收益增量对应升级投入
       const cost = Math.max(0, T.cost(l, g.clock.y, s.size, I.hub) - T.cost(lv, g.clock.y, s.size, I.hub)), inc = I.month(l), net = I.net(l), gain = net - (lv ? I.net(lv) : 0), pay = gain > 0 ? cost / (gain * 12) : Infinity, on = l <= lv;
+      const requirement = !on && T.eligibility ? T.eligibility(g, id, l) : null;
       list.appendChild(h('div', { class: 'tod-lv' + (on ? ' on' : ''), onpointerenter: function () { if (l > lv) showLv(l); }, onpointerleave: function () { if (lv < topLv) showLv(lv + 1); } },
         h('div', { class: 'grow' }, h('b', null, l + ' · ' + L.name), h('small', null, L.desc),
           h('small', null, '每月收入约 ' + U.fmtMoney(inc) + '，成本约 ' + U.fmtMoney(I.cost(l))),
           h('small', { class: net < 0 ? 'bad' : '' }, net < 0 ? '按目前客流每月亏损约 ' + U.fmtMoney(-net) : '每月净收益约 ' + U.fmtMoney(net) + (on ? '' : ' · 投入 ' + U.fmtMoney(cost) + (isFinite(pay) ? ' · 约 ' + U.fmtNum(pay, pay < 10 ? 1 : 0) + ' 年回本' : ' · 难以回本')))),
-        on ? h('span', { class: 'tag good' }, l === lv ? '经营中' : '已含') : h('button', { class: 'btn sm' + (l === lv + 1 ? ' primary' : ''), disabled: l !== lv + 1 ? true : null, onclick: function () {
+        requirement ? h('small', { class: 'muted' }, requirement) : null,
+        on ? h('span', { class: 'tag good' }, l === lv ? '经营中' : '已含') : h('button', { class: 'btn sm' + (l === lv + 1 ? ' primary' : ''), disabled: l !== lv + 1 || requirement ? true : null, onclick: function () {
+          const error = T.eligibility && T.eligibility(g, id, l); if (error) { self.toast(error, 'warn'); return; }
           if (!free && !g.econ.canAffordBuild(cost)) { self.toast('资金不足：需要 ' + U.fmtMoney(cost), 'bad'); return; }
           g.econ.spendBuild({ construction: cost }, '车站商业开发：' + s.name + ' → ' + L.name, { y: g.clock.y, m: g.clock.m, d: g.clock.d }, true);
           patchDisplay(g, 'stations', id, { tod: l });
@@ -1095,6 +1098,12 @@
     };
     const def = defs[key];
     if (!def) return null;
+    const regional = CM.RegionalMetrics && CM.RegionalMetrics.enabled(g);
+    if (regional && ['pop', 'share', 'cong', 'commute'].includes(key)) {
+      def.val = function () { const r = CM.RegionalMetrics.current(g); return r.name + ' · ' + (key === 'pop' ? U.fmtPeople(r.pop) : key === 'share' ? U.fmtPct(r.metroShare) : key === 'cong' ? r.cong.toFixed(2) + '（全日） / ' + r.congAM.toFixed(2) + '（早高峰）' : U.fmtNum(r.commute, 1) + ' 分钟'); };
+      def.scope = '当前值按所选城市或合计范围显示。下方历史趋势沿用区域全图记录；旧记录没有城市切片，不回填推算。';
+      el.appendChild(CM.RegionalMetrics.panel(this, g));
+    }
     el.appendChild(h('div', { style: { fontSize: '22px', fontWeight: 700, margin: '4px 0 8px' } }, this.liveText(def.val)));
     // 指标自带的图层（v2.2 界面整理）：打开详情时已在地图上显示，可在这里关闭或重新打开；图例在地图左上角
     const LY = this.pills[key] && this.pills[key].layer ? UI.LAYERS.find(function (x) { return x.id === self.pills[key].layer; }) : null;
@@ -1106,11 +1115,11 @@
       row.style.setProperty('--lc', LY.color);
       el.appendChild(row);
     }
-    if (key === 'share' && d.ready) {
+    if (key === 'share' && d.ready && !regional) {
       const dw = g.model.dailyWk || d, de = g.model.dailyWe || d;
       el.appendChild(this.kv([[(CM.DATA.bg ? "日均出行（含背景交通，周平均）" : '日均出行（汽车+地铁，周平均）'), U.fmtPeople(d.trips) + ' 人次'], ['其中地铁', U.fmtPeople(d.metro) + ' 人次'], ['工作日 / 周末分担率', U.fmtPct(dw.metroShare || 0) + ' / ' + U.fmtPct(de.metroShare || 0)], ['工作日 / 周末地铁客运量', U.fmtPeople(dw.metro || 0) + ' / ' + U.fmtPeople(de.metro || 0) + ' 人次'], ['步行 15 分钟可达地铁的人口', U.fmtPct(d.coverage)], ['平均票价', d.metro > 0 ? U.fmtNum(U.cur(d.avgFare), 2) + ' ' + CFG.money.unit : '—']]));
     }
-    if (key === 'cong') {
+    if (key === 'cong' && !regional) {
       const W = g.model.weights(g.clock.minute);
       el.appendChild(this.kv([['当前时刻', g.model.cityCongAt(W).toFixed(2)], ['汽车行驶里程（日）', U.fmtPeople(d.vkt) + ' 车公里']]));
     }
@@ -1125,7 +1134,7 @@
     el.appendChild(h('div', { class: 'note', style: { margin: '2px 0 6px' } }, def.def));
     el.appendChild(this.sec('m-about', '统计口径与影响因素', '', function () { const b = h('div', { class: 'note' }, def.scope); for (const f of def.factors) b.appendChild(h('div', { class: 'small', style: { padding: '2px 0', color: 'var(--text)' } }, '· ' + f)); return b; }, false, 'info'));
     if (hist.length > 1) {
-      el.appendChild(this.sec('m-trend', '变化趋势', '近 ' + Math.min(120, hist.length) + ' 个月', function () {
+      el.appendChild(this.sec('m-trend', regional && key !== 'sat' ? '区域全图历史趋势' : '变化趋势', '近 ' + Math.min(120, hist.length) + ' 个月', function () {
         const arr = hist.slice(-120);
         return h('div', null, self.spark(arr.map(def.series), { color: '#1e6fd9', labels: [arr[0].y + '年' + arr[0].m + '月', '', arr[arr.length - 1].y + '年' + arr[arr.length - 1].m + '月'] }));
       }, true));
@@ -1313,6 +1322,7 @@
     const g = this.g(), E = g.econ, self = this, free = E.isFree();
     const mv = CM.Macro && g.macro ? CM.Macro.view(g) : null;
     const tabs = [['ov', '概览', 'chart']];
+    if (CM.RegionalMetrics && CM.RegionalMetrics.enabled(g)) tabs.push(['region', '城市与区域', 'map']);
     if (mv) tabs.push(['econ', '经济', 'trend']);
     tabs.push(['fisc', '财政', 'bank']);
     if (CM.Property) tabs.push(['property', '物业', 'bag']);
@@ -1328,7 +1338,8 @@
     }));
     const body = h('div', { class: 'fin-body page-enter' });
     el.appendChild(body);
-    if (tab === 'econ') this.finEcon(body, mv);
+    if (tab === 'region') { body.appendChild(CM.RegionalMetrics.panel(this, g)); if (CM.CityDynamics) body.appendChild(CM.CityDynamics.panel(this, g)); }
+    else if (tab === 'econ') this.finEcon(body, mv);
     else if (tab === 'property') body.appendChild(CM.Property.portfolioPanel(this));
     else if (tab === 'fisc') this.finFiscal(body, mv);
     else if (tab === 'debt') this.finDebt(body);
@@ -1417,7 +1428,7 @@
         for (const r of loss.slice(0, 4)) b.appendChild(h('div', { class: 'tod-row' },
           h('span', { class: 'grow' }, h('b', null, r.name), h('small', { class: 'bad' }, T.LEVELS[r.lv].name + ' · 每月净亏约 ' + U.fmtMoney(-r.month) + ' · 日客流 ' + U.fmtPeople(r.flow) + ' 人次')),
           h('button', { class: 'btn sm ghost', onclick: function (e) { CM.Quick.popTod(r.id, e.currentTarget); } }, '查看')));
-        for (const r of rows.filter(function (x) { return x.lv < 3; }).slice(0, 6)) b.appendChild(h('div', { class: 'tod-row' },
+        for (const r of rows.filter(function (x) { return x.lv < CM.TOD.LEVELS.length - 1; }).slice(0, 6)) b.appendChild(h('div', { class: 'tod-row' },
           h('span', { class: 'grow' }, h('b', null, r.name), h('small', null, '日客流 ' + U.fmtPeople(r.flow) + ' 人次' + (r.hub ? ' · 换乘站' : '') + (r.lv ? ' · ' + T.LEVELS[r.lv].name : ''))),
           h('button', { class: 'btn sm' + (r.lv ? '' : ' primary'), onclick: function (e) { CM.Quick.popTod(r.id, e.currentTarget); } }, r.lv ? '升级' : '开发')));
         return b;

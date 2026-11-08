@@ -9,10 +9,11 @@
 
   // 公告是否已读（本机记录；无法访问本地存储时视为已读，不打扰）
   const NEWS_KEY = 'cm1.newsSeen';
-  // 按大小版本比较：修订版（如 2.6.1）没有新公告，不提示
-  const newsVer = function (v) { return String(v || '').split('.').slice(0, 2).join('.'); };
-  const newsSeen = function () { try { return newsVer(localStorage.getItem(NEWS_KEY)) === newsVer(CFG.GAME_VERSION); } catch (e) { return true; } };
-  const markNews = function () { try { localStorage.setItem(NEWS_KEY, CFG.GAME_VERSION); } catch (e) { /* ignore */ } };
+  // Notify only for an actual published announcement, including an explicitly
+  // documented patch release. Unannounced fixes do not create unread badges.
+  const newsVer = function () { return CM.NEWS && CM.NEWS[0] ? CM.NEWS[0].v : CFG.GAME_VERSION; };
+  const newsSeen = function () { try { return localStorage.getItem(NEWS_KEY) === newsVer(); } catch (e) { return true; } };
+  const markNews = function () { try { localStorage.setItem(NEWS_KEY, newsVer()); } catch (e) { /* ignore */ } };
   UI.prototype.newsUnread = function () { return !newsSeen(); };
 
   // 难度：点 + 文字
@@ -136,8 +137,9 @@
   UI.prototype.showMapSelect = function (selId, tr) {
     const self = this, all = CM.MAP_ORDER.slice();
     let sel = selId && CM.MAPS[selId] ? selId : (this._mapSel && CM.MAPS[this._mapSel] ? this._mapSel : all[0]);
-    const F = this._mapFilter || (this._mapFilter = { q: '', era: 'all', region: 'all' }), freeOpts = this._freeOpts || (this._freeOpts = {});
-    if (selId) { F.q = ''; F.era = 'all'; F.region = 'all'; }
+    const F = this._mapFilter || (this._mapFilter = { q: '', era: 'all', region: 'all', type: 'all' }), freeOpts = this._freeOpts || (this._freeOpts = {});
+    if (!F.type) F.type = 'all';
+    if (selId) { F.q = ''; F.era = 'all'; F.region = 'all'; F.type = 'all'; }
     const theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
     const eras = Array.from(new Set(all.map(function (id) { return eraOf(CM.MAPS[id]); }))).sort();
     const regions = REGION_ORDER.filter(function (r) { return all.some(function (id) { return CM.MAPS[id].region === r; }); });
@@ -162,16 +164,18 @@
       return h('div', { class: 'ms2-frow' }, h('span', { class: 'ms2-fl' }, ic(icon, 14), label), chips);
     };
     const filters = h('div', { class: 'ms2-filters' },
+      chipRow('类型', 'map', 'type', [['all', '全部'], ['city', '城市'], ['region', '城市群区域']]),
       chipRow('地区', 'globe', 'region', [['all', '全部']].concat(regions.map(function (r) { return [r, r]; }))),
       chipRow('年代', 'calYear', 'era', [['all', '全部']].concat(eras.map(function (e) { return [String(e), eraName(e)]; }))));
     const list = h('div', { class: 'ms2-list', role: 'listbox', 'aria-label': '地图' });
     const empty = h('div', { class: 'msel-empty hidden-el' }, ic('search', 22), h('b', null, '没有符合条件的地图'), h('span', null, '换个关键词，或把筛选改回「全部」。'),
-      h('button', { class: 'btn sm', onclick: function () { F.q = ''; F.era = 'all'; F.region = 'all'; self.showMapSelect(sel); } }, '清除筛选'));
+      h('button', { class: 'btn sm', onclick: function () { F.q = ''; F.era = 'all'; F.region = 'all'; F.type = 'all'; self.showMapSelect(sel); } }, '清除筛选'));
     const count = h('span', { class: 'ms2-count' });
     const items = {};
     const text = function (mp) { const s = [mp.title, mp.name, mp.sub, mp.tagline, mp.region, eraName(eraOf(mp)), String(mp.cfg.START.y), (mp.tags || []).join(' '), mp.data.city, mp.id === 'sh' && CM.CompanyRoles ? CM.CompanyRoles.list().map(r => r.name).join(' ') : ''].join(' '); return CM.I18n ? CM.I18n.search(s) : s.toLowerCase(); };
     const match = function (id) {
       const mp = CM.MAPS[id];
+      if (F.type !== 'all' && mp.mapType !== F.type) return false;
       if (F.era !== 'all' && String(eraOf(mp)) !== F.era) return false;
       if (F.region !== 'all' && mp.region !== F.region) return false;
       if (F.q) { const t = text(mp); for (const w of F.q.toLowerCase().split(/\s+/)) if (w && t.indexOf(w) < 0) return false; }
@@ -184,7 +188,7 @@
         h('span', { class: 'ms2-it' },
           h('span', { class: 'ms2-name' }, h('b', null, mp.tutorial ? (mp.data.city || mp.name) : mp.name), h('em', null, String(mp.cfg.START.y))),
           h('small', null, mp.tagline || mp.sub),
-          h('span', { class: 'ms2-meta' }, levelEl(mp.difficulty || 2), h('span', { class: 'ms2-reg' }, mp.region || ''), n ? h('span', { class: 'ms2-prog', 'data-tip': n + ' 个进度' }, ic('save', 12), String(n)) : null)));
+          h('span', { class: 'ms2-meta' }, levelEl(mp.difficulty || 2), h('span', { class: 'ms2-reg' }, mp.mapType === 'region' ? '城市群区域' : '城市'), h('span', { class: 'ms2-reg' }, mp.region || ''), n ? h('span', { class: 'ms2-prog', 'data-tip': n + ' 个进度' }, ic('save', 12), String(n)) : null)));
       items[id] = it; list.appendChild(it);
     });
     list.appendChild(empty);
@@ -247,7 +251,7 @@
       poster = h('div', { class: 'ms2-poster' },
         CM.thumbInto(h('img', { alt: '' }), sel, theme),
         h('div', { class: 'ms2-ptx' },
-          h('div', { class: 'msel-kicker' }, h('span', null, mp.region || ''), h('i'), h('span', null, y0 + ' 年起'), h('i'), h('span', null, mp.kind === 'fictional' || mp.tutorial ? '虚构城市' : '真实地理')),
+          h('div', { class: 'msel-kicker' }, h('span', null, mp.mapType === 'region' ? '城市群区域' : '城市'), h('i'), h('span', null, mp.region || ''), h('i'), h('span', null, y0 + ' 年起'), h('i'), h('span', null, mp.kind === 'fictional' || mp.tutorial ? '虚构城市' : '真实地理')),
           h('h2', null, role ? role.company + ' · ' + y0 : mp.title || mp.name),
           h('div', { class: 'ms2-tagline' }, role ? '长三角同图经营 · ' + role.progression : mp.tagline || mp.sub),
           h('div', { class: 'msel-chips' }, levelEl(mp.difficulty || 2), (role ? [role.name + '公司', '城市群', '分期开放'] : mp.tags || []).map(function (t) { return h('span', { class: 'tag glass-tag' }, t); }))),

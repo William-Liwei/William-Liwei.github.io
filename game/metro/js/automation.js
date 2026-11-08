@@ -3,11 +3,11 @@
 // the ordinary fleet, construction evaluation and accounting remain authoritative.
 (function (CM) {
   const A = CM.Automation = {}, M = CM.Metro, U = CM.U, CFG = CM.CFG, h = U.h;
-  const DEFAULTS = A.DEFAULTS = Object.freeze({ enabled: false, buy: false, stations: false, hubs: false, tod: false, land: false, reserve: 100000, monthlyLimit: 50000, buyLimit: 4, sparePct: 10, todLimit: 2, landLimit: 2 });
+  const DEFAULTS = A.DEFAULTS = Object.freeze({ enabled: false, alerts: false, buy: false, stations: false, hubs: false, tod: false, land: false, reserve: 100000, monthlyLimit: 50000, buyLimit: 4, sparePct: 10, todLimit: 2, landLimit: 2 });
   const runtime = new WeakMap(), MAX_LOG = 24, CROWD = 1.1;
   A.MAX_TRANSFERS = 64;
   const rt = function (g) { let r = runtime.get(g); if (!r) { r = { due: -1, notices: new Set(), status: '托管已关闭' }; runtime.set(g, r); } return r; };
-  const freshState = function () { return { v: 1, policy: Object.assign({}, DEFAULTS), lastRun: -1, lastStation: -1, budgetYM: -1, spent: 0, bought: 0, todCount: 0, landCount: 0, todStations: [], sample: '', fleetSample: '', crowd: {}, log: [] }; };
+  const freshState = function () { return { v: 1, policy: Object.assign({}, DEFAULTS), alertWait: false, lastRun: -1, lastStation: -1, budgetYM: -1, spent: 0, bought: 0, todCount: 0, landCount: 0, todStations: [], sample: '', fleetSample: '', crowd: {}, log: [] }; };
   const state = function (g) { return g.automation || (g.automation = freshState()); };
   A.enabled = function (g) { return !!(g.automation && g.automation.policy.enabled); };
   A.policy = function (g) { return g.automation ? g.automation.policy : DEFAULTS; };
@@ -19,7 +19,8 @@
     if (!s || typeof s !== 'object' || s.v !== 1 || !s.policy || !s.crowd || Array.isArray(s.crowd) || !Array.isArray(s.log) || s.log.length > MAX_LOG) fail();
     const p = s.policy;
     for (const k of ['enabled', 'buy', 'stations', 'hubs']) if (typeof p[k] !== 'boolean') fail();
-    for (const k of ['tod', 'land']) if (Object.prototype.hasOwnProperty.call(p, k) && typeof p[k] !== 'boolean') fail();
+    for (const k of ['tod', 'land', 'alerts']) if (Object.prototype.hasOwnProperty.call(p, k) && typeof p[k] !== 'boolean') fail();
+    if (s.alertWait !== undefined && typeof s.alertWait !== 'boolean') fail();
     for (const k of ['todLimit', 'landLimit']) if (Object.prototype.hasOwnProperty.call(p, k) && !integer(p[k], 0, 8)) fail();
     if (!integer(p.reserve, 0, 100000000) || !integer(p.monthlyLimit, 0, 100000000) || !integer(p.buyLimit, 0, 24) || !integer(p.sparePct, 0, 50)) fail();
     for (const k of ['lastRun', 'lastStation', 'budgetYM']) if (!integer(s[k], -1, 120000)) fail();
@@ -39,6 +40,7 @@
     for (const k of Object.keys(DEFAULTS)) if (Object.prototype.hasOwnProperty.call(s.policy, k)) out.policy[k] = s.policy[k];
     for (const k of ['lastRun', 'lastStation', 'budgetYM', 'spent', 'bought', 'sample', 'fleetSample']) out[k] = s[k];
     out.todCount = s.todCount || 0; out.landCount = s.landCount || 0; out.todStations = (s.todStations || []).slice();
+    out.alertWait = s.alertWait || false;
     // Explicit fields keep imported extensions small and discard unknown data.
     for (const id of Object.keys(s.crowd)) { const c = s.crowd[id]; Object.defineProperty(out.crowd, id, { value: { ym: c.ym, n: c.n, size: c.size, hub: c.hub }, enumerable: true, writable: true, configurable: true }); }
     out.log = s.log.map(function (e) { return { ym: e.ym, kind: e.kind, title: e.title, desc: e.desc, cost: e.cost }; });
@@ -88,6 +90,15 @@
     if (kind === 'tod') { s.todCount++; s.todStations.push(sid); } else s.landCount++;
     A.noteInvestment(g, kind, title); log(g, kind, title, desc, cost); g.emit('finance'); g.emit('autosave', 'automation');
   };
+  // Alert handling shares the same ledger as ordinary monthly management. The
+  // saved wait bit prevents a reload from treating pre-action demand as fresh.
+  A.recordAlert = function (g, detail) {
+    resetBudget(g); const s = state(g), d = detail || {}, cost = d.cost || 0, bought = d.bought || 0;
+    if (!Number.isFinite(cost) || cost < 0 || cost > 100000000 || !integer(bought, 0, 24) || !text(d.title, 160) || !text(d.desc || '', 1600)) throw Error('无效的待办托管记录');
+    s.spent += cost; s.bought += bought; s.alertWait = true;
+    if (d.stationIds && d.stationIds.length) { s.lastStation = g.ym(); for (const sid of d.stationIds) delete s.crowd[sid]; }
+    A.noteInvestment(g, 'alerts', d.title); log(g, 'alerts', d.title, d.desc, cost); g.emit('finance'); g.emit('autosave', 'automation');
+  };
   const manual = function (g, lid) { return !!(g.fleet.ops[lid] && g.fleet.ops[lid].mode === 'manual'); };
   const ready = function (g) { const m = g.model; return !!(g.fleet && m && m.net && m.net.C === g.compiled && m.trafficReady() && !m.dailyStale && !m.predJob && !m.hasReviewWork()); };
   // Frequencies change immediately after a fleet edit; demand does not. Hash only
@@ -104,7 +115,7 @@
     r.result = m.results; r.year = m.year; r.station = m.stDailyWk; r.hash = (hash >>> 0).toString(36);
     return r.hash;
   };
-  const fit = function (t, x) { return t.cars <= x.rt.cars && (x.rt.kmh <= 80 || CM.Fleet.model(t.model).kmh >= x.rt.kmh); };
+  const fit = function (t, x) { return CM.Fleet.compatible ? CM.Fleet.compatible(t, x.rt) : t.cars <= x.rt.cars && (x.rt.kmh <= 80 || CM.Fleet.model(t.model).kmh >= x.rt.kmh); };
   // A route's average carriage capacity is shared by its loop directions. These
   // groups live only for one plan: stock changes by array replacement or append,
   // while the capacities of existing trains do not change during allocation.
@@ -195,7 +206,7 @@
       // capital cost per seat avoids buying an expensive brand merely because it is new.
       const ordered = plan.services.slice().sort(function (a, b) { return (need(b, b.units) - b.units.length) - (need(a, a.units) - a.units.length); });
       for (const x of ordered) {
-        const models = F.available(F.cityId ? F.cityId(g) : g.mapId, g.clock.y).filter(function (m) { return x.rt.kmh <= 80 || m.kmh >= x.rt.kmh; }).map(function (m) { const cars = Math.min(m.max, x.rt.cars); return { m: m, cars: cars, price: F.price(g, m, cars) }; }).sort(function (a, b) { return a.price / (a.m.cap * a.cars) - b.price / (b.m.cap * b.cars) || a.price - b.price; });
+        const models = F.available(F.cityId ? F.cityId(g) : g.mapId, g.clock.y, x.rt.railSystem).filter(function (m) { const t = { model: m.id, cars: Math.min(m.max, x.rt.cars) }; return F.compatible ? F.compatible(t, x.rt) : x.rt.kmh <= 80 || m.kmh >= x.rt.kmh; }).map(function (m) { const cars = Math.min(m.max, x.rt.cars); return { m: m, cars: cars, price: F.price(g, m, cars) }; }).sort(function (a, b) { return a.price / (a.m.cap * a.cars) - b.price / (b.m.cap * b.cars) || a.price - b.price; });
         const choice = models[0]; if (!choice) continue;
         while (x.units.length < need(x, x.units) && s.bought < p.buyLimit && choice.price <= A.allowance(g) + 1e-7) {
           const result = F.buy(g, x.lid, x.svc, choice.m.id, choice.cars, 1); if (!result.ok) break;
@@ -316,10 +327,17 @@
     }
     rt(g).due = -1; rt(g).stationCandidates = null;
   };
-  A.monthly = function (g) { if (!A.enabled(g)) return; const r = rt(g); r.due = g.ym(); r.notices.clear(); run(g, true); };
+  A.monthly = function (g) { if (!A.enabled(g)) return; const r = rt(g); r.due = g.ym(); r.notices.clear(); if (!A.policy(g).alerts) run(g, true); };
   A.poll = function (g) {
     if (!A.enabled(g)) return;
     resetBudget(g);
+    if (A.policy(g).alerts && CM.AutoAlerts) {
+      if (CM.AutoAlerts.poll(g)) return;
+      if (!CM.AutoAlerts.ready(g)) {
+        if (CM.AutoLand && A.policy(g).land) CM.AutoLand.poll(g);
+        return;
+      }
+    }
     // Land acquisition uses the player's stable quote without altering their
     // draft. Other managed work keeps waiting until the draft is finished.
     if (CM.AutoLand && A.policy(g).land) CM.AutoLand.poll(g);
@@ -336,6 +354,7 @@
       box.appendChild(h('div', { class: 'fo-auto' }, h('span', { class: 'grow' }, h('b', null, label), h('small', null, hint)), h('button', { class: 'switch' + (p[key] ? ' on' : ''), role: 'switch', 'aria-checked': String(p[key]), 'aria-label': label, disabled: disabled ? true : null, onclick: function () { A.setPolicy(g, { [key]: !p[key] }); ui.markUnsaved(); ui.scheduleAutosave(); ui.rerenderPage(); } }, h('i'))));
     };
     toggle('enabled', '启用运营与投资托管', '统一启用自动调车和下方授权项目。调车先用车辆段，再调其他智能交路的富余车，每月最多调拨 64 列；手动线路保留原计划。');
+    toggle('alerts', '自动处理待办', '按现有预算自动调车、购车和扩站；拥挤的手动线路会切换为智能调度。每次处理后等待新客流，保留其他待办。', !p.enabled);
     toggle('buy', '允许自动购车', '没有合适余车时，在本月限额内实际购车并扣费；不会出售列车或借债。', !p.enabled);
     toggle('stations', '允许自动扩站并支付建设费', '两次不同月份的新观测持续超 110% 时按 S→M→L 扩容；每月最多一站，涉及手动线路的站点不扩建。', !p.enabled);
     toggle('hubs', '允许大站继续扩建换乘大厅', '仅在大站仍拥挤、汇集线路数量达标时升级一级大厅，继续受共享月预算约束。', !p.enabled || !p.stations);
@@ -352,6 +371,7 @@
     box.appendChild(h('div', { class: 'note' }, '购车、扩站、车站商业与购地共用月支出上限；购地只用一般资金，其他建设优先用专项资金。新功能默认关闭，自由建造也保留月额度限制。'));
     const live = function (fn) { return ui.liveText ? ui.liveText(fn) : h('span', null, fn()); };
     box.appendChild(h('div', { class: 'callout info', role: 'status' }, live(function () { return A.status(g); }),
+      p.alerts ? h('div', { class: 'tiny' }, live(function () { return A.enabled(g) ? rt(g).alertsStatus || '等待完整运营数据后逐项处理待办' : '托管已关闭'; })) : null,
       p.tod ? h('div', { class: 'tiny' }, live(function () { return A.enabled(g) ? rt(g).todStatus || '商业开发将在本月调度与扩站检查完成后进行' : '托管已关闭'; })) : null,
       p.land ? h('div', { class: 'tiny' }, live(function () { return !A.enabled(g) ? '托管已关闭' : (CM.AutoLand && CM.AutoLand.status && CM.AutoLand.status(g)) || rt(g).landStatus || '等待稳定有效的建设草案后预购地块'; })) : null,
       s ? h('div', { class: 'tiny' }, live(function () { return '本月已支出 ' + U.fmtMoney(s.budgetYM === g.ym() ? s.spent : 0) + ' · 购车 ' + (s.budgetYM === g.ym() ? s.bought : 0) + ' 列 · 商业 ' + A.count(g, 'tod') + ' 站 · 购地 ' + A.count(g, 'land') + ' 块'; })) : null));

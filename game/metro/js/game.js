@@ -77,6 +77,7 @@
       if (sy > CFG.START.y) yield* g.prehistoryGen(sy, sync, opts.onProgress);
       if (CM.Eras) CM.Eras.ensureBases(g);   // 城市发展对比基准：本局开始规划时（v2.2 阶段可视化）
       if (CM.Milestones) CM.Milestones.onStart(g);
+      if (CM.CityDynamics) yield* CM.CityDynamics.primeGen(g);
       complete=true;
       return g;
     } finally {
@@ -425,7 +426,9 @@
     const econF = this.macro && CM.Macro ? CM.Macro.applyFactors(this) : null;
     if (CM.Future) CM.Future.month(this, y, m);
     const development = CM.Development ? CM.Development.month(this, yr) : null;
+    if (CM.CityDynamics) yield* CM.CityDynamics.beforeMonthGen(this);
     const gr = city.growMonth({ year: yr, monthIndex: this.ym(), zoneAccess: model.zoneAccessNorm, cellWalk: acc ? acc.cellWalk : null, coverage: acc ? acc.coverage : 0, econ: econF, pull: this.metroPull(), development: development, developmentRegions: CM.Operators ? CM.Operators.developmentRegions(this) : null });
+    if (CM.CityDynamics) yield* CM.CityDynamics.afterMonthGen(this);
     yield;
     // 交通刷新节奏（v2.6）：见 trafficDue。不刷新的月份沿用上次的出行结果（模型年份也不变，结果仍算有效），城市发展与经营照常按月结算
     this._graphsDirty = this._graphsDirty || gr.streetsChanged;
@@ -796,29 +799,41 @@
     return D.fictional ? '持续发展' : '模拟未来';
   };
 
-  // 地铁带动发展（v2.3 玩家反馈：城市发展在很大程度上受地铁建设影响）：每座运营车站对周边约 1 km 产生吸引，
-  // 强度 = 基础 + 换乘（每多一条线）+ 客流 + 车站商业开发，开通后约 4 年逐步形成（先快后慢）。
-  // 返回每格的吸引值 field、线网成熟度 M（按地铁覆盖比例）与车站吸引的权重 w；每月一次，按车站数 × 周边格子计算
+  // 真实运营、客流与站城开发共同吸引增长；四年成熟期、过载和剩余土地约束影响。
+  // 只影响已由道路步行接驳到本站的格子，不隔河凭直线距离造热点。
+  // 格网结果按城市/月/站点服务缓存；显示或月结不会再次求解交通。
   Game.prototype.metroPull = function () {
     const m = this.model, net = m.net, C = net && net.C, acc = net && net.acc, city = this.city, W = city.W, H = city.H, G = CFG.metroLed;
-    if (!C || !C.stations.length || !acc || !G) return null;
-    const sd = m.stDailyWk && !m.dailyStale && m.stDailyWk.inn.length === C.stations.length ? m.stDailyWk : null;
-    const field = new Float32Array(city.N), now = this.clock.y + (this.clock.m - 1) / 12, R = G.radius;
-    const top = [];
+    if (!C || C !== this.compiled || !C.stations.length || !acc || !acc.cellStation || !acc.cellWalk || !G || !CM.Property) return null;
+    const R = G.radius, effects = [], stamp = [this.clock.y, this.clock.m, city.version, city.geoVer, city.terrainVer, acc.coverage || 0];
     for (let i = 0; i < C.stations.length; i++) {
-      const s = C.stations[i], st = this.net.stations[s.id]; if (!st || (C.serviced && !C.serviced[i])) continue;
-      const age = st.built ? now - st.built[0] - (st.built[1] - 1) / 12 : G.years, x = U.clamp(age / G.years, 0, 1), ramp = 1 - (1 - x) * (1 - x);
-      const lines = C.stationLines[i] ? C.stationLines[i].size : 1, flow = sd ? sd.inn[i] + sd.out[i] + sd.xfer[i] : 0;
-      const k = (G.base + G.xfer * Math.max(0, lines - 1) + G.flow * Math.min(1, flow / G.flowFull) + (G.tod[st.tod || 0] || 0)) * ramp;
+      const s = C.stations[i], svc = CM.Property.stationService(this, i);
+      const k = svc && CM.CityDynamics ? CM.CityDynamics.pullStrength(svc) : 0;
+      stamp.push(s.id, k, s.x, s.y);
       if (k <= 0.001) continue;
-      top.push({ name: st.name, x: s.x, y: s.y, k: k });
-      const i0 = Math.max(0, Math.floor(s.x - R)), i1 = Math.min(W - 1, Math.ceil(s.x + R)), j0 = Math.max(0, Math.floor(s.y - R)), j1 = Math.min(H - 1, Math.ceil(s.y + R));
-      for (let j = j0; j <= j1; j++) for (let q = i0; q <= i1; q++) { const d = Math.hypot(q + 0.5 - s.x, j + 0.5 - s.y) / R; if (d < 1) field[j * W + q] += k * (1 - d) * (1 - d); }
+      effects.push({ i: i, id: s.id, name: svc.station.name || s.name, x: s.x, y: s.y, k: k });
     }
-    if (!top.length) return null;
+    const key = stamp.join(':'), old = this._metroPullCache;
+    if (old && old.key === key && old.city === city && old.C === C && old.acc === acc) return old.value;
+    if (!effects.length) { this._metroPullCache = { key: key, city: city, C: C, acc: acc, value: null }; return null; }
+    const field = new Float32Array(city.N), top = [], walkLimit = Math.min(CFG.walk.maxAccessM, R * CFG.CELL_M);
+    for (const s of effects) {
+      let reached = false;
+      const i0 = Math.max(0, Math.floor(s.x - R)), i1 = Math.min(W - 1, Math.ceil(s.x + R)), j0 = Math.max(0, Math.floor(s.y - R)), j1 = Math.min(H - 1, Math.ceil(s.y + R));
+      for (let j = j0; j <= j1; j++) for (let q = i0; q <= i1; q++) {
+        const c = j * W + q, walk = acc.cellWalk[c], free = (city.landFrac[c] || 0) * Math.max(0, 1 - (city.taken[c] || 0));
+        if (acc.cellStation[c] !== s.i || !(walk < walkLimit) || free <= 0.05) continue;
+        const d = Math.max(Math.hypot(q + 0.5 - s.x, j + 0.5 - s.y) / R, walk / walkLimit);
+        if (d >= 1) continue;
+        field[c] = s.k * (1 - d) * (1 - d) * free; reached = true;
+      }
+      if (reached) top.push(s);
+    }
     top.sort(function (a, b) { return b.k - a.k; });
     const y = U.clamp(((acc.coverage || 0) - G.cov0) / (G.cov1 - G.cov0), 0, 1), M = y * y * (3 - 2 * y);
-    return { field: field, M: M, w: G.wMin + (1 - G.wMin) * M, top: top.slice(0, 24), all: top };
+    const value = top.length ? { field: field, M: M, w: G.wMin + (1 - G.wMin) * M, top: top.slice(0, 24), all: top } : null;
+    this._metroPullCache = { key: key, city: city, C: C, acc: acc, value: value };
+    return value;
   };
   // 地铁出行习惯（v2.3）：编译线网中车站 s 已开通的年数（按开通月份与当前日期；草案中的新站为 0）
   Game.habitAge = function (g) { return function (C, s) { const st = g.net.stations[C.stations[s].id], c = g.clock; return st && st.built ? c.y + (c.m - 1) / 12 - st.built[0] - (st.built[1] - 1) / 12 : 0; }; };
@@ -1060,6 +1075,7 @@
         g.upgradeNote = (g.upgradeNote ? g.upgradeNote + '；' : '') + '已有资产与任务所在的区域保持开放：' + kept;
       }
       if (airportOpened) g.logEvent({ tag: '规则', title: '新区域开放：' + airportOpened.name, desc: (D.airport.name || '机场') + '照常运营，用地不开发；范围内可以地下设站与地下穿越（v1.9 起）。' });
+      if (CM.CityDynamics) yield* CM.CityDynamics.primeGen(g);
       complete = true;
       return g;
     } finally {

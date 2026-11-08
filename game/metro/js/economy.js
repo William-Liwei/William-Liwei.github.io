@@ -69,6 +69,8 @@
       { name: '广告与便利店', k: 0.06, cost: 0.0045, upkeep: 0.06, cyc: 0.4, desc: '站内灯箱广告与便利店' },
       { name: '站内商业街', k: 0.15, cost: 0.022, upkeep: 0.045, cyc: 0.75, desc: '通道与站厅的连续商铺' },
       { name: '站城一体开发', k: 0.3, cost: 0.075, upkeep: 0.035, cyc: 1, desc: '车站上盖与周边物业联合开发' },
+      { name: '枢纽商业综合体', k: .47, cost: .22, upkeep: .04, cyc: 1.1, saturation: 280000, flow: 60000, hall: 1, lines: 2, desc: '大型站台、换乘大厅与日均六万人次支撑的综合商业；持续承担较高维护费' },
+      { name: '都市核心综合开发', k: .7, cost: .6, upkeep: .045, cyc: 1.2, saturation: 500000, flow: 150000, hall: 2, lines: 3, desc: '超级枢纽与日均十五万人次支撑的站城核心区；高投入、高容量，客流下降会影响回本' },
     ],
     HUB: 1.25,   // 两条及以上线路的换乘站
     SIZE: { S: 0.7, M: 1, L: 1.5 },
@@ -81,7 +83,26 @@
       return 1 + (g._todCyc.com - 1) * TOD.LEVELS[level].cyc;
     },
     // 单站日收入（万元）：flow 为当天进出站 + 换乘人次（12 万人次以上逐渐饱和）；g 给出时计入经济周期
-    stationDaily: function (level, flow, hub, y, g) { return flow / (1 + flow / 120000) * CFG.fareDefault.flat * TOD.LEVELS[level].k * (CFG.economy.todK || 1) * (hub ? TOD.HUB : 1) * TOD.pi(y) / 10000 * (g ? TOD.cycle(g, level) : 1); },
+    stationDaily: function (level, flow, hub, y, g) { return flow / (1 + flow / (TOD.LEVELS[level].saturation || 120000)) * CFG.fareDefault.flat * TOD.LEVELS[level].k * (CFG.economy.todK || 1) * (hub ? TOD.HUB : 1) * TOD.pi(y) / 10000 * (g ? TOD.cycle(g, level) : 1); },
+    eligibility: function (g, sid, level) {
+      const spec = TOD.LEVELS[level], st = g.net.stations[sid], m = g.model, C = g.compiled, k = C.sIndex.get(sid);
+      if (!spec || !st) return '商业开发等级或车站无效';
+      if (level < 4) return null;
+      if (!m || m.dailyStale || !m.trafficReady() || !m.stDailyWk || !m.stDailyWe || k === undefined || !C.serviced[k]) return '等待完整的车站运营客流';
+      const requirement = '需要大型站台、' + spec.lines + ' 条运营线路与 ' + spec.hall + ' 级换乘大厅';
+      if (st.size !== 'L' || CM.Metro.hubLevel(st) < spec.hall) return requirement;
+      // Physical connections include unused tracks and passing express services.
+      // Count distinct lines that actually stop here and run published service.
+      const operating = new Set();
+      for (const ri of C.stationRoutes[k] || []) {
+        const rt = C.routes && C.routes[ri]; if (!rt || rt.stIdx && rt.stIdx.indexOf(k) < 0) continue;
+        const live = ['wd', 'we'].some(function (dt) { const data = m.resultsFor ? m.resultsFor(dt) : m.results && m.results[dt] || m.ctxs && m.ctxs[dt]; return data && data.per && data.per.some(function (P) { return P.freq && P.freq[ri] > 1e-7; }); });
+        if (live) operating.add(rt.lineId);
+      }
+      if (operating.size < spec.lines) return requirement;
+      const flow = function (d) { return (d.inn[k] || 0) + (d.out[k] || 0) + (d.xfer[k] || 0); }, avg = (flow(m.stDailyWk) * 5 + flow(m.stDailyWe) * 2) / 7;
+      return avg + 1e-7 < spec.flow ? '需要日均 ' + U.fmtPeople(spec.flow) + ' 人次，当前 ' + U.fmtPeople(avg) : null;
+    },
     // 单站日成本（万元）：累计投入（到该等级为止）× 年成本率 ÷ 365
     stationCost: function (level, y, size, hub) { return level ? TOD.cost(level, y, size, hub) * TOD.LEVELS[level].upkeep / 365 : 0; },
     // 全网当天的商业收入与成本（万元）

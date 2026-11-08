@@ -1353,7 +1353,7 @@
       const re = new Int32Array(nLegs * 2);
       for (let k = 0; k < nLegs; k++) {
         const a = platBase[r] + k, b = platBase[r] + ((k + 1) % n);
-        const t0 = rt.legSec[k] / 60 + mc.dwell / 60, km = rt.legLenM[k] / 1000;
+        const t0 = rt.legSec[k] / 60 + (rt.dwell == null ? mc.dwell : rt.dwell) / 60, km = rt.legLenM[k] / 1000;
         re[2 * k] = push(a, b, 2, r, k, 0, -1, km, t0, 0);
         re[2 * k + 1] = push(b, a, 2, r, k, 1, -1, km, t0, 0);
       }

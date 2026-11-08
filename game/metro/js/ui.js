@@ -701,7 +701,11 @@
       this._funds = f;
       c.money.v.className = 'v' + (f < 0 ? ' bad' : '');
     }
-    const tot = this._tot && this._totCity === g.city && this._totVer === g.city.version ? this._tot : (this._tot = g.city.totals(), this._totCity = g.city, this._totVer = g.city.version, this._tot);
+    const regional = CM.RegionalMetrics && CM.RegionalMetrics.enabled(g) ? CM.RegionalMetrics.current(g) : null;
+    const tot = regional || (this._tot && this._totCity === g.city && this._totVer === g.city.version ? this._tot : (this._tot = g.city.totals(), this._totCity = g.city, this._totVer = g.city.version, this._tot));
+    setT(c.pop.k, regional ? regional.name + '人口' : '人口');
+    setT(c.share.k, regional ? regional.name + '地铁分担' : '地铁分担率');
+    setT(c.cong.k, regional ? regional.name + '全日拥堵' : '道路拥堵');
     this.tweenNum(c.pop.v, this._popShown == null ? tot.pop : this._popShown, tot.pop, U.fmtPeople);
     this._popShown = tot.pop;
     const hist = g.history, prev = hist.length > 1 ? hist[hist.length - 2] : null;
@@ -711,8 +715,8 @@
       if (Math.abs(dlt) < (pct ? 0.0005 : 0.005)) return '';
       return '<span class="trend ' + ((betterUp ? dlt > 0 : dlt < 0) ? 'good' : 'bad') + '">' + (dlt > 0 ? '▲' : '▼') + '</span>';
     };
-    setH(c.share.v, U.fmtPct(d.metroShare || 0) + ' ' + trend(d.metroShare || 0, prev && prev.share, true, true));
-    if (!this._congT || performance.now() - this._congT > 900) { this._congT = performance.now(); this._cong = g.model.cityCongAt(W); }
+    setH(c.share.v, U.fmtPct(regional ? regional.metroShare : d.metroShare || 0) + ' ' + (regional ? '' : trend(d.metroShare || 0, prev && prev.share, true, true)));
+    if (!this._congT || performance.now() - this._congT > 900) { this._congT = performance.now(); this._cong = regional ? regional.cong : g.model.cityCongAt(W); }
     const cg = this._cong,congLevel=CM.Model.congestionLevel(cg);
     setH(c.cong.v, cg.toFixed(2) + ' <small>' + CM.Model.congestionNames[congLevel] + '</small>');
     c.cong.badge.className = 'badge ' + ['b-green', 'b-gold', 'b-orange', 'b-red'][congLevel];
@@ -723,7 +727,7 @@
       this._ecoT = performance.now(); this._ecoRev = g.macro.rec.length;
       const mv = CM.Macro.view(g), L = mv.last, gr = L && L.growth != null ? L.growth : mv.fc.growth;
       c.econ.v.innerHTML = U.esc(gr == null ? '—' : UI.pctS(gr)) + ' <small>' + U.esc(mv.env.label) + '</small>';
-      c.econ.k.textContent = L && L.growth != null ? L.y + ' 年实际增长' : '本年预测增长';
+      c.econ.k.textContent = (regional ? '区域 ' : '') + (L && L.growth != null ? L.y + ' 年实际增长' : '本年预测增长');
       c.econ.badge.className = 'badge ' + (mv.env.cls === 'good' ? 'b-green' : (mv.env.cls === 'bad' ? 'b-red' : (mv.env.cls === 'warn' ? 'b-orange' : 'b-violet')));
       c.econ.el.setAttribute('data-tip', '城市经济：' + mv.env.label + ' · ' + (L ? L.y + ' 年 GDP ' + UI.fmtBig(L.nom) : '本年 GDP 预测 ' + UI.fmtBig(mv.fc.nom)) + ' · 点击查看');
     }
@@ -1146,7 +1150,7 @@
     const colorLine = T.chain && net.lines[T.lineChoice];
     const lineColor = colorLine ? colorLine.color : T.nextLineColor(true);
     const nMulti = this.multi ? this.multi.stations.size + this.multi.segs.size : 0;
-    const key = [T.tool, T.chain, T.lineChoice, T.buildType, T.stationSize, T.curveMode, T.newLineSpeed, g.draft ? g.draft.ver : 0, g.clock.y, gridOn, snapOn, lineColor, nMulti, T.meas.pts.length].join('|');
+    const key = [T.tool, T.chain, T.lineChoice, T.buildType, T.stationSize, T.stationTod, T.newLineRailSystem, T.curveMode, T.newLineSpeed, g.draft ? g.draft.ver : 0, g.clock.y, gridOn, snapOn, lineColor, nMulti, T.meas.pts.length].join('|');
     if (key === this._toKey && !el.classList.contains('hidden')) return;
     this._toKey = key;
     const self = this, mc = CFG.metro, y = g.clock.y;
@@ -1167,6 +1171,9 @@
     };
     const typeCtl = grp('方式', segc(T.buildType, [['underground', '地下', '造价最高；越江为隧道，可穿越山体与保护建筑'], ['surface', '地面', '造价最低；越江为桥梁，两条地面线不能平交'], ['elevated', '高架', '造价居中；越江为桥梁']], function (v) { T.buildType = v; }));
     const sizeCtl = function (label) { return grp(label, segc(T.stationSize, ['S', 'M', 'L'].map(function (sz) { return [sz, mc.sizeName[sz].replace('型', ''), mc.sizeName[sz] + '车站：' + U.fmtInt(mc.stationCap[sz]) + ' 人次/时 · 编组上限 ' + mc.carsBySize[sz] + ' 节 · 约 ' + U.fmtMoney(M.stationCost(T.buildType, sz, y))]; }), function (v) { T.stationSize = v; })); };
+    const todSelect = h('select', { 'aria-label': '新建车站默认 TOD 等级', onchange: function () { T.stationTod = Number(todSelect.value); CM.Settings.set('buildTod', T.stationTod); self.renderToolOpts(); } });
+    CM.TOD.LEVELS.slice(0, 4).forEach(function (v, i) { todSelect.appendChild(h('option', { value: String(i), selected: T.stationTod === i ? true : null }, i + ' · ' + v.name)); });
+    const todCtl = grp('随站 TOD', todSelect); todCtl.setAttribute('data-tip', '只影响之后新建的车站，商业费用计入建设草案；高阶开发需投入运营后满足客流条件。');
     this._replacingToolOpts = true;
     try { el.innerHTML = ''; } finally { this._replacingToolOpts = false; }
     if (T.tool === 'line') {
@@ -1196,12 +1203,14 @@
       // 运行速度（v2.5）：新线路在这里选；延长既有线路时沿用该线的速度（在线路详情「列车运营」中调整）
       const speedCtl = grp('速度', colorLine
         ? h('span', { class: 'tag', 'data-tip': '本线最小转弯半径 ' + M.minRadius(colorLine) + ' m；可在线路详情「列车运营」中调整' }, M.lineKmh(colorLine) + ' km/h')
-        : segc(T.newLineSpeed || 80, mc.speedGrades.filter(function (x) { return !CM.Fleet || CM.Fleet.speedOpen(g.mapId, y, x.kmh).ok; }).map(function (x) { return [x.kmh, String(x.kmh), x.kmh + ' km/h：最小转弯半径 ' + x.minR + ' m，运营成本 ×' + x.ops.toFixed(2)]; }), function (v) { T.newLineSpeed = v; }));
-      el.append(colorGroup, h('span', { class: 'to-sep' }), typeCtl, sizeCtl('新站'), curveCtl, speedCtl);
+        : segc(T.newLineSpeed || CM.RailSystems.get(T.newLineRailSystem).speed, CM.RailSystems.grades({ railSystem: T.newLineRailSystem }).filter(function (x) { return !CM.Fleet || CM.Fleet.speedOpen(CM.Fleet.cityId(g), y, x.kmh, T.newLineRailSystem).ok; }).map(function (x) { return [x.kmh, String(x.kmh), x.kmh + ' km/h：最小转弯半径 ' + x.minR + ' m，运营成本 ×' + x.ops.toFixed(2)]; }), function (v) { T.newLineSpeed = v; }));
+      const railSelect = h('select', { 'aria-label': '新线路轨道制式', onchange: function () { T.newLineRailSystem = railSelect.value; T.newLineSpeed = CM.RailSystems.pickSpeed(CM.Fleet.cityId(g), y, railSelect.value); self.renderToolOpts(); } });
+      CM.RailSystems.SYSTEMS.filter(function (r) { return y >= r.from && CM.RailSystems.pickSpeed(CM.Fleet.cityId(g), y, r.id) !== null; }).forEach(function (r) { railSelect.appendChild(h('option', { value: r.id, selected: T.newLineRailSystem === r.id ? true : null }, r.name)); });
+      el.append(colorGroup, h('span', { class: 'to-sep' }), colorLine ? grp('制式', h('span', { class: 'tag' }, CM.RailSystems.get(colorLine).name)) : grp('制式', railSelect), typeCtl, sizeCtl('新站'), todCtl, curveCtl, speedCtl);
       el.append.apply(el, snapCtl());
       if (T.chain) el.appendChild(h('button', { class: 'btn sm ghost', 'data-tip': '结束本次绘线', 'data-key-pre': '右键', 'data-act': 'build.finish', onclick: function () { T.endChain(); } }, ic('check'), '完成'));
     } else if (T.tool === 'station') {
-      el.append(hint('station', '点击空地建站 · 点击轨道插入车站'), h('span', { class: 'to-sep' }), typeCtl, sizeCtl('规模'));
+      el.append(hint('station', '点击空地建站 · 点击轨道插入车站'), h('span', { class: 'to-sep' }), typeCtl, sizeCtl('规模'), todCtl);
       el.append.apply(el, snapCtl());
     } else if (T.tool === 'edit') {
       el.appendChild(hint('pencil', '拖动车站或圆点调整线形 · 拖动菱形增加转弯点 · 双击删除转弯点 · 选中车站后拖动旋转手柄调整站台方向 · Ctrl+点击多选'));

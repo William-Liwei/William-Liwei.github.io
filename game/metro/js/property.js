@@ -2,7 +2,7 @@
 // 自选地块经营。独立于车站 TOD 和政府合同；只有正式线网的可步行运营服务会带来收益。
 (function (CM) {
   const U = CM.U, CFG = CM.CFG;
-  const P = CM.Property = { VERSION: 1, MAX_OWNED: 32, MAX_RECORDS: 256, ACQUISITION_SHARE: 0.6 };
+  const P = CM.Property = { VERSION: 1, MAX_OWNED: 32, MAX_RECORDS: 256, ACQUISITION_SHARE: 0.6, MAX_SERVICE: 1.6 };
   const BUY_SPREAD = 0.08, SELL_FEE = 0.06, HOLD_RATE = 0.012, EPS = 1e-7;
   const finite = function (v, lo, hi) { return typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi; };
   const dayKey = function (g) { return g.clock.y * 372 + (g.clock.m - 1) * 31 + g.clock.d; };
@@ -63,28 +63,55 @@
     return '';
   };
 
+  // 共用已发布的真实客流与实际停靠频率。只读取本站的交路，不触发求解或扫描城市。
+  // TOD 和枢纽的额外服务能力需要客流支撑，站厅过载会抵消吸引力。
+  P.stationService = function (g, k) {
+    const m = g.model, C = g.compiled, net = m && m.net, s = C && C.stations[k];
+    if (!s || !net || net.C !== C || !C.serviced[k] || m.dailyStale) return null;
+    const st = g.net.stations[s.id], sd = m.stDaily || m.stDailyWk;
+    if (!st || !st.built || !sd || !sd.inn || !sd.out || sd.inn.length !== C.stations.length) return null;
+    const pub = m.results && m.results.wd && m.results.wd.per, live = m.ctxs && m.ctxs.wd && m.ctxs.wd.per;
+    const per = pub || live || m.live && m.live.per;
+    if (!per || !per[0] || !per[0].freq) return null;
+    let frequency = 0;
+    const lines = new Set();
+    for (const ri of C.stationRoutes[k] || []) {
+      let f = Math.max(0, per[0].freq[ri] || 0);
+      // A dispatch stopped since the last publication cannot keep yesterday's premium.
+      if (live && live[0] && live[0].freq) f = Math.min(f, Math.max(0, live[0].freq[ri] || 0));
+      if (f <= EPS) continue;
+      frequency += f; lines.add(C.routes && C.routes[ri] ? C.routes[ri].lineId : ri);
+    }
+    if (frequency <= EPS) return null;
+    const entrances = Math.max(0, (sd.inn[k] || 0) + (sd.out[k] || 0)), flow = entrances + Math.max(0, sd.xfer && sd.xfer[k] || 0);
+    const years = CFG.metroLed && CFG.metroLed.years || 4, now = g.clock.y + (g.clock.m - 1) / 12;
+    const age = Array.isArray(st.built) ? now - st.built[0] - ((st.built[1] || 1) - 1) / 12 : years;
+    const x = U.clamp(age / years, 0, 1), maturity = 1 - (1 - x) * (1 - x);
+    const size = st.size || s.size || 'M', hub = CM.Metro.hubLevel ? CM.Metro.hubLevel(st) : 0;
+    const cap = CM.Metro.stationCapacity ? CM.Metro.stationCapacity({ size: size, hub: hub }) : CFG.metro.stationCap[size];
+    const load = cap > 0 ? Math.max(0, sd.peak && sd.peak[k] || 0) / cap : 0;
+    const comfort = 1 / (1 + Math.max(0, load - 0.9) * 0.8), tier = U.clamp(st.tod || 0, 0, 5);
+    const support = U.clamp(flow / (CFG.metroLed && CFG.metroLed.flowFull || 60000), 0, 1);
+    const bonus = ([0, 0.02, 0.07, 0.14, 0.28, 0.45][tier] + hub * (size === 'L' ? 0.06 : 0.035)) * maturity * support;
+    return { frequency: frequency, lines: lines.size, entrances: entrances, flow: flow, maturity: maturity,
+      comfort: comfort, load: load, tier: tier, hub: hub, size: size, bonus: bonus, station: st };
+  };
+
   // 按道路步行接驳、真正停靠的交路、已求解的发车频率和客流估值。
   // 不读草案，也不以直线距离跨河估值；过站不停、零配车和拆线都不能提供服务。
   P.service = function (g, c) {
-    const out = { score: 0, metres: Infinity, station: null, flow: 0 }, m = g.model, C = g.compiled;
+    const out = { score: 0, metres: Infinity, station: null, flow: 0, bonus: 0 }, m = g.model, C = g.compiled;
     const K = m && m.net, acc = K && K.acc;
     if (!C || !K || K.C !== C || !acc || !acc.cellWalk || !acc.cellStation) return out;
     const k = acc.cellStation[c], dist = acc.cellWalk[c], maxM = CFG.walk.maxAccessM;
     if (!Number.isInteger(k) || k < 0 || !C.stations[k] || !C.serviced[k] || !Number.isFinite(dist) || dist > maxM) return out;
-    const st = C.stations[k];
-    if (!g.net.stations[st.id] || !g.net.stations[st.id].built) return out;
-    const per = m.ctxs && m.ctxs.wd ? m.ctxs.wd.per : m.live && m.live.per;
-    if (!per || !per[0] || !per[0].freq) return out;
-    let frequency = 0;
-    for (const ri of C.stationRoutes[k] || []) frequency += Math.max(0, per[0].freq[ri] || 0);
-    if (frequency <= EPS) return out;
-    const sd = m.stDailyWk || m.stDaily;
-    const flow = sd && k < sd.inn.length ? Math.max(0, (sd.inn[k] || 0) + (sd.out[k] || 0)) : 0;
-    const walk = U.clamp(1 - dist / (maxM * 1.15), 0, 1), freq = U.clamp(frequency / 8, 0, 1);
-    const demand = 0.35 + 0.65 * U.clamp(flow / 10000, 0, 1);
-    const lines = C.stationLines[k] ? C.stationLines[k].size : 1;
-    out.score = U.clamp(walk * freq * demand * (1 + Math.min(0.2, Math.max(0, lines - 1) * 0.1)), 0, 1);
-    out.metres = dist; out.station = st.name; out.flow = flow;
+    const st = C.stations[k], svc = P.stationService(g, k);
+    if (!svc) return out;
+    const walk = U.clamp(1 - dist / (maxM * 1.15), 0, 1), freq = U.clamp(svc.frequency / 8, 0, 1);
+    const demand = 0.35 * U.clamp(svc.entrances / 1000, 0, 1) + 0.65 * U.clamp(svc.entrances / 10000, 0, 1);
+    const access = Math.min(1, walk * freq * demand * (1 + Math.min(0.2, Math.max(0, svc.lines - 1) * 0.1)));
+    out.score = U.clamp(access * (1 + svc.bonus) * svc.comfort, 0, P.MAX_SERVICE);
+    out.metres = dist; out.station = st.name; out.flow = svc.entrances; out.bonus = svc.bonus;
     return out;
   };
   P.baseValue = function (g, c) {
@@ -219,7 +246,7 @@
     const seen = new Set(); let count = 0;
     for (const p of s.records) {
       if (!p || Array.isArray(p) || !Number.isInteger(p.c) || p.c < 0 || p.c >= cells || seen.has(p.c) || typeof p.owned !== 'boolean' ||
-          !finite(p.used, 0, 1) || !finite(p.access, 0, 1) || !Number.isInteger(p.bought) || p.bought < 0 || p.bought > 4000000 ||
+          !finite(p.used, 0, 1) || !finite(p.access, 0, P.MAX_SERVICE) || !Number.isInteger(p.bought) || p.bought < 0 || p.bought > 4000000 ||
           !Number.isInteger(p.devAt) || p.devAt < -1 || p.devAt > 4000000 || !finite(p.devArea, 0, 1) ||
           ['paid', 'devCost', 'rent', 'cost', 'saved'].some(function (k) { return !finite(p[k], 0, 1e14); }) ||
           (p.devCost > 0 && (!p.owned || p.devArea <= 0 || p.devAt < 0)) || (p.devCost === 0 && (p.devArea !== 0 || p.devAt !== -1))) fail();
@@ -294,6 +321,7 @@
     const rows = function () { return [
       ['可交易面积', U.fmtNum(q.area * CFG.CELL_M * CFG.CELL_M / 10000, 2) + ' 公顷（剩余 ' + U.fmtPct(q.area, 0) + '）'],
       ['运营服务', q.service.station ? q.service.station + ' · 步行 ' + Math.round(q.service.metres) + ' 米' : '暂无可步行到达的运营服务'],
+      ['站城服务加成', '+' + U.fmtPct(q.service.bonus, 1)],
       ['地铁带来的地价溢价', '+' + U.fmtPct(0.8 * q.access, 1)],
       [isOwned ? '出售净到手' : '购入总价（含 8% 交易溢价）', U.fmtMoney(isOwned ? q.sell : q.buy)],
       ['每月持有及维护成本', U.fmtMoney((q.hold + q.upkeep) * 30.4)],
@@ -314,6 +342,7 @@
     const rentMessage = function () { return q.service.score <= EPS ? '当前没有可步行到达的运营服务，月租金为 0；开发后仍需支付持有及维护成本。' : q.access <= EPS ? '运营服务刚建立，地价溢价尚未形成；当前预计月租金为 0，后续按实际服务逐步变化。' : ''; };
     const rentNote = h('div', { class: 'note property-rent-note' }, rentMessage()); rentNote.hidden = !rentMessage(); el.appendChild(rentNote);
     el.appendChild(h('div', { class: 'tiny muted property-rent-note' }, '月租金按当前运营服务与地价折算，不包含未来增长；实际逐日结算。'));
+    el.appendChild(h('div', { class: 'tiny muted' }, '大型枢纽与高阶 TOD 的加成受客流、成熟期和拥堵约束；空站不会抬高地价。'));
     el.appendChild(h('div', { class: 'note property-note' }, isOwned ? '卖价已扣 6% 交易费；已划入地铁建设的面积不再出售。开发前可继续持有，空地没有租金。' : '地块为游戏经营单位。可提前储地；以后车站或地面、高架线路用到自有土地时，减免对应征地费。'));
     // Keep prices and affordability current while this card is open, preserving
     // its DOM/focus. Cash-only changes do not trigger another property valuation.

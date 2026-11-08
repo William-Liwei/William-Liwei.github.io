@@ -10,11 +10,22 @@
 
   // ======================== 过载提醒 ========================
   const A = CM.OpsAlerts = {};
-  const LIMIT = { warn: 1.1, bad: 1.4 }, STREAK = 2, POP_GAP = 3, SNOOZE = 12, AFTER_FIX = 6;   // 满载或负荷阈值、持续月数、两次弹出的最短间隔（月）、点「×」与处理后的静默月数
+  const LIMIT = { warn: 1.1, bad: 1.4 }, STREAK = 2, POP_GAP = 3, SNOOZE = 12;
   const note = function (g) { return g.opsNote || (g.opsNote = { streak: {}, snooze: {}, lastPop: 0 }); };
+  // Keep only small alert records and scalar revisions, never an old network or
+  // published result. Rebuilding traffic is not evidence that a problem vanished.
+  const alertRuntime = new WeakMap();
+  const alertState = function (g) { let r = alertRuntime.get(g); if (!r) { r = { items: [], stamp: '', pending: new Map(), running: false }; alertRuntime.set(g, r); } return r; };
+  const ownedAlert = function (g, x) { const a = (x.kind === 'station' ? g.net.stations : g.net.lines)[x.id]; return !!a && (!a.ownerId || a.ownerId === 'player'); };
+  const published = function (g) {
+    const m = g && g.model, sd = m && (m.stDailyWk || m.stDaily);
+    return !!(m && m.net && m.net.C === g.compiled && CM.Tasks && !g.pending && !g.jumping && !m.predJob &&
+      m.settled !== false && !m.dailyStale && sd && sd.peak && sd.peak.length === m.net.C.stations.length &&
+      m.trafficReady() && !(m.hasReviewWork && m.hasReviewWork()));
+  };
   // 当前过载的线路与车站（工作日早高峰已发布结果），按严重程度排序
   A.scan = function (g) {
-    const m = g.model, net = m.net; if (!net || !net.R || !m.trafficReady() || !CM.Tasks) return [];
+    const m = g.model, net = m.net; if (!published(g) || !net.R) return [];
     const out = [], C = net.C;
     for (const x of OD.crowd(g)) {
       const L = g.net.lines[x.lid]; if (!L || L.ownerId && L.ownerId !== 'player' || x.lf < LIMIT.warn) continue;
@@ -29,14 +40,34 @@
     });
     return out.sort(function (a, b) { return b.value - a.value; });
   };
-  // 已持续过载、未被静默的项目（入口角标与 App 的提醒页）
-  A.active = function (g) {
-    const n = note(g), ym = g.ym();
-    return A.scan(g).filter(function (x) { return (n.streak[x.key] || 0) >= STREAK && !(n.snooze[x.key] > ym); });
+  // items remains useful while updating. A newly published, complete result is
+  // the only event that reconciles pending work and removes resolved problems.
+  A.snapshot = function (g) {
+    const r = alertState(g), m = g.model, complete = published(g), n = note(g), ym = g.ym();
+    for (const [key, p] of r.pending) {
+      const x = { id: key.slice(2), kind: key[0] === 's' ? 'station' : 'line' };
+      if (!ownedAlert(g, x) || complete && ((m.version || 0) > p.version || (m.cycles || 0) > p.cycles)) r.pending.delete(key);
+    }
+    const ready = complete && !r.running && !r.pending.size;
+    if (ready) {
+      const stamp = [g.netVersion, m.version, m.cycles, m.epoch, g.fleet && g.fleet.ver, ym].join('|');
+      if (r.stamp !== stamp) { r.items = A.scan(g); r.stamp = stamp; }
+    }
+    r.items = r.items.filter(function (x) { return ownedAlert(g, x); });
+    const items = r.items.filter(function (x) { return (n.streak[x.key] || 0) >= STREAK && !(n.snooze[x.key] > ym); })
+      .map(function (x) { return Object.assign({}, x, r.pending.has(x.key) ? { pending: true } : null); });
+    return { ready: ready, updating: !ready, items: items };
+  };
+  A.ready = function (g) { return A.snapshot(g).ready; };
+  A.active = function (g) { return A.snapshot(g).items; };
+  // Call after a successful fleet/construction action, not before applyFleet:
+  // it publishes an immediate approximation before the background solve starts.
+  A.markPending = function (g, key) {
+    const m = g.model; alertState(g).pending.set(key, { version: m.version || 0, cycles: m.cycles || 0 });
   };
   // 每月一次（当月交通结果发布后）：更新持续月数，只在间隔足够、界面空闲时弹出一张最严重的卡片
   A.monthly = function (g, ui) {
-    if (g.tutorial) return;
+    if (g.tutorial || !A.ready(g)) { ui.updateOpsDock(); return; }
     const n = note(g), ym = g.ym();
     if (n.ym === ym) { ui.updateOpsDock(); return; }   // 读档后同一个月不重复计数
     n.ym = ym;
@@ -52,6 +83,7 @@
   // 自动处理方案（只读）：线路先用车辆段闲置列车、再买车补足高峰所需；手动调度改回智能调度；频率到顶时升级限制编组的车站。
   // 车站升级一级。返回 { ok, steps, cost, text }，不能自动解决时 ok 为 false 并说明原因
   A.plan = function (g, x) {
+    if (!A.ready(g)) return { ok: false, text: '正在更新运营数据，请稍候' };
     const F = CM.Fleet, y = g.clock.y, steps = [];
     const asset = x.kind === 'station' ? g.net.stations[x.id] : g.net.lines[x.id];
     if (asset && asset.ownerId && asset.ownerId !== 'player') return { ok: false, text: '该资产由所属公司独立管理' };
@@ -71,10 +103,10 @@
     for (const s of info) {
       let short = Math.max(0, s.peakNeed - s.avail); if (short <= 0) continue;
       const use = [];
-      for (let i = idle.length - 1; i >= 0 && short > 0; i--) { const t = idle[i], need = s.rt.kmh > 80 ? s.rt.kmh : 0; if (t.cars <= s.rt.cars && F.model(t.model).kmh >= need) { use.push(t.id); idle.splice(i, 1); short--; } }
+      for (let i = idle.length - 1; i >= 0 && short > 0; i--) { const t = idle[i]; if (F.compatible(t, s.rt)) { use.push(t.id); idle.splice(i, 1); short--; } }
       if (use.length) { steps.push({ type: 'move', ids: use, line: lid, svc: s.id }); moved += use.length; }
       if (short > 0) {
-        const m = F.recommend(g.mapId, y, s.rt.kmh), cars = Math.min(s.rt.cars, m.max), each = F.price(g, m, cars, y);
+        const m = F.recommend(F.cityId ? F.cityId(g) : g.mapId, y, s.rt.kmh, s.rt.railSystem), cars = Math.min(s.rt.cars, m.max), each = F.price(g, m, cars, y);
         steps.push({ type: 'buy', line: lid, svc: s.id, model: m.id, cars: cars, n: short, name: F.shortOf(m) });
         cost += each * short; bought += short;
       }
@@ -84,36 +116,47 @@
     // 列车够用仍过载：频率已到上限，只能靠加长编组（升级限制编组的车站）
     if (!moved && !bought) {
       const C = g.compiled, rts = C.routes.filter(function (r) { return r.lineId === lid && !r.svc; }), min = rts.reduce(function (a, r) { return Math.min(a, r.cars); }, 8);
-      if (min < 8) {
+      if (min < (CM.RailSystems ? CM.RailSystems.get(L).cars : 8)) {
         const ids = []; for (const r of rts) if (r.cars === min) for (const sid of r.stIds) { const s = g.net.stations[sid]; if (s && CFG.metro.carsBySize[s.size] === min && ids.indexOf(sid) < 0) ids.push(sid); }
         for (const sid of ids) cost += station(g.net.stations[sid]);
-        steps.push({ type: 'upgrade', ids: ids }); parts.push('升级 ' + ids.length + ' 座车站以加长编组');
+        if (ids.length) { steps.push({ type: 'upgrade', ids: ids }); parts.push('升级 ' + ids.length + ' 座车站以加长编组'); }
       }
     }
     if (!steps.length) return { ok: false, text: '发车频率与编组都到上限：需要分流，例如修平行线路或加开交路' };
     return { ok: true, steps: steps, cost: cost, text: parts.join('，') };
   };
   A.affordable = function (g, plan) { return g.econ.isFree() || g.econ.canAffordBuild(plan.cost); };
-  // 执行方案；车站升级走建设流程：没有其他草案时直接确认，已有草案时并入草案由玩家确认
+  // Never modify a player's existing draft, or reuse a quote while demand is
+  // updating. Unconfirmed work stays visible and is not treated as resolved.
   A.run = function (g, ui, x) {
+    const snapshot = A.snapshot(g), runtime = alertState(g);
+    if (!snapshot.ready) return { error: '正在更新运营数据，请稍候' };
+    if (!snapshot.items.some(function (item) { return item.key === x.key; })) return { error: '这项提醒已更新，请查看最新待办' };
     const plan = A.plan(g, x), F = CM.Fleet; if (!plan.ok) return { error: plan.text };
+    if (g.draft && plan.steps.some(function (st) { return st.type === 'upgrade'; })) return { error: '请先确认或取消现有草案，再处理扩站' };
     if (!A.affordable(g, plan)) return { error: '资金不足：需要约 ' + U.fmtMoney(plan.cost) };
-    let drafted = false;
-    for (const st of plan.steps) {
-      if (st.type === 'auto') F.setMode(g, st.line, 'auto');
-      else if (st.type === 'move') F.move(g, st.ids, st.line, st.svc);
-      else if (st.type === 'buy') { const r = F.buy(g, st.line, st.svc, st.model, st.cars, st.n); if (r.error) return r; }
-      else if (st.type === 'upgrade') {
-        const had = !!g.draft, r = g.edit(function (n) { for (const id of st.ids) { const s = n.stations[id]; if (s && sizeNext[s.size]) s.size = sizeNext[s.size]; } });
-        if (r.error) return r;
-        if (had) drafted = true;
-        else { const c = g.canConfirm(); if (c.ok) g.confirmDraft(); else drafted = true; }
+    let drafted = false, changed = false, reason = '';
+    runtime.running = true;
+    try {
+      for (const st of plan.steps) {
+        if (st.type === 'auto') { const r = F.setMode(g, st.line, 'auto'); if (r && r.error) return r; changed = true; }
+        else if (st.type === 'move') { if (!F.move(g, st.ids, st.line, st.svc)) return { error: '可调入的列车已变化，请等待最新运营数据' }; changed = true; }
+        else if (st.type === 'buy') { const r = F.buy(g, st.line, st.svc, st.model, st.cars, st.n); if (r.error) return r; changed = true; }
+        else if (st.type === 'upgrade') {
+          const r = g.edit(function (n) { for (const id of st.ids) { const s = n.stations[id]; if (s && sizeNext[s.size]) s.size = sizeNext[s.size]; } });
+          if (r.error) return r;
+          const c = g.canConfirm();
+          if (!c.ok) { drafted = true; reason = c.reason || ''; }
+          else { const result = g.confirmDraft(); if (!result.ok) { drafted = true; reason = result.reason || result.error || ''; } else changed = true; }
+        }
       }
+      g.logEvent({ tag: '运营', title: (drafted ? '处理方案已加入草案：' : '自动处理：') + x.title, desc: plan.text + (plan.cost > 0.5 ? '，约 ' + U.fmtMoney(plan.cost) : '') + (drafted ? '；尚未确认建设。' : '；等待最新客流评估。') });
+      return { ok: true, drafted: drafted, pending: changed, text: plan.text, reason: reason };
+    } finally {
+      if (changed) A.markPending(g, x.key);
+      runtime.running = false;
+      ui.markUnsaved(); ui.scheduleAutosave(); ui.updateOpsDock();
     }
-    const n = note(g); n.snooze[x.key] = g.ym() + AFTER_FIX; n.streak[x.key] = 0;
-    g.logEvent({ tag: '运营', title: '自动处理：' + x.title, desc: plan.text + (plan.cost > 0.5 ? '，约 ' + U.fmtMoney(plan.cost) : '') + '。' });
-    ui.markUnsaved(); ui.scheduleAutosave(); ui.updateOpsDock();
-    return { ok: true, drafted: drafted, text: plan.text };
   };
   // 定位后手动处理：地图移到对象处，打开对应详情（线路进「列车运营」分页，车站进「概况」看拥挤诊断）
   A.locate = function (g, ui, x) {
@@ -194,16 +237,17 @@
 
   // 提醒的两个动作（卡片与 App 共用）
   const actions = function (ui, g, x, after, prepared) {
-    const plan = prepared || A.plan(g, x), can = plan.ok && A.affordable(g, plan);
-    const tip = plan.ok ? plan.text + (plan.cost > 0.5 ? '，约 ' + U.fmtMoney(plan.cost) : '') + (can ? '' : '（资金不足）') : plan.text;
+    const plan = prepared || A.plan(g, x), ready = A.ready(g), draftWait = plan.ok && g.draft && plan.steps.some(function (st) { return st.type === 'upgrade'; });
+    const can = ready && plan.ok && !draftWait && A.affordable(g, plan);
+    const tip = !ready ? '正在更新运营数据，请稍候' : (draftWait ? '请先确认或取消现有草案，再处理扩站' : (plan.ok ? plan.text + (plan.cost > 0.5 ? '，约 ' + U.fmtMoney(plan.cost) : '') + (can ? '' : '（资金不足）') : plan.text));
     return h('div', { class: 'ops-acts' },
       h('button', { class: 'btn sm primary', disabled: can ? null : true, 'data-tip': tip, onclick: function () {
         const r = A.run(g, ui, x);
         if (r.error) { ui.toast(r.error, 'bad'); return; }
         sfx(r.drafted ? 'soft' : 'opsFix');
-        ui.toast(r.drafted ? '已放入草案，确认建设后生效：' + r.text : '已处理：' + r.text, r.drafted ? 'info' : 'good');
+        ui.toast(r.drafted ? '已放入草案，确认建设后生效：' + r.text + (r.reason ? '（' + r.reason + '）' : '') : '已执行，等待客流评估：' + r.text, r.drafted ? 'info' : 'good');
         if (after) after('auto');
-      } }, ic('sparkle', 13), '自动处理', plan.ok && plan.cost > 0.5 ? h('em', { class: 'ops-cost' }, U.fmtMoney(plan.cost)) : null),
+      } }, ic('sparkle', 13), x.pending ? '等待评估' : (ready ? '自动处理' : '更新中'), plan.ok && plan.cost > 0.5 ? h('em', { class: 'ops-cost' }, U.fmtMoney(plan.cost)) : null),
       h('button', { class: 'btn sm', onclick: function () { if (after) after('locate'); A.locate(g, ui, x); } }, ic('locate', 13), '定位处理'));
   };
   CM.UI.prototype.hideOpsPop = function () { if (this._opsPop) { this._opsPop.remove(); this._opsPop = null; } clearTimeout(this._opsPopT); };
@@ -229,11 +273,11 @@
   };
   // 随界面刷新调用：换月且当月交通结果已发布时做一次月度检查，打开的 App 随之刷新
   CM.UI.prototype.tickOps = function (g) {
-    const ym = g.ym();
-    if (this._opsYm === ym && this._opsG === g) return;
-    if (g.jumping || g.pending || !g.model.trafficReady()) return;
-    this._opsYm = ym; this._opsG = g;
-    try { A.record(g); A.monthly(g, this); } catch (e) { console.error(e); }
+    const ym = g.ym(), m = g.model, ready = A.ready(g), stamp = [ym, m.version, g.netVersion, g.fleet && g.fleet.ver, ready ? 1 : 0].join('|');
+    if (this._opsStamp === stamp && this._opsG === g) return;
+    this._opsStamp = stamp; this._opsG = g;
+    if (ready) { try { A.record(g); A.monthly(g, this); } catch (e) { console.error(e); } }
+    else this.updateOpsDock();
     if (this.opsApp) this.opsApp.refresh();
   };
   // 入口角标：需要关注的项目数
@@ -393,7 +437,7 @@
       count(navs.home, al, true); count(navs.lines, Object.keys(g.net.lines).length); count(navs.stations, Object.keys(g.net.stations).length);
       if (navs.fleet) count(navs.fleet, g.fleet.trains.length);
       stateEl.className = 'mc-state' + (al ? ' warn' : '');
-      stateEl.replaceChildren(h('i'), h('span', null, al ? al + ' 项待处理' : '线网运行平稳'));
+      stateEl.replaceChildren(h('i'), h('span', null, A.ready(g) ? (al ? al + ' 项待处理' : '线网运行平稳') : '正在更新运营数据'));
       I18(stateEl);
     };
     const rail = h('nav', { class: 'mc-rail' },
@@ -573,7 +617,7 @@
       const L = x.kind === 'line' ? g.net.lines[x.id] : null, s = x.kind === 'station' ? g.net.stations[x.id] : null; if (!L && !s) return null;
       const plan = A.plan(g, x), detail = function () { (L ? openLine : openStation)(x.id); };
       return h('div', { class: 'mc-todo' },
-        tag([x.level === 'bad' ? 'bad' : 'warn', x.level === 'bad' ? '严重' : '过载']),
+        tag([x.level === 'bad' ? 'bad' : 'warn', x.pending ? '等待评估' : (x.level === 'bad' ? '严重' : '过载')]),
         h('button', { class: 'mc-todo-t', 'data-tip': '查看详情', onclick: detail },
           h('span', { class: 'mc-todo-n' }, L ? lb(L) : ic('metro', 14), h('b', null, x.name), h('span', null, x.what)),
           h('small', null, x.sub), h('small', { class: 'mc-plan' }, plan.ok ? '建议：' + plan.text : plan.text)),
@@ -597,8 +641,19 @@
         kpi('车站', String(srows.length), srows.filter(function (r) { return r.lines.length > 1; }).length + ' 座换乘', '', function () { setRoot('stations'); }),
         g.fleet ? kpi('列车', String(fl.length), '配属 ' + avail + ' / 需要 ' + need, need > avail ? 'warn' : '', function () { setRoot('fleet'); }) : null);
       const sw = h('button', { class: 'switch' + (on ? ' on' : ''), role: 'switch', 'aria-checked': on ? 'true' : 'false', 'aria-label': '自动弹出提醒', 'data-silent': '1', 'data-tip': '在入口上方出现小卡片，最多每 3 个月一次；关闭后只显示角标', onclick: function () { sfx('toggle'); CM.Settings.set('opsPop', !on); draw(); } }, h('i'));
-      const todo = h('section', { class: 'mc-card' }, cardHead('待处理事项', al.length ? al.length + ' 项' : '', h('label', { class: 'mc-swl' }, h('span', null, '自动弹出提醒'), sw)),
-        al.length ? al.slice(0, st.todoLimit).map(todoRow) : (rows.length ? empty('check', '线网运行平稳', '线路或车站连续两个月负荷超过 110% 时列在这里。') : empty('route', '还没有线路', '回到地图用「绘线」修第一条线，修好后在这里管理。')),
+      const auto = CM.Automation, autoOn = !!(auto && auto.enabled(g) && auto.policy(g).alerts);
+      const autoTip = '按现有预算自动调车、购车和扩站；拥挤的手动线路会切换为智能调度';
+      const autoSwitch = auto ? h('button', { class: 'switch' + (autoOn ? ' on' : ''), role: 'switch', 'aria-checked': autoOn ? 'true' : 'false', 'aria-label': '自动处理待办', 'data-silent': '1', 'data-tip': autoTip, onclick: function () {
+        sfx('toggle'); auto.setPolicy(g, autoOn ? { alerts: false } : { enabled: true, alerts: true, buy: true, stations: true, hubs: true });
+        self.markUnsaved(); self.scheduleAutosave(); draw();
+      } }, h('i')) : null;
+      const ready = A.ready(g);
+      const todo = h('section', { class: 'mc-card' }, cardHead('待处理事项', al.length ? al.length + ' 项' : '', h('div', { class: 'mc-todo-controls' },
+        autoSwitch ? h('label', { class: 'mc-swl' }, h('span', null, '自动处理待办'), autoSwitch) : null,
+        h('label', { class: 'mc-swl' }, h('span', null, '自动弹出提醒'), sw))),
+        autoOn ? h('div', { class: 'mc-todo-note tiny muted' }, autoTip) : null,
+        !ready ? h('div', { class: 'mc-todo-note tiny muted', role: 'status', 'aria-live': 'polite' }, '正在更新运营数据；其余待办会保留，新结果发布后继续评估。') : null,
+        al.length ? al.slice(0, st.todoLimit).map(todoRow) : (!ready ? empty('chip', '正在更新运营数据', '完整客流结果发布后显示待处理事项。') : (rows.length ? empty('check', '线网运行平稳', '线路或车站连续两个月负荷超过 110% 时列在这里。') : empty('route', '还没有线路', '回到地图用「绘线」修第一条线，修好后在这里管理。'))),
         al.length > st.todoLimit ? h('div', { class: 'mc-pad' }, h('button', { class: 'btn sm', onclick: function () { const t = content.scrollTop; st.todoLimit += 12; draw(); content.scrollTop = t; } }, '显示更多', ' · ', al.length - st.todoLimit, ' 项')) : null);
       const topL = rows.filter(function (r) { return r.lf > 0; }).sort(function (a, b) { return b.lf - a.lf; }).slice(0, 6).map(function (r) { return { name: r.L.name, v: r.lf, badge: lb(r.L), go: function () { openLine(r.lid); } }; });
       const topS = srows.filter(function (r) { return r.load > 0; }).sort(function (a, b) { return b.load - a.load; }).slice(0, 6).map(function (r) { return { name: r.s.name, v: r.load, go: function () { openStation(r.sid); } }; });
@@ -680,7 +735,7 @@
         h('button', { class: 'mc-swatch', style: lineColor(L), 'aria-label': '修改线路颜色', 'data-tip': '修改线路颜色', onclick: function (e) { if (CM.Quick) CM.Quick.popColor(lid, e.currentTarget); } }, M.lineBadge(L)),
         h('div', { class: 'mc-dh-t' },
           nameInput(L.name, 14, '线路名称', function (el) { const v = el.value.trim(); if (v && v !== L.name) self.setLineLook(lid, { name: v }); else el.value = L.name; }),
-          h('div', { class: 'mc-meta' }, official ? tag(lineState(row)) : tag(['', '草案']), h('span', null, M.TOPO_NAME[tp.topo]), h('span', null, ends(row, net)))),
+          h('div', { class: 'mc-meta' }, official ? tag(lineState(row)) : tag(['', '草案']), CM.RailSystems ? h('span', null, CM.RailSystems.get(L).name) : null, h('span', null, M.TOPO_NAME[tp.topo]), h('span', null, ends(row, net)))),
         official ? h('button', { class: 'btn sm', 'data-tip': '在地图上定位这条线路', onclick: then(function () { A.locate(g, self, { kind: 'line', id: lid }); }) }, ic('locate', 14), '定位') : null,
         h('button', { class: 'btn sm', 'data-tip': '贯通、拆开、支线与区段调整', onclick: then(function () { self.openObj('line', lid, 'build'); }) }, ic('pencil', 14), '线路编辑'));
       const lrows = A.rows(g, 'l', lid), prevRow = lrows.length > 1 ? lrows[lrows.length - 2] : null;

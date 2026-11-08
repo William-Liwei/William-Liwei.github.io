@@ -211,10 +211,13 @@
     if (CM.Development) CM.Development.validate(payload.development);
     if (CM.Future) CM.Future.validate(payload.future);
     for (const st of Object.values(payload.net.stations || {})) {
+      if (st.tod != null && (!Number.isInteger(st.tod) || st.tod < 0 || st.tod > 5)) throw new Error('存档中的车站商业等级无效');
       // Missing hub stays absent for exact legacy-network round trips; Metro treats it as level 0.
       if (st.hub != null && ![0, 1, 2].includes(st.hub)) throw new Error('存档中的枢纽等级无效');
     }
     for (const line of Object.values(payload.net.lines || {})) {
+      if (line.railSystem != null && !['metro', 'light', 'tram', 'commuter', 'regional', 'highspeed', 'maglev'].includes(line.railSystem)) throw new Error('存档中的线路制式无效');
+      if (line.speed != null && (!Number.isFinite(line.speed) || CM.RailSystems && !CM.RailSystems.grades(line).some(function (x) { return x.kmh === line.speed; }))) throw new Error('存档中的线路速度无效');
       if (line.skip != null && (!Array.isArray(line.skip) || line.skip.some(function (id) { return typeof id !== 'string'; }))) throw new Error('存档中的线路停靠方案无效');
     }
     // 存档所属地图（1.4 版之前的存档都是广州）：按该地图的网格尺寸校验

@@ -40,6 +40,7 @@
     if (!s || !s.built || (CM.Metro.ownerId ? CM.Metro.ownerId(s, g.net) : s.ownerId || 'player') !== 'player' || k === undefined || !operated(g.model, C, k) || completed(g, sid)) return null;
     const from = s.tod || 0, to = from + 1;
     if (!Number.isInteger(from) || from < 0 || to >= T.LEVELS.length) return null;
+    if (T.eligibility && T.eligibility(g, sid, to)) return null;
     const weekday = flow(g.model.stDailyWk, k), weekend = flow(g.model.stDailyWe, k);
     if (weekday === null || weekend === null) return null;
     const hub = !!(C.stationLines[k] && C.stationLines[k].size >= 2), year = g.clock.y;

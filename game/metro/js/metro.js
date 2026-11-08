@@ -662,12 +662,12 @@
     return Array.from(tight).slice(0, /\d/.test(tight) ? 3 : 2).join('');
   };
   // ---------------- 线路运行速度（v2.5 玩家反馈） ----------------
-  M.lineKmh = function (L) { return (L && L.speed) || 80; };
-  M.speedGrade = function (L) { const v = M.lineKmh(L), G = CFG.metro.speedGrades; for (const x of G) if (x.kmh === v) return x; return G[2]; };
+  M.lineKmh = function (L) { return CM.RailSystems ? CM.RailSystems.speed(L) : (L && L.speed) || 80; };
+  M.speedGrade = function (L) { if (CM.RailSystems) return CM.RailSystems.grade(L); const v = M.lineKmh(L), G = CFG.metro.speedGrades; for (const x of G) if (x.kmh === v) return x; return G[2]; };
   M.minRadius = function (L) { return M.speedGrade(L).minR; };
   M.warnRadius = function (L) { return M.speedGrade(L).warnR; };
   // 拆开线路时新线路沿用原线路的运行速度
-  const keepSpeed = function (net, from, to) { const A = net.lines[from], B = net.lines[to]; if (A && B && A.speed) B.speed = A.speed; };
+  const keepSpeed = function (net, from, to) { const A = net.lines[from], B = net.lines[to]; if (A && B) { if (A.speed) B.speed = A.speed; if (A.railSystem) B.railSystem = A.railSystem; } };
   // ---------------- 运行交路（v2.5 玩家反馈：快慢车、区间车） ----------------
   // 每条线路默认有按顺序停靠所有站的全程交路（不存入 svcs，也不能删除）；line.svcs 记录玩家加开的交路：
   // { id, name, from, to, via, skip }：from / to 为区间端点（缺省为线路端点），via 为支线方向上的一站，skip 为不停靠的车站。
@@ -703,6 +703,7 @@
   M.addStation = function (net, x, y, opts, city) {
     const id = M.newId(net, 's');
     net.stations[id] = { id: id, name: M.suggestName(net, x, y, city), x: x, y: y, size: opts.size || 'M', type: opts.type || 'underground' };
+    if (Number.isInteger(opts.tod) && opts.tod > 0 && opts.tod <= 3) net.stations[id].tod = opts.tod;
     // 地图外设施的接驳口车站（v2.1）：记下所接通的设施，站名取设施名
     if (opts.portal && CM.Fac) {
       const f = CM.Fac.byId(opts.portal);
@@ -864,6 +865,10 @@
   };
   // 网络完整性：区段两端车站与所属线路必须存在（异常编辑据此回滚）
   M.validate = function (net) {
+    if (CM.RailSystems) for (const id in net.lines) { const L = net.lines[id];
+      if (L.railSystem != null && !CM.RailSystems.valid(L.railSystem)) return '线路轨道制式无效';
+      if (L.speed != null && !CM.RailSystems.grades(L).some(function (x) { return x.kmh === L.speed; })) return '运行速度不适用于该轨道制式';
+    }
     for (const id in net.segments) {
       const s = net.segments[id];
       if (!net.stations[s.a] || !net.stations[s.b]) return '轨道 ' + id + ' 的端点车站不存在';
@@ -954,7 +959,7 @@
   // 由全程路线 B 生成一个交路的运营路线：停靠站之外的车站不停车通过（中途不减速，只计首尾一次加减速；不模拟越行站），
   // 编组只受实际停靠车站的站台限制（通过的小站不限制）。设置面板用它预览用时，确认后由 compile 生成
   M.patternRoute = function (C, line, B, sv, plan) {
-    const mc = CFG.metro, stops = plan.stops, n = stops.length, loop = !!B.loop, last = B.legSec.length;
+    const mc = CFG.metro, rail = CM.RailSystems && CM.RailSystems.get(line), accel = rail ? rail.accel : mc.accel, dwell = rail ? rail.dwell : mc.dwell, stops = plan.stops, n = stops.length, loop = !!B.loop, last = B.legSec.length;
     const seq = loop ? stops.concat([last]) : stops, i0 = seq[0], i1 = seq[seq.length - 1];
     const legLenM = [], legSec = [], legSeg = [], legSegs = [], stopDist = [], stopPt = [];
     for (const i of seq) { stopDist.push(B.stopDist[i] - B.stopDist[i0]); stopPt.push(B.stopPt[i] - B.stopPt[i0]); }
@@ -963,16 +968,16 @@
       let L = 0, T = 0, vm = 0;
       for (let i = p; i < q; i++) { L += B.legLenM[i]; T += B.legLenM[i] / B.legV[i]; vm = Math.max(vm, B.legV[i]); refs.push(B.segRefs[i]); }
       legLenM.push(L); legSeg.push(refs[0]); legSegs.push(refs);
-      legSec.push(q === p + 1 ? B.legSec[p] : Math.max(T + (B.legV[p] + B.legV[q - 1]) / (2 * mc.accel), legTime(L, vm, mc.accel)));
+      legSec.push(q === p + 1 ? B.legSec[p] : Math.max(T + (B.legV[p] + B.legV[q - 1]) / (2 * accel), legTime(L, vm, accel)));
     }
     const pts = B.pts.slice(B.stopPt[i0], B.stopPt[i1] + 1), hs = B.hs.slice(B.stopPt[i0], B.stopPt[i1] + 1), cum = U.cumLen(pts);
     const stIds = stops.map(function (i) { return B.stIds[i]; }), stIdx = stops.map(function (i) { return B.stIdx[i]; });
-    let minCars = 8; for (const s of stIds) minCars = Math.min(minCars, mc.carsBySize[C.net.stations[s].size]);
+    let minCars = rail ? rail.cars : 8; for (const s of stIds) minCars = Math.min(minCars, mc.carsBySize[C.net.stations[s].size]);
     let runSec = 0; for (const t of legSec) runSec += t;
     return {
       id: 0, lineId: B.lineId, line: line, color: line.color, label: M.svcLabel(line, sv), loop: loop, branch: false, main: false, svc: sv.id, baseId: B.id, skipped: (loop ? B.stIds.length : plan.ib - plan.ia + 1) - n,
       lvPen: stops.map(function (i) { return B.lvPen[i]; }), stIds: stIds, stIdx: stIdx, segRefs: legSeg, legSegs: legSegs, pts: pts, hs: hs, cum: cum, stopDist: stopDist, stopPt: stopPt, legLenM: legLenM, legSec: legSec, legV: B.legV,
-      cars: minCars, cap: minCars * mc.carCap, runSec: runSec, cycleSec: loop ? runSec + mc.dwell * n : 2 * runSec + 2 * mc.dwell * Math.max(0, n - 2) + 2 * mc.turnaround, lenM: cum[cum.length - 1] * CFG.CELL_M, kmh: B.kmh, opsK: B.opsK,
+      cars: minCars, cap: minCars * (rail ? rail.cap : mc.carCap), railSystem: rail ? rail.id : 'metro', dwell: dwell, runSec: runSec, cycleSec: loop ? runSec + dwell * n : 2 * runSec + 2 * dwell * Math.max(0, n - 2) + 2 * mc.turnaround, lenM: cum[cum.length - 1] * CFG.CELL_M, kmh: B.kmh, opsK: B.opsK,
     };
   };
   M.compile = function (net, city) { return M.withSegIndex([net], function () { return compile(net, city); }); };
@@ -1003,10 +1008,10 @@
       C.lines.push(line);
       if (tp.topo === 'invalid' || tp.topo === 'empty') continue;
       if (tp.routes.some(function (rt) { return rt.segs.some(function (ref) { return !C.segs.has(ref.id); }); })) continue;
-      const vk = M.lineKmh(line) / 80, grade = M.speedGrade(line), bases = [];   // 运行速度按建设方式的基准速度等比调整（未设定为 80 km/h，即基准速度）
+      const vk = M.lineKmh(line) / 80, grade = M.speedGrade(line), rail = CM.RailSystems && CM.RailSystems.get(line), accel = rail ? rail.accel : mc.accel, dwell = rail ? rail.dwell : mc.dwell, bases = [];
       tp.routes.forEach(function (rt, ri) {
         const pts = [], hs = [], stopDist = [0], stopPt = [0], legLenM = [], legSec = [], legSeg = [], legV = [];
-        let minCars = 8, length = 0;
+        let minCars = rail ? rail.cars : 8, length = 0;
         for (let k = 0; k < rt.segs.length; k++) {
           const ref = rt.segs[k], cs = C.segs.get(ref.id);
           let p = cs.g.pts, h = cs.h;
@@ -1019,14 +1024,14 @@
           const Lm = cs.g.lenM;
           let vmax = mc.vmax[cs.seg.type] * vk;
           if (isFinite(cs.g.minRadiusM)) vmax = Math.min(vmax, Math.max(8, Math.sqrt(mc.latAccel * cs.g.minRadiusM)));
-          legLenM.push(Lm); legSec.push(legTime(Lm, vmax, mc.accel)); legSeg.push(ref); legV.push(vmax);
+          legLenM.push(Lm); legSec.push(legTime(Lm, vmax, accel)); legSeg.push(ref); legV.push(vmax);
         }
         const stIdx = rt.st.map(function (s) { return C.sIndex.get(s); });
         for (const s of rt.st) minCars = Math.min(minCars, mc.carsBySize[net.stations[s].size]);
         const cum = U.cumLen(pts);
         const nStops = rt.st.length;
         let runSec = 0; for (const t of legSec) runSec += t;
-        const cycleSec = rt.loop ? runSec + mc.dwell * nStops : 2 * runSec + 2 * mc.dwell * Math.max(0, nStops - 2) + 2 * mc.turnaround;
+        const cycleSec = rt.loop ? runSec + dwell * nStops : 2 * runSec + 2 * dwell * Math.max(0, nStops - 2) + 2 * mc.turnaround;
         let label = line.name;
         if (tp.topo === 'branch') {
           // 支线可单独命名（如「机场支线」）；未命名时按终点站显示方向。指定了主线方向时，主线显示线路本名（v2.3）
@@ -1038,7 +1043,7 @@
         const route = {
           id: C.routes.length, lineId: lid, line: line, color: line.color, label: label, loop: rt.loop, branch: tp.topo === 'branch', main: tp.main != null && rt.st[rt.st.length - 1] === tp.main, lvPen: lvPen,
           stIds: rt.st, stIdx: stIdx, segRefs: legSeg, legSegs: legSeg.map(function (ref) { return [ref]; }), pts: pts, hs: hs, cum: cum, stopDist: stopDist, stopPt: stopPt, legLenM: legLenM, legSec: legSec, legV: legV,
-          cars: minCars, cap: minCars * mc.carCap, runSec: runSec, cycleSec: cycleSec, lenM: cum[cum.length - 1] * CFG.CELL_M, kmh: grade.kmh, opsK: grade.ops,
+          cars: minCars, cap: minCars * (rail ? rail.cap : mc.carCap), railSystem: rail ? rail.id : 'metro', dwell: dwell, runSec: runSec, cycleSec: cycleSec, lenM: cum[cum.length - 1] * CFG.CELL_M, kmh: grade.kmh, opsK: grade.ops,
         };
         // 保留完整物理路线供加开交路使用；默认交路的通过站也使用真正的跳站运行时间、站台容量与客流路径。
         bases.push(route); C.baseRoutes.push(route);
@@ -1147,7 +1152,13 @@
   function evaluate(draft, off, city, year) {
     const res = { items: [], total: 0, byKind: { construction: 0, demolition: 0, upgrade: 0, relocation: 0 }, conflicts: [], warnings: [], demolitions: [], landAcquisitions: [], changes: { add: [], mod: [], del: [] }, affectedLines: new Set(), notes: [] };
     const C = CFG.cost, ci = costIndex(year);
-    const item = function (kind, label, amount, ref) {
+    const item = function (kind, label, amount, ref, raw) {
+      if (!raw && CM.RailSystems && kind !== 'demolition') {
+        const seg = draft.segments[ref];
+        if (seg) amount *= CM.RailSystems.get(draft.lines[seg.line]).track;
+        else if (draft.stations[ref]) amount *= CM.RailSystems.stationFactor(draft, ref);
+        else if (draft.lines[ref]) amount *= CM.RailSystems.get(draft.lines[ref]).track;
+      }
       if (amount <= 0.5) return;
       const bill = { kind: kind, label: label, amount: amount, ref: ref };
       res.items.push(bill);
@@ -1221,6 +1232,23 @@
           touchedSt.add(id); res.affectedLines.add(lid);
         }
       }
+      const tod = s.tod == null ? 0 : s.tod;
+      if ((!o && (!Number.isInteger(tod) || tod < 0 || tod > 3)) || o && tod !== (o.tod == null ? 0 : o.tod)) {
+        conflict({ type: 'tod', kind: 'station', ref: id, x: s.x, y: s.y, msg: o ? '既有车站商业等级不能通过建设草案修改' : '新站同步商业开发只支持 0–3 级', how: o ? '在车站的商业开发页面单独升级，或撤回草案中的商业等级修改。' : '选择 0–3 级商业开发；更高等级在运营后单独开发。', fixes: [] });
+      } else if (!o && tod && CM.TOD && CM.TOD.LEVELS[tod]) {
+        const hub = M.stationLines(draft, id).length >= 2, cost = CM.TOD.cost(tod, year, s.size, hub);
+        item('construction', '随站建设商业 · ' + s.name + '（' + CM.TOD.LEVELS[tod].name + '）', cost, id, true);
+        res.changes.add.push('随站建设商业 ' + s.name + ' · ' + CM.TOD.LEVELS[tod].name);
+      }
+      if (o && CM.RailSystems) {
+        const beforeSystems = new Set(M.stationLines(off, id).map(function (l) { return CM.RailSystems.id(off.lines[l]); }));
+        const addedSystems = M.stationLines(draft, id).map(function (l) { return CM.RailSystems.id(draft.lines[l]); }).filter(function (system) { return !beforeSystems.has(system); });
+        if (beforeSystems.size && addedSystems.length) {
+          const from = CM.RailSystems.stationFactor(off, id), to = CM.RailSystems.stationFactor(draft, id);
+          item('upgrade', '车站制式设备改造 · ' + s.name, M.stationCost(s.type, s.size, year) * (.15 * to + Math.max(0, to - from)), id, true);
+          res.changes.mod.push('车站「' + s.name + '」增设兼容轨道制式的站台设备');
+        }
+      }
       const hub = M.hubLevel(s), oldHub = M.hubLevel(o);
       if (hub !== oldHub) {
         res.changes.mod.push('车站「' + s.name + '」' + (hub ? '建设' + M.HUBS[hub].name : '关闭枢纽大厅（不退款）'));
@@ -1289,7 +1317,7 @@
     const coFree = new Map();   // 区段 → 共用其轨道的线路
     {
       const byKey = new Map();
-      for (const id in draft.segments) { const s = draft.segments[id], k = M.trackKey(s); if (!byKey.has(k)) byKey.set(k, []); byKey.get(k).push(s); }
+      for (const id in draft.segments) { const s = draft.segments[id], k = M.trackKey(s) + (CM.RailSystems ? '|' + CM.RailSystems.id(draft.lines[s.line]) : ''); if (!byKey.has(k)) byKey.set(k, []); byKey.get(k).push(s); }
       byKey.forEach(function (list) {
         if (list.length < 2) return;
         const built = list.find(function (s) { const o = off.segments[s.id]; return o && M.trackKey(o) === M.trackKey(s); });
@@ -1299,9 +1327,10 @@
     }
     const groups = new Map();
     const usedBase = new Set();
+    const systemUses = new Map(), systemChanges = [];
     // 改了运行速度的线路（v2.5）：全线按新速度的最小半径复核
     const respeed = new Set();
-    for (const lid in draft.lines) if (off.lines[lid] && M.lineKmh(off.lines[lid]) !== M.lineKmh(draft.lines[lid])) respeed.add(lid);
+    for (const lid in draft.lines) if (off.lines[lid] && (M.lineKmh(off.lines[lid]) !== M.lineKmh(draft.lines[lid]) || CM.RailSystems && CM.RailSystems.id(off.lines[lid]) !== CM.RailSystems.id(draft.lines[lid]))) respeed.add(lid);
     for (const id in draft.segments) {
       const s = draft.segments[id];
       const g = M.segGeom(draft, s, city);
@@ -1313,6 +1342,10 @@
       let base = null;
       if (o) base = [id]; else if (s.base) base = s.base.filter(function (b) { return off.segments[b]; });
       if (base && base.length) for (const b of base) usedBase.add(b);
+      // Inserted stations leave each child pointing at the entire old segment.
+      // Count all surviving children, including unchanged/rebuilt ones, before
+      // allocating any conversion bill to their shares of that physical track.
+      if (CM.RailSystems && base) for (const b of base) systemUses.set(b, (systemUses.get(b) || 0) + g.lenM);
       let full = false;
       const shared = coFree.get(id), shareTxt = shared ? '与 ' + shared.name + ' 共线运营，沿用同一条轨道，不另收建设费' : '';
       if (!base || !base.length) { full = true; res.changes.add.push(shared ? '共线运营 ' + lbl + '（' + shareTxt + '）' : '新建轨道 ' + lbl + '（' + U.fmtKm(g.lenM) + '，' + CFG.metro.typeName[s.type] + '）'); res.affectedLines.add(s.line); }
@@ -1352,6 +1385,17 @@
         if (g.hillM > 1) item('construction', '风景区环境保护费 · ' + lbl + '（景区内 ' + U.fmtKm(g.hillM) + '）', M.envTrackFee(g, s.type, year), id);
         const gd = M.speedGrade(line);
         if (gd.track > 0) item('construction', '高速线路附加（' + gd.kmh + ' km/h）· ' + lbl, g.lenM / 1000 * C.trackPerKm[s.type] * gd.track * ci, id);
+      }
+      // The same physical track cannot be reassigned to a different system for
+      // free, including splitting it into a newly named line. Downgrades do not
+      // refund construction; dedicated guideways still need paid conversion.
+      if (!full && base && base.length && CM.RailSystems) {
+        const target = CM.RailSystems.get(line);
+        const changed = base.filter(function (bid) { return CM.RailSystems.id(off.lines[off.segments[bid].line]) !== target.id; });
+        if (changed.length) {
+          systemChanges.push({ id: id, label: lbl, target: target, base: changed, lenM: g.lenM });
+          res.affectedLines.add(s.line); touched.add(id);
+        }
       }
       // 冲突
       const toUnder = { label: '改为地下（隧道）', op: 'segType', seg: id, value: 'underground' };
@@ -1398,6 +1442,15 @@
           conflict({ type: 'ramp', kind: 'seg', ref: id, x: mid.x, y: mid.y, msg: lbl + '：' + CFG.metro.typeName[tA] + '/' + CFG.metro.typeName[s.type] + '/' + CFG.metro.typeName[tB] + '转换坡道不足（需约 ' + Math.round(req) + ' m，可用 ' + Math.max(0, Math.round(avail)) + ' m）', how: '轨道最大坡度为 ' + Math.round(CFG.metro.maxGrade * 100) + '%，地下与高架之间高差约 ' + (CFG.metro.levelM.elevated - CFG.metro.levelM.underground) + ' m，需要较长坡道。让区间与两端站台采用相同的建设方式，或拉长两站距离；换乘站可以为本线单独设站台层（天地换乘）。', fixes: fixes });
         }
       }
+    }
+    for (const change of systemChanges) {
+      let amount = 0;
+      for (const bid of change.base) {
+        const old = off.segments[bid], geometry = offGeom[bid], before = CM.RailSystems.get(off.lines[old.line]);
+        const share = change.lenM / Math.max(1, geometry.lenM, systemUses.get(bid));
+        amount += M.trackCost(geometry, old.type, year) * (.45 * change.target.track + Math.max(0, change.target.track - before.track)) * share;
+      }
+      item('upgrade', '轨道制式改造 · ' + change.label + '（改为' + change.target.name + '）', amount, change.id, true);
     }
     // 车站前后转角（站台为直线，线路不能在车站处急转）
     const segsBySt = new Map();
@@ -1531,6 +1584,18 @@
         });
       }
       const ol = off.lines[lid];
+      if (CM.RailSystems) {
+        const system = CM.RailSystems.get(line), changedSystem = ol && CM.RailSystems.id(ol) !== system.id, speed = M.lineKmh(line);
+        if (line.railSystem != null && !CM.RailSystems.valid(line.railSystem)) conflict({ type: 'railSystem', kind: 'line', ref: lid, x: 0, y: 0, msg: line.name + '：线路轨道制式无效', how: '选择有效的轨道制式后再确认建设。', fixes: [] });
+        if (year < system.from) conflict({ type: 'railSystem', kind: 'line', ref: lid, x: 0, y: 0, msg: system.name + '在游戏中于 ' + system.from + ' 年开放', how: '等待开放年份，或选择已经开放的轨道制式。', fixes: [] });
+        const validSpeed = CM.RailSystems.grades(line).some(function (x) { return x.kmh === speed; });
+        const owner = M.ownerId(line), mapId = owner === 'player' ? (CM.mapId === 'sh-city' ? 'sh' : CM.mapId === 'sh' ? D.playerCity || 'sh' : CM.mapId) : owner;
+        const available = CM.Fleet ? CM.Fleet.speedOpen(mapId, year, speed, system.id) : { ok: true };
+        if (!validSpeed || !available.ok) conflict({ type: 'railSpeed', kind: 'line', ref: lid, x: 0, y: 0,
+          msg: line.name + '：' + speed + ' km/h ' + (!validSpeed ? '不适用于' + system.name : '当前没有兼容的可购车型' + (available.year ? '（' + available.year + ' 年起开放）' : '')),
+          how: '选择本制式当前已经开放的运行速度，再确认建设。', fixes: [] });
+        if (changedSystem) { res.changes.mod.push(line.name + ' 轨道制式 ' + CM.RailSystems.get(ol).name + ' → ' + system.name); res.affectedLines.add(lid); res.notes.push(line.name + '：制式改造后，不兼容列车退回车辆段；新制式最低服务配车费用另计。'); }
+      }
       if (!ol) {
         // 由既有轨道组成的新线路：从原线路拆出（支线转为独立线路）
         let from = null;
@@ -1737,7 +1802,7 @@
     }
     if (oldCurve) s.curve = oldCurve; else delete s.curve;
     s.pts = oldPts;
-    const G = CFG.metro.speedGrades, lower = G.filter(function (x) { return x.minR < minR; }).pop();
+    const G = CM.RailSystems ? CM.RailSystems.grades(L0) : CFG.metro.speedGrades, lower = G.filter(function (x) { return x.minR < minR; }).pop();
     return { error: '这段轨道太短或转角太大，放不下半径 ' + minR + ' m 的弯道：拉开站距、把车站移出弯道' + (lower ? '，或把本线运行速度降到 ' + lower.kmh + ' km/h（最小半径 ' + lower.minR + ' m）' : '') + '。' };
   };
   // 执行一键修复（在草案中）

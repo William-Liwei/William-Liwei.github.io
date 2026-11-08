@@ -9,6 +9,7 @@
     this.R = R; this.ui = ui;
     this.tool = 'select';
     this.buildType = 'underground'; this.stationSize = 'M';
+    this.stationTod = CM.Settings.get('buildTod') || 0; this.newLineRailSystem = 'metro';
     this.lineChoice = 'new';
     this.newLineColor = null; this.newLineSpeed = null;
     this.curveMode = CM.Settings.get('curveMode') === 'pass' ? 'pass' : 'smooth';   // 绘线线形（v2.1）
@@ -105,14 +106,14 @@
     if (e.button === 1) { this.ptr.pan = true; e.preventDefault(); return; }
     if (e.button === 0 && e.shiftKey && this.tool === 'demolish' && !g.jumping) { this.ptr.box = true; return; }   // 拆除工具：Shift + 拖动框选
     // 延长手柄：进入绘线，拖到目标位置松开即连线（只点击则从该端点开始逐站绘制）
-    const ext = e.button === 0 && !this.pickingProperty() ? this.pickExtend(e.clientX, e.clientY) : null;
+    const ext = e.button === 0 && this.tool === 'line' && !this.pickingProperty() ? this.pickExtend(e.clientX, e.clientY) : null;
     if (ext) { this.ui.startDraw(ext.station, ext.line, false); this.ptr.extend = true; return; }
     if (e.button === 0 && (this.tool === 'edit' || this.tool === 'line') && !g.jumping && !e.shiftKey) {
       const h = this.pickHandle(e.clientX, e.clientY);
       if (h && (this.tool === 'edit' || h.kind === 'bend' || h.kind === 'mid')) { this.drag = h; this.drag.changed = false; g.beginLive(); this.ptr.handle = true; }
     }
-    // 选择 / 修改工具直接抓取线路：拖到已有车站接入，拖到空地建站；空白处仍然平移地图。
-    if (!this.pickingProperty() && !this.drag && e.button === 0 && !e.shiftKey && !e.altKey && !g.jumping && !g.pending && (this.tool === 'select' || this.tool === 'edit') && this.startRouteDrag) this.startRouteDrag(e);
+    // Only drawing mode can grab a route for new construction; ordinary viewing pans.
+    if (!this.pickingProperty() && !this.drag && e.button === 0 && !e.shiftKey && !e.altKey && !g.jumping && !g.pending && this.tool === 'line' && this.startRouteDrag) this.startRouteDrag(e);
   };
   Tools.prototype.onMove = function (e) {
     const g = this.game(); if (!g) return;
@@ -196,7 +197,7 @@
   };
   // 选址检查（接驳口不受限制）
   Tools.prototype.siteCheck = function (w) { return w.portal ? { ok: true } : M.checkSite(this.game().city, w.x, w.y, this.buildType); };
-  Tools.prototype.stationOpts = function (w) { const o = { size: this.stationSize, type: this.buildType }; if (w.portal) o.portal = w.portal; return o; };
+  Tools.prototype.stationOpts = function (w) { const o = { size: this.stationSize, type: this.buildType }; if (this.stationTod) o.tod = this.stationTod; if (w.portal) o.portal = w.portal; return o; };
   Tools.prototype.updateHover = function (sx, sy, mod) {
     const g = this.game(), R = this.R;
     if (this.drag && this.drag.kind === 'reroute' && this.ptr && this.ptr.moved) return;
@@ -264,7 +265,6 @@
         tip = { title: (ln && ln.name ? ln.name + ' · ' : '') + net.stations[sg.a].name + '—' + net.stations[sg.b].name, lines: [CFG.metro.typeName[sg.type] + '轨道'] };
         if (this.tool === 'demolish') this.demolishTip(tip, { kind: 'seg', id: seg });
         if (this.tool === 'edit') tip.lines.push('点击选中后可拖动控制点调整线形');
-        if (this.tool === 'select' || this.tool === 'edit') tip.lines.push('拖动轨道到车站：接入本站；拖到空地：建站接入');
       } else if (this.tool === 'select' && R.tEase < 0.5) {
         const L = R.pickLink(w.x, w.y, 0.22);
         if (L && L.name) {
@@ -383,10 +383,10 @@
     tip.lines.push('点击：拆除（进入草案，可撤销；确认前不生效）', 'Ctrl+点击多选 · Shift+拖动框选');
     tip.bad = true;
   };
-  // 选中线路时，在线路端点显示延长手柄（选择 / 修改工具）
+  // Drawing mode alone exposes endpoint construction handles.
   Tools.prototype.extendHandles = function () {
     const g = this.game(), R = this.R, lid = this.ui.highlightLine;
-    if (!g || g.jumping || !lid || (this.tool !== 'select' && this.tool !== 'edit')) return [];
+    if (!g || g.jumping || !lid || this.tool !== 'line') return [];
     const net = this.net(), line = net.lines[lid];
     if (!line) return [];
     const tp = M.lineTopo(net, lid);
@@ -442,7 +442,7 @@
   // 当前绘制线路允许的最小转弯半径（米）：延长既有线路按该线的运行速度，新线路按选定的运行速度
   Tools.prototype.drawMinRadius = function () {
     const L = this.chain && this.net().lines[this.lineChoice];
-    return L ? M.minRadius(L) : M.minRadius({ speed: this.newLineSpeed });
+    return L ? M.minRadius(L) : M.minRadius({ speed: this.newLineSpeed, railSystem: this.newLineRailSystem });
   };
   // 放下车站前预览站名（v2.5 玩家反馈）：与放下时的取名规则相同（M.addStation、M.splitSegment）；按位置与线网版本缓存
   Tools.prototype.previewName = function (x, y) {
@@ -619,7 +619,7 @@
       case 'station': {
         if (st) { ui.select({ kind: 'station', id: st }); break; }
         if (seg) {
-          const r = g.edit((net) => M.splitSegment(net, seg, w.x, w.y, { size: this.stationSize, type: this.buildType }, g.city));
+          const r = g.edit((net) => M.splitSegment(net, seg, w.x, w.y, this.stationOpts(w), g.city));
           if (r.station) ui.select({ kind: 'station', id: r.station });
           break;
         }
@@ -708,7 +708,7 @@
     const r = g.edit(function (net) {
       let lid = self.lineChoice;
       const created = lid === 'new' || !net.lines[lid];
-      if (created) { lid = M.newLine(net); if (self.newLineColor) net.lines[lid].color = self.newLineColor; if (self.newLineSpeed && self.newLineSpeed !== 80) net.lines[lid].speed = self.newLineSpeed; }
+      if (created) { const system = self.newLineRailSystem || 'metro', speed = CM.RailSystems.pickSpeed(CM.Fleet.cityId(g), g.clock.y, system, self.newLineSpeed); if (speed === null) return { error: '当前年代没有适配该制式的列车' }; lid = M.newLine(net); if (self.newLineColor) net.lines[lid].color = self.newLineColor; if (system !== 'metro') { net.lines[lid].railSystem = system; net.lines[lid].speed = speed; } else if (speed !== 80) net.lines[lid].speed = speed; }
       let to = st;
       if (!to && seg) { const sp = M.splitSegment(net, seg, w.x, w.y, opts, g.city); to = sp.station; }
       if (!to) to = M.addStation(net, w.x, w.y, opts, g.city);

@@ -3243,6 +3243,8 @@ button.mc-kpi:hover { border-color: var(--accent); background: var(--hover); }
 .mc-link { display: inline-flex; align-items: center; gap: 2px; border: 0; background: none; padding: 0; color: var(--accent); font-size: 12px; cursor: var(--cur-pointer); white-space: nowrap; }
 .mc-swl { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
 .mc-swl .switch { transform: scale(.72); transform-origin: right center; margin-left: -8px; }
+.mc-todo-controls { display: flex; align-items: center; justify-content: flex-end; gap: 14px; flex-wrap: wrap; }
+.mc-todo-note { padding: 8px 16px; border-bottom: 1px solid var(--line); }
 .mc-todo { display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 16px; border-bottom: 1px solid var(--line); }
 .mc-todo:last-child { border-bottom: 0; border-radius: 0 0 12px 12px; }
 .mc-todo-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; border: 0; background: none; padding: 0; color: var(--text); font: inherit; text-align: left; cursor: var(--cur-pointer); }

@@ -16,7 +16,7 @@
     { id: 'energy', title: '能源转型调整期', desc: '企业更新生产方式，短期就业与消费略有回落。', months: 12, pop: -.001, jobs: .985, com: .97 },
     { id: 'industry', title: '新产业投资窗口', desc: '新一轮研发与产业投资提高就业吸引力。', months: 24, pop: .003, jobs: 1.04, com: 1.025 },
   ];
-  F.enabled = g => !!g && g.mapId === 'sh';
+  F.enabled = g => !!g && (g.mapId === 'sh' || g.mapId === 'sh-city');
   F.era = year => ERAS.filter(e => e.y <= year).at(-1) || null;
   function episode(g, ym) {
     const start = U.ymIndex(2026, 7); if (ym < start) return null;
