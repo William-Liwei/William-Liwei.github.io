@@ -317,7 +317,10 @@
   // 主菜单空闲时依次预生成全部地图的缩略图
   CM.prewarmThumbs = function (theme) {
     const ids = CM.MAP_ORDER.slice(); let i = 0;
-    const next = function () { if (i < ids.length) CM.mapThumbAsync(ids[i++], theme).then(next); };
+    const next = function () {
+      if (CM.game || CM.isLoading && CM.isLoading() || typeof document !== 'undefined' && document.hidden) return;
+      if (i < ids.length) CM.mapThumbAsync(ids[i++], theme).then(next);
+    };
     next();
   };
 })(window.CM);

@@ -19,6 +19,7 @@
     return !!(el && !el.hidden && !el.classList.contains('hidden') && !el.classList.contains('closed') && el.getClientRects().length);
   }
   function intersects(a, b) { return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top; }
+  function compiledGeometry(g) { return g.draft ? g.draft.compiled && g.draft.compVer === g.draft.ver ? g.draft.compiled : null : g.compiled; }
 
   function Radar(ui) {
     this.ui = ui; this.R = ui.R; this.game = null; this.nextDraw = 0; this.drawKey = ''; this.terrainKey = ''; this.baseKey = '';
@@ -155,7 +156,7 @@
   };
   Radar.prototype.buildBase = function (g, dark) {
     const x = this.base.getContext('2d'), f = frame(g.city), net = g.draft && g.draft.net || g.net;
-    const compiled = g.draft && g.draft.compiled && g.draft.compVer === g.draft.ver ? g.draft.compiled : !g.draft ? g.compiled : null;
+    const compiled = compiledGeometry(g);
     x.clearRect(0, 0, W, H); x.drawImage(this.terrain, 0, 0); x.save(); x.beginPath(); x.rect(f.x, f.y, f.w, f.h); x.clip();
     x.strokeStyle = dark ? 'rgba(143,198,227,.13)' : 'rgba(44,102,143,.12)'; x.lineWidth = .5; x.beginPath();
     for (let i = 1; i < 5; i++) { x.moveTo(f.x + f.w * i / 5, f.y); x.lineTo(f.x + f.w * i / 5, f.y + f.h); x.moveTo(f.x, f.y + f.h * i / 5); x.lineTo(f.x + f.w, f.y + f.h * i / 5); } x.stroke();
@@ -209,9 +210,10 @@
     const now = performance.now(); if (!force && now < this.nextDraw) return; this.nextDraw = now + 80;
     const R = this.R, city = g.city, dark = R.themeName === 'dark';
     const tk = [city.uid, city.W, city.H, city.terrainVer, city.geoVer, city.version, dark].join('|');
-    const bk = [tk, g.netVersion, g.draft ? g.draft.ver : '-', g.playerCity, CM.Accessibility && CM.Accessibility.flag ? CM.Accessibility.flag() : '', CM.I18n ? CM.I18n.get() : ''].join('|');
+    const bk = [tk, g.netVersion, g.displayVersion || 0, g.draft ? g.draft.ver : '-', g.playerCity, CM.Accessibility && CM.Accessibility.flag ? CM.Accessibility.flag() : '', CM.I18n ? CM.I18n.get() : ''].join('|');
     if (tk !== this.terrainKey) { this.buildTerrain(city, dark); this.terrainKey = tk; }
-    if (bk !== this.baseKey || this.net !== g.net || this.draft !== g.draft) { this.buildBase(g, dark); this.baseKey = bk; this.net = g.net; this.draft = g.draft; this.drawKey = ''; }
+    const geometry = compiledGeometry(g);
+    if (bk !== this.baseKey || this.net !== g.net || this.draft !== g.draft || this.geometry !== geometry) { this.buildBase(g, dark); this.baseKey = bk; this.net = g.net; this.draft = g.draft; this.geometry = geometry; this.drawKey = ''; }
     const key = [R.cam.cx, R.cam.cy, R.cam.zoom, R.cam.t, R.w, R.h].join('|'); if (!force && this.drawKey === key) return;
     this.drawKey = key; const x = this.ctx, f = frame(city), corners = viewport(R); this.lastViewport = corners;
     x.clearRect(0, 0, W, H); x.drawImage(this.base, 0, 0); x.save(); x.beginPath(); x.rect(f.x, f.y, f.w, f.h); x.clip();

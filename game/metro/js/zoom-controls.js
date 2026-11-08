@@ -96,8 +96,14 @@
     const rect = state.button.getBoundingClientRect(), panel = state.panel, viewport = window.visualViewport;
     const x0 = viewport ? viewport.offsetLeft : 0, y0 = viewport ? viewport.offsetTop : 0;
     const w = viewport ? viewport.width : window.innerWidth, h = viewport ? viewport.height : window.innerHeight;
-    const pw = panel.offsetWidth || 244, ph = panel.offsetHeight || 150;
-    panel.style.left = Math.max(x0 + 8, Math.min(x0 + w - pw - 8, rect.right + 10)) + 'px';
-    panel.style.top = Math.max(y0 + 8, Math.min(y0 + h - ph - 8, rect.top - ph / 2 + rect.height / 2)) + 'px';
+    const scale = CM.Settings && Number(CM.Settings.get('uiScale')), z = Number.isFinite(scale) && scale > 0 ? scale : 1;
+    const px = function (key, n) { const value = n + 'px'; if (panel.style[key] !== value) panel.style[key] = value; };
+    // Rects use visible CSS pixels, while the zoomed panel's layout uses its
+    // own unscaled pixels. Constrain before measuring so a narrow/short visual
+    // viewport leaves the slider and actions reachable through scrolling.
+    px('maxWidth', Math.max(1, w - 16) / z); px('maxHeight', Math.max(1, h - 16) / z);
+    const pw = (panel.offsetWidth || 244) * z, ph = (panel.offsetHeight || 150) * z;
+    px('left', Math.max(x0 + 8, Math.min(x0 + w - pw - 8, rect.right + 10)) / z);
+    px('top', Math.max(y0 + 8, Math.min(y0 + h - ph - 8, rect.top - ph / 2 + rect.height / 2)) / z);
   };
 })(window.CM);

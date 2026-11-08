@@ -37,15 +37,14 @@
     return Math.max(0, Math.min(allowance, g.econ.funds - policy.reserve - constructionCash));
   };
   const candidates = function (g, d, ev, r) {
-    const M = CM.Metro, P = CM.Property, cells = new Map();
+    const M = CM.Metro, P = CM.Property, cells = new Map(), held = new Set(P.owned(g).map(function (p) { return p.c; }));
     for (const a of ev.landAcquisitions) {
       const b = a && a.bill;
       if (!b || b.kind !== 'demolition' || !Number.isInteger(a.c) || a.c < 0 || a.c >= g.city.N ||
           !Number.isFinite(a.frac) || a.frac <= 0 || !Number.isFinite(a.fee) || a.fee <= 0) continue;
       const object = d.net.stations[b.ref] || d.net.segments[b.ref];
       if (!object || M.ownerId(object, d.net) !== 'player' || r.purchased.has(a.c)) continue;
-      const held = P.find(g, a.c);
-      if (held && held.owned) continue;
+      if (held.has(a.c)) continue;
       const entry = cells.get(a.c) || { c: a.c, fee: 0, frac: 0 };
       entry.fee += a.fee; entry.frac += a.frac; cells.set(a.c, entry);
     }
@@ -61,20 +60,42 @@
     }
     return out.sort(function (a, b) { return b.priority - a.priority || b.fee - a.fee || a.c - b.c; });
   };
+  // Wallet changes only affect affordability. Reuse the identical ordering until
+  // its actual price/eligibility inputs change, rather than rescanning the plan
+  // and historical property records every simulated day.
+  const candidateRows = function (g, d, ev, r) {
+    const city = g.city, model = g.model;
+    const key = [g.ym(), d.ver, g.netVersion, g.property && g.property.rev, city.version, city.geoVer, city.terrainVer,
+      city.lockVer, city.roadVersion, model && model.version, g.fleet && g.fleet.ver].join(':');
+    const old = r.candidates;
+    if (old && old.key === key && old.ev === ev && old.rows === ev.landAcquisitions && old.city === city && old.model === model &&
+        old.property === g.property && old.compiled === g.compiled && old.net === g.net && old.draftNet === d.net) return old.list;
+    const list = candidates(g, d, ev, r);
+    r.candidates = { key: key, ev: ev, rows: ev.landAcquisitions, city: city, model: model, property: g.property,
+      compiled: g.compiled, net: g.net, draftNet: d.net, list: list };
+    return list;
+  };
+  const permissionKey = function (g, d) {
+    // Agreements can change without a network rebuild. They are a tiny bounded
+    // list, unlike the full network checked by playerOwnershipError.
+    const companies = g.operators && g.operators.companies;
+    const agreements = companies ? JSON.stringify(Object.keys(companies).map(function (id) { return [id, companies[id].agreements]; })) : '';
+    return [d.ver, g.netVersion, agreements].join(':');
+  };
   L.status = function (g) { return rt(g).message; };
   L.poll = function (g, now) {
     if (!g) return 0;
     const r = rt(g), A = CM.Automation, P = CM.Property;
     if (!A || !P || typeof A.recordInvestment !== 'function') return 0;
     const p = A.policy(g);
-    if (!p.enabled || !p.land) { r.draft = null; r.key = ''; return note(g, r, ''); }
+    if (!p.enabled || !p.land) { r.draft = null; r.key = ''; r.next = 0; return note(g, r, ''); }
     if (A.prepareBudget) A.prepareBudget(g);
     const ym = g.ym();
     if (r.ym !== ym) { r.ym = ym; r.purchased.clear(); r.key = ''; }
     const count = A.count ? A.count(g, 'land') : g.automation && g.automation.landCount || 0;
     if (count >= p.landLimit) return note(g, r, '自动购地已达本月数量上限');
     const time = Number.isFinite(now) ? now : performance.now(), d = g.draft;
-    if (!d || busy(g)) { r.draft = null; r.key = ''; return note(g, r, d ? '自动购地等待拖动、输入、对话框或结算结束' : '自动购地等待建设草案'); }
+    if (!d || busy(g)) { r.draft = null; r.key = ''; r.next = 0; return note(g, r, d ? '自动购地等待拖动、输入、对话框或结算结束' : '自动购地等待建设草案'); }
     if (r.draft !== d || r.ver !== d.ver) { r.draft = d; r.ver = d.ver; r.since = time; r.key = ''; }
     if (time - r.since < QUIET_MS) return note(g, r, '自动购地等待草案稳定');
     const ev = d.eval;
@@ -85,17 +106,32 @@
       return note(g, r, '自动购地等待无冲突且不含拆除的玩家建设草案');
     }
     if (ev.landAcquisitions.length > MAX_ROWS) return note(g, r, '草案征地明细过大，请缩小规划后自动购地');
-    const key = [ym, d.ver, g.netVersion, g.property && g.property.rev, g.city.version, g.city.geoVer, g.city.terrainVer,
-      g.model && g.model.version, g.econ.funds, g.econ.capex, p.reserve, p.monthlyLimit, p.landLimit,
+    if (time < r.next) return 0;
+    const key = [ym, d.ver, g.netVersion, g.rev, g.property && g.property.rev, g.city.version, g.city.geoVer, g.city.terrainVer, g.city.lockVer,
+      g.city.roadVersion, g.model && g.model.version, g.fleet && g.fleet.ver, g.econ.funds, g.econ.capex, p.reserve, p.monthlyLimit, p.landLimit,
       g.automation && g.automation.spent, count].join(':');
-    if (r.eval === ev && key === r.key || time < r.next) return 0;
-    r.key = key; r.eval = ev; r.next = time + CHECK_MS;
-    if (CM.Metro.playerOwnershipError(g.net, d.net, g)) return note(g, r, '自动购地等待无冲突且不含拆除的玩家建设草案');
+    const authority = r.authority, authKey = permissionKey(g, d);
+    if (r.eval === ev && r.rows === ev.landAcquisitions && r.city === g.city && r.model === g.model && r.property === g.property && r.net === g.net &&
+        r.draftNet === d.net && r.compiled === g.compiled && authority && authority.key === authKey && key === r.key) return 0;
+    r.next = time + CHECK_MS;
+    r.key = key; r.eval = ev; r.rows = ev.landAcquisitions; r.city = g.city; r.model = g.model; r.property = g.property; r.net = g.net; r.draftNet = d.net; r.compiled = g.compiled;
+    let checked = false;
+    if (!authority || authority.net !== g.net || authority.draftNet !== d.net || authority.key !== authKey) {
+      r.authority = { net: g.net, draftNet: d.net, key: authKey, error: CM.Metro.playerOwnershipError(g.net, d.net, g) };
+      checked = true;
+    }
+    if (r.authority.error) return note(g, r, '自动购地等待无冲突且不含拆除的玩家建设草案');
     if (P.owned(g).length >= P.MAX_OWNED) return note(g, r, '自动购地等待空余持有名额');
-    const cash = available(g, p, ev, A), rows = candidates(g, d, ev, r);
+    const cash = available(g, p, ev, A), rows = candidateRows(g, d, ev, r);
     let reason = rows.length ? '自动购地等待月预算、一般资金底线或草案建设资金充足' : '当前草案没有可自动购入的实际征地地块';
     for (const row of rows) {
       if (row.price > cash + EPS) continue;
+      // A cache is never permission to transact. Recheck the live network when
+      // spending becomes possible, even if an earlier check was cached.
+      if (!checked) {
+        const error = CM.Metro.playerOwnershipError(g.net, d.net, g); checked = true;
+        if (error) { r.authority.error = error; return note(g, r, '自动购地等待无冲突且不含拆除的玩家建设草案'); }
+      }
       const quote = P.quote(g, row.c);
       if (!quote || !Number.isFinite(quote.buy) || quote.buy > available(g, p, ev, A) + EPS || g.draft !== d || d.ver !== r.ver || d.eval !== ev || d.evalVer !== d.ver) continue;
       const bought = P.buy(g, row.c);

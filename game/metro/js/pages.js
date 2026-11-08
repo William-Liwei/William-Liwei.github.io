@@ -34,6 +34,7 @@
         r.label = name ? line.name + ' ' + name : (r.main ? line.name : line.name + '（往' + (st ? st.name : '') + '）');
       }
     }
+    g.displayVersion = (g.displayVersion || 0) + 1;
     g.touch();
   }
   // 修改线路名称或颜色：只影响显示，运营网络与草案同时更新，立即生效、不产生费用

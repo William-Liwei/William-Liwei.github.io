@@ -388,6 +388,6 @@
     if (!preview) { try { preview = makePreview(); } catch (e) { console.error(e); } }
     if (preview && !CM.game) { R.setGame(preview); preview.ready = false; preview.firstFrame = R.frame; }
     requestAnimationFrame(function () { canvas.classList.add('map-in'); });
-    setTimeout(function () { if (CM.prewarmThumbs) CM.prewarmThumbs(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'); }, 1500);
+    setTimeout(function () { if (!loading && !CM.game && !document.hidden && CM.prewarmThumbs) CM.prewarmThumbs(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'); }, 1500);
   }, 80);
 })(window.CM);

@@ -20,12 +20,16 @@
   P.find = find;
   P.owned = owned;
   P.mapColors = ['#2189a6', '#c28a2c', '#c65b68'];
+  const valuationKey = function (g) {
+    const city = g.city, s = g.property, m = g.model;
+    return [dayKey(g), s && s.rev, s && s.lastDay, city.version, city.terrainVer, city.geoVer,
+      m && m.version, g.netVersion, g.fleet && g.fleet.ver].join(':');
+  };
   const mapCache = new WeakMap();
   // 只给可见地皮层提供持有地块的快照。状态版本不变时不重新估价，缓存不进入存档。
   P.mapSnapshot = function (g) {
     const city = g.city, s = g.property, m = g.model;
-    const key = [dayKey(g), s && s.rev, s && s.lastDay, city.version, city.terrainVer, city.geoVer,
-      m && m.version, g.netVersion, g.fleet && g.fleet.ver].join(':');
+    const key = valuationKey(g);
     const old = mapCache.get(g);
     if (old && old.key === key && old.city === city && old.state === s && old.model === m && old.compiled === g.compiled && old.net === g.net) return old.snapshot;
     const hectares = CFG.CELL_M * CFG.CELL_M / 10000;
@@ -280,13 +284,14 @@
     if (r.ok) { ui.markUnsaved(); ui.rerenderPage(); }
   };
   P.cellPanel = function (ui, c) {
-    const h = U.h, g = ui.g(), q = P.quote(g, c), el = h('div', { class: 'property-card' });
+    const h = U.h, g = ui.g(), el = h('div', { class: 'property-card' });
+    let q = P.quote(g, c);
     if (!q) return el;
     const p = q.p, isOwned = p && p.owned, reason = P.unavailable(g, c);
     el.appendChild(h('div', { class: 'row between property-heading' }, h('b', null, isOwned ? '自有地块' : '地块交易'),
       h('span', { class: 'tag' }, isOwned ? (p.devCost > 0 ? '出租物业' : '土地储备') : '可选购地')));
     el.appendChild(h('div', { class: 'tiny muted' }, P.name(g, c)));
-    el.appendChild(ui.kv([
+    const rows = function () { return [
       ['可交易面积', U.fmtNum(q.area * CFG.CELL_M * CFG.CELL_M / 10000, 2) + ' 公顷（剩余 ' + U.fmtPct(q.area, 0) + '）'],
       ['运营服务', q.service.station ? q.service.station + ' · 步行 ' + Math.round(q.service.metres) + ' 米' : '暂无可步行到达的运营服务'],
       ['地铁带来的地价溢价', '+' + U.fmtPct(0.8 * q.access, 1)],
@@ -296,19 +301,45 @@
       isOwned && p.devCost > 0 ? ['每月租金', U.fmtMoney(q.rent * 30.4)] : ['开发后预计月租金', U.fmtMoney(q.rentIfDeveloped * 30.4)],
       isOwned && p.devCost > 0 ? ['每月净收入', U.fmtMoney(q.net * 30.4)] : ['开发后预计月净收入', U.fmtMoney(q.netIfDeveloped * 30.4)],
       isOwned && p.saved > 0 ? ['已减免征地费用', U.fmtMoney(p.saved)] : null,
-    ]));
+    ].filter(Boolean); };
+    const details = ui.kv(rows()); el.appendChild(details);
     const buttons = h('div', { class: 'property-actions' });
     if (isOwned) {
-      if (!p.devCost && q.area >= 0.15 && !reason) buttons.appendChild(h('button', { class: 'btn sm primary', disabled: !g.econ.canAfford(q.develop), onclick: function () { action(ui, function () { return P.develop(g, c); }, '物业已开发；租金与维护成本逐日结算'); } }, '开发出租 · ' + U.fmtMoney(q.develop)));
-      buttons.appendChild(h('button', { class: 'btn sm ghost', onclick: function () { action(ui, function () { return P.sell(g, c); }, '剩余地块已出售，款项已入一般资金'); } }, '出售 · ' + U.fmtMoney(q.sell)));
-    } else if (!reason) buttons.appendChild(h('button', { class: 'btn sm primary', disabled: !g.econ.canAfford(q.buy) || owned(g).length >= P.MAX_OWNED, onclick: function () { action(ui, function () { return P.buy(g, c); }, '已购入地块，开始计收持有成本'); } }, '购买地块 · ' + U.fmtMoney(q.buy)));
+      if (!p.devCost && q.area >= 0.15 && !reason) buttons.appendChild(h('button', { class: 'btn sm primary', 'data-property-action': 'develop', disabled: !g.econ.canAfford(q.develop), onclick: function () { action(ui, function () { return P.develop(g, c); }, '物业已开发；租金与维护成本逐日结算'); } }, '开发出租 · ' + U.fmtMoney(q.develop)));
+      buttons.appendChild(h('button', { class: 'btn sm ghost', 'data-property-action': 'sell', onclick: function () { action(ui, function () { return P.sell(g, c); }, '剩余地块已出售，款项已入一般资金'); } }, '出售 · ' + U.fmtMoney(q.sell)));
+    } else if (!reason) buttons.appendChild(h('button', { class: 'btn sm primary', 'data-property-action': 'buy', disabled: !g.econ.canAfford(q.buy) || owned(g).length >= P.MAX_OWNED, onclick: function () { action(ui, function () { return P.buy(g, c); }, '已购入地块，开始计收持有成本'); } }, '购买地块 · ' + U.fmtMoney(q.buy)));
     buttons.appendChild(h('button', { class: 'btn sm ghost', onclick: function () { P.startPick(ui); } }, '另选地块'));
     el.appendChild(buttons);
     if (reason) el.appendChild(h('div', { class: 'note' }, reason));
-    if (q.service.score <= EPS) el.appendChild(h('div', { class: 'note property-rent-note' }, '当前没有可步行到达的运营服务，月租金为 0；开发后仍需支付持有及维护成本。'));
-    else if (q.access <= EPS) el.appendChild(h('div', { class: 'note property-rent-note' }, '运营服务刚建立，地价溢价尚未形成；当前预计月租金为 0，后续按实际服务逐步变化。'));
+    const rentMessage = function () { return q.service.score <= EPS ? '当前没有可步行到达的运营服务，月租金为 0；开发后仍需支付持有及维护成本。' : q.access <= EPS ? '运营服务刚建立，地价溢价尚未形成；当前预计月租金为 0，后续按实际服务逐步变化。' : ''; };
+    const rentNote = h('div', { class: 'note property-rent-note' }, rentMessage()); rentNote.hidden = !rentMessage(); el.appendChild(rentNote);
     el.appendChild(h('div', { class: 'tiny muted property-rent-note' }, '月租金按当前运营服务与地价折算，不包含未来增长；实际逐日结算。'));
     el.appendChild(h('div', { class: 'note property-note' }, isOwned ? '卖价已扣 6% 交易费；已划入地铁建设的面积不再出售。开发前可继续持有，空地没有租金。' : '地块为游戏经营单位。可提前储地；以后车站或地面、高架线路用到自有土地时，减免对应征地费。'));
+    // Keep prices and affordability current while this card is open, preserving
+    // its DOM/focus. Cash-only changes do not trigger another property valuation.
+    if (Array.isArray(ui.live)) {
+      const values = Array.from(details.querySelectorAll('.v'));
+      const buy = buttons.querySelector('[data-property-action="buy"]'), sell = buttons.querySelector('[data-property-action="sell"]'), develop = buttons.querySelector('[data-property-action="develop"]');
+      const stamp = function () { return valuationKey(g) + '|' + (g.displayVersion || 0) + '|' + (CM.I18n ? CM.I18n.get() : ''); };
+      let seen = stamp(), city = g.city, prop = g.property, model = g.model, compiled = g.compiled, net = g.net, heldCount = owned(g).length;
+      const setText = function (node, value) { if (node && node.textContent !== value) node.textContent = value; };
+      ui.live.push(function () {
+        if (ui.g() !== g || !el.isConnected) return;
+        const next = stamp();
+        if (seen !== next || city !== g.city || prop !== g.property || model !== g.model || compiled !== g.compiled || net !== g.net) {
+          q = P.quote(g, c); if (!q) return;
+          seen = next; city = g.city; prop = g.property; model = g.model; compiled = g.compiled; net = g.net; heldCount = owned(g).length;
+          const nextRows = rows();
+          for (let i = 0; i < values.length && i < nextRows.length; i++) setText(values[i], nextRows[i][1]);
+          setText(buy, '购买地块 · ' + U.fmtMoney(q.buy)); setText(sell, '出售 · ' + U.fmtMoney(q.sell)); setText(develop, '开发出租 · ' + U.fmtMoney(q.develop));
+          const message = rentMessage(); setText(rentNote, message); rentNote.hidden = !message;
+        }
+        const waiting = !!busy(g), unavailable = !!P.unavailable(g, c);
+        if (buy) buy.disabled = waiting || unavailable || !g.econ.canAfford(q.buy) || heldCount >= P.MAX_OWNED;
+        if (develop) develop.disabled = waiting || unavailable || q.area < 0.15 || !g.econ.canAfford(q.develop);
+        if (sell) sell.disabled = waiting;
+      });
+    }
     return el;
   };
   P.portfolioPanel = function (ui) {

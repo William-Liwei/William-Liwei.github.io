@@ -569,13 +569,17 @@
       sx[k] += i + 0.5; sy[k] += j + 0.5; sn[k]++;
       const b = bb[k]; if (i < b[0]) b[0] = i; if (j < b[1]) b[1] = j; if (i + 1 > b[2]) b[2] = i + 1; if (j + 1 > b[3]) b[3] = j + 1;
     }
+    const nearest = new Float64Array(regions.length); nearest.fill(1e9);
     regions.forEach(function (rg, k) {
-      // 标注点取离质心最近的本区域格，避免落在别的区域上
-      let cx = sn[k] ? sx[k] / sn[k] : W / 2, cy = sn[k] ? sy[k] / sn[k] : H / 2;
-      let best = 1e9, bx = cx, by = cy;
-      for (let c = 0; c < N; c++) if (self.region[c] === k && LM[c] >= 0.5) { const d = U.dist(c % W + 0.5, ((c / W) | 0) + 0.5, cx, cy); if (d < best) { best = d; bx = c % W + 0.5; by = ((c / W) | 0) + 0.5; } }
-      rg.cx = bx; rg.cy = by; rg.bbox = bb[k]; rg.cells = sn[k];
+      sx[k] = sn[k] ? sx[k] / sn[k] : W / 2; sy[k] = sn[k] ? sy[k] / sn[k] : H / 2;
+      rg.cx = sx[k]; rg.cy = sy[k]; rg.bbox = bb[k]; rg.cells = sn[k];
     });
+    // One raster pass instead of one pass per region. Each region still visits
+    // its cells in ascending order, preserving the original distance/tie result.
+    for (let c = 0; c < N; c++) if (LM[c] >= 0.5) {
+      const k = this.region[c], x = c % W + 0.5, y = ((c / W) | 0) + 0.5, d = U.dist(x, y, sx[k], sy[k]);
+      if (d < nearest[k]) { nearest[k] = d; regions[k].cx = x; regions[k].cy = y; }
+    }
     const ak = regions.findIndex(function (r) { return r.id === 'airport'; });
     this.airportBox = D.airport && ak >= 0 && sn[ak] ? regions[ak].bbox : null;
     // 区名标注位置：所列街道的质心

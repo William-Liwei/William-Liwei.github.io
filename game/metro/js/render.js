@@ -119,7 +119,7 @@
     this.stop();
     try {
       const cores = navigator.hardwareConcurrency || 2, n = (navigator.deviceMemory <= 4 || matchMedia('(pointer:coarse)').matches) ? 1 : cores >= 8 ? 2 : 1, id = CM.mapId, mp = CM.curMap ? CM.curMap() : null;
-      const data = { landmarks: D.landmarks, runways: D.runways, airport: D.airport, reclaim: (D.reclaim || []).map(function (r) { return { id: r.id, year: r.year, name: r.name }; }), hsrYear: D.hsrYear };
+      const data = { landmarks: D.landmarks, runways: D.runways, airport: D.airport, reclaim: (D.reclaim || []).map(function (r) { return { id: r.id, year: r.year, name: r.name }; }), hsrYear: D.hsrYear, progressiveRegions: !!D.progressiveRegions };
       const msg = { type: 'map', data: data, cfg: { W: CFG.W, H: CFG.H, START: CFG.START }, region: mp ? mp.region : null, geoId: id, geoFile: GEO_FILES[id] ? 'geo_' + id + '.js' : null, geo: GEO_FILES[id] ? null : CM.GEO };
       this.list = [];
       for (let i = 0; i < n; i++) {
@@ -181,12 +181,14 @@
     }
     if (s.mt !== R._mt) { msg.mt = R._mt ? { mask: R._mt.mask } : null; s.mt = R._mt; any = true; }
     const lightOn = CM.Settings.get('lighting') !== false;
-    const viewKey = R.themeName + '|' + lightOn + '|' + R.styleYear + '|' + R.styleEpoch + '|' + g.clock.y + '|' + (g.clock.m || 1);
-    if (s.viewKey !== viewKey) { msg.view = { theme: R.themeName, lightOn: lightOn, styleYear: R.styleYear, styleEpoch: R.styleEpoch, clock: { y: g.clock.y, m: g.clock.m, d: g.clock.d } }; s.viewKey = viewKey; any = true; }
+    const viewKey = R.themeName + '|' + lightOn + '|' + R.styleYear + '|' + R.styleEpoch + '|' + g.clock.y + '|' + (g.clock.m || 1) + '|' + !!g.preview;
+    if (s.viewKey !== viewKey) { msg.view = { theme: R.themeName, lightOn: lightOn, styleYear: R.styleYear, styleEpoch: R.styleEpoch, clock: { y: g.clock.y, m: g.clock.m, d: g.clock.d }, preview: !!g.preview }; s.viewKey = viewKey; any = true; }
     if (any) for (const sl of this.list) sl.w.postMessage(msg);
   };
   // 申请一块：线程都忙时返回 false（下一帧再试）
   TilePool.prototype.request = function (q) {
+    const size = CHUNK_PX / q.lvl;
+    if (!this.R.hasDetailRect(q.ci * size, q.cj * size, (q.ci + 1) * size, (q.cj + 1) * size)) return false;
     if (this.pending.has(q.key)) return true;
     let best = null;
     for (const sl of this.list) if (sl.n < 2 && (!best || sl.n < best.n)) best = sl;
@@ -371,6 +373,44 @@
     const job = this.groundJob;
     if (job) { job.gen.return(); if (job.cv) job.cv.width = job.cv.height = 1; this.groundJob = null; }
   };
+  // Locked progressive regions retain the existing level-4 terrain overview.
+  // A 4x4-cell summed-area index answers chunk queries in O(1), with conservative
+  // boundary buckets; the lock mask itself remains authoritative for each cell.
+  Renderer.prototype.detailState = function () {
+    const g = this.game;
+    if (!D.progressiveRegions || !g || g.preview || !g.city || !g.city.lockState) return null;
+    const city = g.city, mask = city.lockState().mask, old = this._detailIndex;
+    if (old && old.city === city && old.mask === mask && old.terrain === city.terrainVer && old.geo === city.geoVer) return old.allOpen ? null : old;
+    const step = 4, width = Math.ceil(city.W / step), height = Math.ceil(city.H / step), stride = width + 1, len = stride * (height + 1);
+    let sums = this._detailBuffer;
+    if (!sums || sums.length !== len) sums = new Uint32Array(len); else sums.fill(0);
+    let open = 0, locked = 0;
+    for (let c = 0; c < city.N; c++) {
+      if (city.landFrac[c] < .5 || city.lu[c] === LU.WATER) continue;
+      if (mask[c]) { locked++; continue; }
+      open++; sums[(Math.floor(Math.floor(c / city.W) / step) + 1) * stride + Math.floor(c % city.W / step) + 1]++;
+    }
+    if (open && locked) for (let y = 1; y <= height; y++) {
+      let rowSum = 0;
+      for (let x = 1; x <= width; x++) { rowSum += sums[y * stride + x]; sums[y * stride + x] = sums[(y - 1) * stride + x] + rowSum; }
+    }
+    const allOpen = locked === 0 && open > 0;
+    this._detailBuffer = open && locked ? sums : null;
+    this._detailIndex = { city: city, mask: mask, terrain: city.terrainVer, geo: city.geoVer, width: width, height: height, stride: stride, step: step, open: open, allOpen: allOpen, sums: this._detailBuffer };
+    this.stats.detailIndexBytes = this._detailBuffer ? this._detailBuffer.byteLength : 0;
+    this.stats.detailIndexBuilds = (this.stats.detailIndexBuilds || 0) + 1;
+    return allOpen ? null : this._detailIndex;
+  };
+  Renderer.prototype.hasDetailRect = function (x0, y0, x1, y1) {
+    const s = this.detailState(); if (!s) return true;
+    if (!s.open) return false;
+    const pad = 1;
+    x0 = Math.max(0, Math.floor((x0 - pad) / s.step)); y0 = Math.max(0, Math.floor((y0 - pad) / s.step));
+    x1 = Math.min(s.width, Math.ceil((x1 + pad) / s.step)); y1 = Math.min(s.height, Math.ceil((y1 + pad) / s.step));
+    const a = s.sums, stride = s.stride;
+    return x0 < x1 && y0 < y1 && a[y1 * stride + x1] - a[y0 * stride + x1] - a[y1 * stride + x0] + a[y0 * stride + x0] > 0;
+  };
+  Renderer.prototype.detailLocked = function (c) { const s = this.detailState(); return !!(s && c >= 0 && s.mask[c]); };
   // Hold the displayed raster level until the replacement viewport is ready. Buildings at
   // different levels use different chunk grids, so switching immediately would hide them.
   Renderer.prototype.rasterLevel = function (eff, bounds, queue, buildings) {
@@ -393,6 +433,7 @@
     const ci0 = Math.max(0, Math.floor(bounds.x0 / C)), ci1 = Math.min(Math.ceil(CFG.W / C) - 1, Math.floor(bounds.x1 / C));
     const cj0 = Math.max(0, Math.floor(bounds.y0 / C)), cj1 = Math.min(Math.ceil(CFG.H / C) - 1, Math.floor(bounds.y1 / C));
     for (let cj = cj0; cj <= cj1; cj++) for (let ci = ci0; ci <= ci1; ci++) {
+      if (!this.hasDetailRect(ci * C, cj * C, (ci + 1) * C, (cj + 1) * C)) continue;
       if (!this.groundVisible(ci * C, cj * C, C)) continue;
       const key = target + ':' + ci + ':' + cj, e = this.ground.get(key);
       if (e) e.used = this.frame; // Protect completed staging tiles until the atomic handover.
@@ -407,6 +448,7 @@
       const x0 = Math.max(0, Math.floor(bounds.x0 / size) - 1), x1 = Math.min(Math.ceil(CFG.W / size) - 1, Math.floor(bounds.x1 / size) + 1);
       const y0 = Math.max(0, Math.floor(bounds.y0 / size) - 1), y1 = Math.min(Math.ceil(CFG.H / size) - 1, Math.floor(bounds.y1 / size) + 1);
       for (let cj = y0; cj <= y1; cj++) for (let ci = x0; ci <= x1; ci++) {
+        if (!this.hasDetailRect(ci * size, cj * size, (ci + 1) * size, (cj + 1) * size)) continue;
         const key = 'i' + target + ':' + ci + ':' + cj, e = this.iso.get(key);
         if (!this.isoVisible(e, target, ci, cj, size)) continue;
         if (e) { e.used = this.frame; staged.push(e); }
@@ -438,6 +480,7 @@
       const C = CHUNK_PX / L;
       for (let cj = Math.max(0, Math.floor(y0 / C)); cj <= Math.min(Math.ceil(CFG.H / C) - 1, Math.floor(y1 / C)); cj++) {
         for (let ci = Math.max(0, Math.floor(x0 / C)); ci <= Math.min(Math.ceil(CFG.W / C) - 1, Math.floor(x1 / C)); ci++) {
+          if (!this.hasDetailRect(ci * C, cj * C, (ci + 1) * C, (cj + 1) * C)) continue;
           const key = L + ':' + ci + ':' + cj, e = this.ground.get(key);
           if (e) e.used = Math.max(e.used, keep);
           if (!e || e.stale) todo.push({ kind: 'g', key: key, lvl: L, ci: ci, cj: cj, d: p[2] + Math.abs((ci + 0.5) * C - cam.cx) + Math.abs((cj + 0.5) * C - cam.cy) });
@@ -447,6 +490,7 @@
       const S = this.isoChunkGeom(L);
       for (let cj = Math.max(0, Math.floor(y0 / S) - 1); cj <= Math.min(Math.ceil(CFG.H / S) - 1, Math.floor(y1 / S) + 1); cj++) {
         for (let ci = Math.max(0, Math.floor(x0 / S) - 1); ci <= Math.min(Math.ceil(CFG.W / S) - 1, Math.floor(x1 / S) + 1); ci++) {
+          if (!this.hasDetailRect(ci * S, cj * S, (ci + 1) * S, (cj + 1) * S)) continue;
           const key = 'i' + L + ':' + ci + ':' + cj, e = this.iso.get(key);
           if (e) e.used = Math.max(e.used, keep);
           if (!e || e.stale) todo.push({ kind: 'i', key: key, lvl: L, ci: ci, cj: cj, C: S, d: p[2] + 0.5 + Math.abs((ci + 0.5) * S - cam.cx) + Math.abs((cj + 0.5) * S - cam.cy) });
@@ -587,6 +631,7 @@
 
   Renderer.prototype.setGame = function (g) {
     this.game = g;
+    this._detailIndex = null; this._detailBuffer = null; this.stats.detailIndexBytes = 0;
     this._facS = null;   // 设施图层的显示缓存属于上一座城市：不清掉时上一城的设施会画在新城市的地图上
     this._sitePlans=new WeakMap();this._siteStamp=null;
     this.displayedLevel = this.requestedLevel = null;
@@ -859,6 +904,7 @@
   // 单格建筑（单位坐标 u,v ∈ [0,1]，高度为米）：在 4×4 子地块上稀疏布置，避开真实道路、铁路与水面。
   // 风格上以少量玻璃塔楼与低层体量为主；coarse=true（远景）时只保留较高的建筑。
   Renderer.prototype.cellBuildings = function (c, coarse) {
+    if (this.detailLocked(c)) return null;
     const city = this.game.city, L = city.lu[c];
     const landmark = city.protectedId[c] - 1;
     if (landmark >= 0 && city.landmarkOn[landmark] && D.landmarks[landmark].kind === 'campus') return null;
@@ -933,6 +979,7 @@
 
   Renderer.prototype.drawGround = function (ctx, X0, Y0, X1, Y1, lvl) {
     const g = this.game, city = g.city, W = city.W, H = city.H, Geo = CM.Geo;
+    const detail = this.detailState(), lockedDetail = detail && detail.mask;
     const i0 = Math.max(0, Math.floor(X0)), j0 = Math.max(0, Math.floor(Y0)), i1 = Math.min(W, Math.ceil(X1)), j1 = Math.min(H, Math.ceil(Y1));
     const px = 1 / lvl;
     const inBox = function (b, m) { return b[2] >= X0 - m && b[0] <= X1 + m && b[3] >= Y0 - m && b[1] <= Y1 + m; };
@@ -981,6 +1028,7 @@
       const glow = [new Path2D(), new Path2D(), new Path2D()], any = [false, false, false];
       for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++) {
         const c = j * W + i, L = city.lu[c];
+        if (lockedDetail && lockedDetail[c]) continue;
         if ((L !== LU.COM && L !== LU.MIX) || !city.street[c]) continue;
         const d = city.jobs[c] / (L === LU.COM ? 2500 : 4000), q = d > 1.2 ? 2 : (d > 0.5 ? 1 : (d > 0.15 ? 0 : -1));
         if (q < 0) continue;
@@ -1036,6 +1084,7 @@
     // 场地底色先画，随后保留水系、铁路与道路的原始显示。
     for (let k = 0; k < D.landmarks.length; k++) {
       const lm = D.landmarks[k];
+      if (lockedDetail && lockedDetail[city.cellAt(lm.x, lm.y)]) continue;
       if (city.landmarkOn[k] && CM.Sites.complex(lm) && inBox([lm.x - Math.hypot(lm.w, lm.d) / CFG.CELL_M, lm.y - Math.hypot(lm.w, lm.d) / CFG.CELL_M, lm.x + Math.hypot(lm.w, lm.d) / CFG.CELL_M, lm.y + Math.hypot(lm.w, lm.d) / CFG.CELL_M], 0)) this.drawSiteFloor(ctx, lm);
     }
     // 水系（真实岸线）
@@ -1081,6 +1130,7 @@
       const fills = new Map();
       for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++) {
         const c = j * W + i;
+        if (lockedDetail && lockedDetail[c]) continue;
         if (this.isLmCenter(c)) continue;
         const bl = this.cellBuildings(c);
         if (!bl) continue;
@@ -1104,6 +1154,7 @@
       ctx.beginPath();
       for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++) {
         const c = j * W + i, L = city.lu[c];
+        if (lockedDetail && lockedDetail[c]) continue;
         if (L !== LU.PARK && L !== LU.HILL && city.wood[c] < 0.5) continue;
         for (let k = 0; k < 4; k++) {
           const x = i + 0.12 + U.hash2(c, k, 61) * 0.76, y = j + 0.12 + U.hash2(c, k, 62) * 0.76;
@@ -1172,11 +1223,13 @@
     for (let k = 0; k < D.landmarks.length; k++) {
       if (!city.landmarkOn[k]) continue;
       const lm = D.landmarks[k], R = Math.max(lm.w, lm.d) / CFG.CELL_M;
+      if (lockedDetail && lockedDetail[city.cellAt(lm.x, lm.y)]) continue;
       if (lm.x < X0 - R || lm.x > X1 + R || lm.y < Y0 - R || lm.y > Y1 + R) continue;
       this.drawLandmark2D(ctx, lm, lvl);
     }
     // Supplemental facilities use the same ground and isometric plans.
     for (const it of this.extraModels()) {
+      if (lockedDetail && lockedDetail[city.cellAt(it.x, it.y)]) continue;
       const r = Math.hypot(it.lm.w, it.lm.d) / CFG.CELL_M;
       if (it.x < X0 - r || it.x > X1 + r || it.y < Y0 - r || it.y > Y1 + r) continue;
       this.drawLandmark2D(ctx, it.lm, lvl);
@@ -1371,6 +1424,7 @@
   const flushCanvas = function (ctx) { ctx.getImageData(0, 0, 1, 1); };
   Renderer.prototype.groundChunkGen = function* (lvl, ci, cj) {
     const C = CHUNK_PX / lvl, x0 = ci * C, y0 = cj * C;
+    if (!this.hasDetailRect(x0, y0, x0 + C, y0 + C)) return makeCanvas(1, 1);
     const cv = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(CHUNK_PX + 2, CHUNK_PX + 2) : makeCanvas(CHUNK_PX + 2, CHUNK_PX + 2), ctx = cv.getContext('2d', { willReadFrequently: true });
     const N = lvl <= 8 ? 16 : (lvl <= 16 ? 8 : 4), edge = x0 + C > CFG.W || y0 + C > CFG.H;
     for (let s = 0; s < N; s++) {
@@ -1419,14 +1473,17 @@
   Renderer.prototype.isoChunkGen = function* (lvl, ci, cj, C) {
     const city = this.game.city, W = city.W, H = city.H;
     const i0 = ci * C, j0 = cj * C;
+    if (!this.hasDetailRect(i0, j0, i0 + C, j0 + C)) return { cv: makeCanvas(1, 1), ax: 0, ay: 0, px: 1, empty: true };
+    const detail = this.detailState(), lockedDetail = detail && detail.mask;
     const s = lvl, coarse = s < 16;
     let waterOnly = true;
     for (let j = j0; j < Math.min(H, j0 + C) && waterOnly; j++) for (let i = i0; i < Math.min(W, i0 + C); i++) {
+      if (lockedDetail && lockedDetail[j * W + i]) continue;
       const L = city.lu[j * W + i]; if (L !== LU.WATER && L !== LU.LANDMARK) { waterOnly = false; break; }
     }
     if (waterOnly) return { cv: makeCanvas(1, 1), ax: 0, ay: 0, px: 1, empty: true };
     let hasHill = false;
-    for (let j = j0; j < Math.min(H, j0 + C) && !hasHill; j++) for (let i = i0; i < Math.min(W, i0 + C); i++) if (city.lu[j * W + i] === LU.HILL) { hasHill = true; break; }
+    for (let j = j0; j < Math.min(H, j0 + C) && !hasHill; j++) for (let i = i0; i < Math.min(W, i0 + C); i++) if ((!lockedDetail || !lockedDetail[j * W + i]) && city.lu[j * W + i] === LU.HILL) { hasHill = true; break; }
     const pad = hasHill ? 2.8 * s : 4;   // 山峰会越出所在格
     const minX = (i0 - (j0 + C)) * ISO[0] * s - pad, maxX = ((i0 + C) - j0) * ISO[0] * s + pad;
     const minY = (i0 + j0) * ISO[2] * s - MAX_H * HSF * s - pad, maxY = (i0 + j0 + 2 * C) * ISO[2] * s + pad;
@@ -1441,6 +1498,7 @@
         const j = sum - i;
         if (i >= W || j >= H || i < 0 || j < 0) continue;
         const c = j * W + i, L = city.lu[c];
+        if (lockedDetail && lockedDetail[c]) continue;
         if (L === LU.WATER || L === LU.LANDMARK) continue;
         if (L === LU.HILL) {
           const relief = city.regions[city.region[c]].relief;
@@ -2939,6 +2997,7 @@
       const ci0 = Math.max(0, Math.floor(wx0 / C)), ci1 = Math.min(Math.ceil(CFG.W / C) - 1, Math.floor(wx1 / C));
       const cj0 = Math.max(0, Math.floor(wy0 / C)), cj1 = Math.min(Math.ceil(CFG.H / C) - 1, Math.floor(wy1 / C));
       for (let cj = cj0; cj <= cj1; cj++) for (let ci = ci0; ci <= ci1; ci++) {
+        if (!this.hasDetailRect(ci * C, cj * C, (ci + 1) * C, (cj + 1) * C)) continue;
         if (!this.groundVisible(ci * C, cj * C, C)) continue;
         const key = lvl + ':' + ci + ':' + cj;
         let e = this.ground.get(key);
@@ -3007,10 +3066,12 @@
       for (let k = 0; k < D.landmarks.length; k++) {
         if (!city.landmarkOn[k]) continue;
         const lm = D.landmarks[k], kk = Math.floor(lm.x / C) + ':' + Math.floor(lm.y / C);
+        if (this.detailLocked(city.cellAt(lm.x, lm.y))) continue;
         let l = lmBy.get(kk); if (!l) { l = []; lmBy.set(kk, l); } l.push(k);
       }
       const extraBy = new Map();
       for (const it of this.extraModels()) {
+        if (this.detailLocked(city.cellAt(it.x, it.y))) continue;
         const key = Math.floor(it.x / C) + ':' + Math.floor(it.y / C);
         let a = extraBy.get(key); if (!a) extraBy.set(key, a = []); a.push(it);
       }
@@ -3020,7 +3081,7 @@
         const key = 'i' + ilvl + ':' + ci + ':' + cj;
         let e = this.iso.get(key);
         const a = this.P(ci * C, cj * C, 0);
-        const visible = this.isoVisible(e, ilvl, ci, cj, C);
+        const visible = this.hasDetailRect(ci * C, cj * C, (ci + 1) * C, (cj + 1) * C) && this.isoVisible(e, ilvl, ci, cj, C);
         if (visible && (!e || e.stale)) queue.push({ kind: 'i', key: key, lvl: ilvl, ci: ci, cj: cj, C: C, d: Math.abs((ci + 0.5) * C - cam.cx) + Math.abs((cj + 0.5) * C - cam.cy) - 0.5 });
         if (visible && e && !e.empty) {
           e.used = this.frame;
@@ -3160,6 +3221,7 @@
     let n = 0;
     ctx.lineCap = 'round';
     for (const [c, m0] of sites) {
+      if (this.detailLocked(c)) continue;
       const age = now - m0; if (age < 0 || age > 18 || U.hash2(c, 9, 41) > 0.4) continue;   // 约四成工地立塔吊，避免快速发展期满城塔吊
       const i = c % W, j = (c / W) | 0, x = i + 0.3 + 0.4 * U.hash2(c, 1, 41), y = j + 0.3 + 0.4 * U.hash2(c, 2, 41);
       if (x < v.x0 || x > v.x1 || y < v.y0 || y > v.y1) continue;

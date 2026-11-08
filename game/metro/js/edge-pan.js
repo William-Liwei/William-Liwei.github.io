@@ -47,11 +47,14 @@
     const R = tools.R, rect = R.cv.getBoundingClientRect();
     const left = Math.max(0, rect.left), top = Math.max(0, rect.top), right = Math.min(window.innerWidth, rect.right), bottom = Math.min(window.innerHeight, rect.bottom);
     const p = pointer;
-    if (right <= left || bottom <= top || p.x < left || p.x >= right || p.y < top || p.y >= bottom || !document.elementFromPoint || document.elementFromPoint(p.x, p.y) !== R.cv) { reset(); return false; }
+    if (right <= left || bottom <= top || p.x < left || p.x >= right || p.y < top || p.y >= bottom) { reset(); return false; }
     const band = Math.min(BAND, (right - left) / 4, (bottom - top) / 4);
     let x = p.x - left < band ? -(1 - (p.x - left) / band) : right - p.x < band ? 1 - (right - p.x) / band : 0;
     let y = p.y - top < band ? -(1 - (p.y - top) / band) : bottom - p.y < band ? 1 - (bottom - p.y) / band : 0;
-    if (!x && !y) { direction = ''; dwell = 0; vx = vy = 0; return false; }
+    // Interior hover cannot start edge movement without another pointer event.
+    // Release it so stationary planning frames skip layout and DOM hit-testing.
+    if (!x && !y) { reset(); return false; }
+    if (!document.elementFromPoint || document.elementFromPoint(p.x, p.y) !== R.cv) { reset(); return false; }
     const nextDirection = Math.sign(x) + ',' + Math.sign(y);
     if (direction !== nextDirection) { direction = nextDirection; dwell = 0; vx = vy = 0; }
     // 长帧、后台恢复不补走一大段；停靠满 0.2 秒后才平滑起步，离开边缘立即停下。

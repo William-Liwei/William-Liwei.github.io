@@ -53,17 +53,23 @@
   };
   const status = function (g, message, record) {
     const r = rt(g); r.status = message;
-    const key = g.ym() + ':' + message;
-    if (record && !r.notices.has(key)) { r.notices.add(key); log(g, 'wait', '运营托管等待', message); }
+    if (record) {
+      const key = g.ym() + ':' + message;
+      if (!r.notices.has(key)) { r.notices.add(key); log(g, 'wait', '运营托管等待', message); }
+    }
   };
   A.setPolicy = function (g, patch) {
     const s = state(g), next = clean(s);
     for (const k of Object.keys(DEFAULTS)) if (Object.prototype.hasOwnProperty.call(patch, k)) next.policy[k] = patch[k];
-    A.validate(next); s.policy = next.policy;
-    rt(g).due = s.policy.enabled ? g.ym() : -1;
+    A.validate(next);
+    if (Object.keys(DEFAULTS).every(function (k) { return s.policy[k] === next.policy[k]; })) return;
+    s.policy = next.policy;
+    const r = rt(g); r.due = s.policy.enabled ? g.ym() : -1; r.stationCandidates = null;
     status(g, s.policy.enabled ? '交通结果完整且无玩家草稿时检查调度和商业；提前购地单独按有效草案检查' : '托管已关闭');
     log(g, 'policy', s.policy.enabled ? '已更新运营托管规则' : '已关闭运营托管', '自动调车' + (s.policy.enabled ? '已开启' : '已关闭') + '；自动购车' + (s.policy.buy ? '允许' : '关闭') + '；自动扩站' + (s.policy.stations ? '允许' : '关闭') + '；自动车站商业' + (s.policy.tod ? '允许' : '关闭') + '；规划地块预购' + (s.policy.land ? '允许' : '关闭') + '。月支出上限 ' + U.fmtMoney(s.policy.monthlyLimit) + '，一般资金保留 ' + U.fmtMoney(s.policy.reserve) + '。');
-    g.emit('fleet'); g.emit('autosave', 'automation');
+    // Policy controls refresh their own page once. A fleet event would make the
+    // UI redraw the same page a second time despite no train being changed.
+    g.emit('autosave', 'automation');
   };
   const resetBudget = function (g) { const s = state(g); if (s.budgetYM !== g.ym()) { s.budgetYM = g.ym(); s.spent = 0; s.bought = 0; s.todCount = 0; s.landCount = 0; s.todStations = []; } };
   A.prepareBudget = resetBudget;
@@ -99,11 +105,25 @@
     return r.hash;
   };
   const fit = function (t, x) { return t.cars <= x.rt.cars && (x.rt.kmh <= 80 || CM.Fleet.model(t.model).kmh >= x.rt.kmh); };
+  // A route's average carriage capacity is shared by its loop directions. These
+  // groups live only for one plan: stock changes by array replacement or append,
+  // while the capacities of existing trains do not change during allocation.
+  const routeCapacity = new WeakMap();
   const need = function (x, units) {
-    // The simulation shares average carriage capacity between both loop directions.
-    // Recompute that same average for every hypothetical transfer.
-    const all = x.group ? x.group.flatMap(function (v) { return v === x ? units : v.units; }) : units;
-    const cap = all.length ? all.reduce(function (a, t) { return a + CM.Fleet.capOf(t); }, 0) / all.length : x.rt.cap;
+    const group = x.group;
+    let cap;
+    if (group) {
+      let cached = routeCapacity.get(group);
+      if (!cached || group.some(function (v, i) { const list = v === x ? units : v.units; return cached.lists[i] !== list || cached.lengths[i] !== list.length; })) {
+        const lists = group.map(function (v) { return v === x ? units : v.units; });
+        let total = 0, count = 0;
+        // Preserve the previous flattened traversal order and floating arithmetic.
+        for (const list of lists) for (const t of list) { total += CM.Fleet.capOf(t); count++; }
+        cached = { lists: lists, lengths: lists.map(function (list) { return list.length; }), count: count, total: total };
+        routeCapacity.set(group, cached);
+      }
+      cap = cached.count ? cached.total / cached.count : x.rt.cap;
+    } else cap = units.length ? units.reduce(function (a, t) { return a + CM.Fleet.capOf(t); }, 0) / units.length : x.rt.cap;
     const freq = Math.min(CFG.metro.fMax, Math.max(x.floorFreq, x.load / Math.max(1, cap * CFG.metro.targetLF)));
     return Math.max(1, Math.ceil(freq * x.rt.cycleSec / 3600 - 1e-6));
   };
@@ -142,7 +162,17 @@
     const sort = function (a, b) { return F.capOf(b.t) - F.capOf(a.t) || a.t.id.localeCompare(b.t.id); };
     idle.sort(sort); spare.sort(sort);
     const moves = [], blocked = new Set();
-    const next = function () { return services.filter(function (x) { return !blocked.has(x) && x.units.length < need(x, x.units); }).sort(function (a, b) { return (need(b, b.units) - b.units.length) / need(b, b.units) - (need(a, a.units) - a.units.length) / need(a, a.units) || a.lid.localeCompare(b.lid); })[0]; };
+    const next = function () {
+      let best = null, ratio = 0;
+      for (const x of services) {
+        if (blocked.has(x)) continue;
+        const n = need(x, x.units);
+        if (!(x.units.length < n)) continue;
+        const missing = (n - x.units.length) / n;
+        if (!best || missing > ratio || missing === ratio && x.lid.localeCompare(best.lid) < 0) { best = x; ratio = missing; }
+      }
+      return best;
+    };
     for (let x = next(); x && moves.length < A.MAX_TRANSFERS; x = next()) {
       let pool = idle, at = pool.findIndex(function (p) { return fit(p.t, x); });
       if (at < 0) { pool = spare; at = pool.findIndex(function (p) { return fit(p.t, x) && canDonate(p, x); }); }
@@ -211,17 +241,36 @@
   const station = function (g, fingerprint) {
     const s = state(g); if (!s.policy.stations || s.lastStation === g.ym()) return true;
     if (s.fleetSample && s.fleetSample === fingerprint) { status(g, '调车已完成，等待新客流结果再评估车站'); return false; }
-    const candidates = M.withSegIndex([g.net], function () { return Object.keys(s.crowd).filter(function (sid) { const c = s.crowd[sid], st = g.net.stations[sid]; return st && (!CM.Fleet.isPlayer || CM.Fleet.isPlayer(st)) && c.n >= 2 && c.size === st.size && c.hub === M.hubLevel(st) && stationLoad(g, sid) >= CROWD && !M.stationLines(g.net, sid).some(function (lid) { return manual(g, lid); }); }); }).sort(function (a, b) { return stationLoad(g, b) - stationLoad(g, a); });
+    const r = rt(g), m = g.model, fleet = g.fleet;
+    let cached = r.stationCandidates;
+    if (!cached || cached.net !== g.net || cached.compiled !== g.compiled || cached.netVersion !== g.netVersion || cached.fleet !== fleet || cached.fleetVer !== (fleet && fleet.ver) || cached.crowd !== s.crowd || cached.fingerprint !== fingerprint || cached.modelVersion !== m.version || cached.weekday !== m.stDailyWk || cached.weekend !== m.stDailyWe) {
+      const rows = M.withSegIndex([g.net], function () {
+        const out = [];
+        for (const sid of Object.keys(s.crowd)) {
+          const c = s.crowd[sid], st = g.net.stations[sid];
+          if (!st || CM.Fleet.isPlayer && !CM.Fleet.isPlayer(st) || c.n < 2 || c.size !== st.size || c.hub !== M.hubLevel(st)) continue;
+          const load = stationLoad(g, sid);
+          if (load >= CROWD && !M.stationLines(g.net, sid).some(function (lid) { return manual(g, lid); })) out.push({ sid: sid, load: load });
+        }
+        return out;
+      });
+      rows.sort(function (a, b) { return b.load - a.load; });
+      cached = { net: g.net, compiled: g.compiled, netVersion: g.netVersion, fleet: fleet, fleetVer: fleet && fleet.ver,
+        crowd: s.crowd, fingerprint: fingerprint, modelVersion: m.version, weekday: m.stDailyWk, weekend: m.stDailyWe, rows: rows };
+      r.stationCandidates = cached;
+    }
+    const candidates = cached.rows;
     if (!candidates.length) { status(g, '本月检查完成；车站需两次不同月份的新客流观测持续超 110% 才扩容'); return true; }
     const wait = idleForBuild(g); if (wait) { status(g, wait, true); return false; }
     let reason = '拥挤车站已达大站规模；可手动调整路网或另行允许枢纽扩建';
-    for (const sid of candidates) {
+    for (const candidate of candidates) {
+      const sid = candidate.sid;
       const original = g.net.stations[sid], next = M.clone(g.net), st = next.stations[sid], sizes = ['S', 'M', 'L'];
       let label;
       if (st.size !== 'L') { st.size = sizes[sizes.indexOf(st.size) + 1]; label = original.size + ' → ' + st.size; }
       else if (s.policy.hubs && M.hubLevel(st) < M.HUBS.length - 1 && !M.hubEligibility(next, sid, M.hubLevel(st) + 1)) { M.setHub(next, sid, M.hubLevel(st) + 1); label = M.hubSpec(st).name; }
       else continue;
-      const beforeLoad = stationLoad(g, sid);
+      const beforeLoad = candidate.load;
       // A private, one-change draft, with an ordinary undo point. It is never merged
       // into a player's draft. No draft notification is sent until the build commits.
       const draft = { net: next, automation: 'station', undo: [JSON.stringify(g.net)], redo: [], ver: 1, evalVer: -1, eval: null, compiled: null, compVer: -1, pred: { state: 'idle' } };
@@ -265,7 +314,7 @@
       }
       CM.AutoTOD.run(g);
     }
-    rt(g).due = -1;
+    rt(g).due = -1; rt(g).stationCandidates = null;
   };
   A.monthly = function (g) { if (!A.enabled(g)) return; const r = rt(g); r.due = g.ym(); r.notices.clear(); run(g, true); };
   A.poll = function (g) {
@@ -294,7 +343,7 @@
     toggle('land', '允许提前购买规划用地', '按稳定有效草案中的实际征地需求选地；购地只用一般资金，并给草案施工留够资金。地下隧道沿线不会盲目购地，取消草案后保留已购地块。', !p.enabled);
     const fields = h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '8px' } });
     const number = function (key, label, max, step) {
-      const input = h('input', { type: 'number', min: '0', max: String(max), step: String(step || 1), value: String(p[key]), disabled: !p.enabled ? true : null, style: { width: '100%', boxSizing: 'border-box' }, 'aria-label': label, onchange: function () { const value = Number(input.value); if (!integer(value, 0, max)) { input.value = String(p[key]); ui.toast('请输入范围内的整数', 'warn'); return; } A.setPolicy(g, { [key]: value }); ui.markUnsaved(); ui.scheduleAutosave(); ui.rerenderPage(); } });
+      const input = h('input', { type: 'number', min: '0', max: String(max), step: String(step || 1), value: String(p[key]), disabled: !p.enabled ? true : null, style: { width: '100%', boxSizing: 'border-box' }, 'aria-label': label, onchange: function () { const raw = input.value.trim(), value = Number(raw); if (!raw || !integer(value, 0, max)) { input.value = String(p[key]); ui.toast('请输入范围内的整数', 'warn'); return; } if (value === p[key]) return; A.setPolicy(g, { [key]: value }); ui.markUnsaved(); ui.scheduleAutosave(); ui.rerenderPage(); } });
       fields.appendChild(h('label', { class: 'field' }, h('span', null, label), input));
     };
     number('monthlyLimit', '每月总支出上限（万元）', 100000000, 1000); number('reserve', '一般资金保留（万元）', 100000000, 1000); number('buyLimit', '每月最多购车（列）', 24); number('sparePct', '调出线路备用比例（%）', 50);
@@ -303,8 +352,8 @@
     box.appendChild(h('div', { class: 'note' }, '购车、扩站、车站商业与购地共用月支出上限；购地只用一般资金，其他建设优先用专项资金。新功能默认关闭，自由建造也保留月额度限制。'));
     const live = function (fn) { return ui.liveText ? ui.liveText(fn) : h('span', null, fn()); };
     box.appendChild(h('div', { class: 'callout info', role: 'status' }, live(function () { return A.status(g); }),
-      p.tod ? h('div', { class: 'tiny' }, live(function () { return rt(g).todStatus || '商业开发将在本月调度与扩站检查完成后进行'; })) : null,
-      p.land ? h('div', { class: 'tiny' }, live(function () { return CM.AutoLand && CM.AutoLand.status ? CM.AutoLand.status(g) : rt(g).landStatus || '等待稳定有效的建设草案后预购地块'; })) : null,
+      p.tod ? h('div', { class: 'tiny' }, live(function () { return A.enabled(g) ? rt(g).todStatus || '商业开发将在本月调度与扩站检查完成后进行' : '托管已关闭'; })) : null,
+      p.land ? h('div', { class: 'tiny' }, live(function () { return !A.enabled(g) ? '托管已关闭' : (CM.AutoLand && CM.AutoLand.status && CM.AutoLand.status(g)) || rt(g).landStatus || '等待稳定有效的建设草案后预购地块'; })) : null,
       s ? h('div', { class: 'tiny' }, live(function () { return '本月已支出 ' + U.fmtMoney(s.budgetYM === g.ym() ? s.spent : 0) + ' · 购车 ' + (s.budgetYM === g.ym() ? s.bought : 0) + ' 列 · 商业 ' + A.count(g, 'tod') + ' 站 · 购地 ' + A.count(g, 'land') + ' 块'; })) : null));
     const details = h('details', null, h('summary', null, '最近托管记录' + (s && s.log.length ? '（' + s.log.length + '）' : '')));
     if (!s || !s.log.length) details.appendChild(h('p', { class: 'note' }, '尚未启用。所有调拨、实际支出及等待原因会保存在本局进度中。'));

@@ -53,7 +53,7 @@ self.matchMedia = function () { return {matches:false}; };
       const v = m.view;
       if (v.theme !== R.themeName) { R.applyTheme(v.theme); R._hs = null; }
       R.lightOn = v.lightOn; R.styleYear = v.styleYear; R.styleEpoch = v.styleEpoch;
-      game.clock = v.clock; R._rk = null;
+      game.clock = v.clock; game.preview = !!v.preview; R._rk = null;
     }
   };
   self.onmessage = function (e) {

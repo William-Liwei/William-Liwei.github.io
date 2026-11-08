@@ -7630,3 +7630,13 @@ Object.assign(window.CM.I18N_EN, {
   '托管调车 {count} 列 · 购车 {buy} 列': 'Managed transfers {count} · Train purchases {buy}',
   '现有车型的高峰车数需求已满足；达到线路最高发车频率后仍拥挤的线路需另行增容。': 'Peak train requirements are met with current models. Lines still crowded at their maximum frequency need separate capacity upgrades.'
 });
+
+Object.assign(window.CM.I18N_EN, {
+  '长三角按需细节与操作修复': 'Yangtze Delta detail streaming and interaction fixes',
+  '长三角未解锁区域优先使用总览底图，楼宇、树木及精细图块延后生成；解锁后按帧补齐细节。地形、人口经济、其他城市公司的经营建设和地铁线路仍正常运行。': 'Locked Yangtze Delta regions use the overview map while buildings, trees and detailed tiles are deferred. Details fill in over multiple frames after unlocking. Terrain, population, the economy, other city companies and metro lines continue to operate.',
+  '优化自动调车和扩站等待检查，减少大车队的重复容量计算及等待期间的重复车站查询；配车顺序、最终配属与预算规则保持一致。': 'Automatic dispatch and station expansion reuse capacity calculations and avoid repeated station queries while waiting. Transfer order, final allocations and budget rules remain consistent.',
+  '规划地预购复用已计算的征地候选，资金变化时只重新判断是否买得起；修复免费签接入协议后预购仍卡在旧权限状态的问题。': 'Advance purchases reuse acquisition candidates and only reassess affordability when cash changes. Fixed purchases remaining blocked after a free access agreement was signed.',
+  '清空预算输入框不再意外把数值改为零；未改变数值时不重复写策略或刷记录。关闭托管后，商业和购地状态立即显示为关闭。': 'Clearing a budget field no longer accidentally sets it to zero. Unchanged values do not rewrite policies or activity records. Disabling management immediately shows commerce and land purchases as disabled.',
+  '缩放面板跟随界面尺寸并适配窄屏；雷达及时同步草案曲线和线路改色。鼠标离开画面边缘后停止空闲命中检查，减少多余界面计算。': 'The zoom panel follows interface scale and fits narrow screens. The radar updates draft curves and line colors promptly. Moving the pointer away from an edge stops idle hit testing.',
+  '地块详情中的租金、估值和购买按钮状态随经营变化更新，并保留当前焦点；加载城市或进入游戏时停止其他地图缩略图的后台预热。': 'Parcel rent, valuation and button availability update as operations change while preserving keyboard focus. Loading or entering a game stops background thumbnail prewarming for other maps.'
+});

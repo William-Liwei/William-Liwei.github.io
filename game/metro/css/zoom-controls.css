@@ -1,6 +1,6 @@
 /* 镜头面板独立于可滚动的地图栏；横向滑条在手机和横屏中保留可拖动宽度。 */
 #dock #zoomCtl .zoom-value { font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; min-height: 34px; color: var(--accent); }
-#zoomPanel { position: fixed; z-index: 45; width: min(244px, calc(100vw - 16px)); box-sizing: border-box; padding: 14px; border-radius: 15px; color: var(--text); overscroll-behavior: contain; }
+#zoomPanel { position: fixed; z-index: 45; width: 244px; max-width: calc((100vw - 16px) / var(--uiz, 1)); max-height: calc((100dvh - 16px) / var(--uiz, 1)); box-sizing: border-box; padding: 14px; border-radius: 15px; color: var(--text); zoom: var(--uiz, 1); overflow-y: auto; overscroll-behavior: contain; }
 #zoomPanel[hidden] { display: none; }
 .zoom-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; font-weight: 700; }
 .zoom-readout { color: var(--accent); font-variant-numeric: tabular-nums; }
