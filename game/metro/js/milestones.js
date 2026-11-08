@@ -18,6 +18,23 @@
   const fmtN = function (v) { return v >= 1e8 ? U.fmtNum(v / 1e8, 1) + ' 亿' : (v >= 1e4 ? (v / 1e4 >= 100 ? Math.round(v / 1e4) : U.fmtNum(v / 1e4, v % 1e4 ? 1 : 0)) + ' 万' : String(Math.round(v))); };
 
   function state(g) { if (!g.milestones) g.milestones = { list: [], done: {} }; return g.milestones; }
+  function assessment(g) {
+    const P = CM.PlayerMetrics, scoped = !!(P && P.enabled(g));
+    const d = scoped ? P.home(g) || {} : g.model.daily || {};
+    return { scoped, d, tot: scoped ? d : g.city.totals(), ready: !scoped || !!(d.ready && d.hasPopulation), key: scoped ? d.scopeKey : null };
+  }
+  const sameScope = (r, a) => !a.scoped || r.metricScope === 'player' && !!a.key && r.scopeKey === a.key;
+  function populationBase(g, a) {
+    const st = state(g);
+    if (!a.scoped) return st.pop0 || (st.pop0 = g.history.length ? g.history[0].pop : a.tot.pop);
+    // Unlocking a district adds existing population, not organic city growth.
+    // Keep earned records, but start growth comparisons at this scope's baseline.
+    if (!st.playerPopScope || st.playerPopScope.key !== a.key) {
+      const initial = !st.playerPopScope && (g.history || []).find(r => sameScope(r, a) && Number.isFinite(r.pop));
+      st.playerPopScope = { key: a.key, pop: initial ? initial.pop : a.tot.pop };
+    }
+    return st.playerPopScope.pop;
+  }
   function add(g, id, o, when) {
     if (typeof id !== 'string' || !id || id.length > 160 || ['__proto__', 'constructor', 'prototype'].includes(id) || !o || !Object.prototype.hasOwnProperty.call(CAT, o.cat) || typeof o.title !== 'string') return null;
     const st = state(g); if (st.done[id]) return null;
@@ -134,16 +151,16 @@
 
   // 每月：城市与客流类里程碑
   function onMonth(g) {
-    const d = g.model.daily || {}, tot = g.city.totals(), st = state(g);
-    const pop0 = st.pop0 || (st.pop0 = g.history.length ? g.history[0].pop : tot.pop);
-    series(g, POP, function (k) { return k > pop0 * 1.04 && tot.pop >= k; }, 'pop-', function (k) { return { cat: 'city', icon: 'people', big: k >= 1e6 && k % 1e6 === 0 && k >= pop0 * 1.3, title: '城市人口突破 ' + fmtN(k), desc: '地图范围内常住人口约 ' + U.fmtPeople(tot.pop) }; });
+    const a = assessment(g), d = a.d, tot = a.tot, st = state(g), pop0 = populationBase(g, a);
+    const populationLabel = a.scoped ? '主城已开放范围常住人口约 ' : '地图范围内常住人口约 ';
+    series(g, POP, function (k) { return k > pop0 * 1.04 && tot.pop >= k; }, 'pop-', function (k) { return { cat: 'city', icon: 'people', big: k >= 1e6 && k % 1e6 === 0 && k >= pop0 * 1.3, title: '城市人口突破 ' + fmtN(k), desc: populationLabel + U.fmtPeople(tot.pop) }; });
     // 开局既有地铁（如东京银座线）：开局时已达到的客流门槛不再记为里程碑
-    if (g.mapInit && g.mapInit.metro && st.ride0 == null) {
+    if (a.ready && g.mapInit && g.mapInit.metro && st.ride0 == null) {
       st.ride0 = d.metro || 0; st.share0 = d.metroShare || 0;
       for (const k of RIDE) if (k <= st.ride0 * 1.1) st.done['ride-' + k] = 1;
       for (const k of SHARE) if (k <= st.share0 * 1.1) st.done['share-' + k] = 1;
     }
-    if (g.compiled.stations.length) {
+    if (a.ready && (a.scoped ? !!netInfo(g).first : g.compiled.stations.length)) {
       series(g, RIDE, function (k) { return (d.metro || 0) >= k; }, 'ride-', function (k) { return { cat: 'ride', icon: 'people', big: k >= 1e6, title: '地铁日客运量突破 ' + fmtN(k) + ' 人次', desc: '日均（周平均）' + U.fmtPeople(d.metro) + ' 人次，分担率 ' + U.fmtPct(d.metroShare || 0, 1) }; });
       series(g, SHARE, function (k) { return (d.metroShare || 0) >= k; }, 'share-', function (k) { return { cat: 'ride', icon: 'metro', title: '地铁分担率达到 ' + Math.round(k * 100) + '%', desc: '每 ' + Math.round(1 / k) + ' 次出行就有 1 次乘地铁' }; });
       if ((d.coverage || 0) >= 0.5) add(g, 'cover-50', { cat: 'ride', icon: 'station', title: '地铁覆盖过半人口', desc: U.fmtPct(d.coverage, 0) + ' 的居民步行 15 分钟可到达地铁站' });
@@ -182,14 +199,15 @@
   // 旧存档：按月度历史补记可推断的里程碑（日期取首次达到的月份），其余按当前状态补记
   function backfill(g) {
     if (g.milestones) return;
-    const st = state(g), H = g.history || [], n = netInfo(g);
-    const t0 = H.length ? { y: H[0].y, m: H[0].m, d: 1 } : g.clock;
-    add(g, 'start', { cat: 'history', icon: 'flag', title: (H.length ? H[0].y : CFG.START.y) + ' 年 · ' + (D.city || '城市') + '，从这里开始', desc: '' }, t0);
-    st.pop0 = H.length ? H[0].pop : g.city.totals().pop;
+    const st = state(g), a = assessment(g), all = g.history || [], H = all.filter(r => sameScope(r, a)), n = netInfo(g);
+    const t0 = all.length ? { y: all[0].y, m: all[0].m, d: 1 } : g.clock;
+    add(g, 'start', { cat: 'history', icon: 'flag', title: (all.length ? all[0].y : CFG.START.y) + ' 年 · ' + (D.city || '城市') + '，从这里开始', desc: '' }, t0);
+    const pop0 = populationBase(g, a);
     for (const r of H) {
       const w = { y: r.y, m: r.m, d: 1 };
-      for (const k of POP) if (k > st.pop0 * 1.04 && r.pop >= k) add(g, 'pop-' + k, { cat: 'city', icon: 'people', title: '城市人口突破 ' + fmtN(k), desc: '地图范围内常住人口约 ' + U.fmtPeople(r.pop) }, w);
+      for (const k of POP) if (k > pop0 * 1.04 && r.pop >= k) add(g, 'pop-' + k, { cat: 'city', icon: 'people', title: '城市人口突破 ' + fmtN(k), desc: (a.scoped ? '主城已开放范围常住人口约 ' : '地图范围内常住人口约 ') + U.fmtPeople(r.pop) }, w);
       if (r.stations > 1 && n.first) add(g, 'first-line', { cat: 'metro', icon: 'train', big: true, title: (D.city || '城市') + '第一条地铁开通', desc: '' }, w);
+      if (a.scoped && (r.ready === false || !n.first)) continue;
       for (const k of RIDE) if ((r.riders || 0) >= k) add(g, 'ride-' + k, { cat: 'ride', icon: 'people', title: '地铁日客运量突破 ' + fmtN(k) + ' 人次', desc: '' }, w);
       for (const k of SHARE) if ((r.share || 0) >= k) add(g, 'share-' + k, { cat: 'ride', icon: 'metro', title: '地铁分担率达到 ' + Math.round(k * 100) + '%', desc: '' }, w);
       if ((r.coverage || 0) >= 0.5) add(g, 'cover-50', { cat: 'ride', icon: 'station', title: '地铁覆盖过半人口', desc: '' }, w);
@@ -207,12 +225,12 @@
   }
   // 下一个目标：给统计页的进度卡
   function next(g) {
-    const d = g.model.daily || {}, tot = g.city.totals(), n = netInfo(g), st = state(g), out = [];
+    const a = assessment(g), d = a.d, tot = a.tot, n = netInfo(g), st = state(g), out = [];
     const nx = function (arr, v, pre) { for (const k of arr) if (!st.done[pre + k] && k > v) return k; return null; };
     const p = nx(POP, tot.pop, 'pop-'); if (p) out.push({ icon: 'people', label: '人口', cur: tot.pop, goal: p, text: U.fmtPeople(tot.pop) + ' / ' + fmtN(p), color: CAT.city.color });
     const k = nx(KM, n.km, 'km-'); if (k) out.push({ icon: 'metro', label: '地铁里程', cur: n.km, goal: k, text: U.fmtNum(n.km, 1) + ' / ' + k + ' km', color: CAT.metro.color });
-    const r = nx(RIDE, d.metro || 0, 'ride-'); if (r) out.push({ icon: 'train', label: '日客运量', cur: d.metro || 0, goal: r, text: U.fmtPeople(d.metro || 0) + ' / ' + fmtN(r), color: CAT.ride.color });
-    const s = nx(SHARE, d.metroShare || 0, 'share-'); if (s) out.push({ icon: 'chart', label: '分担率', cur: d.metroShare || 0, goal: s, text: U.fmtPct(d.metroShare || 0, 1) + ' / ' + Math.round(s * 100) + '%', color: CAT.ride.color });
+    const r = nx(RIDE, d.metro || 0, 'ride-'); if (r && a.ready) out.push({ icon: 'train', label: '日客运量', cur: d.metro || 0, goal: r, text: U.fmtPeople(d.metro || 0) + ' / ' + fmtN(r), color: CAT.ride.color });
+    const s = nx(SHARE, d.metroShare || 0, 'share-'); if (s && a.ready) out.push({ icon: 'chart', label: '分担率', cur: d.metroShare || 0, goal: s, text: U.fmtPct(d.metroShare || 0, 1) + ' / ' + Math.round(s * 100) + '%', color: CAT.ride.color });
     const service = operatingInfo(g);
     if (service && service.stations.size) {
       let hall = 0, connections = 0, tod = 0;

@@ -681,7 +681,7 @@
   const setH = function (el, html) { if (el._h !== html) { el._h = html; el.innerHTML = html; } };
   const setT = function (el, text) { if (el._t !== text) { el._t = text; el.textContent = text; } };
   UI.prototype.updateTop = function () {
-    const g = this.g(), c = this.pills, d = g.model.daily || {};
+    const g = this.g(), c = this.pills, scoped = CM.PlayerMetrics && CM.PlayerMetrics.enabled(g) ? CM.PlayerMetrics.home(g) : null, d = scoped || g.model.daily || {};
     const W = g.model.weights(g.clock.minute);
     const per = CFG.periods[g.model.hourPeriod[Math.floor(g.clock.minute / 60) % 24]];
     setH(c.date.v, U.esc(g.clock.y + '年' + g.clock.m + '月' + g.clock.d + '日') + ' <small>' + U.fmtClock(g.clock.minute) + '</small>');
@@ -701,11 +701,11 @@
       this._funds = f;
       c.money.v.className = 'v' + (f < 0 ? ' bad' : '');
     }
-    const regional = CM.RegionalMetrics && CM.RegionalMetrics.enabled(g) ? CM.RegionalMetrics.current(g) : null;
+    const regional = scoped;
     const tot = regional || (this._tot && this._totCity === g.city && this._totVer === g.city.version ? this._tot : (this._tot = g.city.totals(), this._totCity = g.city, this._totVer = g.city.version, this._tot));
-    setT(c.pop.k, regional ? regional.name + '人口' : '人口');
-    setT(c.share.k, regional ? regional.name + '地铁分担' : '地铁分担率');
-    setT(c.cong.k, regional ? regional.name + '全日拥堵' : '道路拥堵');
+    setT(c.pop.k, regional ? regional.cityName + '已开放人口' : '人口');
+    setT(c.share.k, regional ? '本城已开放地铁分担' : '地铁分担率');
+    setT(c.cong.k, regional ? '本城已开放全日拥堵' : '道路拥堵');
     this.tweenNum(c.pop.v, this._popShown == null ? tot.pop : this._popShown, tot.pop, U.fmtPeople);
     this._popShown = tot.pop;
     const hist = g.history, prev = hist.length > 1 ? hist[hist.length - 2] : null;
@@ -715,10 +715,10 @@
       if (Math.abs(dlt) < (pct ? 0.0005 : 0.005)) return '';
       return '<span class="trend ' + ((betterUp ? dlt > 0 : dlt < 0) ? 'good' : 'bad') + '">' + (dlt > 0 ? '▲' : '▼') + '</span>';
     };
-    setH(c.share.v, U.fmtPct(regional ? regional.metroShare : d.metroShare || 0) + ' ' + (regional ? '' : trend(d.metroShare || 0, prev && prev.share, true, true)));
-    if (!this._congT || performance.now() - this._congT > 900) { this._congT = performance.now(); this._cong = regional ? regional.cong : g.model.cityCongAt(W); }
+    setH(c.share.v, (scoped && !scoped.ready ? '更新中' : U.fmtPct(d.metroShare || 0)) + ' ' + (regional ? '' : trend(d.metroShare || 0, prev && prev.share, true, true)));
+    if (!this._congT || this._congScope !== (scoped && scoped.scopeKey) || performance.now() - this._congT > 900) { this._congScope = scoped && scoped.scopeKey; this._congT = performance.now(); this._cong = regional ? regional.cong : g.model.cityCongAt(W); }
     const cg = this._cong,congLevel=CM.Model.congestionLevel(cg);
-    setH(c.cong.v, cg.toFixed(2) + ' <small>' + CM.Model.congestionNames[congLevel] + '</small>');
+    setH(c.cong.v, scoped && !scoped.ready ? '更新中' : cg.toFixed(2) + ' <small>' + CM.Model.congestionNames[congLevel] + '</small>');
     c.cong.badge.className = 'badge ' + ['b-green', 'b-gold', 'b-orange', 'b-red'][congLevel];
     // 城市经济：最近一年的实际增速（尚无完整年度时为本年预测）与经济环境；教程等未启用的地图不显示
     const hasEco = !!(g.macro && CM.Macro);
@@ -727,12 +727,14 @@
       this._ecoT = performance.now(); this._ecoRev = g.macro.rec.length;
       const mv = CM.Macro.view(g), L = mv.last, gr = L && L.growth != null ? L.growth : mv.fc.growth;
       c.econ.v.innerHTML = U.esc(gr == null ? '—' : UI.pctS(gr)) + ' <small>' + U.esc(mv.env.label) + '</small>';
-      c.econ.k.textContent = (regional ? '区域 ' : '') + (L && L.growth != null ? L.y + ' 年实际增长' : '本年预测增长');
+      c.econ.k.textContent = (CM.RegionalMetrics && CM.RegionalMetrics.enabled(g) ? '区域 ' : '') + (L && L.growth != null ? L.y + ' 年实际增长' : '本年预测增长');
       c.econ.badge.className = 'badge ' + (mv.env.cls === 'good' ? 'b-green' : (mv.env.cls === 'bad' ? 'b-red' : (mv.env.cls === 'warn' ? 'b-orange' : 'b-violet')));
       c.econ.el.setAttribute('data-tip', '城市经济：' + mv.env.label + ' · ' + (L ? L.y + ' 年 GDP ' + UI.fmtBig(L.nom) : '本年 GDP 预测 ' + UI.fmtBig(mv.fc.nom)) + ' · 点击查看');
     }
     const sat = g.econ.sat;
-    setH(c.sat.v, Math.round(sat) + ' ' + trend(sat, prev && prev.sat, true));
+    setT(c.sat.k, scoped ? scoped.cityName + '满意度' : '满意度');
+    c.sat.el.setAttribute('data-tip', scoped ? '仅考核本公司主城已解锁范围；跨市经营不改变主城考核' : '居民满意度');
+    setH(c.sat.v, Math.round(sat) + ' ' + trend(sat, prev && (!scoped || prev.satScopeKey === scoped.scopeKey) ? prev.sat : null, true));
     const sk = sat >= 60 ? 'smile' : (sat >= 40 ? 'meh' : 'frown');
     if (c.sat.ico !== sk) { c.sat.ico = sk; c.sat.badge.className = 'badge ' + (sk === 'smile' ? 'b-green' : (sk === 'meh' ? 'b-orange' : 'b-red')); c.sat.badge.innerHTML = ''; c.sat.badge.appendChild(ic(sk)); }
     if (CM.Voices && this.updateSatDock) this.updateSatDock(g);

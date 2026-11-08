@@ -186,7 +186,11 @@
   R.scope = function (g, value) { const rt = runtime(g); if (value !== undefined) rt.scope = value; return rt.scope || CM.Operators.playerCity(g); };
   R.current = function (g) {
     if (!R.enabled(g)) return null;
-    const s = basic(g), scope = R.scope(g);
+    const s = basic(g), scope = R.scope(g), P = CM.PlayerMetrics;
+    if (P && P.enabled(g) && (scope === 'home-open' || scope === 'player-open')) {
+      const d = scope === 'home-open' ? P.home(g) : P.snapshot(g);
+      return Object.assign({}, d, { id: scope, name: scope === 'home-open' ? d.cityName + '已开放范围' : '已开放经营范围合计' });
+    }
     if (scope === 'all') return s.all;
     if (scope !== 'open') return s.byId[scope] || s.byId[CM.Operators.playerCity(g)] || s.all;
     const rt = runtime(g), open = R.openCities(g), old = rt.current;
@@ -196,19 +200,22 @@
   };
   R.panel = function (ui, g, rerender) {
     if (!R.enabled(g)) return null;
+    if (!runtime(g).scope && CM.PlayerMetrics && CM.PlayerMetrics.enabled(g)) R.scope(g, 'home-open');
     const h = U.h, s = R.snapshot(g), cur = R.current(g), open = R.openCities(g), el = h('section', { class: 'chart-card', 'aria-label': '城市与区域' });
     el.appendChild(h('h3', null, '城市与区域'));
+    el.appendChild(h('p', { class: 'note' }, '本公司只考核主城已开放范围。全市和全图数据用于规划参考，切换此表不会改变满意度或任务的考核范围。'));
     const select = h('select', { 'aria-label': '统计范围', onchange: function () { R.scope(g, select.value); ui._popShown = null; ui._congT = 0; if (ui.updateTop) ui.updateTop(); if (rerender) rerender(); else if (ui.rerenderPage) ui.rerenderPage(); } });
-    for (const r of s.rows) if (r.pop > 0 || r.jobs > 0) select.appendChild(h('option', { value: r.id, selected: R.scope(g) === r.id ? true : null }, r.name + (open.has(r.id) ? '' : '（未开放建设）')));
-    for (const r of [{ id: 'open', name: '已进入城市合计' }, s.all]) select.appendChild(h('option', { value: r.id, selected: R.scope(g) === r.id ? true : null }, r.name));
+    if (CM.PlayerMetrics && CM.PlayerMetrics.enabled(g)) select.appendChild(h('option', { value: 'home-open', selected: R.scope(g) === 'home-open' ? true : null }, '主城已开放范围'));
+    for (const r of s.rows) if (r.pop > 0 || r.jobs > 0) select.appendChild(h('option', { value: r.id, selected: R.scope(g) === r.id ? true : null }, r.name + '（全市参考）' + (open.has(r.id) ? '' : '（未开放建设）')));
+    for (const r of [{ id: 'player-open', name: '已开放经营范围合计' }, {id: 'all', name: '全图参考'}]) select.appendChild(h('option', { value: r.id, selected: R.scope(g) === r.id ? true : null }, r.name));
     el.appendChild(h('label', { class: 'field' }, '统计范围', select));
     const fmt = v => U.fmtPeople(v), pct = v => U.fmtPct(v), num = v => v.toFixed(2);
     const table = h('table', { class: 'tbl' }, h('tr', null, ...['城市', '人口', '岗位', '地铁分担', '拥堵', '车内拥挤'].map(t => h('th', null, t))));
-    for (const r of s.rows.filter(r => r.pop > 0 || r.jobs > 0).concat(s.all)) table.appendChild(h('tr', { class: r.id === cur.id ? 'on' : '' }, h('th', null, r.name), h('td', null, fmt(r.pop)), h('td', null, fmt(r.jobs)), h('td', null, s.ready ? pct(r.metroShare) : '更新中'), h('td', null, s.ready ? num(r.cong) : '更新中'), h('td', null, s.ready ? pct(r.crowdShare) : '更新中')));
+    for (const r of (cur.id === 'home-open' || cur.id === 'player-open' ? [cur] : []).concat(s.rows.filter(r => r.pop > 0 || r.jobs > 0), s.all)) table.appendChild(h('tr', { class: r.id === cur.id ? 'on' : '' }, h('th', null, r.name), h('td', null, fmt(r.pop)), h('td', null, fmt(r.jobs)), h('td', null, r.ready ? pct(r.metroShare) : '更新中'), h('td', null, r.ready ? num(r.cong) : '更新中'), h('td', null, r.ready ? pct(r.crowdShare) : '更新中')));
     el.appendChild(h('div', { style: { overflowX: 'auto' } }, table));
     if (g.macro && CM.Macro) { const mv = CM.Macro.view(g), total = mv.last ? mv.last.nom : mv.fc.nom, estimate = s.all.jobs > 0 ? total * cur.jobs / s.all.jobs : 0; el.appendChild(h('p', { class: 'note' }, cur.name + '经济规模（岗位占比估算）：' + CM.UI.fmtBig(estimate) + '。区域经济总量按当前各市岗位占比分配，各市估算之和等于区域总量；不代表各市独立 GDP 统计。')); }
     el.appendChild(h('p', { class: 'note' }, '人口、岗位按街区归属分别汇总；跨界小区的出行按居民权重拆分，拥堵按本市道路车公里加权。车内拥挤为本市轨道上满载率超过 100% 的人公里占比，跨城线路按实际区间长度分摊。未开放城市仍由当地公司发展。公司票款按实际承运分账，与城市地理统计分开。'));
-    const top = s.corridors.filter(x => cur.id === 'all' || cur.id === 'open' && (open.has(x.a) || open.has(x.b)) || x.a === cur.id || x.b === cur.id).slice(0, 6);
+    const top = s.corridors.filter(x => cur.id === 'all' || cur.id === 'player-open' && (open.has(x.a) || open.has(x.b)) || x.a === (cur.id === 'home-open' ? CM.Operators.playerCity(g) : cur.id) || x.b === (cur.id === 'home-open' ? CM.Operators.playerCity(g) : cur.id)).slice(0, 6);
     el.appendChild(h('h4', null, '跨城通勤走廊'));
     for (const x of top) el.appendChild(h('div', { class: 'note' }, x.from + ' ↔ ' + x.to + '：' + fmt(x.total) + ' 人次居住→工作需求/日'));
     if (!top.length) el.appendChild(h('p', { class: 'note' }, '等待城市间形成通勤需求。'));

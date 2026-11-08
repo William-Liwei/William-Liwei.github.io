@@ -44,6 +44,8 @@
       const pre = opts.mode === 'free' && !opts.tutorial && opts.startYear && Math.round(opts.startYear) > CFG.START.y;
       lp(0.06, '准备地图');
       yield* g.city.generateGen(g.seed, g.clock.y);
+      // 开局统计与建设权限采用同一范围，包含自由建造的全图解锁选项。
+      g.unlockAll = opts.mode === 'free' && !opts.tutorial && !!opts.unlockAll; g.city.unlockAll = g.unlockAll;
       lp(0.2, '生成城市与道路');
       g.model = new CM.Model(g.city);
       g.model.habitAge = Game.habitAge(g);
@@ -68,13 +70,22 @@
       g.tasks.monthly(g).forEach(function (o) { g.logTask(o); });
       // 城市经济：真实城市开局即接入（教程不启用）；开局当月已发生的经济事件一并记录
       if (CM.Macro) for (const x of CM.Macro.create(g) || []) g.logMacroEvent(x);
+      g.econ.migrateCitySatisfaction(g, g.ym(), { legacy: false });
       g.recordHistory();
       if (CM.Eras) { const er = CM.Eras.month(g); if (er) g.logEra(er, false); }
       // 自由建造选项（v2.2）：解锁全图（未开放区域也可建设，城市仍按历史开放与发展）；自定义起始年份（先按默认开局年份生成，
       // 再逐月快速推演到所选年份的 1 月，见 prehistoryGen）
-      g.unlockAll = opts.mode === 'free' && !opts.tutorial && !!opts.unlockAll; g.city.unlockAll = g.unlockAll;
       const sy = opts.mode === 'free' && !opts.tutorial && opts.startYear ? U.clamp(Math.round(opts.startYear), CFG.START.y, CFG.growth.histEnd || 2020) : 0;
-      if (sy > CFG.START.y) yield* g.prehistoryGen(sy, sync, opts.onProgress);
+      if (sy > CFG.START.y) {
+        yield* g.prehistoryGen(sy, sync, opts.onProgress);
+        // 历史推演重新建立了经营账本；只补齐本次新局的首条观察记录，不改写旧档历史。
+        g.econ.migrateCitySatisfaction(g, g.ym(), { legacy: false });
+        const initial = g.history[g.history.length - 1];
+        if (initial && initial.metricScope === 'player') {
+          initial.satCityId = CM.PlayerMetrics.homeCity(g);
+          initial.satScopeKey = g.econ.satScope && g.econ.satScope.scopeKey || null;
+        }
+      }
       if (CM.Eras) CM.Eras.ensureBases(g);   // 城市发展对比基准：本局开始规划时（v2.2 阶段可视化）
       if (CM.Milestones) CM.Milestones.onStart(g);
       if (CM.CityDynamics) yield* CM.CityDynamics.primeGen(g);
@@ -244,17 +255,17 @@
     const beforeC = M.compile(plan.before, this.city);
     m.predict(this.compiled, plan.lines, res => {
       if (this._impactPlan !== plan || m.retired) return;
-      if (this.netVersion !== plan.version || this.city.version !== cityVersion || this.city.roadVersion !== roadVersion || m.year !== year || CM.Model.fareKey(m.fare) !== fare) {
+      if (res.stale || this.netVersion !== plan.version || this.city.version !== cityVersion || this.city.roadVersion !== roadVersion || m.year !== year || CM.Model.fareKey(m.fare) !== fare) {
         this.impactReport = { status: 'waiting', at: [this.clock.y, this.clock.m] }; return;
       }
       this._impactPlan = null;
 
       this.impactReport = { status: 'done', at: [this.clock.y, this.clock.m], stable: !!res.stable,
-        base: res.base, draft: res.draft, roads: res.roads || [], roadsWorse: res.roadsWorse || [], lines: res.lines || [], stations: res.stations || [], lineLF: res.lineLF || [], hot: res.hot || [], induced: res.induced || null, cost: plan.cost || 0, summary: plan.summary || "", ops: CM.Impact ? CM.Impact.opsInputs(this, beforeC, this.compiled) : null };
+        metricScope: res.metricScope, scopeKey: res.scopeKey, scopedBase: res.scopedBase, scopedDraft: res.scopedDraft, scopedWk: res.scopedWk, scopedWe: res.scopedWe, base: res.base, draft: res.draft, roads: res.roads || [], roadsWorse: res.roadsWorse || [], lines: res.lines || [], stations: res.stations || [], lineLF: res.lineLF || [], hot: res.hot || [], induced: res.induced || null, cost: plan.cost || 0, summary: plan.summary || "", ops: CM.Impact ? CM.Impact.opsInputs(this, beforeC, this.compiled) : null };
       if (CM.Impact && CM.Impact.captureContext) CM.Impact.captureContext(this.impactReport, this);
       this.lastImpactReport = this.impactReport;
       this.touch(); this.emit('trafficImpact');
-    }, beforeC);
+    }, beforeC, this);
   };
   Game.prototype.update = function (dt) {
     // 交通求解的每帧预算（v2.3 高密度线网）：上一帧除求解外的主线程耗时较少时，把余量让给求解（最多 solverBudgetMaxMs），
@@ -456,7 +467,8 @@
     yield;
     // 经营与任务：上月已封账，先开新月账本，任务奖励记入新月，最后按本月任务结果发放拨款
     // 满意度按周平均日（5 个工作日 + 2 个周末日）计算，通勤时间按工作日；升级过渡期内不因统计口径变化而下降
-    this.econ.updateSatisfaction(model.daily, model, y, m, { protect: this.inTransition(this.ym()) });
+    if (CM.PlayerMetrics && CM.PlayerMetrics.warmGen) yield* CM.PlayerMetrics.warmGen(this);
+    this.econ.updateCitySatisfaction(this, y, m, { protect: this.inTransition(this.ym()) });
     this.econ.openMonth(y, m);
     if (model.trafficReady()) this.tasks.rebaseCongestion(this);
     this.tasks.monthly(this).forEach((o) => this.logTask(o));
@@ -490,18 +502,26 @@
     this.emit('finance');
     return r;
   };
-  // 月度历史：客流、分担率与拥堵为周平均日（v1.9 起，tm: 2）；此前的记录为典型工作日口径（不重算）
+  // 月度历史：玩家指标按当月已开放经营范围保存，scopeKey 不同的月份不能直接比较。
+  // 旧记录保留原口径；未发布交通用 null 标记，不能把缺失数据记成零或全域结果。
   Game.prototype.recordHistory = function () {
-    const d = this.model.daily || {}, dw = this.model.dailyWk || {}, de = this.model.dailyWe || {};
-    const tot = this.city.totals();
+    const P = CM.PlayerMetrics, scoped = P && P.enabled(this), home = scoped && P.homeCity ? P.homeCity(this) : null;
+    const snapshot = scoped ? (P.city && home ? P.city(this, home) : P.snapshot(this)) : null;
+    const d = scoped ? snapshot || {} : this.model.daily || {}, dw = scoped ? d.dailyWk || {} : this.model.dailyWk || {}, de = scoped ? d.dailyWe || {} : this.model.dailyWe || {};
+    const tot = scoped ? d : this.city.totals(), ready = !!(d.ready && (!scoped || dw.ready && de.ready));
+    const metric = (value, fallback) => scoped && !ready ? null : Number.isFinite(value) ? value : fallback;
     const last = this.econ.ledger[this.econ.ledger.length - 1];
-    this.history.push({
-      y: this.clock.y, m: this.clock.m, pop: tot.pop, jobs: tot.jobs, share: d.metroShare || 0, cong: d.cong || 1, commute: dw.commute || d.commute || 0,
-      riders: d.metro || 0, sat: this.econ.sat, funds: this.econ.isFree() ? null : this.econ.funds, coverage: d.coverage || 0,
+    const row = {
+      y: this.clock.y, m: this.clock.m, pop: tot.pop, jobs: tot.jobs, share: metric(d.metroShare, 0), cong: metric(d.cong, 1), commute: metric(Number.isFinite(dw.commute) ? dw.commute : d.commute, 0),
+      riders: metric(d.metro, 0), sat: this.econ.sat, funds: this.econ.isFree() ? null : this.econ.funds, coverage: metric(d.coverage, 0),
       debt: this.econ.isFree() ? null : this.econ.debtTotal(), capex: this.econ.isFree() ? null : this.econ.capex,
-      fare: last ? last.fare : 0, ops: last ? last.ops : 0, grant: last ? last.grant : 0, stations: this.compiled.stations.length,
-      trips: d.trips || 0, crowd: d.crowdShare || 0, ridersWk: dw.metro || 0, ridersWe: de.metro || 0, tm: CFG.TRAFFIC_MODEL,
-    });
+      fare: last ? last.fare : 0, ops: last ? last.ops : 0, grant: last ? last.grant : 0,
+      stations: scoped ? this.compiled.stations.reduce((n, s) => n + (!s.ownerId || s.ownerId === 'player' ? 1 : 0), 0) : this.compiled.stations.length,
+      trips: metric(d.trips, 0), crowd: metric(d.crowdShare, 0), ridersWk: metric(dw.metro, 0), ridersWe: metric(de.metro, 0), tm: CFG.TRAFFIC_MODEL,
+    };
+    if (scoped) Object.assign(row, { metricScope: 'player', scopeKey: d.scopeKey || null, scopeLabel: d.scopeLabel, ready: ready,
+      satCityId: home || this.econ.satFactors && this.econ.satFactors.cityId || null, satScopeKey: this.econ.satScope && this.econ.satScope.scopeKey || null });
+    this.history.push(row);
     if (this.history.length > 1200) this.history.shift();
     if(CM.Statistics)CM.Statistics.recordMonth(this);
   };
@@ -759,10 +779,11 @@
     d.pred = { state: 'running', progress: 0, ver: ver };
     const gen = this.model.predict(C, affected, function (res) {
       if (!self.draft || self.draft.ver !== ver) return;
+      if (res.stale) { self.draft.pred = { state: 'stale', msg: '可经营范围已变化，请重新计算预测', ver: ver }; self.emit('prediction'); return; }
       res.conditions.y = self.clock.y; res.conditions.m = self.clock.m;
       self.draft.pred = { state: 'done', result: res, ver: ver };
       self.emit('prediction');
-    });
+    }, null, this);
     d.pred.gen = gen;
     this.emit('prediction');
   };
@@ -1076,6 +1097,18 @@
       }
       if (airportOpened) g.logEvent({ tag: '规则', title: '新区域开放：' + airportOpened.name, desc: (D.airport.name || '机场') + '照常运营，用地不开发；范围内可以地下设站与地下穿越（v1.9 起）。' });
       if (CM.CityDynamics) yield* CM.CityDynamics.primeGen(g);
+      if (CM.PlayerMetrics && CM.PlayerMetrics.enabled(g)) {
+        // 地图权限、车队和交通结果均已恢复后，先移除旧锁区任务/合同造成的仍生效处罚。
+        if (g.tasks.rebasePlayerScope) g.tasks.rebasePlayerScope(g);
+        if (CM.Corp && CM.Corp.rebasePlayerScope) CM.Corp.rebasePlayerScope(g);
+        const home = CM.PlayerMetrics.homeCity(g), legacySat = !(g.econ.satCities && g.econ.satCities[home]);
+        if (g.econ.migrateCitySatisfaction(g, g.ym(), { legacy: legacySat })) {
+          const pending = g.econ.satScope && g.econ.satScope.pending;
+          g.logEvent({ tag: '版本', title: '主城满意度口径更新', desc: '本公司满意度只按主经营城市内已解锁区域独立考核，跨市经营不混入主城考核。' +
+            (pending ? '完整本城交通结果发布后再修复旧满意度，修复后提供三个月保护。' : '旧满意度已按本城已发布结果校正，并提供三个月保护。') + '原有资金、债务和历史账目保留。' });
+          g.upgradeNote = (g.upgradeNote ? g.upgradeNote + '；' : '') + '满意度改为主城独立考核，其他城市分别记录';
+        }
+      }
       complete = true;
       return g;
     } finally {

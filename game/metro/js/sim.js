@@ -228,7 +228,7 @@
   // 变化的行程表与结果缓冲区往返转移并复用，避免每帧复制整份需求或保留旧城市。
   // 地铁最短路与客流回溯的固定分段数：只影响计算顺序，线程数不影响结果
   const SKIM_BLOCKS = 16;
-  const OD_OUT = ['carDem', 'hasCar', 'S', 'pT', 'pM', 'zTrips', 'zMetro', 'zAccess', 'zCW', 'zCT', 'desTot', 'desMetro',
+  const OD_OUT = ['carDem', 'hasCar', 'S', 'pT', 'pM', 'zTrips', 'zMetro', 'zFare', 'zTime', 'zAccess', 'zCW', 'zCT', 'desTot', 'desMetro',
     'zDest', 'zDestM', 'fIn', 'fInM', 'fOut', 'fOutM', 'fP', 'fPM', 'DS', 'choices'];
   const OD_FIXED = ['Z', 'NZ', 'B', 'odStart', 'odDest', 'odDistance', 't0', 't1', 't2', 't3', 't4', 't5', 'hostZ', 'nx', 'ny', 'kmPerCell', 'blocks'];
   const OD_MOVE = { gtS: 1, tmS: 1, kmS: 1 };
@@ -481,7 +481,7 @@
     const gtS = K.gtS, tmS = K.tmS, kmS = K.kmS, DS = K.DS, perMin = K.perMin, capSh = K.capSh, capLz = K.capLz;
     const carDem = K.carDem, hasCar = K.hasCar, S = K.S, pT = K.pT, pM = K.pM;
     const habit = K.habit, habAsc = K.habAsc || 0, habLite = K.habLite || 0;
-    const zCW = K.zCW, zCT = K.zCT, zTrips = K.zTrips, zMetro = K.zMetro, zAccess = K.zAccess, zJ = K.zJ, blocks = K.blocks, desTot = K.desTot, desMetro = K.desMetro;
+    const zCW = K.zCW, zCT = K.zCT, zTrips = K.zTrips, zMetro = K.zMetro, zFare = K.zFare, zTime = K.zTime, zAccess = K.zAccess, zJ = K.zJ, blocks = K.blocks, desTot = K.desTot, desMetro = K.desMetro;
     const zDest = K.zDest, zDestM = K.zDestM, fIn = K.fIn, fInM = K.fInM, fOut = K.fOut, fOutM = K.fOutM, fP = K.fP, fPM = K.fPM;
     for (let k = odStart[i]; k < odStart[i + 1]; k++) {
       const j = odDest[k];
@@ -565,9 +565,10 @@
         if (onRoad > 0) { carDem[ho * Z + hd] += onRoad / occ * roadF; hasCar[ho] = 1; }
         S[0] += F; S[1] += metro; S[2] += car;
         const tCar = bgShare > 0 ? (1 - bgShare) * (ct + carAccess * 0.5) + bgShare * tBg : ct + carAccess * 0.5;
-        S[3] += car * tCar + metro * mTime;
+        const travelTime = car * tCar + metro * mTime, paidFare = metro * fare;
+        S[3] += travelTime;
         S[4] += car * tCar; S[5] += metro * mTime;
-        S[6] += metro * fare; S[7] += metro * mKm; S[8] += car * ck; S[9] += onRoad / occ * ck * roadF;
+        S[6] += paidFare; S[7] += metro * mKm; S[8] += car * ck; S[9] += onRoad / occ * ck * roadF;
         if (metro > 0) {
           const band = mKm <= 5 ? 0 : mKm <= 10 ? 1 : mKm <= 20 ? 2 : mKm <= 30 ? 3 : 4;
           S[14 + band] += metro; S[19 + band] += metro * fare;
@@ -577,6 +578,8 @@
         for (let p = 0; p < NPK; p++) { const c = comp[p]; if (c) { pT[p] += c; pM[p] += c * q; } }
         if (ind > 0) { pT[SH] += indSh; pT[LZ] += indLz; pM[SH] += indSh * pMc; pM[LZ] += indLz * pMc; S[12] += ind; S[13] += indM; }
         zTrips[ho] += F; zMetro[ho] += metro;
+        if (zFare) zFare[ho] += paidFare;
+        if (zTime) zTime[ho] += travelTime;
         if (o < Z && d < Z) zAccess[o] += zJ[d] * Math.exp(-gtBest / 30);
         const key = blocks[ho] * B + blocks[hd];
         desTot[key] += F; desMetro[key] += metro;
@@ -1408,6 +1411,8 @@
     const Z = this.Z, F = this.fn ? this.fn.F : 0;
     if (!P.zDest || P.zDest.length !== NPK * Z) { P.zDest = new Float32Array(NPK * Z); P.zDestM = new Float32Array(NPK * Z); }
     if (!P.zCW || P.zCW.length !== Z) { P.zCW = new Float32Array(Z); P.zCT = new Float32Array(Z); }
+    if (!P.zFare || P.zFare.length !== Z) P.zFare = new Float32Array(Z);
+    if (!P.zTime || P.zTime.length !== Z) P.zTime = new Float32Array(Z);
     if (!P.fIn || P.fIn.length !== F) { P.fIn = new Float32Array(F); P.fInM = new Float32Array(F); P.fOut = new Float32Array(F); P.fOutM = new Float32Array(F); P.fP = new Float32Array(NPK * F); P.fPM = new Float32Array(NPK * F); }
   };
   Model.prototype.makePer = function (net) {
@@ -1598,6 +1603,7 @@
     const accOk = acc && acc.NZ === NZ && acc.facKey === fn.key;   // 接驳表与设施节点一致（城市刷新与网络同步之间的过渡状态下只用小区部分）
     const kmPerCell = CFG.CELL_M / 1000;
     P.desTot.fill(0); P.desMetro.fill(0); P.zTrips.fill(0); P.zMetro.fill(0); P.zAccess.fill(0); P.zCW.fill(0); P.zCT.fill(0);
+    P.zFare.fill(0); P.zTime.fill(0);
     P.zDest.fill(0); P.zDestM.fill(0); P.fIn.fill(0); P.fInM.fill(0); P.fOut.fill(0); P.fOutM.fill(0); P.fP.fill(0); P.fPM.fill(0);
     const BW = this.BW, ZW = this.ZW;
     if (!this.zoneBlock) this.zoneBlock = Int32Array.from({ length: Z }, function (_, z) { return (((z / ZW) | 0) >> 1) * BW + ((z % ZW) >> 1); });
@@ -1622,7 +1628,7 @@
       acc: acc, accOk: !!accOk, choices: choices, skimStore: store, gtS: store ? store.gt : null, tmS: store ? store.tm : null, kmS: store ? store.km : null, DS: store ? store.D : null,
       perMin: IND.perMin, capSh: IND.cap.sh, capLz: IND.cap.lz,
       habit: this.habit && this.habit.length === Z ? this.habit : null, habAsc: CFG.habit ? CFG.habit.asc : 0, habLite: CFG.habit ? CFG.habit.carLite : 0,
-      carDem: carDem, hasCar: hasCar, S: S, pT: pT, pM: pM, zTrips: P.zTrips, zMetro: P.zMetro, zAccess: P.zAccess, zCW: P.zCW, zCT: P.zCT, zJ: this.zJobs, blocks: blocks, desTot: P.desTot, desMetro: P.desMetro,
+      carDem: carDem, hasCar: hasCar, S: S, pT: pT, pM: pM, zTrips: P.zTrips, zMetro: P.zMetro, zFare: P.zFare, zTime: P.zTime, zAccess: P.zAccess, zCW: P.zCW, zCT: P.zCT, zJ: this.zJobs, blocks: blocks, desTot: P.desTot, desMetro: P.desMetro,
       zDest: P.zDest, zDestM: P.zDestM, fIn: P.fIn, fInM: P.fInM, fOut: P.fOut, fOutM: P.fOutM, fP: P.fP, fPM: P.fPM };
     let odDone = false;
     if (!this.syncSolve && OdPool.ready()) {
@@ -2069,7 +2075,7 @@
     let mx = 0; for (let z = 0; z < this.Z; z++) if (za[z] > mx) mx = za[z];
     this.zoneAccessNorm = new Float32Array(this.Z);
     if (mx > 0) for (let z = 0; z < this.Z; z++) this.zoneAccessNorm[z] = Math.sqrt(za[z] / mx);
-    const copy=P=>{const o={};for(const k of ['arcVol','arcTime','freq','freqDir','needDir','load','stIn','stOut','stXfer','stDelay','stBoard','zTrips','zMetro','zCW','zCT','desTot','desMetro'])if(P[k])o[k]=P[k].slice();o.stats=P.stats;o.stable=P.stable;return o;};
+    const copy=P=>{const o={};for(const k of ['arcVol','arcTime','freq','freqDir','needDir','load','stIn','stOut','stXfer','stDelay','stBoard','zTrips','zMetro','zFare','zTime','zCW','zCT','desTot','desMetro'])if(P[k])o[k]=P[k].slice();o.stats=P.stats;o.stable=P.stable;return o;};
     this.results={wd:{per:this.ctxs.wd.per.map(copy)},we:{per:this.ctxs.we.per.map(copy)}};
     this.live=this.resultsFor(this.dayType);
     this.version++;
@@ -2215,11 +2221,19 @@
 
   // ---------------- 建设前预测 ----------------
   // 基于同一城市状态与票价，比较当前网络与草案网络（均从当前运行状态热启动，迭代次数相同）；工作日与周末分别计算
-  Model.prototype.predict = function (draftC, affectedLineIds, done, comparisonC) {
-    const self = this;
+  Model.prototype.predict = function (draftC, affectedLineIds, done, comparisonC, game) {
+    const self = this, scopeGame = game || this.city.operatorGame, metrics = scopeGame && CM.PlayerMetrics && CM.PlayerMetrics.enabled(scopeGame) ? CM.PlayerMetrics : null;
+    // A comparison keeps the permissions present when it was requested. If an
+    // unlock occurs while the generator yields, discard it before reading a new
+    // mask; the caller can then request a fresh comparison.
+    const scopeKey = metrics ? metrics.scopeKey(scopeGame) : null;
+    const scopeChanged = function () { return metrics && metrics.scopeKey(scopeGame) !== scopeKey; };
     const gen = (function* () {
       const result = { conditions: { year: self.year, fare: Object.assign({}, self.fare) }, progress: 0 };
+      if (!metrics) result.metricScope = 'world';
       self.predState = result;
+      const expired = function () { result.stale = true; result.valid = false; result.reason = '可经营范围已变化，请重新计算预测'; result.progress = 1; return result; };
+      if (scopeChanged()) return expired();
       const baseNet = comparisonC?self.buildMetro(comparisonC):self.net;
       if (comparisonC) yield;   // 两次建网分在两帧（v2.3：大型线网每次约百毫秒，合在一帧是明显的长帧）
       const draftNet = self.buildMetro(draftC);
@@ -2242,15 +2256,19 @@
           result.progress = ++itDone / itTotal;
           if(P.stable){itDone+=ITS[p]-it-1;result.progress=itDone/itTotal;break;}
         }
-        // 仅保留结果所需
-        return { stable:P.stable, stats: P.stats, freq: P.freq, freqDir: P.freqDir, load: P.load, stIn: P.stIn, stOut: P.stOut, stXfer: P.stXfer, arcVol: p === 0 ? P.arcVol : null, arcTime: p === 0 ? P.arcTime : null,
-          fIn: P.fIn, fInM: P.fInM, fOut: P.fOut, fOutM: P.fOutM, fP: P.fP, zDest: P.zDest, zDestM: P.zDestM, zTrips: P.zTrips, zMetro: P.zMetro };
+        // Scoped all-day congestion needs each period, and commuting/fare/time
+        // need their additive origin-zone arrays. These arrays stay in this
+        // generator only; saved reports contain small aggregate snapshots.
+        return { stable:P.stable, stats: P.stats, freq: P.freq, freqDir: P.freqDir, load: P.load, stIn: P.stIn, stOut: P.stOut, stXfer: P.stXfer, arcVol: P.arcVol, arcTime: P.arcTime,
+          fIn: P.fIn, fInM: P.fInM, fOut: P.fOut, fOutM: P.fOutM, fP: P.fP, zDest: P.zDest, zDestM: P.zDestM, zTrips: P.zTrips, zMetro: P.zMetro,
+          zCW: P.zCW, zCT: P.zCT, zFare: P.zFare, zTime: P.zTime };
       };
       const jobs = [];
       for (const k of baseNet ? ['base', 'draft'] : ['draft']) for (const dt of DT) for (let p = 0; p < NP; p++) jobs.push([k, dt, p]);
       const itTotal = jobs.reduce(function (s, j) { return s + ITS[j[2]]; }, 0);
       result.progress = 0;
       yield* self.pipeline(jobs, runOne, function (j, per) { out[j[0]][j[1]][j[2]] = per; }, true);
+      if (scopeChanged()) return expired();
       result.stable=Object.values(out).every(group=>DT.every(dt=>group[dt].every(P=>P.stable)));
       const base = baseNet ? out.base : null;
       const draft = out.draft;
@@ -2259,6 +2277,15 @@
       const Dr = { wd: self.aggregate(draft.wd, draftNet), we: self.aggregate(draft.we, draftNet) };
       result.base = self.weekAvg(B.wd, B.we, baseNet); result.draft = self.weekAvg(Dr.wd, Dr.we, draftNet);
       result.wk = { base: B.wd, draft: Dr.wd }; result.we = { base: B.we, draft: Dr.we };
+      // Financial quantities remain the original full-network comparison.
+      // Traffic assessment is a separate, consistently scoped observation.
+      if (metrics && base) {
+        const sb = metrics.fromPeriods(scopeGame, baseNet, base.wd, base.we), sd = metrics.fromPeriods(scopeGame, draftNet, draft.wd, draft.we);
+        if (!sb || !sd || !sb.daily || !sd.daily || !sb.daily.ready || !sd.daily.ready || scopeChanged()) return expired();
+        result.metricScope = 'player-open-v1'; result.scopeKey = scopeKey;
+        result.scopedBase = sb.daily; result.scopedDraft = sd.daily;
+        result.scopedWk = { base: sb.dailyWk, draft: sd.dailyWk }; result.scopedWe = { base: sb.dailyWe, draft: sd.dailyWe };
+      }
       // 出行目的：地铁出行（人次/日），工作日与周末
       result.purpose = PK.map(function (k, q) { return { key: k, wd0: B.wd[MKEY[q]] || 0, wd1: Dr.wd[MKEY[q]] || 0, we0: B.we[MKEY[q]] || 0, we1: Dr.we[MKEY[q]] || 0, tot: Dr.wd[TKEY[q]] || 0 }; });
       result.induced = { wd: Dr.wd.indM || 0, we: Dr.we.indM || 0, wd0: B.wd.indM || 0, we0: B.we.indM || 0 };
@@ -2331,17 +2358,19 @@
       }
       // 道路变化：工作日早高峰按道路名汇总
       if (base) {
-        const road = self.road, byName = new Map();
+        const road = self.road, byName = new Map(), roadWeights = result.metricScope && metrics ? metrics.roadWeights(scopeGame) : null;
         const v0 = base.wd[0].arcVol, v1 = draft.wd[0].arcVol;
         for (const L of road.links) {
           if (!L.name || L.cls < 3) continue;
+          const share = roadWeights ? roadWeights[L.id] || 0 : 1, length = L.lenM * share;
+          if (!(length > 0)) continue;
           for (let d = 0; d < 2; d++) {
             const a = 2 * L.id + d;
             const e = byName.get(L.name) || { n0: 0, n1: 0, d0: 0, d1: 0, vkt0: 0, top: -1, pt: null };
             const x0 = base.wd[0].arcTime[a] / road.arcT0[a], x1 = draft.wd[0].arcTime[a] / road.arcT0[a];
-            e.n0 += v0[a] * L.lenM * x0; e.d0 += v0[a] * L.lenM; e.n1 += v1[a] * L.lenM * x1; e.d1 += v1[a] * L.lenM; e.vkt0 += v0[a] * L.lenM;
+            e.n0 += v0[a] * length * x0; e.d0 += v0[a] * length; e.n1 += v1[a] * length * x1; e.d1 += v1[a] * length; e.vkt0 += v0[a] * length;
             // 最拥堵路段的位置（归因：拥堵道路离新线多远）
-            const hot = v0[a] * L.lenM * Math.max(0, x0 - 1); if (hot > e.top) { e.top = hot; e.pt = L.pts[Math.floor(L.pts.length / 2)]; }
+            const hot = v0[a] * length * Math.max(0, x0 - 1); if (hot > e.top) { e.top = hot; e.pt = roadWeights ? metrics.roadPoint(scopeGame, L) : L.pts[Math.floor(L.pts.length / 2)]; }
             byName.set(L.name, e);
           }
         }

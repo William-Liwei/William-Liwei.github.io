@@ -98,7 +98,8 @@
     inner.appendChild(wrap);
     if (!res.valid) { wrap.appendChild(h('div', { class: 'callout warn' }, '无法形成有效预测：' + (res.reason || '草案中没有有效的地铁行程。'))); }
     else {
-      const B = res.base, Dr = res.draft;
+      const traffic = CM.Impact ? CM.Impact.traffic(res) : res, B = traffic.base, Dr = traffic.draft;
+      if (CM.Impact) wrap.appendChild(h('p', { class: 'note' }, CM.Impact.scopeNote(res)));
       const dlt = function (a, b, d0, unit, betterUp) { const x = b - a; if (Math.abs(x) < Math.pow(10, -d0) / 2) return ['±0' + (unit || ''), 'muted']; return [U.fmtSigned(x, d0, unit || ''), (x > 0) === betterUp ? 'good' : 'bad']; };
       const g1 = h('div', { class: 'stat-grid' });
       let x;
@@ -107,23 +108,23 @@
       x = dlt(B.commute, Dr.commute, 1, ' 分钟', false); g1.appendChild(this.stat('平均通勤时间', U.fmtNum(Dr.commute, 1) + ' 分钟', x[0], x[1]));
       x = dlt(B.cong, Dr.cong, 3, '', false); g1.appendChild(this.stat('道路拥堵指数（全日）', Dr.cong.toFixed(3), x[0], x[1]));
       x = dlt(B.car, Dr.car, 0, '', false); g1.appendChild(this.stat('非地铁出行（人次/日）', U.fmtPeople(Dr.car), (Dr.car<=B.car?'减少 ':'增加 ')+U.fmtPeople(Math.abs(B.car-Dr.car))+' 人次', x[1]));
-      x = dlt(B.fare, Dr.fare, 0, '', true); g1.appendChild(this.stat('票务收入（日）', U.fmtMoney(Dr.fare / 10000), U.fmtSigned(U.cur(Dr.fare - B.fare) / 10000, 1, ' ' + CFG.money.wan), x[1]));
+      x = dlt(res.base.fare, res.draft.fare, 0, '', true); g1.appendChild(this.stat('票务收入（日）', U.fmtMoney(res.draft.fare / 10000), U.fmtSigned(U.cur(res.draft.fare - res.base.fare) / 10000, 1, ' ' + CFG.money.wan), x[1]));
       wrap.appendChild(g1);
       // 预测解读（v2.3）：与建成后的建设效果报告同一套归因
       if (res.stations) wrap.appendChild(this.sec('pr-why', '预计会怎样，为什么', '', function () {
         return CM.Impact.view(self, res, { pred: true, noKpi: true, ops: CM.Impact.opsInputs(g, g.compiled, g.draftCompiled()) });
       }, true, 'help'));
       // 工作日与周末对比（v1.9）
-      if (res.wk && res.we) {
+      if (traffic.wk && traffic.we) {
         const arrow = function (a, b, fmt, up) { const d = b - a, cls = Math.abs(d) < 1e-9 ? 'muted' : ((d > 0) === up ? 'good' : 'bad'); return h('td', null, fmt(a) + ' → ', h('b', { class: cls }, fmt(b))); };
         const pct = function (v) { return U.fmtPct(v, 1); }, ppl = function (v) { return U.fmtPeople(v); }, f3 = function (v) { return v.toFixed(3); };
         const t = h('table', { class: 'tbl' }, h('tr', null, h('th', null, ''), h('th', null, '工作日'), h('th', null, '周末')),
-          h('tr', null, h('td', null, '地铁客运量'), arrow(res.wk.base.metro, res.wk.draft.metro, ppl, true), arrow(res.we.base.metro, res.we.draft.metro, ppl, true)),
-          h('tr', null, h('td', null, '地铁分担率'), arrow(res.wk.base.metroShare, res.wk.draft.metroShare, pct, true), arrow(res.we.base.metroShare, res.we.draft.metroShare, pct, true)),
-          h('tr', null, h('td', null, '道路拥堵指数'), arrow(res.wk.base.cong, res.wk.draft.cong, f3, false), arrow(res.we.base.cong, res.we.draft.cong, f3, false)));
+          h('tr', null, h('td', null, '地铁客运量'), arrow(traffic.wk.base.metro, traffic.wk.draft.metro, ppl, true), arrow(traffic.we.base.metro, traffic.we.draft.metro, ppl, true)),
+          h('tr', null, h('td', null, '地铁分担率'), arrow(traffic.wk.base.metroShare, traffic.wk.draft.metroShare, pct, true), arrow(traffic.we.base.metroShare, traffic.we.draft.metroShare, pct, true)),
+          h('tr', null, h('td', null, '道路拥堵指数'), arrow(traffic.wk.base.cong, traffic.wk.draft.cong, f3, false), arrow(traffic.we.base.cong, traffic.we.draft.cong, f3, false)));
         const ind = res.induced || { wd: 0, we: 0, wd0: 0, we0: 0 };
-        wrap.appendChild(this.sec('pr-days', '工作日与周末', '典型的一天', function () {
-          return h('div', null, t, h('div', { class: 'note', style: { marginTop: '6px' } }, '工作日通勤、上学集中在早晚高峰；周末购物与旅游休闲出行更多、高峰平缓。草案改善可达性后新增的购物、休闲出行（有上限）：工作日约 ' + U.fmtPeople(Math.max(0, ind.wd - ind.wd0)) + ' 人次、周末约 ' + U.fmtPeople(Math.max(0, ind.we - ind.we0)) + ' 人次（已计入客运量）。'));
+        wrap.appendChild(this.sec('pr-days', '工作日与周末（交通评价范围）', traffic.scoped ? '已开放经营范围' : '全地图', function () {
+          return h('div', null, t, h('div', { class: 'note', style: { marginTop: '6px' } }, '全地图诱增出行参考：工作日约 ' + U.fmtPeople(Math.max(0, ind.wd - ind.wd0)) + ' 人次、周末约 ' + U.fmtPeople(Math.max(0, ind.we - ind.we0)) + ' 人次（已计入客运量）。'));
         }, true));
       }
       // 出行目的（地铁出行，人次/日）
@@ -135,11 +136,11 @@
           const cell = function (a, b) { const d = b - a; return h('td', null, U.fmtPeople(b), h('small', { class: d > 0.5 ? 'good' : (d < -0.5 ? 'bad' : 'muted') }, ' ' + UI.sgnPeople(d))); };
           t.appendChild(h('tr', null, h('td', null, h('span', { class: 'dot', style: { background: AX.category(TR.keys.indexOf(r.key), TR.color[r.key]), marginRight: '6px' } }), TR.name[r.key]), cell(r.wd0, r.wd1), cell(r.we0, r.we1)));
         }
-        wrap.appendChild(this.sec('pr-purp', '地铁出行的目的（人次/日）', '草案 · 较当前', function () { return h('div', null, t, h('div', { class: 'note', style: { marginTop: '6px' } }, '通勤与上学看工作日，购物与旅游休闲看周末；枢纽接驳为往返火车站、机场的旅客。')); }, true));
+        wrap.appendChild(this.sec('pr-purp', '地铁出行的目的（全地图参考，人次/日）', '草案 · 较当前', function () { return h('div', null, t, h('div', { class: 'note', style: { marginTop: '6px' } }, '通勤与上学看工作日，购物与旅游休闲看周末；枢纽接驳为往返火车站、机场的旅客。')); }, true));
       }
       // 重点设施预计客流贡献（乘地铁到达与离开，人次/日）
       if (res.fac && res.fac.length) {
-        wrap.appendChild(this.sec('pr-fac', '重点设施的地铁客流', res.fac.length + ' 处变化', function () {
+        wrap.appendChild(this.sec('pr-fac', '重点设施的地铁客流（全地图参考）', res.fac.length + ' 处变化', function () {
           const bx = h('div');
           const t = h('table', { class: 'tbl' }, h('tr', null, h('th', null, '设施'), h('th', null, '工作日'), h('th', null, '周末')));
           for (const r of res.fac.slice(0, 8)) {
@@ -950,7 +951,7 @@
     // 普通设施（按片区汇总）吸引的出行：分目的，工作日与周末（模拟结果）
     if (model.facData('wd') && model.facData('we')) {
       const Z = model.Z, a = model.facDaily.wd, b = model.facDaily.we, TR = CFG.trips;
-      const t = h('table', { class: 'tbl' }, h('tr', null, h('th', null, '出行目的'), h('th', null, '工作日'), h('th', null, '周末'), h('th', null, '乘地铁（工作日）')));
+      const t = h('table', { class: 'tbl' }, h('tr', null, h('th', null, '全地图出行目的参考'), h('th', null, '工作日'), h('th', null, '周末'), h('th', null, '乘地铁（工作日）')));
       let any = false;
       ['hw', 'sc', 'sh', 'md', 'lz'].forEach(function (k) {
         const qi = TR.keys.indexOf(k), v1 = a.dest[qi * Z + z], v2 = b.dest[qi * Z + z], m1 = a.destM[qi * Z + z];
@@ -1086,9 +1087,9 @@
 
   // ======================== 页面：指标 ========================
   UI.prototype.page_metric = function (key) {
-    const g = this.g(), d = g.model.daily || {}, self = this;
+    const g = this.g(), local = CM.PlayerMetrics && CM.PlayerMetrics.enabled(g) ? CM.PlayerMetrics.home(g) : null, d = local || g.model.daily || {}, self = this;
     const el = h('div');
-    const hist = g.history;
+    let hist = local ? g.history.filter(function (r) { return r.metricScope === 'player' && (key === 'sat' ? r.satScopeKey : r.scopeKey) === local.scopeKey; }) : g.history;
     const defs = {
       pop: { title: '人口', val: function () { return U.fmtPeople(g.city.totals().pop); }, series: function (r) { return r.pop; }, def: '地图范围内的常住人口。', scope: '统计范围：全图（约 ' + U.fmtNum(CFG.W * CFG.CELL_M / 1000, 0) + ' km × ' + U.fmtNum(CFG.H * CFG.CELL_M / 1000, 0) + ' km）；更新：每月城市发展结算；' + (CM.DATA.fictional ? '虚构城市，人口按模拟规则发展。' : CFG.growth.histEnd + ' 年前为参考统计的估算，之后为模拟。'), factors: ['历史人口增长参考曲线', '区域开放（时间与人口共同决定）', '地铁覆盖率提高可吸引更多人口（最多约 +6%）', '城市经济景气：繁荣时人口增长加快、新区可提前开放，衰退时放缓（真实城市）', '各街区的可达性、地铁车站邻近度与规划用地'] },
       share: { title: '地铁分担率', val: function () { return U.fmtPct(d.metroShare || 0); }, series: function (r) { return r.share; }, pct: true, def: '采用地铁的完整出行次数 ÷ 全部完整出行次数。换乘不重复计为新出行。', scope: '时间窗口：周平均日（5 个工作日 + 2 个周末日加权，各时段汇总）；非地铁部分包含汽车，以及本城当前年代配置的电车、普通铁路、渡轮或步行等背景交通；背景交通不计入道路车流。v1.9 之前的月度记录为典型工作日口径。', factors: ['起终点步行接驳时间（沿道路计算）', '候车时间（由发车间隔决定）与换乘次数', '车厢拥挤与车站拥挤', '票价与居民时间价值', '汽车出行时间（道路拥堵）与停车费用'] },
@@ -1098,12 +1099,14 @@
     };
     const def = defs[key];
     if (!def) return null;
+    hist = hist.filter(function (r) { return Number.isFinite(def.series(r)); });
     const regional = CM.RegionalMetrics && CM.RegionalMetrics.enabled(g);
-    if (regional && ['pop', 'share', 'cong', 'commute'].includes(key)) {
-      def.val = function () { const r = CM.RegionalMetrics.current(g); return r.name + ' · ' + (key === 'pop' ? U.fmtPeople(r.pop) : key === 'share' ? U.fmtPct(r.metroShare) : key === 'cong' ? r.cong.toFixed(2) + '（全日） / ' + r.congAM.toFixed(2) + '（早高峰）' : U.fmtNum(r.commute, 1) + ' 分钟'); };
-      def.scope = '当前值按所选城市或合计范围显示。下方历史趋势沿用区域全图记录；旧记录没有城市切片，不回填推算。';
-      el.appendChild(CM.RegionalMetrics.panel(this, g));
+    if (local) {
+      def.val = function () { if (key === 'pop') return local.cityName + '已开放 · ' + U.fmtPeople(local.pop); if (key === 'sat') return local.cityName + ' · ' + Math.round(g.econ.sat) + ' / 100'; if (!local.ready) return '正在更新经营区数据'; return key === 'share' ? U.fmtPct(local.metroShare) : key === 'cong' ? local.cong.toFixed(2) + '（全日） / ' + local.congAM.toFixed(2) + '（早高峰）' : U.fmtNum(local.dailyWk.commute, 1) + ' 分钟'; };
+      def.scope = '经营指标只统计本公司主城已解锁、可经营的范围；未开放地区不参与考核。跨市线路收入与成本仍按实际运营结算。范围变化前的历史不与当前值混比。';
+      el.appendChild(h('p', { class: 'note' }, def.scope));
     }
+    if (regional) el.appendChild(CM.RegionalMetrics.panel(this, g));
     el.appendChild(h('div', { style: { fontSize: '22px', fontWeight: 700, margin: '4px 0 8px' } }, this.liveText(def.val)));
     // 指标自带的图层（v2.2 界面整理）：打开详情时已在地图上显示，可在这里关闭或重新打开；图例在地图左上角
     const LY = this.pills[key] && this.pills[key].layer ? UI.LAYERS.find(function (x) { return x.id === self.pills[key].layer; }) : null;
@@ -1115,11 +1118,11 @@
       row.style.setProperty('--lc', LY.color);
       el.appendChild(row);
     }
-    if (key === 'share' && d.ready && !regional) {
+    if (key === 'share' && d.ready && !local) {
       const dw = g.model.dailyWk || d, de = g.model.dailyWe || d;
       el.appendChild(this.kv([[(CM.DATA.bg ? "日均出行（含背景交通，周平均）" : '日均出行（汽车+地铁，周平均）'), U.fmtPeople(d.trips) + ' 人次'], ['其中地铁', U.fmtPeople(d.metro) + ' 人次'], ['工作日 / 周末分担率', U.fmtPct(dw.metroShare || 0) + ' / ' + U.fmtPct(de.metroShare || 0)], ['工作日 / 周末地铁客运量', U.fmtPeople(dw.metro || 0) + ' / ' + U.fmtPeople(de.metro || 0) + ' 人次'], ['步行 15 分钟可达地铁的人口', U.fmtPct(d.coverage)], ['平均票价', d.metro > 0 ? U.fmtNum(U.cur(d.avgFare), 2) + ' ' + CFG.money.unit : '—']]));
     }
-    if (key === 'cong' && !regional) {
+    if (key === 'cong' && !local) {
       const W = g.model.weights(g.clock.minute);
       el.appendChild(this.kv([['当前时刻', g.model.cityCongAt(W).toFixed(2)], ['汽车行驶里程（日）', U.fmtPeople(d.vkt) + ' 车公里']]));
     }
@@ -1134,7 +1137,7 @@
     el.appendChild(h('div', { class: 'note', style: { margin: '2px 0 6px' } }, def.def));
     el.appendChild(this.sec('m-about', '统计口径与影响因素', '', function () { const b = h('div', { class: 'note' }, def.scope); for (const f of def.factors) b.appendChild(h('div', { class: 'small', style: { padding: '2px 0', color: 'var(--text)' } }, '· ' + f)); return b; }, false, 'info'));
     if (hist.length > 1) {
-      el.appendChild(this.sec('m-trend', regional && key !== 'sat' ? '区域全图历史趋势' : '变化趋势', '近 ' + Math.min(120, hist.length) + ' 个月', function () {
+      el.appendChild(this.sec('m-trend', local ? '相同经营范围的历史趋势' : '变化趋势', '近 ' + Math.min(120, hist.length) + ' 个月', function () {
         const arr = hist.slice(-120);
         return h('div', null, self.spark(arr.map(def.series), { color: '#1e6fd9', labels: [arr[0].y + '年' + arr[0].m + '月', '', arr[arr.length - 1].y + '年' + arr[arr.length - 1].m + '月'] }));
       }, true));

@@ -41,7 +41,7 @@
     fr: { name: '特许经营', from: 1900, note: '参照巴黎市建设隧道、由运营公司特许经营地铁的做法' },
     jp: { name: '公私合作', from: 1970, note: '参照日本地方政府与民间企业合资建设、运营轨道的做法' }
   };
-  const MAP_FLAVOR={gz:'cn',hz:'cn',wh:'cn',sh:'cn',bj:'cn',hk:'hk',tp:'tw',pa:'fr',tk:'jp'};
+  const MAP_FLAVOR={gz:'cn',hz:'cn',wh:'cn',sh:'cn','sh-city':'cn',bj:'cn',hk:'hk',tp:'tw',pa:'fr',tk:'jp'};
   Corp.flavor = function (g) { return g ? FLAVOR[MAP_FLAVOR[g.mapId]] || null : null; };
   Corp.enabled = function (g) { return !!g && !!g.econ && g.econ.mode === 'challenge' && !g.tutorial && !CM.DATA.noDynTasks && !!Corp.flavor(g); };
   Corp.grade = function (r) { return r >= 80 ? 'A' : (r >= 60 ? 'B' : (r >= 40 ? 'C' : 'D')); };
@@ -65,23 +65,25 @@
   // ---------------- 招标 ----------------
   // 片区可建设（与动态任务同一判定：一半以上陆地已开放、非风景区）
   const zoneOpen = function (g, z) {
+    const local = CM.Tasks.scopeZone(g, z); if (local) return local.openFraction > 0 && local.pop + local.jobs > 0;
     const city = g.city; let n = 0, o = 0;
     for (const c of g.model.zoneCells[z]) { if (city.landFrac[c] < 0.5) continue; n++; if (!city.cellLocked(c) && !city.regions[city.region[c]].scenic) o++; }
     return n > 0 && o >= n / 2;
   };
-  const catchment = function (city, x, y, r) {
+  const catchment = function (g, x, y, r) {
+    const city = g.city;
     let s = 0; const W = city.W, r2 = r * r;
     for (let j = Math.max(0, Math.floor(y - r)); j <= Math.min(city.H - 1, Math.floor(y + r)); j++)
-      for (let i = Math.max(0, Math.floor(x - r)); i <= Math.min(W - 1, Math.floor(x + r)); i++) { const dx = i + 0.5 - x, dy = j + 0.5 - y; if (dx * dx + dy * dy <= r2) { const c = j * W + i; s += city.pop[c] + city.jobs[c]; } }
+      for (let i = Math.max(0, Math.floor(x - r)); i <= Math.min(W - 1, Math.floor(x + r)); i++) { const dx = i + 0.5 - x, dy = j + 0.5 - y; if (dx * dx + dy * dy <= r2) { const c = j * W + i; if (CM.Tasks.scopeCellOpen(g, c)) s += city.pop[c] + city.jobs[c]; } }
     return s;
   };
   // 政府的客流预测：本市运营车站每天的进站人次 ÷ 车站周边约 600 m 的人口与岗位，乘以目标片区的人口与岗位，再乐观一成
   const forecast = function (g, ctx, area) {
     const C = ctx.C, sd = ctx.sd; if (!C || !sd) return 0;
     let inn = 0, cat = 0, n = 0;
-    for (let i = 0; i < C.stations.length && i < sd.inn.length; i++) if (C.serviced[i]) { const s = C.stations[i]; inn += sd.inn[i]; cat += catchment(g.city, s.x, s.y, 2.4); n++; }
+    for (let i = 0; i < C.stations.length && i < sd.inn.length; i++) if (C.serviced[i]) { const s = C.stations[i]; if (!CM.Tasks.scopeCellOpen(g, g.city.cellAt(s.x, s.y))) continue; inn += sd.inn[i]; cat += catchment(g, s.x, s.y, 2.4); n++; }
     if (n < 4 || cat <= 0) return 0;
-    return Math.max(500, Math.round(inn / cat * catchment(g.city, area.x, area.y, area.r + 1.5) * 1.1 / 100) * 100);
+    return Math.max(500, Math.round(inn / cat * catchment(g, area.x, area.y, area.r + 1.5) * 1.1 / 100) * 100);
   };
   // 与进行中的任务、招标、合同重叠的地点不再招标
   const taken = function (g, P, x, y) {
@@ -95,12 +97,12 @@
     const m = g.model, acc = m.net && m.net.acc, C = ctx.C, ym = g.ym(); if (!acc || !C) return null;
     let best = null;
     for (let z = 0; z < m.Z; z++) {
-      const pj = m.zPop[z] + m.zJobs[z]; if (pj < 15000 || acc.zCov[z] > 0.25 || P.cool['z:' + z] > ym || !zoneOpen(g, z)) continue;
+      const local = CM.Tasks.scopeZone(g, z), pj = local ? local.pop + local.jobs : m.zPop[z] + m.zJobs[z], coverage = local ? local.coverage : acc.zCov[z]; if (pj < 15000 || coverage > 0.25 || P.cool['z:' + z] > ym || !zoneOpen(g, z)) continue;
       const x = m.zCx[z], y = m.zCy[z]; if (taken(g, P, x, y)) continue;
       let ns = -1, nd = Infinity;
-      for (let i = 0; i < C.stations.length; i++) if (C.serviced[i]) { const d = U.dist(C.stations[i].x, C.stations[i].y, x, y); if (d < nd) { nd = d; ns = i; } }
+      for (let i = 0; i < C.stations.length; i++) if (C.serviced[i] && CM.Tasks.scopeCellOpen(g, g.city.cellAt(C.stations[i].x, C.stations[i].y))) { const d = U.dist(C.stations[i].x, C.stations[i].y, x, y); if (d < nd) { nd = d; ns = i; } }
       if (ns < 0 || nd < 8 || nd > 48) continue;   // 离线网 2–12 km
-      const score = pj * (1 - acc.zCov[z]) / (1 + nd / 40);
+      const score = pj * (1 - coverage) / (1 + nd / 40);
       if (!best || score > best.score) best = { z: z, ns: ns, nd: nd, score: score, pj: pj };
     }
     if (!best) return null;
@@ -115,7 +117,7 @@
     for (const x of CM.Tasks.crowdOf(g)) {
       if (x.lf < 0.95 || x.cars >= 8 || P.cool['l:' + x.lid] > ym) continue;
       if (g.tasks.active.concat(g.tasks.offers || []).some(function (t) { return t.line === x.lid; }) || P.tenders.concat(P.contracts).some(function (t) { return t.line === x.lid; })) continue;
-      const L = g.net.lines[x.lid]; if (!L || L.ownerId && L.ownerId !== 'player') continue;
+      const L = g.net.lines[x.lid]; if (!L || L.ownerId && L.ownerId !== 'player' || CM.RailSystems && CM.RailSystems.get(L).cars < 8 || CM.Tasks.scopeStatus({ type: 'lineCars', line: x.lid, target: 8 }, g)) continue;
       let E = 0, n = 0; const seen = new Set();
       for (const r of C.routes) if (r.lineId === x.lid) for (const k of r.stIdx) {
         const s = C.stations[k], tbl = CFG.cost.station[s.type] || CFG.cost.station.underground;
@@ -147,7 +149,9 @@
           title: '「' + L.name + '」扩容改造 PPP',
           desc: L.name + ' 早高峰满载率 ' + U.fmtPct(c.lf, 0) + '，列车只有 ' + c.cars + ' 节。公司投资把沿线 ' + c.n + ' 座车站升级为大型站、列车加长到 8 节；政府不给建设补助，改造完成后按可用性付费分 8 年支付。' };
       }
+      if (Corp.scopeStatus(g, t)) continue;
       t.id = 'P' + (P.seq++); t.offered = ym; t.expires = ym + RULE.life; t.bid = null;
+      if (CM.PlayerMetrics && CM.PlayerMetrics.enabled(g)) t.playerScopeKey = CM.PlayerMetrics.snapshot(g).scopeKey;
       return Corp.terms(t);
     }
     return null;
@@ -167,12 +171,22 @@
     const m = g.model, C = CM.Tasks.playerCompiled ? CM.Tasks.playerCompiled(g) : m.net ? m.net.C : g.compiled, sd = m.stDaily && !m.dailyStale ? m.stDaily : null;
     const crowd = new Map(); for (const x of CM.Tasks.crowdOf(g)) crowd.set(x.lid, Math.max(crowd.get(x.lid) || 0, x.lf));
     const f = CM.Macro && g.macro ? CM.Macro.cityFactors(g) : null;
-    return { C: C, sd: sd, crowd: crowd, fare: (m.daily && m.daily.avgFare) || 0, cyc: f ? U.clamp(f.com, 0.7, 1.25) : 1 };
+    const d = CM.PlayerMetrics && CM.PlayerMetrics.enabled(g) ? CM.PlayerMetrics.snapshot(g) : CM.Tasks.scopedDaily(g);
+    return { C: C, sd: sd, crowd: crowd, fare: d.avgFare || 0, ready: d.ready !== false && m.trafficReady(), cyc: f ? U.clamp(f.com, 0.7, 1.25) : 1 };
   };
   const areaIdx = function (ctx, a) { const C = ctx.C, out = []; if (!C || !a) return out; for (let i = 0; i < C.stations.length; i++) if (C.serviced[i] && U.dist(C.stations[i].x, C.stations[i].y, a.x, a.y) <= a.r + 0.5) out.push(i); return out; };
   const scope = function (g, c) {
     if (c.type === 'upgrade') return g.tasks.evaluate({ type: 'lineCars', line: c.line, target: 8, start: c.cars0 }, g);
     return g.tasks.evaluate({ type: 'connect', anchors: c.anchors }, g);
+  };
+  Corp.scopeStatus = function (g, c) { return CM.Tasks.scopeStatus(c.type === 'upgrade' ? { type: 'lineCars', line: c.line, target: 8 } : { type: 'connect', anchors: c.anchors, zone: c.zone }, g); };
+  // Locked projects retain their commitments, but the clock and payments pause.
+  // Restored ledgers stay intact; only obsolete, still-running sanctions stop.
+  Corp.rebasePlayerScope = function (g) {
+    if (!g.corp || !CM.PlayerMetrics || !CM.PlayerMetrics.enabled(g)) return;
+    for (const c of g.corp.closed || []) if (c.status === 'failed' && !c.playerScopeKey && !c.scopePenaltyRemoved && Corp.scopeStatus(g, c)) {
+      g.econ.mods = g.econ.mods.filter(function (m) { return m.reason !== '合同违约：' + c.title; }); c.scopePenaltyRemoved = true;
+    }
   };
   const kpis = function (g, c, ctx) {
     const sc = scope(g, c), idx = c.type === 'upgrade' ? [] : areaIdx(ctx, c.area);
@@ -211,6 +225,19 @@
   };
   const step = function (g, P, c, ctx) {
     const ym = g.ym();
+    const blocked = Corp.scopeStatus(g, c), pending = CM.PlayerMetrics && CM.PlayerMetrics.enabled(g) && !ctx.ready;
+    if (blocked || pending) {
+      if (!c.scopePause) c.scopePause = { at: ym, last: ym, remaining: c.phase === 'build' ? Math.max(6, c.deadline - ym) : Math.max(1, c.opsEnd - ym) };
+      c.scopePause.last = ym; c.prog = { ok: false, v: 0, waiting: true, text: blocked || '经营区域数据正在更新，暂不考核' };
+      if (c.phase === 'build') c.deadline = ym + c.scopePause.remaining; else c.opsEnd = ym + c.scopePause.remaining;
+      return;
+    }
+    if (c.scopePause) {
+      const end = ym + c.scopePause.remaining; if (c.phase === 'build') c.deadline = end; else c.opsEnd = end;
+      c.scopeHistory = (c.scopeHistory || []).concat([{ at: c.scopePause.at, resumed: ym, reason: c.prog && c.prog.text }]).slice(-8);
+      delete c.scopePause; c.offline = 0;
+    }
+    if (CM.PlayerMetrics && CM.PlayerMetrics.enabled(g)) c.playerScopeKey = CM.PlayerMetrics.snapshot(g).scopeKey;
     if (c.phase === 'build') {
       const ev = scope(g, c); c.prog = { v: ev.value, text: ev.text, ok: !!ev.ok };
       if (ev.ok) { open(g, P, c); return; }
@@ -246,6 +273,7 @@
   const fresh = function (g) { return { v: 1, since: g.ym(), rating: 60, tenders: [], contracts: [], closed: [], seq: 1, next: g.ym(), cool: {} }; };
   Corp.monthly = function (g) {
     if (!Corp.enabled(g)) return;
+    Corp.rebasePlayerScope(g);
     const ym = g.ym();
     if (!g.corp) {
       if (!g.model.trafficReady() || !Corp.unlockState(g).ok) return;
@@ -258,6 +286,7 @@
     // 评标：投标后的下一个月初公布，结果按投标确定（读档不会改变）
     for (const t of P.tenders.slice()) {
       if (!t.bid || t.bid.ym >= ym) continue;
+      if (Corp.scopeStatus(g, t) || !ctx.ready) { t.expires = Math.max(t.expires, ym + RULE.life); continue; }
       P.tenders.splice(P.tenders.indexOf(t), 1);
       // 兼容旧档中超额待评标的项目：不超限签约、不扣保证金，也不扣信誉。
       if (P.contracts.length >= RULE.active) {
@@ -282,7 +311,7 @@
     for (const c of P.contracts.slice()) step(g, P, c, ctx);
     // 到期未投标的招标撤下
     P.tenders = P.tenders.filter(function (t) { if (t.bid || ym <= t.expires) return true; if (t.zone != null) P.cool['z:' + t.zone] = ym + 12; if (t.line) P.cool['l:' + t.line] = ym + 12; return false; });
-    if (ym >= P.next && P.tenders.length < RULE.open && P.contracts.length < RULE.active && g.model.trafficReady()) {
+    if (ym >= P.next && P.tenders.length < RULE.open && P.contracts.length < RULE.active && ctx.ready) {
       const t = makeTender(g, P, ctx);
       if (t) { P.tenders.push(t); say(g, '新的招标：' + t.title, t.desc); }
       P.next = ym + (t ? RULE.every : 3);
@@ -292,6 +321,8 @@
   // 投标与退出（界面调用）
   Corp.bid = function (g, id, key) {
     const P = g.corp, t = P && P.tenders.find(function (x) { return x.id === id; }); if (!t || t.bid) return { error: '招标已结束' };
+    const blocked = Corp.scopeStatus(g, t); if (blocked) return { error: blocked };
+    if (CM.PlayerMetrics && CM.PlayerMetrics.enabled(g) && !CM.Tasks.scopedDaily(g).ready) return { error: '经营区域数据正在更新，请稍后投标' };
     if (P.contracts.length + P.tenders.filter(function (x) { return !!x.bid; }).length >= RULE.active) return { error: '履约和待评标的项目合计最多 ' + RULE.active + ' 个' };
     const o = t.opts.find(function (x) { return x.key === key; }); if (!o) return { error: '方案不存在' };
     if (g.econ.funds < o.bond + o.land) return { error: '一般资金不足以支付履约保证金' + (o.land ? '与地价' : '') + '（' + U.fmtMoney(o.bond + o.land) + '）' };

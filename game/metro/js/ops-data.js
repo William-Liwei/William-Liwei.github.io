@@ -2,6 +2,14 @@
 // 地铁芯的只读派生数据与预览。缓存只存在内存，不写入存档，也不改变模拟精度。
 (function (CM) {
   const D = CM.OpsData = {}, M = CM.Metro, U = CM.U;
+  D.owned = function (asset) { return !!asset && (!asset.ownerId || asset.ownerId === 'player'); };
+  D.home = function (g) { const P = CM.PlayerMetrics; return P && P.enabled(g) ? P.home ? P.home(g) : CM.Tasks.scopedDaily(g) : g.model.daily || {}; };
+  D.history = function (g, satisfaction) {
+    const P = CM.PlayerMetrics, rows = g.history || []; if (!P || !P.enabled(g)) return rows;
+    const d = D.home(g), key = satisfaction ? g.econ.satScope && g.econ.satScope.scopeKey : d && d.scopeKey, home = P.homeCity(g);
+    if (!key) return [];
+    return rows.filter(function (r) { return satisfaction ? r.satCityId === home && r.satScopeKey === key && Number.isFinite(r.sat) : r.metricScope === 'player' && r.scopeKey === key && r.ready !== false; });
+  };
   const snapshots = new WeakMap(), paths = new WeakMap(), terrain = new WeakMap();
   // Published result identities/version, readiness and fleet revision all matter: a new
   // solve, restore, service edit or purchase can change values within the same month.
@@ -19,14 +27,14 @@
     return hit.values.get(key);
   };
   D.lineInfo = function (g, lid) { return D.memo(g, 'fleet:' + lid, function () { return CM.Fleet && g.fleet ? CM.Fleet.lineInfo(g, lid) || [] : []; }); };
-  D.crowd = function (g) { return D.memo(g, 'crowd', function () { return CM.Tasks ? CM.Tasks.crowdOf(g) : []; }); };
-  D.lineStats = function (g) { return D.memo(g, 'stats', function () { return CM.Tasks ? CM.Tasks.lineStats(g) : new Map(); }); };
+  D.crowd = function (g) { return D.memo(g, 'crowd', function () { return CM.Tasks ? CM.Tasks.crowdOf(g, null, true).filter(function (x) { return D.owned(g.net.lines[x.lid]); }) : []; }); };
+  D.lineStats = function (g) { return D.memo(g, 'stats', function () { return CM.Tasks ? new Map(Array.from(CM.Tasks.lineStats(g, true)).filter(function (x) { return D.owned(g.net.lines[x[0]]); })) : new Map(); }); };
   D.lineRows = function (g) {
     return D.memo(g, 'lines', function () { return M.withSegIndex([g.net], function () {
       const stats = D.lineStats(g), crowd = new Map();
       for (const x of D.crowd(g)) crowd.set(x.lid, x.lf);
       const C = g.compiled;
-      return M.sortIds(Object.keys(g.net.lines)).map(function (lid, i) {
+      return M.sortIds(Object.keys(g.net.lines).filter(function (lid) { return D.owned(g.net.lines[lid]); })).map(function (lid, i) {
         const L = g.net.lines[lid], tp = C && C.topo && C.topo.get(lid) || M.lineTopo(g.net, lid), s = stats.get(lid), info = D.lineInfo(g, lid);
         let km = 0;
         for (const sg of M.lineSegs(g.net, lid)) { const cs = C && C.segs.get(sg.id); km += (cs ? cs.g : M.segGeom(g.net, sg, g.city)).lenM / 1000; }
@@ -38,7 +46,7 @@
   D.stationRows = function (g) {
     return D.memo(g, 'stations', function () { return M.withSegIndex([g.net], function () {
       const C = g.model.net ? g.model.net.C : g.compiled, sd = g.model.dailyStale ? null : g.model.stDailyWk || g.model.stDaily;
-      return M.sortIds(Object.keys(g.net.stations)).map(function (sid) {
+      return M.sortIds(Object.keys(g.net.stations).filter(function (sid) { return D.owned(g.net.stations[sid]); })).map(function (sid) {
         const s = g.net.stations[sid], k = C.sIndex.get(sid), ok = k !== undefined && sd && k < sd.peak.length;
         return { sid: sid, s: s, lines: M.stationLines(g.net, sid), live: k !== undefined && !!C.serviced[k], flow: ok ? sd.inn[k] + sd.out[k] + sd.xfer[k] : 0,
           load: ok ? sd.peak[k] / M.stationCapacity(s) : 0 };

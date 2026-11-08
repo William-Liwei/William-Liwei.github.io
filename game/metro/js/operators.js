@@ -53,6 +53,7 @@
       book(g, c, 'fare', a.fare, true); book(g, c, 'ops', a.ops, false);
       c.lastDay = { fare: a.fare, ops: a.ops, pkm: a.pkm, dt: dt === 'we' ? 'we' : 'wd' };
     }
+    O.updateSatisfaction(g);
     if (CM.OperatorControls && CM.OperatorControls.recordMonth) CM.OperatorControls.recordMonth(g);
   };
   O.playerCity = g => g.playerCity || 'sh';
@@ -176,6 +177,20 @@
     c.projects.push(p); c.note = '筹资中';
     log(g, c.id, defOf(c.id).city + (p.kind === 'cross' ? '联络线' : '城区线') + '开始筹资', '概算 ' + U.fmtMoney(p.estimate) + '，独立公司资金；时间与走廊为模拟规划。'); return p;
   }
+  // Informational city score only: never books money, alters project gates,
+  // valuation, grants or company survival. NPC home permissions ignore player locks.
+  O.updateSatisfaction = function (g) {
+    const P = CM.PlayerMetrics, E = CM.Economy, state = g.operators;
+    if (!state || !P || !P.company || !E || !E.cityTarget) return;
+    const ym = g.ym();
+    for (const c of Object.values(state.companies)) {
+      if (c.satYM === ym) continue;
+      const daily = P.company(g, c.id), score = E.cityTarget(daily, g.clock.y, g.clock.m);
+      if (!score) continue;
+      c.sat = U.clamp((Number.isFinite(c.sat) ? c.sat : CFG.economy.startSat) * .75 + score.target * .25, 0, 100);
+      c.satYM = ym;
+    }
+  };
   O.monthly = function (g) {
     const s = O.ensure(g); if (!s || s.lastMonth === g.ym()) return; s.lastMonth = g.ym();
     const ym = g.ym(), ci = g.econ.costIndex(g.clock.y);
@@ -188,6 +203,7 @@
       rotate(c, ym); book(g, c, 'grant', 12000 * d.strength * ci, true);
       if (!g.draft && CM.Fleet && CM.Fleet.maintainOwned) CM.Fleet.maintainOwned(g, c.id);
     }
+    O.updateSatisfaction(g);
     if (!g.fleet && CM.Fleet) CM.Fleet.ensure(g);
     // At most one project advances per month. No NPC mutation can overwrite a player draft.
     if (g.draft || s.lastBuild === ym || !CM.Fleet || !CM.Fleet.quoteOwned) return;
@@ -250,6 +266,7 @@
     const row = o => { fields(o); if (!integer(o.ym, 0, 120000)) fail(); };
     for (const [id, c] of Object.entries(s.companies)) {
       if (!IDS.has(id) || !c || c.id !== id || !integer(c.founded, 0, 120000) || !finite(c.funds, -1e12, 1e15) || !Array.isArray(c.projects) || c.projects.length > 2 || !Array.isArray(c.history) || c.history.length > 24 || !Array.isArray(c.agreements) || c.agreements.length > 48 || typeof c.note !== 'string' || c.note.length > 180) fail();
+      if (c.sat != null && !finite(c.sat, 0, 100) || c.satYM != null && !integer(c.satYM, 0, 120000)) fail();
       fields(c.total); row(c.cur); c.history.forEach(row);
       const balance = c.total.grant + c.total.fare - c.total.ops - c.total.construction - c.total.fleet;
       if (Math.abs(balance - c.funds) > Math.max(.001, Math.abs(balance) * 1e-9)) fail();
@@ -271,7 +288,7 @@
   function clean(s) {
     const out = { v: 1, since: s.since, lastMonth: s.lastMonth, lastDay: s.lastDay, lastBuild: s.lastBuild, companies: {}, indexHistory: (s.indexHistory || []).map(r => ({ ym: r.ym, values: r.values.map(v => ({ownerId:v.ownerId,score:v.score,annualProfit:v.annualProfit,riders:v.riders,service:v.service,debt:v.debt})) })), log: s.log.map(e => ({ ym:e.ym,ownerId:e.ownerId,title:e.title,desc:e.desc })) };
     const fields = x => Object.fromEntries(KINDS.map(k => [k,x[k]])), row = x => Object.assign({ym:x.ym},fields(x));
-    for (const [id,c] of Object.entries(s.companies)) out.companies[id] = { id, founded:c.founded, funds:c.funds, total:fields(c.total),cur:row(c.cur),history:c.history.map(row),agreements:c.agreements.slice(),request:c.request,crossPermit:c.crossPermit,note:c.note,lastDay:c.lastDay?{fare:c.lastDay.fare,ops:c.lastDay.ops,pkm:c.lastDay.pkm,dt:c.lastDay.dt}:null,
+    for (const [id,c] of Object.entries(s.companies)) out.companies[id] = { id, founded:c.founded, funds:c.funds, total:fields(c.total),cur:row(c.cur),history:c.history.map(row),agreements:c.agreements.slice(),request:c.request,crossPermit:c.crossPermit,note:c.note,...(c.sat == null ? {} : {sat:c.sat,satYM:c.satYM}),lastDay:c.lastDay?{fare:c.lastDay.fare,ops:c.lastDay.ops,pkm:c.lastDay.pkm,dt:c.lastDay.dt}:null,
       projects:c.projects.map(p=>({id:p.id,kind:p.kind,phase:p.phase,points:p.points.map(q=>Object.assign({x:q.x,y:q.y},q.stationId?{stationId:q.stationId}:{})),target:p.target,proposed:p.proposed,start:p.start,due:p.due,opened:p.opened,estimate:p.estimate,construction:p.construction,fleet:p.fleet,line:p.line})) };
     return out;
   }

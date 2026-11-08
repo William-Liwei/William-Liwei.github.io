@@ -49,7 +49,7 @@
     // Game index, not a security, share price or estimate of a real-world company.
     const score = Math.max(0, 100 + annualProfit / 10000 * 5 + riders / 10000 * 2 + service * 20 - debt / 10000 * 3);
     return { id: id, def: d, company: c, name: d ? d.name : id, active: id === 'player' || !!c, lines: lines, stations: stations, trains: trains, km: km, riders: riders, fresh: !!fresh,
-      annualProfit: annualProfit, monthProfit: annualProfit / 12, last: last, debt: debt, service: service, available: available, needed: needed, score: score,
+      sat: id === 'player' ? g.econ.sat : c && Number.isFinite(c.sat) ? c.sat : null, annualProfit: annualProfit, monthProfit: annualProfit / 12, last: last, debt: debt, service: service, available: available, needed: needed, score: score,
       funds: id === 'player' ? g.econ.funds : c ? c.funds : 0, fare: last && last.fare || 0, ops: last && last.ops || 0 };
   };
   X.snapshot = function (g, id) { return snapshot(g, id, operating(g)); };
@@ -142,9 +142,10 @@
     if (!row) {
       el.appendChild(h('p', { class: 'note' }, '上海、苏州、无锡、常州、南通、嘉兴、湖州各有一家轨道公司。每家公司独立筹资、购车和经营；地图边缘的其他辖区只展示当前覆盖范围。'));
       const ranking = all.slice().sort(function (a, b) { return Number(b.active) - Number(a.active) || b.score - a.score; });
-      const table = h('table', { class: 'tbl op-ranking' }, h('tr', null, h('th', null, '公司'), h('th', null, '模拟估值指数'), h('th', null, '日上车人次'), h('th', null, '线网')));
-      ranking.forEach(function (r, i) { table.appendChild(h('tr', null, h('td', null, action((r.active ? i + 1 + '. ' : '') + r.name + (r.id === 'player' ? '（你）' : ''), function () { go(r.id); }, 'ghost')), h('td', null, r.active ? U.fmtNum(r.score, 1) : '筹备前'), h('td', null, r.fresh ? U.fmtPeople(r.riders) : '更新中'), h('td', null, U.fmtNum(r.km, 1) + ' km'))); });
+      const table = h('table', { class: 'tbl op-ranking' }, h('tr', null, h('th', null, '公司'), h('th', null, '模拟估值指数'), h('th', null, '日上车人次'), h('th', null, '主城满意度'), h('th', null, '线网')));
+      ranking.forEach(function (r, i) { table.appendChild(h('tr', null, h('td', null, action((r.active ? i + 1 + '. ' : '') + r.name + (r.id === 'player' ? '（你）' : ''), function () { go(r.id); }, 'ghost')), h('td', null, r.active ? U.fmtNum(r.score, 1) : '筹备前'), h('td', null, r.fresh ? U.fmtPeople(r.riders) : '更新中'), h('td', null, r.sat == null ? '更新中' : Math.round(r.sat) + ' / 100'), h('td', null, U.fmtNum(r.km, 1) + ' km'))); });
       el.appendChild(h('div', { class: 'tbl-wrap' }, table));
+      el.appendChild(h('p', { class: 'note' }, '各公司满意度只统计本公司主城；NPC 满意度仅供参考，不影响资金、建设或存续。'));
       const trendPicker = h('select', { 'aria-label': '选择公司查看经营指数趋势' }, all.map(function (r) { return h('option', { value: r.id }, r.name + (r.id === 'player' ? '（你）' : '')); })), trendHost = h('div');
       trendPicker.value = 'player'; const showTrend = function () { trendHost.replaceChildren(X.trend(g, trendPicker.value)); }; trendPicker.addEventListener('change', showTrend); showTrend(); el.append(trendPicker, trendHost);
       el.appendChild(h('div', { class: 'op-score-note note' }, '经营指数只用于本局比较，不提供股票交易。指数 = max(0, 100 + 年化运营结余〔亿元〕×5 + 日上车人次〔万人〕×2 + 运力充足率×20 − 债务〔亿元〕×3)。运营结余按最近完整月票款减运营费，再乘 12；换乘上车可重复计数，运力充足率最高为 100%。没有完整月账时结余按 0。'));
@@ -154,7 +155,7 @@
     }
     const c = row.company, d = row.def;
     el.append(action('← 全部公司与排行', function () { go(null); }, 'ghost'), h('div', { class: 'op-company-head' }, h('span', { class: 'swatch', style: { background: d.color } }), h('b', null, row.name), h('span', { class: 'tag' }, row.id === 'player' ? '你的公司' : c ? c.note : d.year + ' 年起筹备')));
-    el.appendChild(this.kv([['所属城市', d.city], ['线网 / 自有车站 / 列车', U.fmtNum(row.km, 1) + ' km / ' + row.stations.length + ' 站 / ' + row.trains.length + ' 列'], ['公司资金', U.fmtMoney(row.funds)], ['公司债务', U.fmtMoney(row.debt)], ['上月票款 / 运营费', row.last ? U.fmtMoney(row.fare) + ' / ' + U.fmtMoney(row.ops) : '尚无完整月账'], ['上月运营结余', row.last ? U.fmtMoney(row.monthProfit) : '尚无完整月账'], ['日上车人次', row.fresh ? U.fmtPeople(row.riders) : '等待客流更新'], ['高峰运力充足率', U.fmtPct(row.service, 0) + '（可用 ' + row.available + ' / 需要 ' + row.needed + ' 列）'], ['经营指数', U.fmtNum(row.score, 1) + ' · 游戏比较指标']]));
+    el.appendChild(this.kv([['所属城市', d.city], ['主城满意度', row.sat == null ? '更新中' : Math.round(row.sat) + ' / 100'], ['线网 / 自有车站 / 列车', U.fmtNum(row.km, 1) + ' km / ' + row.stations.length + ' 站 / ' + row.trains.length + ' 列'], ['公司资金', U.fmtMoney(row.funds)], ['公司债务', U.fmtMoney(row.debt)], ['上月票款 / 运营费', row.last ? U.fmtMoney(row.fare) + ' / ' + U.fmtMoney(row.ops) : '尚无完整月账'], ['上月运营结余', row.last ? U.fmtMoney(row.monthProfit) : '尚无完整月账'], ['日上车人次', row.fresh ? U.fmtPeople(row.riders) : '等待客流更新'], ['高峰运力充足率', U.fmtPct(row.service, 0) + '（可用 ' + row.available + ' / 需要 ' + row.needed + ' 列）'], ['经营指数', U.fmtNum(row.score, 1) + ' · 游戏比较指标']]));
     el.appendChild(h('p', { class: 'note' }, '筹建年份、资本强度与工程进度为游戏规则；不代表现实公司的财务或历史线路。城市经济阶段不同，资金与当地需求决定实际开工。'));
     el.appendChild(X.trend(g, row.id));
     if (row.id === 'player') { el.append(action('本公司车队与运营托管', function () { self.openPage('fleet'); }), action('本公司财务', function () { self.openPage('finance'); })); }

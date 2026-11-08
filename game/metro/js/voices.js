@@ -49,14 +49,21 @@
   // 生成本月的反馈（周平均日、工作日早高峰等已发布结果）；kind：bad 吐槽 / good 点赞 / idea 建议
   Voices.generate = function (g) {
     const m = g.model; if (!m.trafficReady() || !m.net) return [];
-    const key = g.ym() + ':' + g.netVersion + ':' + (g.impactReport && g.impactReport.version || 0);
-    if (Voices.cache && Voices.cache.g === g && Voices.cache.key === key) return Voices.cache.list;
+    const T = CM.Tasks, scoped = CM.PlayerMetrics && CM.PlayerMetrics.enabled(g), d = T.scopedDaily(g); if (scoped && !d.ready) { Voices.cache = { g: g, key: 'pending:' + g.ym(), daily: d, list: [] }; return []; }
+    const key = g.ym() + ':' + g.netVersion + ':' + (g.impactReport && g.impactReport.version || 0) + ':' + (d.scopeKey || 'city') + ':' + g.econ.sat;
+    const publication = m.results;
+    if (Voices.cache && Voices.cache.g === g && Voices.cache.key === key && Voices.cache.publication === publication && Voices.cache.daily === d) return Voices.cache.list;
     const out = [], C = m.net.C, acc = m.net.acc, ym = g.ym(), sd = m.stDailyWk || m.stDaily;
+    const PM = scoped ? CM.PlayerMetrics : null, home = PM && PM.homeCity ? PM.homeCity(g) : null, mask = PM && PM.cityMask && home ? PM.cityMask(g, home) : null;
+    const homeCell = function (c) { return mask ? Number.isInteger(c) && c >= 0 && c < mask.length && mask[c] === 0 : T.scopeCellOpen(g, c); };
+    const own = function (s) { return !!s && (!s.ownerId || s.ownerId === 'player'); }, openStation = function (s, i) { return own(s) && C.serviced[i] && homeCell(g.city.cellAt(s.x, s.y)); };
+    const zoneData = function (z) { return (PM && PM.cityZone && home ? PM.cityZone(g, home, z) : T.scopeZone(g, z)) || { pop: m.zPop[z], coverage: acc.zCov[z] || 0, openFraction: 1 }; };
+    const roadShare = function (link) { return PM && PM.roadShare && home ? PM.roadShare(g, link.id, home) : T.scopeRoadShare(g, link); };
     used = {};
     // 回复里用到的小工具：片区最近的运营车站、车站的线路、道路的早高峰拥堵指数
-    const nearSt = function (z) { const cells = m.zoneCells[z] || []; let x = 0, y = 0; for (const c of cells) { x += c % g.city.W + 0.5; y += Math.floor(c / g.city.W) + 0.5; } if (!cells.length) return null; x /= cells.length; y /= cells.length; let best = null, bd = 1e9; C.stations.forEach(function (s, k) { if (!C.serviced[k]) return; const dd = U.dist(s.x, s.y, x, y); if (dd < bd) { bd = dd; best = s.name; } }); return best ? { name: best, km: bd * CFG.CELL_M / 1000 } : null; };
-    const lineNames = function (i) { return Array.from(C.stationLines[i] || []).map(function (l) { return g.net.lines[l] ? g.net.lines[l].name : ''; }).filter(Boolean); };
-    const roadCi = function (name) { const Pw = m.resultsFor('wd').per[0]; let num = 0, den = 0; for (const L of m.road.links) { if (L.name !== name) continue; for (let k = 0; k < 2; k++) { const a = 2 * L.id + k, v = Pw.arcVol[a]; num += v * L.lenM * Pw.arcTime[a] / m.road.arcT0[a]; den += v * L.lenM; } } return den > 0 ? num / den : 1; };
+    const nearSt = function (z) { const cells = m.zoneCells[z] || []; let x = 0, y = 0, n = 0; for (const c of cells) { if (!homeCell(c)) continue; x += c % g.city.W + 0.5; y += Math.floor(c / g.city.W) + 0.5; n++; } if (!n) return null; x /= n; y /= n; let best = null, bd = 1e9; C.stations.forEach(function (s, k) { if (!openStation(s, k)) return; const dd = U.dist(s.x, s.y, x, y); if (dd < bd) { bd = dd; best = s.name; } }); return best ? { name: best, km: bd * CFG.CELL_M / 1000 } : null; };
+    const lineNames = function (i) { return Array.from(C.stationLines[i] || []).map(function (l) { return own(g.net.lines[l]) ? g.net.lines[l].name : ''; }).filter(Boolean); };
+    const roadCi = function (name) { const Pw = m.resultsFor('wd').per[0]; let num = 0, den = 0; for (const L of m.road.links) { if (L.name !== name) continue; const w = roadShare(L); if (!(w > 0)) continue; for (let k = 0; k < 2; k++) { const a = 2 * L.id + k, v = Pw.arcVol[a]; num += v * L.lenM * Pw.arcTime[a] / m.road.arcT0[a] * w; den += v * L.lenM * w; } } return den > 0 ? num / den : 1; };
     // dd：可附的随手涂鸦（话题与图上的文字），约四成动态带图，按动态固定
     // meta：回复里引用的模拟数据（客流、负荷、步行距离等），见 Voices.replies
     // 发帖人的身份按话题与地点（道路、线路、设施）固定：同一片区、同一座车站的市民每月都是同一个人，可以关注（v2.3）
@@ -68,44 +75,44 @@
     };
     // 片区覆盖：人口多但步行 15 分钟内没有车站
     const gaps = [];
-    for (let z = 0; z < m.Z; z++) if (m.zPop[z] > 6000 && (acc.zCov[z] || 0) < 0.15) gaps.push(z);
-    gaps.sort(function (a, b) { return m.zPop[b] - m.zPop[a]; });
-    for (const z of gaps.slice(0, 3)) { const p = g.zoneName(z).replace(/（.*?）/, '').replace(/一带$/, ''); post('bad', 'cover', fill(say(SAY.cover, z + ym), { p: p }), m.zPop[z], { zone: z }, ['覆盖'], p, null, ['cover'], { p: p, pop: m.zPop[z], near: nearSt(z) }); }
+    for (let z = 0; z < m.Z; z++) { const local = zoneData(z); if (local.openFraction > 0 && local.pop > 6000 && local.coverage < .15) gaps.push(z); }
+    gaps.sort(function (a, b) { return zoneData(b).pop - zoneData(a).pop; });
+    for (const z of gaps.slice(0, 3)) { const p = g.zoneName(z).replace(/（.*?）/, '').replace(/一带$/, ''); post('bad', 'cover', fill(say(SAY.cover, z + ym), { p: p }), zoneData(z).pop, { zone: z }, ['覆盖'], p, null, ['cover'], { p: p, pop: zoneData(z).pop, near: nearSt(z) }); }
     // 新开车站（近 6 个月）
     const fresh = [];
-    C.stations.forEach(function (s, i) { const st = g.net.stations[s.id]; if (st && st.built && ym - U.ymIndex(st.built[0], st.built[1]) <= 6 && C.serviced[i]) fresh.push(i); });
+    C.stations.forEach(function (s, i) { const st = g.net.stations[s.id]; if (st && st.built && ym - U.ymIndex(st.built[0], st.built[1]) <= 6 && openStation(s, i)) fresh.push(i); });
     fresh.sort(function (a, b) { return (sd ? sd.inn[b] : 0) - (sd ? sd.inn[a] : 0); });
     for (const i of fresh.slice(0, 3)) { const s = C.stations[i]; post('good', 'newst', fill(say(SAY.newst, hash(s.id) + ym), { s: s.name }), sd ? sd.inn[i] : 2000, { station: s.id }, ['新站'], s.name, null, ['newst', { s: s.name }], { s: s.name, flow: sd ? sd.inn[i] + sd.out[i] : 0, lines: lineNames(i) }); }
     // 站外换乘：步行超过 250 m
-    const xs = acc.transfers.filter(function (t) { return t.a < t.b && t.m > 250; }).sort(function (a, b) { return b.m - a.m; });
+    const xs = acc.transfers.filter(function (t) { return t.a < t.b && t.m > 250 && openStation(C.stations[t.a], t.a) && openStation(C.stations[t.b], t.b); }).sort(function (a, b) { return b.m - a.m; });
     for (const t of xs.slice(0, 2)) { const a = C.stations[t.a], b = C.stations[t.b], flow = sd ? sd.xfer[t.a] + sd.xfer[t.b] : 1000; post(hash(a.id) % 3 ? 'bad' : 'idea', 'xfer', fill(say(SAY.xfer, hash(a.id + b.id) + ym), { s: a.name, t: b.name, m: Math.round(t.m) }), flow + 800, { station: a.id }, ['换乘'], a.name, null, ['xfer', { s: a.name, t: b.name, m: Math.round(t.m) }], { s: a.name, t: b.name, m: Math.round(t.m), xf: flow }); }
     // 天地换乘（不同层站台）
-    C.stations.forEach(function (s, i) { const lv = C.stLevels && C.stLevels[i]; if (lv && lv.length > 1 && sd && sd.xfer[i] > 3000 && out.filter(function (p) { return p.topic === 'xfer'; }).length < 3) post('bad', 'xfer', fill(say(SAY.level, hash(s.id) + ym), { s: s.name }), sd.xfer[i], { station: s.id }, ['换乘'], s.name, null, ['level'], { s: s.name, xf: sd.xfer[i], levels: true }); });
+    C.stations.forEach(function (s, i) { const lv = C.stLevels && C.stLevels[i]; if (openStation(s, i) && lv && lv.length > 1 && sd && sd.xfer[i] > 3000 && out.filter(function (p) { return p.topic === 'xfer'; }).length < 3) post('bad', 'xfer', fill(say(SAY.level, hash(s.id) + ym), { s: s.name }), sd.xfer[i], { station: s.id }, ['换乘'], s.name, null, ['level'], { s: s.name, xf: sd.xfer[i], levels: true }); });
     // 车站高峰拥挤
     if (sd) {
       const crowd = [];
-      C.stations.forEach(function (s, i) { const r = (sd.peak[i] || 0) / CM.Metro.stationCapacity(s); if (r > 0.9) crowd.push([i, r]); });
+      C.stations.forEach(function (s, i) { if (!openStation(s, i)) return; const r = (sd.peak[i] || 0) / CM.Metro.stationCapacity(s); if (r > 0.9) crowd.push([i, r]); });
       crowd.sort(function (a, b) { return b[1] - a[1]; });
       for (const c of crowd.slice(0, 2)) { const s = C.stations[c[0]]; post('bad', 'crowd', fill(say(SAY.crowd, hash(s.id) + ym), { s: s.name }), sd.inn[c[0]] + sd.out[c[0]], { station: s.id }, ['拥挤'], s.name, null, ['crowd', { s: s.name }], { s: s.name, peak: sd.peak[c[0]], cap: CM.Metro.stationCapacity(s), size: s.size }); }
     }
     // 线路：最挤的区段与表现好的线路
-    const lc = CM.Tasks ? CM.Tasks.crowdOf(g) : [], ls = CM.Tasks ? CM.Tasks.lineStats(g) : new Map();
+    const lc = CM.Tasks ? CM.Tasks.crowdOf(g, home) : [], ls = CM.Tasks ? CM.Tasks.lineStats(g) : new Map();
     for (const x of lc) {
-      const L = g.net.lines[x.lid], a = C.stations[x.a], b = C.stations[x.b]; if (!L || !a || !b) continue;
+      const L = g.net.lines[x.lid], a = C.stations[x.a], b = C.stations[x.b]; if (!own(L) || !a || !b || !openStation(a, x.a) || !openStation(b, x.b)) continue;
       const riders = (ls.get(x.lid) || {}).riders || 0;
       if (x.lf > 1) post('bad', 'crowd', fill(say(SAY.linecrowd, hash(x.lid) + ym), { l: L.name, s: a.name, t: b.name }), riders, { line: x.lid }, ['拥挤', L.name], '', null, ['crowd', { s: a.name }], { l: L.name, s: a.name, t: b.name, lf: x.lf, riders: riders });
       else if (x.lf < 0.75 && riders > 20000 && out.filter(function (p) { return p.topic === 'line'; }).length < 2) post('good', 'line', fill(say(SAY.linegood, hash(x.lid) + ym), { l: L.name, s: a.name, t: b.name }), riders / 2, { line: x.lid }, [L.name], '', null, ['line', { l: L.name }], { l: L.name, riders: riders, lf: x.lf });
     }
     // 票价负担（与满意度同一公式）
-    const sf = g.econ.satFactors, d = m.daily || {};
+    const sf = g.econ.satFactors;
     const fv = sf ? (sf.factors.find(function (f) { return /票价负担/.test(f.label); }) || {}).v || 0 : 0;
     if (fv < -1.5 && d.metro > 0) { const f2 = U.cur(d.avgFare * 2).toFixed(1); post('bad', 'fare', fill(say(SAY.fare, ym), { f: f2 + ' ' + CFG.money.unit }), d.metro * 0.3, null, ['票价'], '', null, ['fare', { f: f2 }], { f: U.cur(d.avgFare).toFixed(2) }); }
     // 道路拥堵：工作日早高峰最拥堵的主要道路（按拥堵车公里）
     const road = m.road, P = m.resultsFor('wd').per[0], byName = new Map();
-    for (const L of road.links) { if (!L.name || L.cls < 3) continue; for (let k = 0; k < 2; k++) { const a = 2 * L.id + k, x = P.arcTime[a] / road.arcT0[a]; if (x < 1.35) continue; byName.set(L.name, (byName.get(L.name) || 0) + P.arcVol[a] * L.lenM / 1000 * (x - 1)); } }
+    for (const L of road.links) { if (!L.name || L.cls < 3) continue; const w = roadShare(L); if (!(w > 0)) continue; for (let k = 0; k < 2; k++) { const a = 2 * L.id + k, x = P.arcTime[a] / road.arcT0[a]; if (x < 1.35) continue; byName.set(L.name, (byName.get(L.name) || 0) + P.arcVol[a] * L.lenM / 1000 * (x - 1) * w); } }
     Array.from(byName.entries()).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 2).forEach(function (e) { const name = g.city.roadNames[e[0]]; if (name) post('bad', 'road', fill(say(SAY.road, hash(name) + ym), { r: name }), e[1] * 2, { road: name }, ['堵车'], '', null, ['road', { r: name }], { r: name, ci: roadCi(e[0]) }); });
     const ir = g.impactReport;
-    if (ir && ir.status === 'done' && ym - U.ymIndex(ir.at[0], ir.at[1]) <= 3) {
+    if (ir && ir.status === 'done' && (!scoped || ir.draft.scopeKey === d.scopeKey && ir.base.scopeKey === d.scopeKey) && ym - U.ymIndex(ir.at[0], ir.at[1]) <= 3) {
       if (ir.roads && ir.roads.length) post('good', 'road', fill(SAY.roadok[0], { r: ir.roads[0].name }), 6000, { road: ir.roads[0].name }, ['堵车'], '', null, ['roadok'], { r: ir.roads[0].name, ok: true });
       const ds = (ir.draft.metroShare - ir.base.metroShare) * 100;
       if (ds > 0.2) post('good', 'line', fill(say(SAY.impact, ym), { d: U.fmtNum(ds, 1) + ' 个百分点' }), ir.draft.metro - ir.base.metro, null, ['新线'], '', null, ['impact'], { share: ir.draft.metroShare, add: ir.draft.metro - ir.base.metro });
@@ -113,13 +120,13 @@
     // 重要设施：到访量大但乘地铁比例很低
     if (m.fn && CM.Tasks) {
       const fs = [];
-      for (const f of m.fn.list) { if (f.T.hub) continue; const r = CM.Tasks.facShareOf(m, f, CM.Tasks.facBasis(f)); if (r && r.vol > 4000 && r.share < 0.08) fs.push([f, r.vol, r.share]); }
+      for (const f of m.fn.list) { if (f.T.hub || !homeCell(g.city.cellAt(f.x, f.y)) || !T.facServable(g.city, f)) continue; const r = CM.Tasks.facShareOf(m, f, CM.Tasks.facBasis(f)); if (r && r.vol > 4000 && r.share < 0.08) fs.push([f, r.vol, r.share]); }
       fs.sort(function (a, b) { return b[1] - a[1]; });
       for (const x of fs.slice(0, 2)) post('idea', 'fac', fill(say(SAY.fac, hash(x[0].id) + ym), { x: x[0].name }), x[1], { fac: x[0].id }, ['接驳'], '', FAC_ROLE[x[0].t], ['fac', { x: short(x[0].name) }], { x: short(x[0].name), vol: x[1], share: x[2] });
     }
     // 总体口碑
-    if (g.econ.sat >= 75) post('good', 'city', pick(SAY.sathigh, ym), 5000, null, ['点赞'], CM.DATA.city, null, ['line', {}], { sat: g.econ.sat, share: d.metroShare || 0 });
-    else if (g.econ.sat < 45) post('bad', 'city', pick(SAY.satlow, ym), 5000, null, ['建议'], CM.DATA.city, null, null, { sat: g.econ.sat, share: d.metroShare || 0 });
+    if (g.econ.sat >= 75) post('good', 'city', pick(SAY.sathigh, ym), 5000, null, ['点赞'], d.cityName || CM.DATA.city, null, ['line', {}], { sat: g.econ.sat, share: d.metroShare || 0 });
+    else if (g.econ.sat < 45) post('bad', 'city', pick(SAY.satlow, ym), 5000, null, ['建议'], d.cityName || CM.DATA.city, null, null, { sat: g.econ.sat, share: d.metroShare || 0 });
     out.sort(function (a, b) { return b.likes - a.likes; });
     const list = out.slice(0, 14);
     // 配图：按动态固定约三成带图，同一种涂鸦只出现一次；靠前的几条里至少一条带图
@@ -127,7 +134,7 @@
     for (const p of list) if (p.dd && p.id % 10 < 4 && !usedPic.has(p.dd[0])) { p.pic = p.dd; usedPic.add(p.dd[0]); }
     if (!list.slice(0, 4).some(function (p) { return p.pic; })) { const f = list.slice(0, 4).find(function (p) { return p.dd; }); if (f) f.pic = f.dd; }
     archive(g, list);
-    Voices.cache = { g: g, key: key, list: list };
+    Voices.cache = { g: g, key: key, publication: publication, daily: d, list: list };
     return list;
   };
   // 关注市民（v2.3）：关注后，他们每月的新动态存进存档（每人最多 12 条），在「关注」里随时回看；随存档保存
@@ -315,7 +322,9 @@
     const toggle = function (set, p, el, base) { if (set.has(p.id)) set.delete(p.id); else set.add(p.id); const on = set.has(p.id); sfx(on ? (set === liked ? 'like' : 'repost') : 'tap'); el.classList.toggle('on', on); el.querySelector('.vx-n').textContent = num(base + (on ? 1 : 0)); if (on) el.classList.add('pop'); setTimeout(function () { el.classList.remove('pop'); }, 400); };
     // 运营方置顶：本月满意度、最认可与最需改进的方面，以及由满意度推算的投票结果
     const official = function () {
-      const sat = g.econ.sat, hist = g.history, prev = hist.length > 1 ? hist[hist.length - 2].sat : null, sf = g.econ.satFactors, fs = sf ? sf.factors : [];
+      const sat = g.econ.sat, hist = g.history, sf = g.econ.satFactors, fs = sf ? sf.factors : [], record = hist.length > 1 ? hist[hist.length - 2] : null;
+      const scoped = CM.PlayerMetrics && CM.PlayerMetrics.enabled(g), satKey = g.econ.satScope && g.econ.satScope.scopeKey;
+      const prev = record && (!scoped || record.satCityId === (sf && sf.cityId) && record.satScopeKey === satKey && !!satKey) ? record.sat : null;
       const pos = fs.filter(function (f) { return f.v > 0.3; }).sort(function (a, b) { return b.v - a.v; })[0], neg = fs.filter(function (f) { return f.v < -0.3; }).sort(function (a, b) { return a.v - b.v; })[0];
       // 分句各成一段文字（英文界面按整句翻译）
       const parts = ['你对本月的地铁服务满意吗？', '本月乘客满意度 ' + Math.round(sat) + ' 分' + (prev != null && Math.abs(sat - prev) >= 0.5 ? '，比上月' + (sat > prev ? '上升 ' : '下降 ') + U.fmtNum(Math.abs(sat - prev), 1) + ' 分' : '') + '。'];
@@ -323,7 +332,7 @@
       if (neg) parts.push('最需要改进：' + clean(neg.label) + '。');
       parts.push('感谢每一位乘客的反馈！');
       let ps = U.clamp((sat - 35) / 55, 0.05, 0.9), pb = U.clamp((65 - sat) / 55, 0.04, 0.9), pm = Math.max(0.06, 1 - ps - pb); const t = ps + pb + pm; ps /= t; pb /= t; pm /= t;
-      const mx = Math.max(ps, pm, pb), votes = Math.max(120, Math.round((((g.model.daily && g.model.daily.metro) || 0)) / 40));
+      const mx = Math.max(ps, pm, pb), votes = Math.max(120, Math.round((CM.Tasks.scopedDaily(g).metro || 0) / 40));
       const poll = h('div', { class: 'vx-poll' }, [['满意', ps], ['一般', pm], ['不满意', pb]].map(function (o) {
         return h('div', { class: 'vx-opt' + (o[1] >= mx - 1e-9 ? ' top' : '') }, h('i', { style: { width: (o[1] * 100).toFixed(1) + '%' } }), h('span', null, o[0]), h('b', null, U.fmtPct(o[1], 0)));
       }), h('small', null, num(votes) + ' 票 · 本月结果'));
@@ -331,7 +340,7 @@
         h('div', { class: 'vx-pin' }, ic('pin', 13), '置顶'),
         h('span', { class: 'vx-ava', style: { background: 'var(--accent)' } }, ic('metro', 20)),
         h('div', { class: 'vx-body' },
-          h('div', { class: 'vx-who' }, h('b', null, CM.DATA.city + '地铁'), h('span', { class: 'vx-vb', html: XI.verified }), h('span', { class: 'vx-hd' }, '@metro_official · ' + g.clock.m + '月' + Math.max(1, g.clock.d - 1) + '日')),
+          h('div', { class: 'vx-who' }, h('b', null, (CM.Tasks.scopedDaily(g).cityName || CM.DATA.city) + '地铁'), h('span', { class: 'vx-vb', html: XI.verified }), h('span', { class: 'vx-hd' }, '@metro_official · ' + g.clock.m + '月' + Math.max(1, g.clock.d - 1) + '日')),
           h('p', { class: 'vx-text' }, parts.map(function (s, i) { return i ? [sp, s] : s; })), poll));
     };
     const postEl = function (p, isNew) {
@@ -549,7 +558,7 @@
     const v = Math.round(sat) + '';
     b.setAttribute('aria-label', (CM.I18n ? CM.I18n.text('满意度') : '满意度') + ' ' + v + ' · ' + (CM.I18n ? CM.I18n.text('乘客满意度与乘客之声') : '乘客满意度与乘客之声'));
     if (b._v !== v) { b._v = v; b.querySelector('.sd-v').textContent = v; }
-    if ((!CM.Voices.cache || CM.Voices.cache.g !== g) && !g.jumping && g.model.trafficReady()) { try { CM.Voices.generate(g); } catch (e) { console.error(e); } }
+    if (!g.jumping && g.model.trafficReady()) { try { CM.Voices.generate(g); } catch (e) { console.error(e); } }
     const C = CM.Voices.cache, unseen =C && C.g === g && (!this.voSeen || this.voSeen.g !== g || this.voSeen.key !== C.key) ? C.list.filter(function (p) { return p.kind === 'bad'; }).length : 0;
     const dot = b.querySelector('.sd-dot'); dot.textContent = unseen ? String(unseen) : ''; dot.style.display = unseen ? '' : 'none';
   };

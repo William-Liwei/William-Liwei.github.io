@@ -39,6 +39,8 @@
     this.failed = null;
     this.lastDay = null;
     this.satFactors = null;
+    this.satScope = null;      // 玩家考核口径与保护期；范围变化和未发布数据不能延续旧口径的低满意度处罚
+    this.satCities = {};       // 各城市独立观察记录；主经营城市同步到 sat，其他城市只供参考
     this.fisc = null;          // 财力系数 { y, f }（城市经济每年 1 月设定）
     this.quoteFn = null;       // 新发债券的利率报价（城市经济提供；不保存）
   }
@@ -205,30 +207,171 @@
     return this.cur;
   };
 
-  // 满意度（0–100）：通勤、覆盖、拥堵、票价负担、拥挤。daily 为周平均日（5 个工作日 + 2 个周末日加权），
-  // 通勤时间按工作日（model.dailyWk）；opts.protect：交通模型升级过渡期，满意度不下降
-  Economy.prototype.updateSatisfaction = function (daily, model, y, m, opts) {
-    if (!daily || !daily.ready) return;
-    const vot = U.interp(CFG.choice.vot, y);
-    const wk = model && model.dailyWk && model.dailyWk.ready ? model.dailyWk : daily;
-    const f = [];
-    f.push({ label: '平均通勤时间（工作日 ' + Math.round(wk.commute) + ' 分钟）', v: 14 * U.clamp((40 - wk.commute) / 15, -1, 1) });
+  // 满意度（0–100）：通勤、覆盖、拥堵、票价负担、拥挤。玩家口径必须完整使用同一范围的已发布结果，
+  // 包括工作日通勤；不能在局部结果未发布时退回全域数据。
+  function satisfactionReady(daily, wk, scoped) {
+    return !!(daily && daily.ready && wk && wk.ready &&
+      (!scoped || daily.hasPopulation !== false && !(Number.isFinite(daily.pop) && daily.pop <= 0)) &&
+      ['coverage', 'cong', 'metro', 'avgFare', 'crowdShare'].every(k => Number.isFinite(daily[k])) && Number.isFinite(wk.commute));
+  }
+  function satisfactionScore(econ, daily, wk, y, m) {
+    const vot = U.interp(CFG.choice.vot, y), ym = U.ymIndex(y, m), f = [];
+    const noCommute = Number.isFinite(wk.commTrips) && wk.commTrips <= 0;
+    f.push({ label: noCommute ? '平均通勤时间（工作日无通勤出行）' : '平均通勤时间（工作日 ' + Math.round(wk.commute) + ' 分钟）', v: noCommute ? 0 : 14 * U.clamp((40 - wk.commute) / 15, -1, 1) });
     f.push({ label: '地铁覆盖（' + U.fmtPct(daily.coverage, 0) + ' 人口）', v: 12 * U.clamp(daily.coverage / 0.5, 0, 1) });
     f.push({ label: '道路拥堵（周平均指数 ' + daily.cong.toFixed(2) + '）', v: -14 * U.clamp((daily.cong - 1.25) / 0.8, 0, 1) });
     const burden = daily.metro > 1 ? daily.avgFare / (vot * 0.35) : 0;
     f.push({ label: '票价负担（平均 ' + U.cur(daily.avgFare).toFixed(U.cur(daily.avgFare) < 10 ? 2 : 1) + ' ' + CFG.money.unit + '）', v: -9 * U.clamp((burden - 1) / 2, 0, 1) });
     f.push({ label: '车厢拥挤（周平均超载客公里 ' + U.fmtPct(daily.crowdShare, 0) + '）', v: -9 * U.clamp(daily.crowdShare / 0.25, 0, 1) });
-    const ym = U.ymIndex(y, m);
-    for (const md of this.mods) if (md.kind === 'sat' && md.until >= ym) f.push({ label: md.reason, v: md.delta });
-    // 历史事件的满意度效果（v2.2，如大型国际活动），按时间计算
-    if (CM.Eras) for (const x of CM.Eras.satBonus(y + (m - 1) / 12)) if (Math.abs(x.v) > 0.05) f.push({ label: x.label, v: x.v });
+    for (const md of econ.mods) if (md.kind === 'sat' && md.until >= ym && (!md.cityId || !daily.cityId || md.cityId === daily.cityId)) f.push({ label: md.reason, v: md.delta });
+    if (econ._satEraBonus !== false && CM.Eras) for (const x of CM.Eras.satBonus(y + (m - 1) / 12)) if (Math.abs(x.v) > 0.05) f.push({ label: x.label, v: x.v });
     let target = 55;
     for (const x of f) target += x.v;
-    target = U.clamp(target, 0, 100);
-    const next = U.clamp(this.sat + (target - this.sat) * 0.25, 0, 100);
-    const prot = !!(opts && opts.protect) && next < this.sat;
-    this.sat = prot ? this.sat : next;
-    this.satFactors = { base: 55, factors: f, target: target, basis: 'avg', protected: prot };
+    const score = { base: 55, factors: f, target: U.clamp(target, 0, 100), basis: 'avg' };
+    if (daily.cityId) Object.assign(score, { cityId: daily.cityId, cityName: daily.cityName || daily.cityId });
+    if (daily.scopeKey) Object.assign(score, { scopeKey: daily.scopeKey, scopeLabel: daily.scopeLabel });
+    return score;
+  }
+  // 纯城市目标函数：NPC 可共用交通公式，但不会借用玩家任务或主城历史事件的奖励/处罚。
+  Economy.cityTarget = function (daily, y, m, opts) {
+    if (!satisfactionReady(daily, daily && daily.dailyWk, true)) return null;
+    return satisfactionScore({ mods: opts && Array.isArray(opts.mods) ? opts.mods : [], _satEraBonus: !!(opts && opts.eraBonus) }, daily, daily.dailyWk, y, m);
+  };
+  // 新局仅记录口径；旧档由 Game.restore 显式迁移，避免正常读档重复恢复满意度。
+  // 历史现金、票款和债务不重算。仅旧口径的满意度失败可以解除，资金失败继续保留。
+  Economy.prototype.migratePlayerScope = function (daily, ym, opts) {
+    if (!daily || typeof daily.scopeKey !== 'string' || !daily.scopeKey) return false;
+    const created = !this.satScope;
+    if (created) this.satScope = { rev: 1, scopeKey: daily.scopeKey, since: ym, protectUntil: ym, pending: !satisfactionReady(daily, daily.dailyWk, true), legacy: !!(opts && opts.legacy) };
+    const s = this.satScope;
+    if (daily.cityId) { s.cityId = daily.cityId; s.cityName = daily.cityName || daily.cityId; }
+    if (!s.legacy) return false;
+    s.pending = !satisfactionReady(daily, daily.dailyWk, true);
+    if (s.pending) {
+      this.satFactors = { base: 55, factors: [], target: this.sat, basis: 'avg', metricScope: 'player', scopeKey: daily.scopeKey,
+        scopeLabel: daily.scopeLabel, cityId: daily.cityId, cityName: daily.cityName, protected: true, pending: true };
+      return created;
+    }
+    const score = satisfactionScore(this, daily, daily.dailyWk, Math.floor(ym / 12), ym % 12 + 1);
+    this.sat = Math.max(Number.isFinite(this.sat) ? this.sat : 0, Math.min(CFG.economy.startSat, score.target));
+    this.lowSatMonths = 0;
+    if (this.failed && Array.isArray(this.failed.reasons) && this.failed.reasons.length && this.failed.reasons.every(r => /^居民满意度/.test(r))) this.failed = null;
+    Object.assign(s, { scopeKey: daily.scopeKey, since: ym, protectUntil: ym + 2, pending: false, legacy: false, recoveredAt: ym });
+    this.satFactors = Object.assign(score, { metricScope: 'player', scopeKey: daily.scopeKey, scopeLabel: daily.scopeLabel, protected: true, pending: false, migrated: true });
+    return true;
+  };
+  Economy.prototype.satisfactionProtected = function (ym) {
+    const s = this.satScope;
+    return s ? !!(s.pending || Number.isFinite(s.protectUntil) && ym <= s.protectUntil) : !!(this.satFactors && this.satFactors.metricScope === 'player' && this.satFactors.pending);
+  };
+  // daily 为周平均日，通勤按工作日；opts.protect 为交通模型升级过渡保护。
+  Economy.prototype.updateSatisfaction = function (daily, model, y, m, opts) {
+    const scoped = !!(opts && opts.scoped || daily && daily.scopeKey), ym = U.ymIndex(y, m);
+    const wk = scoped ? daily && daily.dailyWk : model && model.dailyWk && model.dailyWk.ready ? model.dailyWk : daily;
+    if (scoped && daily && daily.scopeKey) this.migratePlayerScope(daily, ym);
+    if (!satisfactionReady(daily, wk, scoped) || scoped && !(daily && daily.scopeKey)) {
+      if (scoped) {
+        if (this.satScope) this.satScope.pending = true;
+        this.satFactors = { base: 55, factors: [], target: this.sat, basis: 'avg', metricScope: 'player', pending: true,
+          protected: true, scopeKey: daily && daily.scopeKey || null, scopeLabel: daily && daily.scopeLabel,
+          cityId: daily && daily.cityId, cityName: daily && daily.cityName };
+      }
+      return false;
+    }
+    if (scoped) {
+      if (this.satScope.scopeKey !== daily.scopeKey) {
+        this.satScope.scopeKey = daily.scopeKey;
+        this.satScope.since = ym;
+        this.satScope.protectUntil = Math.max(this.satScope.protectUntil || ym, ym);
+        this.lowSatMonths = 0;
+      }
+      this.satScope.pending = false;
+    }
+    const score = satisfactionScore(this, daily, wk, y, m);
+    const next = U.clamp(this.sat + (score.target - this.sat) * 0.25, 0, 100);
+    const prot = !!(opts && opts.protect) || scoped && this.satisfactionProtected(ym);
+    this.sat = prot ? Math.max(this.sat, next) : next;
+    this.satFactors = Object.assign(score, { protected: prot });
+    if (scoped) Object.assign(this.satFactors, { metricScope: 'player', scopeKey: daily.scopeKey, scopeLabel: daily.scopeLabel, pending: false });
+    return true;
+  };
+
+  const validSatCity = id => typeof id === 'string' && /^[a-z0-9_-]{1,24}$/.test(id) && !['__proto__', 'constructor', 'prototype'].includes(id);
+  const hasSatPopulation = d => !!(d && d.hasPopulation !== false && !(Number.isFinite(d.pop) && d.pop <= 0));
+  function cityAssessment(e, id, name, lastYM) {
+    return { cityId: id, cityName: name || id, sat: e.sat, satFactors: e.satFactors, satScope: e.satScope, lastYM: Number.isFinite(lastYM) ? lastYM : null };
+  }
+  function cityAssessmentView(e, id, row) {
+    const view = Object.create(Economy.prototype);
+    Object.assign(view, { sat: row ? row.sat : CFG.economy.startSat, satFactors: row && row.satFactors || null,
+      satScope: row && row.satScope || null, lowSatMonths: 0, failed: null,
+      mods: e.mods.filter(md => md.cityId === id), _satEraBonus: false });
+    return view;
+  }
+  function cityAssessmentIds(g) {
+    const P = CM.PlayerMetrics, home = P.homeCity(g);
+    return Array.from(new Set([home].concat(P.cityIds(g)))).filter(validSatCity).slice(0, 8);
+  }
+  function storeCityAssessment(e, id, row) {
+    if (!e.satCities) e.satCities = {};
+    if (Object.prototype.hasOwnProperty.call(e.satCities, id) || Object.keys(e.satCities).length < 8) e.satCities[id] = row;
+  }
+  // 开局/读档仅建立各城观察记录。旧档只补偿主经营城市；其余城市从 60 分开始，
+  // 不把全域或其他城市的分数继承过来。完整记录不会因预览或反复读档重复计分。
+  Economy.prototype.migrateCitySatisfaction = function (g, ym, opts) {
+    const P = CM.PlayerMetrics;
+    if (!P || !P.enabled(g) || !P.city || !P.cityIds || !P.homeCity) return false;
+    const home = P.homeCity(g); let migrated = false;
+    if (!this.satCities) this.satCities = {};
+    for (const id of cityAssessmentIds(g)) {
+      const d = P.city(g, id), row = this.satCities[id], primary = id === home;
+      if (!hasSatPopulation(d)) {
+        if (primary) this.updateSatisfaction(d, g.model, Math.floor(ym / 12), ym % 12 + 1, { scoped: true });
+        continue;
+      }
+      if (row && !(row.satScope && row.satScope.legacy)) {
+        if (primary) Object.assign(this, { sat: row.sat, satFactors: row.satFactors, satScope: row.satScope });
+        continue;
+      }
+      const e = primary ? this : cityAssessmentView(this, id, row);
+      if (primary && !row && e.satScope && e.satScope.cityId !== id) e.satScope = null;
+      const changed = e.migratePlayerScope(d, ym, { legacy: primary && !!(opts && opts.legacy) });
+      if (primary) migrated = changed || migrated;
+      const ready = satisfactionReady(d, d.dailyWk, true);
+      if (!e.satFactors || e.satFactors.cityId !== id) {
+        const score = ready ? satisfactionScore(e, d, d.dailyWk, Math.floor(ym / 12), ym % 12 + 1) : { base: 55, factors: [], target: e.sat, basis: 'avg' };
+        e.satFactors = Object.assign(score, { metricScope: 'player', cityId: id, cityName: d.cityName || id, scopeKey: d.scopeKey,
+          scopeLabel: d.scopeLabel, protected: true, pending: !ready });
+      }
+      storeCityAssessment(this, id, cityAssessment(e, id, d.cityName, ready ? ym : null));
+    }
+    return migrated;
+  };
+  // 每城每月最多更新一次。重复绘制/预览只读取记录；其他城市的分数不进入本公司的
+  // 拨款、失败判定或主城满意度。新城市仅在本城已有可经营人口时建立记录。
+  Economy.prototype.updateCitySatisfaction = function (g, y, m, opts) {
+    const P = CM.PlayerMetrics;
+    if (!P || !P.enabled(g)) return this.updateSatisfaction(g.model.daily, g.model, y, m, opts);
+    if (!P.city || !P.cityIds || !P.homeCity) return this.updateSatisfaction(null, g.model, y, m, { scoped: true });
+    const home = P.homeCity(g), ym = U.ymIndex(y, m); let changed = false;
+    if (!this.satCities) this.satCities = {};
+    for (const id of cityAssessmentIds(g)) {
+      const d = P.city(g, id), row = this.satCities[id], primary = id === home;
+      if (!hasSatPopulation(d)) {
+        if (primary) this.updateSatisfaction(d, g.model, y, m, { scoped: true });
+        continue;
+      }
+      if (row && row.lastYM === ym) {
+        if (primary) Object.assign(this, { sat: row.sat, satFactors: row.satFactors, satScope: row.satScope });
+        continue;
+      }
+      const e = primary ? this : cityAssessmentView(this, id, row);
+      if (primary && row) Object.assign(e, { sat: row.sat, satFactors: row.satFactors, satScope: row.satScope });
+      const updated = e.updateSatisfaction(d, g.model, y, m, { scoped: true, protect: !!(opts && opts.protect) });
+      storeCityAssessment(this, id, cityAssessment(e, id, d.cityName, updated ? ym : row && row.lastYM));
+      if (primary) changed = updated;
+    }
+    return changed;
   };
 
   // 失败判定（仅经营挑战）。protect：交通模型升级过渡期，满意度不足的月数不累计
@@ -237,11 +380,12 @@
     const E = CFG.economy;
     const limit = E.debtLimit * this.costIndex(y);
     this.negMonths = this.funds < 0 ? this.negMonths + 1 : 0;
-    this.lowSatMonths = this.sat < E.satFail ? (protect ? this.lowSatMonths : this.lowSatMonths + 1) : 0;
+    const satProtect = protect || this.satisfactionProtected(U.ymIndex(this.cur.y, this.cur.m));
+    this.lowSatMonths = this.sat < E.satFail ? (satProtect ? this.lowSatMonths : this.lowSatMonths + 1) : 0;
     const reasons = [];
     if (this.funds < limit) reasons.push('资金低于负债下限（' + U.fmtMoney(this.funds) + '，下限 ' + U.fmtMoney(limit) + '）');
     if (this.negMonths >= E.negMonthsLimit) reasons.push('连续 ' + this.negMonths + ' 个月负余额（上限 ' + E.negMonthsLimit + ' 个月）');
-    if (this.lowSatMonths >= E.satFailMonths) reasons.push('居民满意度连续 ' + this.lowSatMonths + ' 个月低于 ' + E.satFail + '，交通持续恶化');
+    if (!satProtect && this.lowSatMonths >= E.satFailMonths) reasons.push('居民满意度连续 ' + this.lowSatMonths + ' 个月低于 ' + E.satFail + '，交通持续恶化');
     if (reasons.length) { this.failed = { reasons: reasons, funds: this.funds }; return this.failed; }
     return null;
   };
@@ -471,7 +615,8 @@
   };
 
   Economy.prototype.serialize = function () {
-    return { mode: this.mode, funds: this.funds, fare: this.fare, cur: this.cur, ledger: this.ledger, sat: this.sat, mods: this.mods, negMonths: this.negMonths, lowSatMonths: this.lowSatMonths, failed: this.failed, satFactors: this.satFactors, lastDay: this.lastDay,
+    return { mode: this.mode, funds: this.funds, fare: this.fare, cur: this.cur, ledger: this.ledger, sat: this.sat, mods: this.mods, negMonths: this.negMonths, lowSatMonths: this.lowSatMonths, failed: this.failed, satFactors: this.satFactors, satScope: this.satScope || undefined,
+      satCities: this.satCities && Object.keys(this.satCities).length ? this.satCities : undefined, lastDay: this.lastDay,
       capex: this.capex, bonds: this.bonds, bondIssued: this.bondIssued, overdue: this.overdue, overdueParts: this.overdueParts || null, overdueMonths: this.overdueMonths, flow: this.flow, bondSeq: this.bondSeq, svc: this._svc == null ? null : this._svc,
       fisc: this.fisc || null, built: this.built || 0, rate: this.rate || undefined, fareMark: this.fareMark != null ? this.fareMark : undefined, fareAuto: this.fareAuto || undefined, fareNote: this.fareNote || undefined };
   };
@@ -480,6 +625,22 @@
     Object.assign(e, { funds: s.funds, fare: Economy.normFare(s.fare), cur: s.cur, ledger: s.ledger || [], sat: s.sat, mods: s.mods || [], negMonths: s.negMonths || 0, lowSatMonths: s.lowSatMonths || 0, failed: s.failed || null, satFactors: s.satFactors || null, lastDay: s.lastDay || null,
       capex: s.capex || 0, bonds: s.bonds || [], bondIssued: s.bondIssued || {}, overdue: s.overdue || 0, overdueParts: s.overdueParts || null, overdueMonths: s.overdueMonths || 0, flow: s.flow || [], bondSeq: s.bondSeq || 1, built: s.built || 0 });
     e._svc = s.svc == null ? null : s.svc;
+    const restoreScope = function (ss) { return ss && ss.rev === 1 && typeof ss.scopeKey === 'string' && ss.scopeKey && Number.isFinite(ss.since) && Number.isFinite(ss.protectUntil) ?
+      { rev: 1, scopeKey: ss.scopeKey, since: ss.since, protectUntil: ss.protectUntil, pending: !!ss.pending, legacy: !!ss.legacy,
+        recoveredAt: Number.isFinite(ss.recoveredAt) ? ss.recoveredAt : undefined,
+        cityId: validSatCity(ss.cityId) ? ss.cityId : undefined, cityName: typeof ss.cityName === 'string' ? ss.cityName.slice(0, 80) : undefined } : null; };
+    e.satScope = restoreScope(s.satScope);
+    if (s.satCities && typeof s.satCities === 'object' && !Array.isArray(s.satCities)) {
+      for (const [id, row] of Object.entries(s.satCities)) {
+        if (Object.keys(e.satCities).length >= 8) break;
+        if (!validSatCity(id) || !row || !Number.isFinite(row.sat)) continue;
+        const scope = restoreScope(row.satScope);
+        if (!scope || scope.cityId && scope.cityId !== id) continue;
+        e.satCities[id] = { cityId: id, cityName: typeof row.cityName === 'string' ? row.cityName.slice(0, 80) : id,
+          sat: U.clamp(row.sat, 0, 100), satFactors: row.satFactors && Array.isArray(row.satFactors.factors) ? row.satFactors : null,
+          satScope: scope, lastYM: Number.isSafeInteger(row.lastYM) ? row.lastYM : null };
+      }
+    }
     e.fareMark = Number.isFinite(s.fareMark) ? s.fareMark : null;   // 没调过价（含旧存档）：物价涨幅从开局算起，读档不改变
     const fa = s.fareAuto;
     e.fareAuto = fa && Number.isFinite(fa.idx) && fa.idx > 0 && ['flat', 'inc', 'cap'].every(function (k) { return Number.isFinite(fa[k]) && fa[k] >= 0; }) ? { flat: fa.flat, inc: fa.inc, cap: fa.cap, idx: fa.idx } : null;
@@ -546,6 +707,69 @@
   }
   CM.Tasks = Tasks;
   const taskPlayer = function (obj) { return !obj || !obj.ownerId || obj.ownerId === 'player'; };
+  const playerScope = function (g) { const P = CM.PlayerMetrics; return P && P.enabled(g) ? P : null; };
+  const scopeCache = new WeakMap();
+  const scopeRuntime = function (g) {
+    const P = playerScope(g); if (!P) return null;
+    const mask = P.scopeMask(g), old = scopeCache.get(g);
+    if (old && old.mask === mask && old.region === g.city.region) return old;
+    const r = { mask: mask, region: g.city.region, regions: new Map(), roads: new Map() }; scopeCache.set(g, r); return r;
+  };
+  Tasks.scopedDaily = function (g, basis) { const P = playerScope(g); if (!P) return g.model.dailyFor ? g.model.dailyFor(basis || 'avg') : g.model.daily; const d = P.city && P.homeCity ? P.city(g, P.homeCity(g)) || P.snapshot(g) : P.snapshot(g); return basis === 'wd' || basis === 'wdAM' ? d.dailyWk || d : basis === 'we' ? d.dailyWe || d : d; };
+  const taskScopeKey = function (t, g) { const P = playerScope(g); if (!P) return null; const regional = function (p) { return p.type === 'combo' ? (p.parts || []).some(regional) : ['zoneCov', 'zoneCong', 'regionCov', 'regionShare', 'regionCommute', 'xferShare'].includes(p.type); }; return regional(t) ? P.snapshot(g).scopeKey : Tasks.scopedDaily(g).scopeKey; };
+  Tasks.scopeCellOpen = function (g, c) {
+    if (!playerScope(g)) return true;
+    return Number.isInteger(c) && c >= 0 && c < g.city.N && scopeRuntime(g).mask[c] === 0;
+  };
+  Tasks.scopeAt = function (g, a) {
+    if (!playerScope(g) || !a) return true;
+    if (Array.isArray(a)) { const q = Tasks.placeOf && Tasks.placeOf(a[0]); if (!q) return false; a = { x: q.x, y: q.y, r: a[1] || 3 }; }
+    const city = g.city; if (!Number.isFinite(a.x) || !Number.isFinite(a.y)) return false;
+    const r = Math.max(0, Math.min(64, a.r || 0)), R2 = r * r;
+    const center = city.cellAt(a.x, a.y);
+    if (Tasks.scopeCellOpen(g, center) && (!city.landFrac || city.landFrac[center] >= .1)) return true;
+    for (let y = Math.max(0, Math.floor(a.y - r)); y < Math.min(city.H, Math.ceil(a.y + r)); y++) for (let x = Math.max(0, Math.floor(a.x - r)); x < Math.min(city.W, Math.ceil(a.x + r)); x++) {
+      const c = y * city.W + x;
+      if ((x + .5 - a.x) ** 2 + (y + .5 - a.y) ** 2 <= R2 && (!city.landFrac || city.landFrac[c] >= .1) && Tasks.scopeCellOpen(g, c)) return true;
+    }
+    return false;
+  };
+  Tasks.scopeZone = function (g, z) { const P = playerScope(g); return P && P.zone ? P.zone(g, z) : null; };
+  Tasks.scopeRegionOpen = function (g, id) {
+    if (!playerScope(g)) return true;
+    const rt = scopeRuntime(g); if (rt.regions.has(id)) return rt.regions.get(id);
+    const city = g.city, k = city.regions.findIndex(function (r) { return r.id === id; }); let open = false;
+    if (k >= 0) { const cells = city.regions[k].cells; if (cells) open = cells.some(function (c) { return rt.mask[c] === 0 && (!city.landFrac || city.landFrac[c] >= .1); });
+      else for (let c = 0; c < city.N; c++) if (city.region[c] === k && rt.mask[c] === 0 && (!city.landFrac || city.landFrac[c] >= .1)) { open = true; break; } }
+    rt.regions.set(id, open); return open;
+  };
+  Tasks.scopeStatus = function (t, g) {
+    if (!playerScope(g) || !t) return null;
+    if (t.type === 'combo') { for (const p of t.parts || []) { const reason = Tasks.scopeStatus(Object.assign({ anchors: t.anchors }, p), g); if (reason) return reason; } }
+    const L = t.line && g.net && g.net.lines[t.line], S = t.station && g.net && g.net.stations[t.station];
+    if (L && !taskPlayer(L) || S && !taskPlayer(S)) return '目标由其他公司经营，不计入本公司的考核';
+    if (L && t.type === 'lineCars' && t.target) {
+      if (CM.RailSystems && t.target > CM.RailSystems.get(L).cars) return '现有轨道制式无法达到目标编组，暂不考核';
+      if (g.compiled.routes.some(function (r) { return r.lineId === t.line && r.cars < t.target && r.stIdx.some(function (i) { const s = g.compiled.stations[i]; return !taskPlayer(s) && CFG.metro.carsBySize[s.size] < t.target; }); })) return '目标依赖其他公司车站扩建，暂不考核';
+    }
+    if (L && g.compiled.routes.some(function (r) { return r.lineId === t.line && r.stIdx.some(function (i) { const s = g.compiled.stations[i]; return !Tasks.scopeCellOpen(g, g.city.cellAt(s.x, s.y)); }); })) return '线路途经尚未解锁片区，暂不考核';
+    if (S && !Tasks.scopeAt(g, S) || t.zone != null && !(Tasks.scopeZone(g, t.zone)?.openFraction > 0)) return '目标片区尚未解锁，暂不考核';
+    if (t.anchors && t.anchors.some(function (a) { return !Tasks.scopeAt(g, a); })) return '目标地点尚未解锁，暂不考核';
+    if (t.type !== 'noStation' && t.regions && t.regions.some(function (id) { return !Tasks.scopeRegionOpen(g, id); })) return '目标片区尚未解锁，暂不考核';
+    if (Number.isFinite(t.x) && Number.isFinite(t.y) && !Tasks.scopeAt(g, t)) return '目标地点尚未解锁，暂不考核';
+    if (t.fac) { const f = CM.Fac && CM.Fac.byId(t.fac); if (f && !Tasks.facServable(g.city, f)) return '设施尚不在可经营范围，暂不考核'; }
+    return null;
+  };
+  Tasks.scopeRoadShare = function (g, link) {
+    const P = playerScope(g); if (!P) return 1;
+    if (P.roadShare) return P.roadShare(g, link.id);
+    const rt = scopeRuntime(g), road = g.model.road; if (rt.road !== road) { rt.road = road; rt.roads.clear(); }
+    if (rt.roads.has(link.id)) return rt.roads.get(link.id);
+    const city = g.city, points = link.verts && city.vx && city.vy ? link.verts.map(function (v) { return [city.vx[v], city.vy[v]]; }) : link.pts || [];
+    let len = 0, open = 0;
+    for (let i = 1; i < points.length; i++) { const a = points[i - 1], b = points[i], d = Math.hypot(a[0] - b[0], a[1] - b[1]); len += d; if (Tasks.scopeCellOpen(g, city.cellAt((a[0] + b[0]) / 2, (a[1] + b[1]) / 2))) open += d; }
+    const value = len > 0 ? open / len : 0; rt.roads.set(link.id, value); return value;
+  };
   const playerCompiledCache = new WeakMap();
   // Preserve station indices for published passenger arrays while restricting
   // construction and operating obligations to the player's own company.
@@ -617,7 +841,9 @@
   // 只为能完成的设施发布接驳任务。结果按设施与年份缓存
   const servCache = new Map();
   Tasks.facServable = function (city, f) {
-    if (f.ext) return true;
+    const game = city.operatorGame;
+    if (game && playerScope(game) && !Tasks.scopeCellOpen(game, city.cellAt(f.x, f.y))) return false;
+    if (f.ext) { const g = city.operatorGame; return !g || !playerScope(g) || Tasks.scopeAt(g, Object.assign({}, f, { r: Math.max(.5, f.r || 0) + 2.4 })); }
     const key = city.uid + ':' + f.id + ':' + city.terrainVer + ':' + city.lockVer + ':' + (city.unlockAll ? 1 : 0);
     if (servCache.has(key)) return servCache.get(key);
     const lm = f.lmK >= 0 ? CM.DATA.landmarks[f.lmK] : null;
@@ -644,7 +870,7 @@
   // 到最近运营车站的距离（格）
   Tasks.netDist = function (g, x, y) {
     const C = g.compiled; let d = Infinity;
-    C.stations.forEach(function (s, i) { if (C.serviced[i]) { const v = U.dist(s.x, s.y, x, y); if (v < d) d = v; } });
+    C.stations.forEach(function (s, i) { if (taskPlayer(s) && C.serviced[i] && Tasks.scopeCellOpen(g, g.city.cellAt(s.x, s.y))) { const v = U.dist(s.x, s.y, x, y); if (v < d) d = v; } });
     return d;
   };
   Tasks.facShareOf = function (model, f, basis) {
@@ -655,6 +881,8 @@
 
   Tasks.prototype.evaluate = function (t, g) {
     const C = Tasks.playerCompiled(g), model = g.model, acc = model.net ? model.net.acc : null;
+    const wait = Tasks.scopeStatus(t, g); if (wait) return { ok: false, waiting: true, value: 0, text: wait };
+    if (playerScope(g) && scopeMetric(t) && !Tasks.scopedDaily(g).ready) return { ok: false, waiting: true, value: 0, text: '经营区域数据正在更新，暂不考核' };
     if (t.line && g.net.lines[t.line] && !taskPlayer(g.net.lines[t.line]) || t.station && g.net.stations[t.station] && !taskPlayer(g.net.stations[t.station])) return { ok: false, value: 0, text: '该目标需要本公司拥有并经营的资产' };
     if (t.type === 'connect') {
       const comp = t.avoid ? componentsAvoiding(C, acc, t.avoid) : stationComponents(C, acc);
@@ -673,11 +901,11 @@
       return { ok: ok, value: ok ? 1 : n / (t.anchors.length + 1), text: t.anchors.map(function (a, i) { return (hits[i] ? '✓ ' : '✗ ') + a.name; }).join('；') + (hits.every(Boolean) && !ok ? (t.avoid ? '（目前只能经过' + t.avoid.name + '才连得上）' : '（车站尚未连通）') : '') + (t.avoid && ok ? ' · 不经' + t.avoid.name : '') };
     }
     if (t.type === 'coverage') {
-      const v = acc ? acc.coverage : 0;
+      const v = playerScope(g) ? Tasks.scopedDaily(g).coverage : acc ? acc.coverage : 0;
       return { ok: v >= t.target, value: v / t.target, text: '当前覆盖 ' + U.fmtPct(v) + ' / 目标 ' + U.fmtPct(t.target, 0) };
     }
     if (t.type === 'zoneCong' && t.metric==='carShare') {
-      const v=model.zoneTraffic(t.zone).carShare,cheap=Tasks.fareCheap(t,g);
+      const local=Tasks.scopeZone(g,t.zone),v=local?local.carShare:model.zoneTraffic(t.zone).carShare,cheap=Tasks.fareCheap(t,g);
       return{ok:v<=t.target&&!cheap,cheap,value:U.clamp((t.start-v)/Math.max(.001,t.start-t.target),0,1),text:'片区工作日早高峰汽车出行占比 '+U.fmtPct(v,1)+' / 目标 ≤ '+U.fmtPct(t.target,1)+(cheap?'（票价低于任务发布时，本月不计）':''),sample:v};
     }
     if (t.type === 'zoneCong') {
@@ -685,7 +913,7 @@
       return { ok: v <= t.target, value: U.clamp((t.start - v) / Math.max(0.01, t.start - t.target), 0, 1), text: '工作日早高峰拥堵指数 ' + v.toFixed(2) + ' / 目标 ≤ ' + t.target.toFixed(2) };
     }
     if (t.type === 'zoneCov') {
-      const v = acc ? acc.zCov[t.zone] : 0;
+      const local = Tasks.scopeZone(g, t.zone), v = local ? local.coverage : acc ? acc.zCov[t.zone] : 0;
       return { ok: v >= t.target, value: v / t.target, text: '该片区覆盖 ' + U.fmtPct(v) + ' / 目标 ' + U.fmtPct(t.target, 0) };
     }
     if (t.type === 'stationCrowd') {
@@ -698,7 +926,7 @@
       return { ok: v <= t.target, value: U.clamp((t.start - v) / Math.max(0.01, t.start - t.target), 0, 1), text: '工作日高峰负荷 ' + U.fmtPct(v, 0) + ' / 目标 ≤ ' + U.fmtPct(t.target, 0) };
     }
     if (t.type === 'ridership') {
-      const b = Tasks.basisOf(t), d = model.dailyFor ? model.dailyFor(b) : model.daily;
+      const b = Tasks.basisOf(t), d = Tasks.scopedDaily(g, b);
       const v = d ? d.metro : 0;
       return { ok: v >= t.target, value: v / t.target, text: (b === 'wd' ? '工作日' : (b === 'we' ? '周末' : '日均（周平均）')) + '客运量 ' + U.fmtPeople(v) + ' / 目标 ' + U.fmtPeople(t.target) };
     }
@@ -750,7 +978,8 @@
       return { ok: v >= t.target, value: U.clamp(v / t.target, 0, 1), text: (t.areaName || '目标片区') + '步行 15 分钟可达地铁的人口 ' + U.fmtPct(v, 0) + ' / 目标 ' + U.fmtPct(t.target, 0) };
     }
     if (t.type === 'xferHub') {
-      let n = 0; if (C.stationLines) C.stationLines.forEach(function (s) { if (s.size >= 2) n++; });
+      const P = playerScope(g), mask = P && P.cityMask && P.homeCity ? P.cityMask(g, P.homeCity(g)) : null;
+      let n = 0; if (C.stationLines) C.stationLines.forEach(function (s, i) { const st = C.stations[i], cell = g.city.cellAt(st.x, st.y); if (s.size >= 2 && taskPlayer(st) && Tasks.scopeCellOpen(g, cell) && (!mask || mask[cell] === 0)) n++; });
       return { ok: n >= t.target, value: U.clamp(n / t.target, 0, 1), text: '换乘站 ' + n + ' 座 / 目标 ' + t.target + ' 座' };
     }
     const done = this.evaluatePart(t, g);
@@ -802,6 +1031,7 @@
   };
   // 发布（或接受）时记下基准：预算、物价年份、人口岗位、票价
   Tasks.prepare = function (t, g) {
+    if (playerScope(g) && !t.playerScopeKey) t.playerScopeKey = taskScopeKey(t, g);
     if (t.type !== 'combo') return t;
     const anchors = t.anchors || [], ready = g.model.trafficReady();
     for (const p of t.parts) {
@@ -815,10 +1045,61 @@
     }
     return t;
   };
+  const scopeMetric = function (t) { return t.type === 'combo' ? (t.parts || []).some(scopeMetric) : ['coverage', 'zoneCov', 'ridership', 'share', 'regionCov', 'regionShare', 'regionCommute', 'zoneCong', 'xferShare'].includes(t.type); };
+  const scopeBaseline = function (t) { return { scope: t.playerScopeKey || 'legacy-region', deadline: t.deadline && t.deadline.slice(), metric: t.metric, title: t.title, desc: t.desc, start: t.start, target: t.target, streak: t.streak || 0, progress: t.progress ? String(t.progress.text || '').slice(0, 1200) : '', parts: (t.parts || []).map(function (p) { return { type: p.type, base0: p.base0, target: p.target }; }) }; };
+  const resetScopeTarget = function (t, g) {
+    if (t.type === 'combo') for (const p of t.parts || []) resetScopeTarget(p, g);
+    if (t.gain || t.drop) { delete t.base0; delete t.target; }
+    if (t.type === 'ridership' && t.kind === 'dyn') {
+      const d = Tasks.scopedDaily(g, t.basis), share = d.metroShare || 0, gain = share < .08 ? .2 : share < .15 ? .12 : .08;
+      t.start = d.metro || 0; t.target = Math.max(1, Math.round(t.start * (1 + gain) / 1000) * 1000);
+    }
+    if (t.type === 'zoneCong') {
+      const z = Tasks.scopeZone(g, t.zone), value = z ? z.carShare : g.model.zoneTraffic(t.zone).carShare;
+      const drop = t.metric === 'carShare' ? U.clamp((t.start || 0) - (t.target || 0), .008, .03) : .015;
+      t.metric = 'carShare'; t.start = value; t.target = Math.max(0, value - drop);
+      t.desc = '降低已解锁片区工作日早高峰汽车出行占比，按最近 3 个月平均值评估。';
+    }
+    t.streak = 0; if (t.samples) t.samples = []; delete t.evaluatedYM; delete t.progress;
+  };
+  // Save the previous goal rather than pretending regional observations were
+  // local ones. A scope change never itself awards a task or deducts a penalty.
+  Tasks.prototype.rebasePlayerScope = function (g) {
+    const P = playerScope(g); if (!P) return false;
+    const current = Tasks.scopedDaily(g), ym = g.ym(); let changed = false;
+    for (const t of this.active) {
+      const key = taskScopeKey(t, g);
+      const reason = Tasks.scopeStatus(t, g);
+      if (reason) {
+        if (!t.scopePause) t.scopePause = { at: ym, remaining: Math.max(6, U.ymIndex(t.deadline[0], t.deadline[1]) - ym) };
+        t.graced = reason; const end = ym + t.scopePause.remaining; t.deadline = [Math.floor(end / 12), end % 12 + 1]; changed = true; continue;
+      }
+      const resumed = !!t.scopePause, altered = t.playerScopeKey !== key;
+      if (!resumed && !altered) continue;
+      if (scopeMetric(t) && !current.ready) { t.graced = '经营区域数据正在更新，暂不考核'; continue; }
+      if (scopeMetric(t) || resumed) {
+        const old = scopeBaseline(t); t.scopeHistory = (t.scopeHistory || []).concat([old]).slice(-8);
+        resetScopeTarget(t, g);
+        const months = resumed ? t.scopePause.remaining : Math.max(6, t.months || (t.kind === 'dyn' ? 24 : 6), U.ymIndex(t.deadline[0], t.deadline[1]) - ym);
+        const end = ym + months; t.deadline = [Math.floor(end / 12), end % 12 + 1];
+        t.graced = '考核已切换到已解锁经营区域，保留旧目标并重新开始评估窗口';
+        t.scopeRebasedYM = ym;
+      }
+      delete t.scopePause; t.playerScopeKey = key; Tasks.prepare(t, g); changed = true;
+    }
+    // Historical ledger entries remain untouched. Only still-running modifiers
+    // from impossible old obligations are stopped, without retroactive rewards.
+    for (const t of this.failed) if (!t.playerScopeKey && !t.scopePenaltyRemoved && (Tasks.scopeStatus(t, g) || scopeMetric(t))) {
+      const reasons = ['任务未完成：' + t.title, '可选挑战未完成：' + t.title], before = g.econ.mods.length;
+      g.econ.mods = g.econ.mods.filter(function (m) { return !reasons.includes(m.reason); });
+      t.scopePenaltyRemoved = true; if (before !== g.econ.mods.length) changed = true;
+    }
+    return changed;
+  };
   // 相对目标用到的当前值：全市分担率、片区乘地铁比例、片区平均通勤
   Tasks.partValue = function (p, g) {
     const model = g.model;
-    if (p.type === 'share') return (model.daily && model.daily.metroShare) || 0;
+    if (p.type === 'share') { const d = Tasks.scopedDaily(g); return d && d.ready !== false ? d.metroShare || 0 : null; }
     if (p.type === 'regionShare') {
       const fd = model.facData('wd'); if (!fd) return null;
       const w = zoneWeights(g, p.regions); let a = 0, b = 0;
@@ -846,14 +1127,15 @@
     for (const a of anchors) best.stIdx.forEach(function (i, k) { const s = C.stations[i]; if (U.dist(s.x, s.y, a.x, a.y) <= a.r) { i0 = Math.min(i0, k); i1 = Math.max(i1, k); } });
     return { route: best, n: bn, all: bn === anchors.length, i0: i0, i1: i1 };
   };
-  const inRegions = function (g, ids) { const city = g.city, set = new Set(ids); return function (x, y) { const rg = city.regionAt(x, y); return !!rg && set.has(rg.id); }; };
+  const inRegions = function (g, ids) { const city = g.city, set = new Set(ids); return function (x, y) { const rg = city.regionAt(x, y); return !!rg && set.has(rg.id) && Tasks.scopeCellOpen(g, city.cellAt(x, y)); }; };
   // 交通小区落在指定片区内的比例（小区可能跨片区）
   const zoneWeights = function (g, ids) {
-    const m = g.model, city = g.city, key = ids.join(','), cache = m._zoneW || (m._zoneW = new Map());
+    const m = g.model, city = g.city, P = playerScope(g), key = ids.join(',') + (P ? ':' + P.snapshot(g).scopeKey + ':' + city.version : ''), cache = m._zoneW || (m._zoneW = new Map());
     if (cache.has(key)) return cache.get(key);
     const ks = new Set(); city.regions.forEach(function (r, k) { if (ids.indexOf(r.id) >= 0) ks.add(k); });
     const w = new Float32Array(m.Z);
-    for (let z = 0; z < m.Z; z++) { const cells = m.zoneCells[z]; if (!cells || !cells.length) continue; let n = 0; for (const c of cells) if (ks.has(city.region[c])) n++; w[z] = n / cells.length; }
+    for (let z = 0; z < m.Z; z++) { const cells = m.zoneCells[z]; if (!cells || !cells.length) continue; let n = 0, total = 0; for (const c of cells) { const weight = P ? Math.max(0, city.pop[c] || 0) : 1; total += weight; if (ks.has(city.region[c]) && Tasks.scopeCellOpen(g, c)) n += weight; } w[z] = total > 0 ? n / total : 0; }
+    if (cache.size >= 64) cache.clear();
     cache.set(key, w);
     return w;
   };
@@ -864,7 +1146,7 @@
     if (!C || !T) return { n: 0, net: 0 };
     for (const id in g.net.stations) {
       const s = g.net.stations[id], lv = s.tod || 0, k = C.sIndex.get(id);
-      if (!lv || k === undefined || !C.serviced[k] || (inside && !inside(s.x, s.y))) continue;
+      if (!lv || !taskPlayer(s) || !Tasks.scopeCellOpen(g, g.city.cellAt(s.x, s.y)) || k === undefined || !C.serviced[k] || (inside && !inside(s.x, s.y))) continue;
       const flow = sd && k < sd.inn.length ? sd.inn[k] + sd.out[k] + sd.xfer[k] : 0, hub = !!(C.stationLines[k] && C.stationLines[k].size >= 2);
       n++; net += (T.stationDaily(lv, flow, hub, y, g) - T.stationCost(lv, y, s.size, hub)) * 30.4;
     }
@@ -967,7 +1249,7 @@
       case 'share': {
         const v = Tasks.partValue(t, g) || 0;
         if (t.target == null) return { ok: false, value: 0, text: '客流计算中' };
-        return { ok: v >= t.target, value: t.base0 != null ? U.clamp((v - t.base0) / Math.max(0.001, t.target - t.base0), 0, 1) : v / t.target, text: '全市地铁分担率 ' + pct(v, 1) + ' / 目标 ' + pct(t.target, 1) + (t.base0 != null ? '（发布时 ' + pct(t.base0, 1) + '）' : '') };
+        return { ok: v >= t.target, value: t.base0 != null ? U.clamp((v - t.base0) / Math.max(0.001, t.target - t.base0), 0, 1) : v / t.target, text: (playerScope(g) ? '已解锁经营区域地铁分担率 ' : '全市地铁分担率 ') + pct(v, 1) + ' / 目标 ' + pct(t.target, 1) + (t.base0 != null ? '（发布时 ' + pct(t.base0, 1) + '）' : '') };
       }
       case 'lineRiders': {   // 经过 anchors 的线路每公里日客流
         const rt = Tasks.routeThrough(g, t.anchors);
@@ -985,7 +1267,7 @@
         return { ok: cr.lf <= t.target, value: atMost(cr.lf, t.target), text: rt.route.line.name + ' 早高峰最高满载率 ' + pct(cr.lf) + ' / 目标 ≤ ' + pct(t.target) };
       }
       case 'netLoad': {   // 全网最拥挤区段的早高峰满载率
-        const cr = Tasks.crowdOf(g).find(function (x) { return taskPlayer(g.net.lines[x.lid]); });
+        const P = playerScope(g), cr = Tasks.crowdOf(g, P && P.homeCity ? P.homeCity(g) : null).find(function (x) { return taskPlayer(g.net.lines[x.lid]); });
         if (!cr) return { ok: false, value: 0, text: '客流计算中' };
         return { ok: cr.lf <= t.target, value: atMost(cr.lf, t.target), text: '本公司早高峰最高满载率 ' + pct(cr.lf) + ' / 目标 ≤ ' + pct(t.target) };
       }
@@ -1003,7 +1285,7 @@
         const sd = model.stDaily, MC = model.net ? model.net.C : null;
         if (!sd || !MC || model.dailyStale) return { ok: false, value: 0, text: '客流计算中' };
         const inside = inRegions(g, t.regions); let a = 0, b = 0;
-        MC.stations.forEach(function (s, i) { const v = sd.xfer[i] || 0; b += v; if (inside(s.x, s.y)) a += v; });
+        MC.stations.forEach(function (s, i) { if (!taskPlayer(s) || !Tasks.scopeCellOpen(g, g.city.cellAt(s.x, s.y))) return; const v = sd.xfer[i] || 0; b += v; if (inside(s.x, s.y)) a += v; });
         if (b <= 0) return { ok: false, value: 0, text: '还没有换乘客流' };
         const v = a / b;
         return { ok: v <= t.target, value: atMost(v, t.target), text: '换乘客流在' + t.areaName + '的比例 ' + pct(v) + ' / 目标 ≤ ' + pct(t.target) };
@@ -1034,12 +1316,17 @@
     return null;
   };
   // 工作日早高峰各线路最拥挤的区段（满载率 = 区间断面客流 ÷ 线路运力），按满载率从高到低
-  Tasks.crowdOf = function (g) {
+  Tasks.crowdOf = function (g, cityId, operatingAssets) {
     const m = g.model, net = m.net; if (!net || !net.R || !m.trafficReady()) return [];
+    const Pm = playerScope(g), mask = Pm && cityId && Pm.cityMask ? Pm.cityMask(g, cityId) : null;
     const P = m.resultsFor('wd').per[0], out = new Map();
     for (let r = 0; r < net.R; r++) {
       const rt = net.C.routes[r], re = net.rideEdge[r], capT = m.capOf(r, net);   // v2.5：定员按车队，环线两个方向的频率分别计
+      if (playerScope(g) && !taskPlayer(g.net.lines[rt.lineId])) continue;
       for (let q = 0; q < re.length; q++) {
+        const leg = q >> 1, a = net.C.stations[rt.stIdx[leg]], b = net.C.stations[rt.stIdx[(leg + 1) % rt.stIdx.length]];
+        if (!operatingAssets && playerScope(g) && (!a || !b || !Tasks.scopeCellOpen(g, g.city.cellAt(a.x, a.y)) || !Tasks.scopeCellOpen(g, g.city.cellAt(b.x, b.y)))) continue;
+        if (mask && (mask[g.city.cellAt(a.x, a.y)] !== 0 || mask[g.city.cellAt(b.x, b.y)] !== 0)) continue;
         const lf = P.load[re[q]] / Math.max(1, CM.Model.dirFreq(P, net, r, q) * capT), cur = out.get(rt.lineId);
         if (!cur || lf > cur.lf) { const k = q >> 1; out.set(rt.lineId, { lid: rt.lineId, lf: lf, a: rt.stIdx[k], b: rt.stIdx[(k + 1) % rt.stIdx.length], cars: rt.cars }); }
       }
@@ -1047,10 +1334,10 @@
     return Array.from(out.values()).sort(function (x, y) { return y.lf - x.lf; });
   };
   // 各线路的日客流（周平均上车人次）与线路长度
-  Tasks.lineStats = function (g) {
+  Tasks.lineStats = function (g, operatingAssets) {
     const m = g.model, sd = m.stDaily, out = new Map();
     if (!sd || !sd.routeBoard || !m.net || m.dailyStale) return out;
-    m.net.C.routes.forEach(function (rt, r) { const s = out.get(rt.lineId) || { riders: 0, km: 0 }; s.riders += sd.routeBoard[r] || 0; out.set(rt.lineId, s); });
+    m.net.C.routes.forEach(function (rt, r) { if (playerScope(g) && (!taskPlayer(g.net.lines[rt.lineId]) || !operatingAssets && Tasks.scopeStatus({ line: rt.lineId }, g))) return; const s = out.get(rt.lineId) || { riders: 0, km: 0 }; s.riders += sd.routeBoard[r] || 0; out.set(rt.lineId, s); });
     g.compiled.segs.forEach(function (cs) { const s = out.get(cs.seg.line); if (s && cs.g) s.km += cs.g.lenM / 1000; });
     return out;
   };
@@ -1059,24 +1346,24 @@
     const city = g.city, acc = g.model.net ? g.model.net.acc : null; if (!acc) return 0;
     const ks = new Set(); city.regions.forEach(function (r, k) { if (ids.indexOf(r.id) >= 0) ks.add(k); });
     let tot = 0, cov = 0;
-    for (let c = 0; c < city.N; c++) { if (!ks.has(city.region[c])) continue; const p = city.pop[c]; tot += p; if (acc.cellWalk[c] <= CFG.walk.maxAccessM) cov += p; }
+    for (let c = 0; c < city.N; c++) { if (!ks.has(city.region[c]) || !Tasks.scopeCellOpen(g, c)) continue; const p = city.pop[c]; tot += p; if (acc.cellWalk[c] <= CFG.walk.maxAccessM) cov += p; }
     return tot > 0 ? cov / tot : 0;
   };
 
   // Review samples belong to this exact input and are never reused after a change.
   Tasks.prototype.trafficReviewState=function(g){
-    const m=g.model;let s=this._trafficReview;
-    if(!s||s.net!==m.net||s.od!==m.od||s.year!==m.year||s.fare!==CM.Model.fareKey(m.fare)||s.ym!==g.ym())s=this._trafficReview={net:m.net,od:m.od,year:m.year,fare:CM.Model.fareKey(m.fare),ym:g.ym(),values:new Map()};
+    const m=g.model,scope=playerScope(g)?Tasks.scopedDaily(g).scopeKey+':'+CM.PlayerMetrics.snapshot(g).scopeKey:'';let s=this._trafficReview;
+    if(!s||s.net!==m.net||s.od!==m.od||s.year!==m.year||s.fare!==CM.Model.fareKey(m.fare)||s.ym!==g.ym()||s.scope!==scope)s=this._trafficReview={net:m.net,od:m.od,year:m.year,fare:CM.Model.fareKey(m.fare),ym:g.ym(),scope:scope,values:new Map()};
     return s;
   };
   Tasks.prototype.reviewValue=function(t,g){
-    if(t.type==='ridership'){const d=g.model.dailyFor(Tasks.basisOf(t));return d?d.metro:null;}
+    if(t.type==='ridership'){const d=Tasks.scopedDaily(g,Tasks.basisOf(t));return d?d.metro:null;}
     if(t.type==='facShare'){const f=CM.Fac.byId(t.fac),r=f&&Tasks.facShareOf(g.model,f,t.basis);return r?r.share:null;}
     if(t.type==='stationCrowd'){const i=g.compiled.sIndex.get(t.station),s=g.model.stDailyWk;return i===undefined||!s?null:(s.peak[i]||0)/CM.Metro.stationCapacity(g.compiled.stations[i]);}
     if(t.type==='zoneCong'){
       if(t.metric!=='carShare')return g.zoneCong(t.zone,'wd');
       const a=(t.samples||[]).filter(x=>x.ym>=g.ym()-2&&x.ym<g.ym()).slice(-2);
-      return(a.reduce((n,x)=>n+x.value,0)+g.model.zoneTraffic(t.zone).carShare)/(a.length+1);
+      const local=Tasks.scopeZone(g,t.zone);return(a.reduce((n,x)=>n+x.value,0)+(local?local.carShare:g.model.zoneTraffic(t.zone).carShare))/(a.length+1);
     }
     return null;
   };
@@ -1119,6 +1406,7 @@
     return near;
   };
   Tasks.prototype.prepareTrafficReviews=function(g){
+    this.rebasePlayerScope(g);
     if(!g.model.trafficReady())return;
     for(const t of this.active)if(t.evaluatedYM!==g.ym()&&['zoneCong','stationCrowd','ridership','facShare'].includes(t.type)){
       const basis=Tasks.basisOf(t);if(!g.model.trafficVerified(basis)&&this.nearTrafficThreshold(t,g,this.evaluate(t,g))&&!this.reviewSafe(t,g))this.startTrafficReview(t,g);
@@ -1129,10 +1417,12 @@
     const y = g.clock.y, m = g.clock.m, ym = U.ymIndex(y, m);
     const out = [];
     const challenge = g.econ.mode === 'challenge';
+    this.rebasePlayerScope(g);
     // 发布历史参考任务
     for (const h of D.histTasks) {
       if (this.issued[h.id]) continue;
       if (ym < U.ymIndex(h.appear[0], h.appear[1])) continue;
+      if (Tasks.scopeStatus(Tasks.withPlan(g, h), g)) continue;
       this.issued[h.id] = 1;
       if (ym > U.ymIndex(h.deadline[0], h.deadline[1])) continue;
       const t = Object.assign({ kind: 'hist', status: 'active', issuedAt: [y, m], streak: 0 }, JSON.parse(JSON.stringify(Tasks.withPlan(g, h))));
@@ -1153,6 +1443,8 @@
     // 评估。交通模型升级过渡期（旧存档升级当月）：未达标时不清零连续月数，到期任务顺延 1 个月，不判失败
     const transit = g.inTransition ? g.inTransition(ym) : false;
     for (const t of this.active.slice()) {
+      if (Tasks.scopeStatus(t, g) || t.scopeRebasedYM === ym) continue;
+      if (playerScope(g) && scopeMetric(t) && (!Tasks.scopedDaily(g).ready || t.playerScopeKey !== taskScopeKey(t, g))) { if (ym >= U.ymIndex(t.deadline[0], t.deadline[1])) { const end = ym + 1; t.deadline = [Math.floor(end / 12), end % 12 + 1]; } continue; }
       if(t.evaluatedYM===ym)continue;
       // 复合条件也可能包含已停用的设施；未来开放的设施不算停用。
       const retired = function (p) {
@@ -1255,6 +1547,7 @@
 
   Tasks.prototype.generate = function (g) {
     const y = g.clock.y, m = g.clock.m, model = g.model, city = g.city;
+    const daily = Tasks.scopedDaily(g); if (playerScope(g) && !daily.ready) return null;
     const acc = model.net ? model.net.acc : null;
     const ci = g.econ.costIndex(y) * (CFG.economy.rewardScale || 1);   // 奖励按本城价格水平
     const dl = function (months) { const t = U.ymIndex(y, m) + months; return [Math.floor(t / 12), t % 12 + 1]; };
@@ -1270,24 +1563,25 @@
 
     // 拥堵热点（排除近期出过任务的片区）
     let worst=-1,bestPotential=0;
-    const zoneOpen=function(z){let n=0,o=0;for(const c of model.zoneCells[z]){if(city.landFrac[c]<.5)continue;n++;if(!city.cellLocked(c)&&!city.regions[city.region[c]].scenic)o++;}return n>0&&o>=n/2;};   // 可建设范围按格判断（v2.2）
+    const zoneOpen=function(z){const local=Tasks.scopeZone(g,z);if(local)return local.openFraction>0&&local.pop+local.jobs>0;let n=0,o=0;for(const c of model.zoneCells[z]){if(city.landFrac[c]<.5)continue;n++;if(!city.cellLocked(c)&&!city.regions[city.region[c]].scenic)o++;}return n>0&&o>=n/2;};
     if(model.trafficReady())for(let z=0;z<model.Z;z++){
-      if(model.zPop[z]+model.zJobs[z]<3000||!zoneOpen(z)||!free('cong:'+z,'zoneCong')||g.zoneCong(z)<1.25)continue;
+      const local=Tasks.scopeZone(g,z),v=local||model.zoneTraffic(z),people=local?local.pop+local.jobs:model.zPop[z]+model.zJobs[z];
+      if(people<3000||!zoneOpen(z)||!free('cong:'+z,'zoneCong')||(local?v.carShare<.5:g.zoneCong(z)<1.25))continue;
       if(Tasks.netDist(g,model.zCx[z],model.zCy[z])>12)continue;   // v2.4：离运营车站 3 km 以上的片区不发拥堵任务（偏远片区靠覆盖任务）
-      const v=model.zoneTraffic(z),potential=model.zoneOpportunity(z)/Math.max(1,v.trips);
+      const potential=model.zoneOpportunity(z)*(local?(local.populationFraction||local.openFraction):1)/Math.max(1,v.trips);
       if(v.trips>100&&potential>=.06&&potential>bestPotential){worst=z;bestPotential=potential;}
     }
     if(worst>=0){
       // v2.4 平衡：降幅按可替代的出行估算、更温和（一两处车站或一段延伸就能做到），票价低于发布时的月份不计
-      const v=model.zoneTraffic(worst),drop=U.clamp(bestPotential*.12,.008,.03),target=Math.max(0,v.carShare-drop);
+      const v=Tasks.scopeZone(g,worst)||model.zoneTraffic(worst),drop=U.clamp(bestPotential*.12,.008,.03),target=Math.max(0,v.carShare-drop);
       cands.push({type:'zoneCong',metric:'carShare',coolKey:'cong:'+worst,zone:worst,start:v.carShare,target,sustain:3,samples:[],fare0:Tasks.fareLevel(g.econ.fare),title:'减少「'+g.zoneName(worst)+'」高峰汽车出行',desc:'让工作日早高峰汽车出行占比降低 '+(drop*100).toFixed(1)+' 个百分点（近 3 个月平均，降价月份不计）。',months:30,reward:60000*ci});
     }
     // 覆盖空白
     if (acc) {
       let best = -1, bp = 0;
       for (let z = 0; z < model.Z; z++) {
-        const p = model.zPop[z];
-        if (p > bp && acc.zCov[z] < 0.2 && zoneOpen(z) && free('cov:' + z, 'zoneCov')) { bp = p; best = z; }
+        const local = Tasks.scopeZone(g, z), p = local ? local.pop : model.zPop[z], cov = local ? local.coverage : acc.zCov[z];
+        if (p > bp && cov < 0.2 && zoneOpen(z) && free('cov:' + z, 'zoneCov')) { bp = p; best = z; }
       }
       if (best >= 0 && bp > 12000) {
         cands.push({ type: 'zoneCov', coolKey: 'cov:' + best, zone: best, target: 0.5, title: '为「' + g.zoneName(best) + '」提供地铁服务', desc: '该片区人口约 ' + U.fmtPeople(bp) + '，尚无地铁覆盖。使片区 50% 以上的居民与岗位步行 15 分钟可达车站。', months: 30, reward: 50000 * ci });
@@ -1298,7 +1592,7 @@
     if (sdw && !model.dailyStale && g.compiled.stations.length && crowdFree) {
       let bs = -1, br = 0;
       g.compiled.stations.forEach(function (s, i) {
-        if (!taskPlayer(s) || !free('st:' + s.id, 'stationCrowd')) return;
+        if (!taskPlayer(s) || !Tasks.scopeCellOpen(g, city.cellAt(s.x, s.y)) || !free('st:' + s.id, 'stationCrowd')) return;
         const r = sdw.peak[i] / CM.Metro.stationCapacity(s);
         if (r > br) { br = r; bs = i; }
       });
@@ -1308,13 +1602,13 @@
       }
     }
     // 客流增长（v2.3 平衡）：线网越成熟（分担率越高）增幅要求越低——成熟线网两年再涨两成很难做到
-    if (model.daily && model.daily.metro > 20000 && free('ridership', 'ridership')) {
-      const sh = model.daily.metroShare || 0, gr = sh < 0.08 ? 0.2 : (sh < 0.15 ? 0.12 : 0.08);
-      cands.push({ type: 'ridership', basis: 'avg', target: Math.round(model.daily.metro * (1 + gr) / 1000) * 1000, title: '提升地铁客运量', desc: '在期限内使日均地铁客运量较当前提高 ' + Math.round(gr * 100) + '%（可通过新线、延长线、换乘或调整票价实现）。统计口径：周平均（5 个工作日 + 2 个周末日）。', months: 24, reward: 40000 * ci });
+    if (daily && daily.metro > 20000 && free('ridership', 'ridership')) {
+      const sh = daily.metroShare || 0, gr = sh < 0.08 ? 0.2 : (sh < 0.15 ? 0.12 : 0.08);
+      cands.push({ type: 'ridership', basis: 'avg', start: daily.metro, target: Math.round(daily.metro * (1 + gr) / 1000) * 1000, title: '提升地铁客运量', desc: '在期限内使日均地铁客运量较当前提高 ' + Math.round(gr * 100) + '%（可通过新线、延长线、换乘或调整票价实现）。统计口径：周平均（5 个工作日 + 2 个周末日）。', months: 24, reward: 40000 * ci });
     }
     // 经营：票款覆盖（v2.3 平衡）：目标按近 3 个月的实际覆盖率提高一截（最高 70%），不再一律要求 70%——
     // 大线网的运营费用随物价上涨，票价长期不变时覆盖率很低，固定目标几乎必然失败、反复扣减拨款
-    if (g.econ.mode === 'challenge' && model.daily && model.daily.metro > 50000 && free('recovery', 'recovery')) {
+    if (g.econ.mode === 'challenge' && daily && daily.metro > 50000 && free('recovery', 'recovery')) {
       const L3 = g.econ.ledger.slice(-3), cur = L3.length ? L3.reduce(function (a, r) { return a + Tasks.recoveryOf(r); }, 0) / L3.length : 0;
       if (cur >= 0.15 && cur < 0.66) {
         const tg = Math.min(0.7, Math.ceil((cur + Math.max(0.06, cur * 0.25)) * 20) / 20);
@@ -1335,7 +1629,7 @@
         // v2.4 玩家反馈（番禺、香港新界等）：离线网 4 km 以上的设施，要把比例拉上去只能修好几条又长又空的线。
         // 改为「接入线网」：在设施附近设站并连到现有线网即可完成，偏远地区一条线就够
         const f = best.f, C0 = g.compiled; let ns = -1, nd = Infinity;
-        C0.stations.forEach(function (s, i) { if (C0.serviced[i]) { const d = U.dist(s.x, s.y, f.x, f.y); if (d < nd) { nd = d; ns = i; } } });
+        C0.stations.forEach(function (s, i) { if (taskPlayer(s) && C0.serviced[i] && Tasks.scopeCellOpen(g, city.cellAt(s.x, s.y))) { const d = U.dist(s.x, s.y, f.x, f.y); if (d < nd) { nd = d; ns = i; } } });
         if (ns >= 0) {
           const s = C0.stations[ns], lm = f.lmK >= 0 ? CM.DATA.landmarks[f.lmK] : null, r = (lm ? Math.max(lm.w || 0, lm.d || 0) / 2 / CFG.CELL_M : Math.max(0.5, f.r || 0)) + 2.4;
           cands.push({ type: 'connect', coolKey: 'fac:' + f.id, fac: f.id, title: '把「' + f.name + '」接入线网',
@@ -1344,7 +1638,7 @@
         }
       } else if (best) {
         // 目标（v2.4 平衡）：比现在高 6 个百分点，并争取达到「全市分担率 + 5 个百分点」（上限 16%）；离线网 2 km 以上的只要求高 5 个百分点
-        const cs = (model.daily && model.daily.metroShare) || 0;
+        const cs = daily && daily.metroShare || 0;
         const f = best.f, raw = best.dNet > 8 ? best.r.share + 0.05 : Math.max(best.r.share + 0.06, Math.min(0.16, cs + 0.05)), target = Math.round(raw * 100) / 100;
         const what = f.T.hub ? '接驳出行' : '到访出行';
         cands.push({ type: 'facShare', coolKey: 'fac:' + f.id, fac: f.id, basis: best.basis, start: best.r.share, target: target, fare0: Tasks.fareLevel(g.econ.fare), title: '地铁服务「' + f.name + '」',
@@ -1359,11 +1653,13 @@
       if (this.issued['dyn:' + tp.id] || ym < U.ymIndex(tp.from[0], tp.from[1]) || ym > U.ymIndex(tp.to[0], tp.to[1]) || !free('city:' + tp.id, tp.type)) continue;
       const c = Object.assign({ coolKey: 'city:' + tp.id, cityId: tp.id }, JSON.parse(JSON.stringify(tp)), { reward: tp.reward * ci });
       delete c.from; delete c.to; delete c.id;
+      if (Tasks.scopeStatus(c, g)) continue;
       if (this.evaluate(c, g).ok) continue;
       cands.push(c, c);   // 权重加倍，让本城任务更常出现
     }
-    if (!cands.length) return null;
-    const c = cands[Math.floor(rng.next() * cands.length)];
+    const eligible = cands.filter(function (t) { return !Tasks.scopeStatus(t, g); });
+    if (!eligible.length) return null;
+    const c = eligible[Math.floor(rng.next() * eligible.length)];
     if (c.cityId) self.issued['dyn:' + c.cityId] = 1;
     if (c.type === 'stationCrowd') cool.crowd = ym + 36;
     const t = Object.assign({ id: 'd' + (this.seq++), kind: 'dyn', status: 'active', issuedAt: [y, m], deadline: dl(c.months), streak: 0 }, c);
@@ -1371,6 +1667,7 @@
   };
 
   Tasks.prototype.rebaseCongestion=function(g){
+    if(playerScope(g)){for(const t of this.active)if(t.type==='zoneCong'&&t.metric!=='carShare')delete t.playerScopeKey;this.rebasePlayerScope(g);return;}
     for(const t of this.active.slice())if(t.type==='zoneCong'&&t.metric!=='carShare'){
       const v=g.model.zoneTraffic(t.zone),room=g.model.zoneOpportunity(t.zone)/Math.max(1,v.trips);
       t.legacyGoal={start:t.start,target:t.target,streak:t.streak||0,title:t.title,desc:t.desc,deadline:t.deadline&&t.deadline.slice(),progress:t.progress?JSON.parse(JSON.stringify(t.progress)):null};t.metric='carShare';t.start=v.carShare;t.target=Math.max(0,v.carShare-Math.min(.025,room*.15));t.samples=[];t.streak=0;
@@ -1451,7 +1748,7 @@
         title: '疏解「' + L.name + '」最拥挤区段', desc: L.name + ' 的「' + (a ? a.name : '') + '—' + (b ? b.name : '') + '」早高峰满载率已达 ' + U.fmtPct(top.lf, 0) + '，列车已挤不下。不修新线也可以：把它降到 100% 以下并保持 3 个月。',
         tips: ['升级沿线最小的车站，列车就能加长编组', '在拥挤区段两端做换乘，引导乘客换到平行线路', '把支线拆成独立线路或减少共线，空出班次'] });
     }
-    const tight = crowd.find(function (x) { return x.lf > 1 && x.cars < 8 && free('cars:' + x.lid); });
+    const tight = crowd.find(function (x) { return x.lf > 1 && x.cars < 8 && (!CM.RailSystems || CM.RailSystems.get(g.net.lines[x.lid]).cars >= 8) && free('cars:' + x.lid); });
     if (tight) {
       const L = g.net.lines[tight.lid];
       out.push({ type: 'lineCars', line: tight.lid, start: tight.cars, target: 8, coolKey: 'opt:cars:' + tight.lid, months: 24, reward: 1.5 * gm, theme: Tasks.THEME.lineCars,
@@ -1471,7 +1768,8 @@
     const stats = Tasks.lineStats(g), hist = this.lineHist || {};
     for (const lid in hist) {
       const s = stats.get(lid), L = g.net.lines[lid]; if (!s || !L || !taskPlayer(L) || !free('eff:' + lid)) continue;
-      const old = hist[lid].find(function (r) { return ym - r[0] >= 24 && ym - r[0] <= 48 && Math.abs(r[2] - s.km) <= Math.max(0.5, r[2] * 0.05); });
+      const key = playerScope(g) ? Tasks.scopedDaily(g).scopeKey : null;
+      const old = hist[lid].find(function (r) { return (!key || r[3] === key) && ym - r[0] >= 24 && ym - r[0] <= 48 && Math.abs(r[2] - s.km) <= Math.max(0.5, r[2] * 0.05); });
       if (!old || old[1] <= 0) continue;
       const was = old[1] / Math.max(0.1, old[2]), now = s.riders / Math.max(0.1, s.km);
       if (now >= was * 0.85) continue;
@@ -1480,16 +1778,16 @@
         tips: ['打开「城市发展」图层，看人口与岗位搬到了哪里', '把线路端点延伸到新开发的片区，或与通往新区的线路换乘', '与相邻线路贯通，减少换乘，让老线路承接新的客流'] });
       break;
     }
-    return out;
+    return out.filter(function (t) { return !Tasks.scopeStatus(t, g); });
   };
   const M_inherited = function (g, lid) { for (const id in g.net.segments) { const s = g.net.segments[id]; if (s.line === lid && s.inherited) return true; } return false; };
   // 每月：记录各线路客流（每年 1 月一次），按节奏提出可选挑战，清理过期的待选
   Tasks.prototype.offerMonthly = function (g) {
     const out = [], ym = g.ym(), O = Tasks.OPT;
-    if (D.noDynTasks || !g.model.trafficReady()) return out;
+    if (D.noDynTasks || !g.model.trafficReady() || playerScope(g) && !Tasks.scopedDaily(g).ready) return out;
     if (g.clock.m === 1) {
       const hist = this.lineHist || (this.lineHist = {});
-      Tasks.lineStats(g).forEach(function (s, lid) { const a = hist[lid] || (hist[lid] = []); if (!a.length || a[a.length - 1][0] !== ym) a.push([ym, Math.round(s.riders), +s.km.toFixed(2)]); if (a.length > 8) a.shift(); });
+      Tasks.lineStats(g).forEach(function (s, lid) { const a = hist[lid] || (hist[lid] = []); if (!a.length || a[a.length - 1][0] !== ym) a.push([ym, Math.round(s.riders), +s.km.toFixed(2), playerScope(g) ? Tasks.scopedDaily(g).scopeKey : null]); if (a.length > 8) a.shift(); });
       for (const lid in hist) if (!g.net.lines[lid]) delete hist[lid];
     }
     this.offers = (this.offers || []).filter(function (o) { return ym <= o.expiresYM; });
@@ -1508,6 +1806,7 @@
   // 接受：从现在开始计时；预算类记下当前累计建设支出
   Tasks.prototype.accept = function (g, id) {
     const k = (this.offers || []).findIndex(function (o) { return o.id === id; }); if (k < 0) return null;
+    if (Tasks.scopeStatus(this.offers[k], g) || playerScope(g) && scopeMetric(this.offers[k]) && !Tasks.scopedDaily(g).ready) return null;
     const o = this.offers.splice(k, 1)[0], ym = g.ym(), dl = ym + o.months;
     const t = Object.assign({}, o, { kind: 'opt', status: 'active', issuedAt: [g.clock.y, g.clock.m], deadline: [Math.floor(dl / 12), dl % 12 + 1], streak: 0 });
     delete t.expiresYM;

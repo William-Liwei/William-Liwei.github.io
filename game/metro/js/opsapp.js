@@ -117,7 +117,7 @@
     if (!moved && !bought) {
       const C = g.compiled, rts = C.routes.filter(function (r) { return r.lineId === lid && !r.svc; }), min = rts.reduce(function (a, r) { return Math.min(a, r.cars); }, 8);
       if (min < (CM.RailSystems ? CM.RailSystems.get(L).cars : 8)) {
-        const ids = []; for (const r of rts) if (r.cars === min) for (const sid of r.stIds) { const s = g.net.stations[sid]; if (s && CFG.metro.carsBySize[s.size] === min && ids.indexOf(sid) < 0) ids.push(sid); }
+        const ids = []; for (const r of rts) if (r.cars === min) for (const sid of r.stIds) { const s = g.net.stations[sid]; if (OD.owned(s) && CFG.metro.carsBySize[s.size] === min && ids.indexOf(sid) < 0) ids.push(sid); }
         for (const sid of ids) cost += station(g.net.stations[sid]);
         if (ids.length) { steps.push({ type: 'upgrade', ids: ids }); parts.push('升级 ' + ids.length + ' 座车站以加长编组'); }
       }
@@ -170,7 +170,7 @@
   // ======================== 月度记录与改造效果 ========================
   // 只读模拟结果，不影响模拟。每月记下各线路、车站的指标（趋势图用）；线路或车站的配置变化时，把变化和改造前的指标记入改造记录，之后用当前指标对比
   const KEEP_L = 60, KEEP_S = 18, KEEP_LOG = 40;
-  const trainCount = function (g) { const c = {}; if (g.fleet) for (const t of g.fleet.trains) if (t.line) c[t.line] = (c[t.line] || 0) + 1; return c; };
+  const trainCount = function (g) { const c = {}; if (g.fleet) for (const t of g.fleet.trains) if (t.line && OD.owned(t)) c[t.line] = (c[t.line] || 0) + 1; return c; };
   const lineSig = function (g, lid, count) {
     const L = g.net.lines[lid], tp = M.lineTopo(g.net, lid); let km = 0;
     // 编译结果里已有区段几何（v2.6：以前每月为每条线重算一遍几何，线路多时一次要半秒）
@@ -185,6 +185,7 @@
     const out = {}, stats = OD.lineStats(g), crowd = new Map();
     for (const x of OD.crowd(g)) crowd.set(x.lid, x.lf);
     for (const lid in g.net.lines) {
+      if (!OD.owned(g.net.lines[lid])) continue;
       const info = OD.lineInfo(g, lid), main = info.find(function (x) { return !x.svc; }) || info[0], P = main && main.per && main.per[0], s = stats.get(lid);
       out[lid] = [Math.round(s ? s.riders : 0), Math.round((crowd.get(lid) || 0) * 100), P && P.f > 0 ? Math.round(600 / P.f) : 0, tripOf(main && main.rt), P ? Math.round(P.capH) : 0];
     }
@@ -193,7 +194,7 @@
   // 车站当前指标：[日客流, 高峰负荷 %]
   const stationNow = function (g) {
     const out = {}, C = g.model.net ? g.model.net.C : g.compiled, sd = g.model.dailyStale ? null : g.model.stDailyWk || g.model.stDaily; if (!sd) return out;
-    for (const sid in g.net.stations) { const k = C.sIndex.get(sid); if (k !== undefined && k < sd.peak.length) out[sid] = [Math.round(sd.inn[k] + sd.out[k] + sd.xfer[k]), Math.round(sd.peak[k] / CM.Metro.stationCapacity(g.net.stations[sid]) * 100)]; }
+    for (const sid in g.net.stations) { if (!OD.owned(g.net.stations[sid])) continue; const k = C.sIndex.get(sid); if (k !== undefined && k < sd.peak.length) out[sid] = [Math.round(sd.inn[k] + sd.out[k] + sd.xfer[k]), Math.round(sd.peak[k] / CM.Metro.stationCapacity(g.net.stations[sid]) * 100)]; }
     return out;
   };
   // 每月一次（当月交通结果可用时）
@@ -207,8 +208,8 @@
       S[k][id] = sig; arr.push([ym].concat(vals));
       if (arr.length > keep) arr.shift();
     };
-    M.withSegIndex([g.net], function () { for (const lid in g.net.lines) put('l', lid, lineSig(g, lid, count), lm[lid] || [0, 0, 0, 0, 0], KEEP_L); });
-    for (const sid in g.net.stations) put('s', sid, stationSig(g.net.stations[sid]), sm[sid] || [0, 0], KEEP_S);
+    M.withSegIndex([g.net], function () { for (const lid in g.net.lines) if (OD.owned(g.net.lines[lid])) put('l', lid, lineSig(g, lid, count), lm[lid] || [0, 0, 0, 0, 0], KEEP_L); });
+    for (const sid in g.net.stations) if (OD.owned(g.net.stations[sid])) put('s', sid, stationSig(g.net.stations[sid]), sm[sid] || [0, 0], KEEP_S);
     for (const k of ['l', 's']) { const live = k === 'l' ? g.net.lines : g.net.stations; for (const id in T[k]) if (!live[id]) { delete T[k][id]; delete S[k][id]; } }
     while (log.length > KEEP_LOG) log.shift();
   };
@@ -434,8 +435,8 @@
     const drawRail = function () {
       for (const k in navs) navs[k].classList.toggle('on', st.root === k);
       const al = activeAlerts().length;
-      count(navs.home, al, true); count(navs.lines, Object.keys(g.net.lines).length); count(navs.stations, Object.keys(g.net.stations).length);
-      if (navs.fleet) count(navs.fleet, g.fleet.trains.length);
+      count(navs.home, al, true); count(navs.lines, OD.lineRows(g).length); count(navs.stations, OD.stationRows(g).length);
+      if (navs.fleet) count(navs.fleet, g.fleet.trains.filter(OD.owned).length);
       stateEl.className = 'mc-state' + (al ? ' warn' : '');
       stateEl.replaceChildren(h('i'), h('span', null, A.ready(g) ? (al ? al + ' 项待处理' : '线网运行平稳') : '正在更新运营数据'));
       I18(stateEl);
@@ -453,7 +454,8 @@
         if (i) nodes.push(h('span', { class: 'mc-sep' }, '/'));
         nodes.push(c[1] ? h('button', { class: 'mc-crumb link', onclick: c[1] }, c[0]) : h('b', { class: 'mc-crumb' }, c[0]));
       });
-      nodes.push(h('span', { class: 'grow' }), h('span', { class: 'mc-when' }, CM.DATA.city + ' · ' + g.clock.y + '年' + g.clock.m + '月'));
+      const home = OD.home(g);
+      nodes.push(h('span', { class: 'grow' }), h('span', { class: 'mc-when' }, (home && home.cityName || CM.DATA.city) + ' · ' + g.clock.y + '年' + g.clock.m + '月'));
       bar.replaceChildren.apply(bar, nodes); I18(bar);
     };
     const setContent = function (nodes) { content.replaceChildren.apply(content, nodes.flat().filter(Boolean)); I18(content); };
@@ -529,10 +531,10 @@
       let top = '';
       for (const lid of M.sortIds(Object.keys(net.lines))) {
         const L = net.lines[lid], d = linePath(net, lid); if (!d) continue;
-        const col = AX.line(L), hot = o.all || lid === o.focus || through.indexOf(lid) >= 0;
+        const col = AX.line(L), hot = OD.owned(L) && (o.all || lid === o.focus || through.indexOf(lid) >= 0);
         if (hot) top += '<path class="mc-halo" d="' + d + '"/><path class="mc-l" stroke="' + col + '" d="' + d + '"/>';
         else o2 += '<path class="mc-other" d="' + d + '"/>';
-        if (o.all) top += '<path class="mc-hit" data-lid="' + esc(lid) + '" data-tip="' + esc(L.name) + '" d="' + d + '"/>';
+        if (o.all && OD.owned(L)) top += '<path class="mc-hit" data-lid="' + esc(lid) + '" data-tip="' + esc(L.name) + '" d="' + d + '"/>';
       }
       o2 += top;
       if (o.station) {
@@ -597,7 +599,7 @@
         logs.map(function (e) { return h('div', { class: 'mc-fx' }, h('span', { class: 'mc-fx-d' }, ymText(e.ym)), fxBody(kind, e, now)); }));
     };
     const recentFx = function () {
-      const log = (g.opsNote && g.opsNote.log || []).slice(-4).reverse().filter(function (e) { return (e.k === 'l' ? g.net.lines : g.net.stations)[e.id]; });
+      const log = (g.opsNote && g.opsNote.log || []).slice(-4).reverse().filter(function (e) { return OD.owned((e.k === 'l' ? g.net.lines : g.net.stations)[e.id]); });
       if (!log.length) return null;
       return h('section', { class: 'mc-card' }, cardHead('最近的改造效果', '改造前一个月与当前对比'), log.map(function (e) {
         const L = e.k === 'l' ? g.net.lines[e.id] : null, s = e.k === 's' ? g.net.stations[e.id] : null, rows = A.rows(g, e.k, e.id);
@@ -630,13 +632,13 @@
     };
     const overview = function () {
       setBar([['总览']]);
-      const d = g.model.daily || {}, rows = lineRows(), srows = stationRows(), al = activeAlerts(), fl = g.fleet ? g.fleet.trains : [], km = rows.reduce(function (a, r) { return a + r.km; }, 0);
+      const d = OD.home(g) || {}, rows = lineRows(), srows = stationRows(), al = activeAlerts(), fl = g.fleet ? g.fleet.trains.filter(OD.owned) : [], km = rows.reduce(function (a, r) { return a + r.km; }, 0);
       const need = rows.reduce(function (a, r) { return a + r.need; }, 0), avail = rows.reduce(function (a, r) { return a + r.avail; }, 0), on = CM.Settings.get('opsPop') !== false;
-      const hist = g.history, hl = hist[hist.length - 1], hp = hist.length > 1 ? hist[hist.length - 2] : null;
+      const hist = OD.history(g), satHist = OD.history(g, true), hl = hist[hist.length - 1], hp = hist.length > 1 ? hist[hist.length - 2] : null, sl = satHist[satHist.length - 1], sp = satHist.length > 1 ? satHist[satHist.length - 2] : null;
       const kpis = h('div', { class: 'mc-kpis' },
-        kpi('日客运量', d.metro ? U.fmtPeople(d.metro) : '—', hp ? deltaEl(hl.riders, hp.riders, true) : '人次（周平均）'),
-        kpi('地铁分担率', d.metroShare != null ? U.fmtPct(d.metroShare, 1) : '—', hp ? deltaEl(hl.share, hp.share, true) : '全部出行'),
-        kpi('满意度', String(Math.round(g.econ.sat)), hp ? deltaEl(hl.sat, hp.sat, true) : '满分 100'),
+        kpi('日客运量', d.ready !== false && Number.isFinite(d.metro) ? U.fmtPeople(d.metro) : '—', hp ? deltaEl(hl.riders, hp.riders, true) : '人次（周平均）'),
+        kpi('地铁分担率', d.ready !== false && Number.isFinite(d.metroShare) ? U.fmtPct(d.metroShare, 1) : '—', hp ? deltaEl(hl.share, hp.share, true) : '全部出行'),
+        kpi('满意度', String(Math.round(g.econ.sat)), sp ? deltaEl(sl.sat, sp.sat, true) : '满分 100'),
         kpi('线路', String(rows.length), U.fmtNum(km, 1) + ' km', '', function () { setRoot('lines'); }),
         kpi('车站', String(srows.length), srows.filter(function (r) { return r.lines.length > 1; }).length + ' 座换乘', '', function () { setRoot('stations'); }),
         g.fleet ? kpi('列车', String(fl.length), '配属 ' + avail + ' / 需要 ' + need, need > avail ? 'warn' : '', function () { setRoot('fleet'); }) : null);
@@ -657,11 +659,11 @@
         al.length > st.todoLimit ? h('div', { class: 'mc-pad' }, h('button', { class: 'btn sm', onclick: function () { const t = content.scrollTop; st.todoLimit += 12; draw(); content.scrollTop = t; } }, '显示更多', ' · ', al.length - st.todoLimit, ' 项')) : null);
       const topL = rows.filter(function (r) { return r.lf > 0; }).sort(function (a, b) { return b.lf - a.lf; }).slice(0, 6).map(function (r) { return { name: r.L.name, v: r.lf, badge: lb(r.L), go: function () { openLine(r.lid); } }; });
       const topS = srows.filter(function (r) { return r.load > 0; }).sort(function (a, b) { return b.load - a.load; }).slice(0, 6).map(function (r) { return { name: r.s.name, v: r.load, go: function () { openStation(r.sid); } }; });
-      const allSt = Object.values(g.net.stations), over = srows.filter(function (r) { return r.load > 1; });
+      const allSt = srows.map(function (r) { return r.s; }), over = srows.filter(function (r) { return r.load > 1; });
       const dev = srows.filter(function (r) { return r.s.tod; });
       const netCard = h('section', { class: 'mc-card' }, cardHead('线网预览', rows.length + ' 条线路', h('span', { class: 'mc-maplg' }, over.length ? [h('i'), '过载 ' + over.length] : null, dev.length ? [h('i', { class: 'tod' }), '已开发 ' + dev.length] : null)),
         allSt.length ? mapEl({ fit: boundsOf(allSt), all: true, alerts: over, tods: dev, minW: 40 }) : h('div', { class: 'mc-none' }, '修好线路后在这里预览线网'));
-      const hseries = function (key, f) { return hist.slice(-120).map(function (r) { return [U.ymIndex(r.y, r.m), f ? f(r[key]) : r[key]]; }); };
+      const hseries = function (key, f) { return (key === 'sat' ? satHist : hist).slice(-120).filter(function (r) { return Number.isFinite(r[key]); }).map(function (r) { return [U.ymIndex(r.y, r.m), f ? f(r[key]) : r[key]]; }); };
       const trendCard = metricCard('net', [
         { k: 'riders', label: '日客运量', sub: '周平均', short: '客运量', pts: hseries('riders'), fmt: U.fmtPeople },
         { k: 'share', label: '地铁分担率', sub: '地铁占全部出行', short: '分担率', pts: hseries('share', function (v) { return Math.round(v * 1000) / 10; }), fmt: function (v) { return U.fmtNum(v, 1) + '%'; } },
@@ -729,6 +731,7 @@
     const lineDetail = function () {
       const net = nets(), lid = st.id, L = net.lines[lid], rootCrumb = ['线路管理', function () { setRoot('lines'); }];
       if (!L) { setBar([rootCrumb, ['线路已不存在']]); setContent([empty('route', '线路已不存在')]); return; }
+      if (!OD.owned(L)) { setBar([rootCrumb, [L.name]]); setContent([empty('route', '该资产由所属公司独立管理')]); return; }
       setBar([rootCrumb, [L.name]]);
       const official = !!g.net.lines[lid], tp = M.lineTopo(net, lid), row = lineRows().find(function (r) { return r.lid === lid; }) || { lid: lid, L: L, tp: tp, km: 0, st: (tp.stations || []).length, kmh: M.lineKmh(L), riders: 0, lf: 0, avail: 0, need: 0, svcs: 0 };
       const headCard = h('section', { class: 'mc-card mc-dh' },
@@ -784,14 +787,15 @@
         I18(host); I18(pager);
       };
       fill();
-      const devMap = st.f.stations === 'dev' && dev.length ? h('section', { class: 'mc-card' }, cardHead('已开发车站分布', '圆点越大，开发等级越高'), mapEl({ fit: boundsOf(Object.values(g.net.stations)), tods: dev, minW: 40 })) : null;
+      const devMap = st.f.stations === 'dev' && dev.length ? h('section', { class: 'mc-card' }, cardHead('已开发车站分布', '圆点越大，开发等级越高'), mapEl({ fit: boundsOf(rows.map(function (r) { return r.s; })), tods: dev, minW: 40 })) : null;
       setContent([toolbar('stations', [['all', '全部', rows.length], ['over', '过载', over.length], ['xfer', '换乘站', xfer.length], ['dev', '已开发', dev.length]], '搜索车站', fill), devMap, host, pager]);
     };
     const stationDetail = function () {
       const net = nets(), sid = st.id, s = net.stations[sid], rootCrumb = ['车站管理', function () { setRoot('stations'); }];
       if (!s) { setBar([rootCrumb, ['车站已不存在']]); setContent([empty('metro', '车站已不存在')]); return; }
+      if (!OD.owned(s)) { setBar([rootCrumb, [s.name]]); setContent([empty('metro', '该资产由所属公司独立管理')]); return; }
       setBar([rootCrumb, [s.name]]);
-      const official = !!g.net.stations[sid], ls = M.stationLines(net, sid).map(function (l) { return net.lines[l]; }).filter(Boolean);
+      const official = !!g.net.stations[sid], ls = M.stationLines(net, sid).map(function (l) { return net.lines[l]; }).filter(OD.owned);
       const C = g.model.net ? g.model.net.C : null, k = C ? C.sIndex.get(sid) : undefined, sd = g.model.stDaily, sw = g.model.stDailyWk, serviced = k !== undefined && !!C.serviced[k], live = serviced && sd && !g.model.dailyStale && k < sd.inn.length;
       const cap = CM.Metro.stationCapacity(s), peak = live && sw ? sw.peak[k] : 0, load = peak / cap, kind = s.lv ? M.levelsText(M.stationLevels(net, sid)) : CFG.metro.typeName[s.type], I = official ? self.todInfo(sid) : null;
       const headCard = h('section', { class: 'mc-card mc-dh' },

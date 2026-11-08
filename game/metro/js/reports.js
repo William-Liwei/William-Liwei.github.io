@@ -17,9 +17,11 @@
     return CM.Settings.get('autoImpactReport') ? '正在评估本次建设的交通效果。完成后会在界面空闲时自动展开报告。' : '正在评估本次建设的交通效果。完成后可随时从地铁芯概览打开报告。';
   };
   Reports.notice = function (g, r) {
-    if (Reports.evaluating(g)) return '本次建设仍在评估，以下保留最近一份已完成的报告。';
-    if (r && r.previous) return '这是最近一份已完成的报告，不包含之后的建设。';
-    return '';
+    const notes = [];
+    if (Reports.evaluating(g)) notes.push('本次建设仍在评估，以下保留最近一份已完成的报告。');
+    else if (r && r.previous) notes.push('这是最近一份已完成的报告，不包含之后的建设。');
+    if (r && r.metricScope === 'player-open-v1' && CM.PlayerMetrics && r.scopeKey !== CM.PlayerMetrics.scopeKey(g)) notes.push('当前可经营范围已有变化，以下仍按评估时的范围展示。');
+    return notes.join(' ');
   };
   Reports.viewed = function (ui, r) {
     const s = current(ui, ui.g());

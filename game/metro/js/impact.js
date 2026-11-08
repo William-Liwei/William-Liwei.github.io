@@ -8,6 +8,20 @@
   CM.Impact = Impact;
   const WALK = CFG.walk.maxAccessM / CFG.CELL_M;   // 步行 15 分钟约 4.5 格
 
+  // Keep traffic observations separate from the full-network operating account.
+  // Older saved comparisons have no scoped data and retain their original basis.
+  Impact.traffic = function (r) {
+    r = r || {};
+    const valid = function (d) { return d && ['metroShare', 'metro', 'car', 'commute', 'cong'].every(function (k) { return Number.isFinite(d[k]); }); };
+    const scoped = !!(r && r.metricScope === 'player-open-v1' && typeof r.scopeKey === 'string' && r.scopeKey && valid(r.scopedBase) && valid(r.scopedDraft));
+    return { scoped: scoped, base: scoped ? r.scopedBase : r.base, draft: scoped ? r.scopedDraft : r.draft,
+      wk: scoped ? r.scopedWk : r.wk, we: scoped ? r.scopedWe : r.we };
+  };
+  Impact.scopeNote = function (r) {
+    if (Impact.traffic(r).scoped) return '交通评价按评估时已开放的可经营范围统计；线路客流、票款与成本按实际运行计算。';
+    return r && r.metricScope === 'world' ? '交通评价采用全地图口径。' : '这份旧结果采用全地图交通口径，包含未开放地区；保留生成时的统计结果。';
+  };
+
   // 运营费用口径（与 Economy.day 相同）：开通前后全网车站的日运营费；列车车公里在对照结果中（carKm）
   Impact.opsInputs = function (g, beforeC, afterC) {
     const oi = g.econ.opsIndex(g.clock.y);
@@ -64,17 +78,20 @@
   // r：impactReport 或预测结果（base / draft 为周平均日汇总）；ops 为运营费用口径（预测时由调用方给出）
   Impact.analyze = function (r, g, opts) {
     opts = opts || {};
-    const a = r.base, b = r.draft; if (!a || !b) return null;
+    const traffic = Impact.traffic(r), a = traffic.base, b = traffic.draft; if (!a || !b || !r.base || !r.draft) return null;
     const model = g.model, ops = r.ops || opts.ops || { oi: g.econ.opsIndex(g.clock.y), st0: 0, st1: 0 };
+    const comm0 = traffic.wk && traffic.wk.base ? traffic.wk.base.commute : a.commute, comm1 = traffic.wk && traffic.wk.draft ? traffic.wk.draft.commute : b.commute;
     const k = {
       share: (b.metroShare - a.metroShare) * 100,
-      commute: (b.commute || 0) - (a.commute || 0),
+      commute: (comm1 || 0) - (comm0 || 0),
       metro: b.metro - a.metro,
       car: b.car - a.car,
       cong0: a.congAM != null ? a.congAM : a.cong, cong1: b.congAM != null ? b.congAM : b.cong,
-      fare: ((b.fare || 0) - (a.fare || 0)) / 10000,
-      ops: ((b.carKm || 0) - (a.carKm || 0)) * CFG.ops.carKmCost * ops.oi + ops.st1 - ops.st0,
-      induced: Math.max(0, (b.indM || 0) - (a.indM || 0)),
+      fare: ((r.draft.fare || 0) - (r.base.fare || 0)) / 10000,
+      ops: ((r.draft.carKm || 0) - (r.base.carKm || 0)) * CFG.ops.carKmCost * ops.oi + ops.st1 - ops.st0,
+      // The solver does not yet publish induced demand by origin zone. Do not
+      // compare a full-map increment to the scoped passenger increment.
+      induced: traffic.scoped ? 0 : Math.max(0, (b.indM || 0) - (a.indM || 0)),
       carAll: a.car || 0,
     };
     k.net = k.fare - k.ops;
@@ -135,7 +152,7 @@
         reasons.push(['bad', 'road', '最拥堵的「' + farHot[0].name + '」（拥堵指数 ' + farHot[0].vc0.toFixed(2) + '）离新线最近的车站约 ' + U.fmtNum(farHot[0].km, 1) + ' km，新线分流不到这条路上的车流']);
         tips.push(['lyFlow', '打开「出行方向」图层，看「' + farHot[0].name + '」上的车从哪里来、往哪里去，沿这个方向修线']);
       }
-      if (k.carAll > 0 && -k.car / k.carAll < 0.01) reasons.push(['warn', 'car', '改乘地铁的出行只占全市非地铁出行的 ' + U.fmtPct(Math.max(0, -k.car) / k.carAll, 1) + '，对整体道路拥堵影响有限']);
+      if (k.carAll > 0 && -k.car / k.carAll < 0.01) reasons.push(['warn', 'car', '改乘地铁的出行只占' + (traffic.scoped ? '可经营范围内' : '全地图') + '非地铁出行的 ' + U.fmtPct(Math.max(0, -k.car) / k.carAll, 1) + '，对整体道路拥堵影响有限']);
       if (k.metro > 1 && fromCar < 0.4) reasons.push(['warn', 'people','新增乘客多数原本步行或乘坐其他公共交通，开车的人改乘不多']);
       { const bg = CM.Eras ? CM.Eras.bg(g.year()) : null; if (bg && bg.keep >= 0.3) reasons.push(['info', 'road', '这个年代道路需求旺盛：路面空出来后，约 ' + U.fmtPct(bg.keep, 0) + ' 又被公交、货车和新增的小汽车占满，地铁未必能让路上明显变空']); }
     }
@@ -152,11 +169,12 @@
     if (weak.length && k.net < 0) neg = (weak.some(function (s) { return s.end; }) ? '但外围车站客流不足' : '但部分车站客流不足') + '，导致新增运营成本高于票款收入';
     else if (k.net < 0 && k.ops > 0.0001) neg = '但客流强度还不够，新增运营成本高于票款收入';
     else if (congFlat && farHot.length) neg = '但最拥堵的道路离新线较远，道路拥堵没有明显改善';
-    else if (congFlat && k.metro > 1) neg = '但改乘地铁的车流相对全市很少，道路拥堵改善不明显';
+    else if (congFlat && k.metro > 1) neg = '但改乘地铁的车流相对' + (traffic.scoped ? '可经营范围' : '全地图') + '很少，道路拥堵改善不明显';
     else if (maxLF > 1) neg = '但早高峰列车过于拥挤，限制了吸引力';
     else if (k.ops > 0.0001 && k.net >= 0) neg = '票款收入足以覆盖新增运营成本';
     const verdict = pos + (neg ? '，' + neg : '') + '。';
-    return { k: k, stations: st, avg: avg, weak: weak, hot: hot, maxLF: maxLF, reasons: reasons, tips: tips, verdict: verdict, connects: connects, dc: dc };
+    return { k: k, stations: st, avg: avg, weak: weak, hot: hot, maxLF: maxLF, reasons: reasons, tips: tips, verdict: verdict, connects: connects, dc: dc,
+      scoped: traffic.scoped, share0: a.metroShare, share1: b.metroShare, comm0: comm0 || 0, comm1: comm1 || 0, metro0: a.metro, metro1: b.metro };
   };
 
   // 数字从旧值滚动到新值（减少动态效果时直接显示）；元素插入页面后才开始计时（效果卡可能稍后才弹出）
@@ -194,8 +212,8 @@
   Impact.view = function (ui, r, opts) {
     opts = opts || {};
     const g = ui.g(), A = Impact.analyze(r, g, opts); if (!A) return h('div');
-    A.share0 = r.base.metroShare; A.share1 = r.draft.metroShare; A.comm0 = r.base.commute || 0; A.comm1 = r.draft.commute || 0; A.metro0 = r.base.metro; A.metro1 = r.draft.metro;
     const box = h('div', { class: 'imp' });
+    box.appendChild(h('p', { class: 'note imp-scope' }, Impact.scopeNote(r)));
     if (!opts.noKpi) box.appendChild(Impact.kpis(A, opts.pred));
     box.appendChild(h('div', { class: 'imp-why' }, h('div', { class: 'imp-q' }, ic('help', 15), opts.pred ? '预计会怎样，为什么？' : '为什么出现这个结果？'), h('p', { class: 'imp-verdict' }, A.verdict),
       h('ul', { class: 'imp-reasons' }, A.reasons.map(function (x) { return h('li', { class: 'lv-' + x[0] }, ic(x[1], 14), h('span', null, x[2])); }))));
@@ -220,11 +238,11 @@
   Impact.card = function (ui, r, opts) {
     opts = opts || {};
     const g = ui.g(), A = Impact.analyze(r, g); if (!A) return;
-    A.share0 = r.base.metroShare; A.share1 = r.draft.metroShare; A.comm0 = r.base.commute || 0; A.comm1 = r.draft.commute || 0; A.metro0 = r.base.metro; A.metro1 = r.draft.metro;
     const close = function () { ui.closeScreen(); if (opts.onClose) opts.onClose(); };
     const card = h('div', { class: 'card imp-card' },
       h('div', { class: 'imp-hero' }, h('span', { class: 'imp-burst' }, ic('sparkle', 22)), h('div', { class: 'grow' }, h('div', { class: 'tiny muted' }, opts.kicker || '建设效果'), h('h2', null, opts.title || '新线路开通了！'))),
       Impact.kpis(A, false),
+      h('p', { class: 'note imp-scope' }, Impact.scopeNote(r)),
       h('p', { class: 'imp-verdict' }, A.verdict),
       opts.extra || null,
       h('div', { class: 'modal-actions' },

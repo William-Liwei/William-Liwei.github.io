@@ -17,16 +17,43 @@
   function esc(s) { return U.esc ? U.esc(String(s)) : String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
   // ---------- 数据 ----------
+  const owned = asset => !!asset && (!asset.ownerId || asset.ownerId === 'player');
+  const LOCAL_FIELDS = ['pop', 'jobs', 'share', 'cong', 'commute', 'riders', 'sat', 'coverage', 'stations', 'crowd', 'trips', 'ridersWk', 'ridersWe'];
+  const TRAFFIC_FIELDS = ['share', 'cong', 'commute', 'riders', 'coverage', 'crowd', 'trips', 'ridersWk', 'ridersWe'];
+  function homeMetrics(g) { const P = CM.PlayerMetrics; return P && P.enabled(g) ? P.home(g) : null; }
+  function localStation(g, station, mask) {
+    if (!owned(station)) return false;
+    if (!mask) return true;
+    const cell = g.city.cellAt(station.x, station.y); return cell >= 0 && cell < mask.length && !mask[cell];
+  }
   function liveRec(g) {
-    const d = g.model.daily || {}, tot = g.city.totals();
+    const local = homeMetrics(g), d = local || g.model.daily || {}, tot = local || g.city.totals(), P = CM.PlayerMetrics;
+    const ready = !local || d.ready, wk = local ? d.dailyWk || {} : g.model.dailyWk || d;
+    const value = (v, fallback) => ready ? Number.isFinite(v) ? v : fallback : null;
+    const mask = local ? P.cityMask(g, P.homeCity(g)) : null, satScope = g.econ.satScope;
     return {
-      y: g.clock.y, m: g.clock.m, d: g.clock.d, live: true, pop: tot.pop, jobs: tot.jobs, share: d.metroShare || 0,
-      cong: d.cong || 1, commute: d.commute || 0, riders: d.metro || 0, sat: g.econ.sat, funds: g.econ.isFree() ? null : g.econ.funds, debt: g.econ.isFree() ? null : g.econ.debtTotal(), capex: g.econ.isFree() ? null : g.econ.capex,
-      coverage: d.coverage || 0, stations: g.compiled.stations.length, crowd: d.crowdShare || 0,
+      y: g.clock.y, m: g.clock.m, d: g.clock.d, live: true, pop: tot.pop, jobs: tot.jobs, share: value(d.metroShare, 0),
+      cong: value(d.cong, 1), commute: value(wk.commute, 0), riders: value(d.metro, 0),
+      sat: local && (!ready || !d.hasPopulation || !satScope || satScope.pending || satScope.scopeKey !== d.scopeKey) ? null : g.econ.sat,
+      funds: g.econ.isFree() ? null : g.econ.funds, debt: g.econ.isFree() ? null : g.econ.debtTotal(), capex: g.econ.isFree() ? null : g.econ.capex,
+      coverage: value(d.coverage, 0), stations: local ? g.compiled.stations.filter(s => localStation(g, g.net.stations[s.id] || s, mask)).length : g.compiled.stations.length, crowd: value(d.crowdShare, 0),
+      metricScope: local ? 'player' : 'world', scopeKey: local && local.scopeKey, scopeLabel: local && local.scopeLabel, ready: ready,
     };
   }
   function timeline(g) {
-    let H = g.history.slice();
+    const local = homeMetrics(g);
+    // Retain real money history at every date. Incompatible geographic records
+    // become gaps in assessment charts; they must not be relabelled or rebased.
+    let H = (g.history || []).map(function (row) {
+      if (!local) return row;
+      const r = Object.assign({}, row), same = r.metricScope === 'player' && r.scopeKey === local.scopeKey;
+      if (!same) for (const key of LOCAL_FIELDS) r[key] = null;
+      else {
+        if (r.ready === false) for (const key of TRAFFIC_FIELDS) r[key] = null;
+        if (r.ready === false || r.satScopeKey !== local.scopeKey || r.satCityId && r.satCityId !== local.cityId) r.sat = null;
+      }
+      return r;
+    });
     H.push(liveRec(g));
     if (range !== 'all') H = H.slice(-(+range) - 1);
     return H;
@@ -229,10 +256,11 @@
     else el.appendChild(h('div', { class: 'delta muted' }, o.note || ' '));
     if (vals.length >= 2) {
       const W = 200, Hh = 34, lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals), sp = hi - lo;
-      const pts = vals.map(function (v, i) { return [(i / (vals.length - 1) * (W - 6) + 3).toFixed(1), (sp > 1e-9 ? Hh - 4 - (v - lo) / sp * (Hh - 8) : Hh / 2).toFixed(1)]; });
+      const pts = o.vals.map(function (v, i) { return v == null ? null : [(i / (o.vals.length - 1) * (W - 6) + 3).toFixed(1), (sp > 1e-9 ? Hh - 4 - (v - lo) / sp * (Hh - 8) : Hh / 2).toFixed(1)]; });
       const c = pal()[0];
-      const d = 'M' + pts.map(function (p) { return p[0] + ' ' + p[1]; }).join('L');
-      const svg = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" preserveAspectRatio="none"><path d="' + d + 'L' + pts[pts.length - 1][0] + ' ' + Hh + 'L' + pts[0][0] + ' ' + Hh + 'Z" fill="' + c + '" fill-opacity="0.1"/><path d="' + d + '" fill="none" stroke="' + c + '" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>';
+      let d = '', pen = false; for (const p of pts) { if (!p) { pen = false; continue; } d += (pen ? 'L' : 'M') + p[0] + ' ' + p[1]; pen = true; }
+      const area = pts.every(Boolean) ? '<path d="' + d + 'L' + pts[pts.length - 1][0] + ' ' + Hh + 'L' + pts[0][0] + ' ' + Hh + 'Z" fill="' + c + '" fill-opacity="0.1"/>' : '';
+      const svg = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" preserveAspectRatio="none">' + area + '<path d="' + d + '" fill="none" stroke="' + c + '" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>';
       el.appendChild(h('div', { class: 'spark', html: svg }));
     } else el.appendChild(h('div', { style: { height: '36px' } }));
     return el;
@@ -273,6 +301,7 @@
     if (!mnet || !sd || !mnet.C.routes.length) return [];
     const byLine = new Map();
     mnet.C.routes.forEach(function (rt, i) {
+      if (!owned(g.net.lines[rt.lineId] || rt.line)) return;
       let o = byLine.get(rt.lineId); if (!o) { o = { name: rt.line ? rt.line.name : rt.label, color: AX.line(rt.line || { id: rt.lineId, color: rt.color }), v: 0 }; byLine.set(rt.lineId, o); }
       o.v += sd.routeBoard[i] || 0;
     });
@@ -281,8 +310,8 @@
   function stationItems(g) {
     const mnet = g.model.net, sd = g.model.dailyStale ? null : g.model.stDaily, P = pal();
     if (!mnet || !sd) return [];
-    const C = mnet.C, st = [];
-    for (let k = 0; k < C.stations.length; k++) st.push({ k: k, v: (sd.inn[k] || 0) + (sd.out[k] || 0) + (sd.xfer[k] || 0) });
+    const C = mnet.C, st = [], local = homeMetrics(g), PM = CM.PlayerMetrics, mask = local ? PM.cityMask(g, PM.homeCity(g)) : null;
+    for (let k = 0; k < C.stations.length; k++) if (localStation(g, g.net.stations[C.stations[k].id] || C.stations[k], mask)) st.push({ k: k, v: (sd.inn[k] || 0) + (sd.out[k] || 0) + (sd.xfer[k] || 0) });
     st.sort(function (a, b) { return b.v - a.v; });
     return st.slice(0, 8).filter(function (o) { return o.v > 0; }).map(function (o) {
       return { name: C.stations[o.k].name, v: o.v, color: P[0], tip: [{ name: '进站', v: U.fmtPeople(sd.inn[o.k]) }, { name: '出站', v: U.fmtPeople(sd.out[o.k]) }, { name: '换乘', v: U.fmtPeople(sd.xfer[o.k]) }] };
@@ -294,19 +323,20 @@
     const H = timeline(g), P = pal(), cur = H[H.length - 1], free = g.econ.isFree();
     const grid = h('div', { class: 'kpi-grid' });
     const last36 = function (k) { return pick(H.slice(-37), k); };
+    const show = (value, fmt) => value == null ? '—' : fmt(value);
     grid.append(
-      kpi({ icon: 'train', badge: 'b-teal', label: '地铁日客运量', value: U.fmtPeople(cur.riders), unit: '人次', vals: last36('riders'), delta: delta(H, 'riders', 'up', U.fmtPeople), onclick: function () { go('traffic'); } }),
-      kpi({ icon: 'metro', badge: 'b-teal', label: '地铁分担率', value: U.fmtPct(cur.share, 1), vals: last36('share'), delta: delta(H, 'share', 'up', function (v) { return (v * 100).toFixed(1) + ' 个百分点'; }), onclick: function () { go('traffic'); } }),
-      kpi({ icon: 'car', badge: cur.cong < 1.15 ? 'b-green' : (cur.cong < 1.6 ? 'b-orange' : 'b-red'), label: '道路拥堵指数', value: cur.cong.toFixed(2), vals: last36('cong'), delta: delta(H, 'cong', 'down', function (v) { return v.toFixed(2); }), onclick: function () { go('traffic'); } }),
-      kpi({ icon: cur.sat >= 60 ? 'smile' : (cur.sat >= 40 ? 'meh' : 'frown'), badge: cur.sat >= 60 ? 'b-green' : (cur.sat >= 40 ? 'b-orange' : 'b-red'), label: '市民满意度', value: Math.round(cur.sat), unit: '/ 100', vals: last36('sat'), delta: delta(H, 'sat', 'up', function (v) { return v.toFixed(1); }) }),
+      kpi({ icon: 'train', badge: 'b-teal', label: '地铁日客运量', value: show(cur.riders, U.fmtPeople), unit: '人次', vals: last36('riders'), delta: delta(H, 'riders', 'up', U.fmtPeople), onclick: function () { go('traffic'); } }),
+      kpi({ icon: 'metro', badge: 'b-teal', label: '地铁分担率', value: show(cur.share, v => U.fmtPct(v, 1)), vals: last36('share'), delta: delta(H, 'share', 'up', function (v) { return (v * 100).toFixed(1) + ' 个百分点'; }), onclick: function () { go('traffic'); } }),
+      kpi({ icon: 'car', badge: cur.cong == null ? 'b-slate' : cur.cong < 1.15 ? 'b-green' : (cur.cong < 1.6 ? 'b-orange' : 'b-red'), label: '道路拥堵指数', value: show(cur.cong, v => v.toFixed(2)), vals: last36('cong'), delta: delta(H, 'cong', 'down', function (v) { return v.toFixed(2); }), onclick: function () { go('traffic'); } }),
+      kpi({ icon: cur.sat == null ? 'meh' : cur.sat >= 60 ? 'smile' : (cur.sat >= 40 ? 'meh' : 'frown'), badge: cur.sat == null ? 'b-slate' : cur.sat >= 60 ? 'b-green' : (cur.sat >= 40 ? 'b-orange' : 'b-red'), label: '市民满意度', value: show(cur.sat, Math.round), unit: '/ 100', vals: last36('sat'), delta: delta(H, 'sat', 'up', function (v) { return v.toFixed(1); }) }),
       kpi({ icon: 'people', badge: 'b-blue', label: '城市人口', value: U.fmtPeople(cur.pop), vals: last36('pop'), delta: delta(H, 'pop', 'up', U.fmtPeople) }),
-      free ? kpi({ icon: 'station', badge: 'b-slate', label: '车站 · 覆盖人口', value: String(cur.stations), unit: '站 · ' + U.fmtPct(cur.coverage, 0), vals: last36('coverage'), delta: delta(H, 'coverage', 'up', function (v) { return (v * 100).toFixed(1) + ' 个百分点'; }) })
+      free ? kpi({ icon: 'station', badge: 'b-slate', label: '车站 · 覆盖人口', value: String(cur.stations), unit: '站 · ' + show(cur.coverage, v => U.fmtPct(v, 0)), vals: last36('coverage'), delta: delta(H, 'coverage', 'up', function (v) { return (v * 100).toFixed(1) + ' 个百分点'; }) })
         : kpi({ icon: 'coin', badge: 'b-gold', label: '可用资金', value: U.fmtMoney(cur.funds), vals: last36('funds'), delta: delta(H, 'funds', 'up', function (v) { return U.fmtMoney(v); }), onclick: function () { go('finance'); } }));
     el.appendChild(grid);
     const cg = h('div', { class: 'chart-grid' });
     cg.append(
       ts(H, '地铁日客运量', '日均乘车人次（周平均；v1.9 之前的记录为典型工作日）', [{ name: '地铁日客运量', color: P[0], vals: pick(H, 'riders') }], { fmt: peopleFmt, axisFmt: axisPeople, area: true, int: true, icon: 'train' }),
-      hbarChart({ title: '各线路日客运量', sub: '日均上车人次（周平均）', icon: 'route', items: lineItems(g), fmt: function (v) { return U.fmtPeople(v); }, empty: '还没有运营中的线路。' }));
+      hbarChart({ title: '各线路日客运量', sub: '自营线路实际日均上车人次（周平均，含跨市运营）', icon: 'route', items: lineItems(g), fmt: function (v) { return U.fmtPeople(v); }, empty: '还没有运营中的线路。' }));
     el.appendChild(cg);
   }
 
@@ -346,7 +376,7 @@
     if (CM.TOD) {
       const T = CM.TOD, mn = g.model.net, sd = g.model.dailyStale ? null : g.model.stDaily, C = mn ? mn.C : null, dev = [];
       if (C && sd) C.stations.forEach(function (s, k) {
-        const st = g.net.stations[s.id]; if (!st || !st.tod || k >= sd.inn.length) return;
+        const st = g.net.stations[s.id]; if (!owned(st) || !st.tod || k >= sd.inn.length) return;
         const flow = sd.inn[k] + sd.out[k] + sd.xfer[k], hub = C.stationLines[k].size >= 2;
         dev.push({ name: st.name, lv: st.tod, flow: flow, hub: hub, month: (T.stationDaily(st.tod, flow, hub, g.clock.y, g) - T.stationCost(st.tod, g.clock.y, st.size, hub)) * 30.4 });
       });
@@ -642,7 +672,8 @@
     charts = [];
     if (!PAGES[tab]) tab = 'overview';
     const page = h('div', { class: 'stats-page' + (swap ? ' swap-in' : '') });
-    if (CM.RegionalMetrics && CM.RegionalMetrics.enabled(g) && tab !== 'regional' && tab !== 'milestones') page.appendChild(h('div', { class: 'note' }, '本页历史图表为区域全图口径；分城市数据请切换“城市与区域”。财政与票务属于玩家公司。'));
+    const local = homeMetrics(g);
+    if (local && (tab === 'overview' || tab === 'traffic' || tab === 'milestones')) page.appendChild(h('div', { class: 'note' }, local.scopeLabel + '；历史图表只连接相同范围的记录，旧全图记录保留为空档。财政、票务和自营线路客流按实际运营计算。'));
     PAGES[tab](g, page);
     if ((tab === 'overview' || tab === 'regional') && CM.CityDynamics) page.appendChild(CM.CityDynamics.panel(ui, g));
     page.appendChild(h('div', { class: 'tiny muted stats-note' }, NOTES[tab] || NOTES._));
@@ -671,9 +702,10 @@
     const th = document.documentElement.dataset.theme + '|' + AX.flag(), n = g.milestones ? g.milestones.list.length : 0;
     if (tab === 'regional') return ['regional', g.clock.y, g.clock.m, g.clock.d, g.city.version, g.model.version, g.model.dailyStale, CM.RegionalMetrics.scope(g), n, th].join('|');
     if (tab === 'tickets') return ['tickets', g.clock.y, g.clock.m, g.clock.d, g.model.version, g.model.trafficReady(), CM.Model.fareKey(g.econ.fare), g.netVersion, g.fleet ? g.fleet.ver : 0, g.statistics ? g.statistics.events.length : 0, th].join('|');
-    if (tab === 'milestones') return 'ms|' + n + '|' + th + '|' + (window.innerWidth < 820 ? 1 : 2);
+    const local = homeMetrics(g), scope = local ? local.scopeKey + '|' + local.ready : '';
+    if (tab === 'milestones') return 'ms|' + n + '|' + th + '|' + scope + '|' + g.model.version + '|' + g.city.version + '|' + (window.innerWidth < 820 ? 1 : 2);
     if (tab === 'econ') return 'ec|' + g.clock.y + '-' + g.clock.m + '|' + (g.macro ? g.macro.rec.length + '|' + g.macro.gv : '') + '|' + th;
-    return g.clock.y + '-' + g.clock.m + '-' + g.clock.d + '|' + (g.model.dailyStale ? 0 : 1) + '|' + g.history.length + '|' + g.econ.ledger.length + '|' + g.netVersion + '|' + th + '|' + n;
+    return g.clock.y + '-' + g.clock.m + '-' + g.clock.d + '|' + (g.model.dailyStale ? 0 : 1) + '|' + g.history.length + '|' + g.econ.ledger.length + '|' + g.netVersion + '|' + th + '|' + n + '|' + scope + '|' + g.model.version + '|' + g.city.version;
   }
   function redrawCharts() { for (const d of charts) d(); }
   let rT = null;
