@@ -12,15 +12,43 @@
     const g = city && city.operatorGame;
     return g && CM.Operators && CM.Operators.cityView ? CM.Operators.cityView(g, ownerId || 'player') : city;
   };
+  // A shared station keeps its owner, building and partner platforms. Only the
+  // player's line-specific platform level/direction belongs to a player draft.
+  // The same merge is used at final confirmation, after global normalization.
+  M.playerStation = function (off, draft, sid) {
+    const old = off.stations[sid], next = draft.stations[sid];
+    if (!old || !next) return old ? M.clone(old) : null;
+    const out = M.clone(old), before = new Set(M.stationLines(off, sid)), after = new Set(M.stationLines(draft, sid));
+    for (const field of ['lv', 'pd']) {
+      let editable = false;
+      const keys = new Set(Object.keys(old[field] || {}).concat(Object.keys(next[field] || {})));
+      for (const lid of keys) {
+        const wasMine = before.has(lid) && off.lines[lid] && M.ownerId(off.lines[lid]) === 'player';
+        const isMine = after.has(lid) && draft.lines[lid] && M.ownerId(draft.lines[lid]) === 'player';
+        if (!wasMine && !isMine) continue;
+        editable = true;
+        const value = next[field] && next[field][lid];
+        if (isMine && value != null) { if (!out[field]) out[field] = {}; out[field][lid] = value; }
+        else if (out[field]) delete out[field][lid];
+      }
+      if (editable && out[field] && !Object.keys(out[field]).length) delete out[field];
+    }
+    return out;
+  };
+  const stationJSON = function (s) { return JSON.stringify(s, function (key, value) { return value && typeof value === 'object' && !Array.isArray(value) ? Object.keys(value).sort().reduce(function (out, k) { out[k] = value[k]; return out; }, {}) : value; }); };
   // Final authority for every player edit, including live drags and imported drafts.
-  // Other companies keep their own objects; an agreement only permits a new player
-  // line to meet an unchanged partner station, never transfer its ownership.
   M.playerOwnershipError = function (off, draft, g) {
     if (!off || !draft) return '线路数据不完整';
     for (const kind of ['stations', 'segments', 'lines']) {
       for (const id in off[kind]) {
         const obj = off[kind][id];
-        if (M.ownerId(obj, off) !== 'player' && JSON.stringify(obj) !== JSON.stringify(draft[kind][id])) return '这是其他公司的资产，不能改名、移动、拆除或改建';
+        if (M.ownerId(obj, off) !== 'player' && JSON.stringify(obj) !== JSON.stringify(draft[kind][id])) {
+          if (kind !== 'stations' || !draft.stations[id] || stationJSON(M.playerStation(off, draft, id)) !== stationJSON(draft.stations[id])) return '这是其他公司的资产，只能调整本公司线路的站台，不能改名、移动、拆除或改建';
+          const st = draft.stations[id];
+          for (const lid of M.stationLines(draft, id)) if (M.ownerId(draft.lines[lid]) === 'player') {
+            if (st.lv && st.lv[lid] != null && !CFG.metro.typeName[st.lv[lid]] || st.pd && st.pd[lid] != null && !Number.isFinite(st.pd[lid])) return '本站本公司线路的站台设置无效';
+          }
+        }
       }
       for (const id in draft[kind]) {
         const obj = draft[kind][id], old = off[kind][id];
@@ -393,7 +421,7 @@
       if (st.pd) { for (const lid of Object.keys(st.pd)) if (!lines.has(lid) || !isFinite(st.pd[lid])) delete st.pd[lid]; if (!Object.keys(st.pd).length) delete st.pd; }
       if (!st.lv) continue;
       for (const lid of Object.keys(st.lv)) if (!lines.has(lid) || st.lv[lid] === st.type || !CFG.metro.typeName[st.lv[lid]]) delete st.lv[lid];
-      if (lines.size && Array.from(lines).every(function (lid) { return st.lv[lid]; })) {
+      if (lines.size && Array.from(lines).every(function (lid) { return st.lv[lid] && M.ownerId(net.lines[lid]) === M.ownerId(st); })) {
         const cnt = {}; lines.forEach(function (lid) { cnt[st.lv[lid]] = (cnt[st.lv[lid]] || 0) + 1; });
         const main = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a] || a.localeCompare(b); })[0];
         st.type = main;
@@ -462,19 +490,20 @@
   M.coTrackSegs = function (net, seg) {
     if (!seg) return [];
     const k = M.trackKey(seg), out = [];
-    for (const id in net.segments) { const o = net.segments[id]; if (o !== seg && o.line !== seg.line && M.trackKey(o) === k) out.push({ id: id, rev: o.a !== seg.a }); }
+    for (const id in net.segments) { const o = net.segments[id]; if (o !== seg && o.line !== seg.line && M.ownerId(o, net) === M.ownerId(seg, net) && M.trackKey(o) === k) out.push({ id: id, rev: o.a !== seg.a }); }
     return out;
   };
   // 绘线连接两座车站时可沿用的既有轨道（其他线路在这两站之间的区段）
   M.coHost = function (net, a, b, lineId) {
     let best = null;
-    for (const id in net.segments) { const o = net.segments[id]; if (o.line !== lineId && ((o.a === a && o.b === b) || (o.a === b && o.b === a)) && (!best || M.idNum(o.id) < M.idNum(best.id))) best = o; }
+    for (const id in net.segments) { const o = net.segments[id]; if (o.line !== lineId && M.ownerId(o, net) === M.ownerId(net.lines[lineId]) && ((o.a === a && o.b === b) || (o.a === b && o.b === a)) && (!best || M.idNum(o.id) < M.idNum(best.id))) best = o; }
     return best;
   };
   // 并线运行（v2.3 玩家反馈）：线路 lid 从车站 from 起，沿线路 other 的既有轨道一直延伸到 to，逐段共用轨道（共线运营，免建设费）。
   // 沿途车站本线也停靠；建设方式不同的车站按本线增设站台层。路径须完全在 other 的轨道上
   M.runAlong = function (net, lid, from, other, to) {
     if (!net.lines[lid] || !net.lines[other] || lid === other) return { error: '线路不存在' };
+    if (M.ownerId(net.lines[lid]) !== M.ownerId(net.lines[other])) return { error: '换乘接入协议不包含其他公司的轨道使用权，请建设本公司轨道并在车站换乘' };
     if (from === to) return { error: '起点与终点相同' };
     const adj = new Map();
     for (const s of M.lineSegs(net, other)) { (adj.get(s.a) || adj.set(s.a, []).get(s.a)).push(s); (adj.get(s.b) || adj.set(s.b, []).get(s.b)).push(s); }
@@ -1267,7 +1296,7 @@
         res.changes.mod.push('车站「' + s.name + '」增设' + CFG.metro.typeName[t] + '站台（天地换乘）');
         item('construction', '增设' + CFG.metro.typeName[t] + '站台 ' + s.name + '（天地换乘）', M.stationCost(t, s.size, year) * lvf, id);
         touchedSt.add(id);
-        const chk = CM.Fac && CM.Fac.isPortalStation(s) ? { ok: true } : M.checkSite(M.ownerCity(city, M.ownerId(s)), s.x, s.y, t);
+        const chk = CM.Fac && CM.Fac.isPortalStation(s) ? { ok: true } : M.checkSite(city, s.x, s.y, t);
         if (!chk.ok) {
           const lid0 = Object.keys(s.lv || {}).find(function (l) { return s.lv[l] === t; });
           conflict({ type: 'site', kind: 'station', ref: id, x: s.x, y: s.y, msg: '车站「' + s.name + '」的' + CFG.metro.typeName[t] + '站台：' + chk.msg, how: chk.how || '把这条线路在本站的站台改为允许的建设方式，或移动车站。',
@@ -1317,7 +1346,7 @@
     const coFree = new Map();   // 区段 → 共用其轨道的线路
     {
       const byKey = new Map();
-      for (const id in draft.segments) { const s = draft.segments[id], k = M.trackKey(s) + (CM.RailSystems ? '|' + CM.RailSystems.id(draft.lines[s.line]) : ''); if (!byKey.has(k)) byKey.set(k, []); byKey.get(k).push(s); }
+      for (const id in draft.segments) { const s = draft.segments[id], k = M.ownerId(s, draft) + '|' + M.trackKey(s) + (CM.RailSystems ? '|' + CM.RailSystems.id(draft.lines[s.line]) : ''); if (!byKey.has(k)) byKey.set(k, []); byKey.get(k).push(s); }
       byKey.forEach(function (list) {
         if (list.length < 2) return;
         const built = list.find(function (s) { const o = off.segments[s.id]; return o && M.trackKey(o) === M.trackKey(s); });
@@ -1765,7 +1794,6 @@
   // 已建车站锁定站台方向（v2.6.1）：在既有车站接新区段时，本线站台保持原来的方向，新线从站台末端再转出，既有线路不会被带歪
   M.lockPlatform = function (net, off, sid, lid) {
     const s = net.stations[sid]; if (!s || !off.stations[sid] || (s.pd && s.pd[lid] != null)) return;
-    if (M.ownerId(s) !== M.ownerId(net.lines[lid])) return;
     let os = null; for (const id in off.segments) { const o = off.segments[id]; if (o.line === lid && (o.a === sid || o.b === sid)) { os = o; break; } }
     if (!os) return;
     const t = M.stationTangent(off, os, sid);

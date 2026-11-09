@@ -1208,7 +1208,7 @@ button:focus-visible, [role="option"]:focus-visible, [role="tab"]:focus-visible,
   #rightPanel.closed { transform: translateY(calc(100% + 24px)); }
   #rightPanel::before { content: ''; position: absolute; top: 6px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--line-strong); }
   #toolbar { left: auto; right: calc(8px / var(--uiz, 1)); transform: none; bottom: calc(10px + env(safe-area-inset-bottom)); padding: 4px; border-radius: 18px; }
-  .tbtn { width: clamp(36px, calc((100vw - 80px) / var(--uiz, 1) / 5 - 4px), 46px); height: 46px; border-radius: 14px; }
+  .tbtn { width: clamp(36px, calc((100vw - 80px) / var(--uiz, 1) / 6 - 4px), 46px); height: 46px; border-radius: 14px; }
   .tind { top: 4px; height: calc(100% - 8px); border-radius: 14px; }
   #buildStack { bottom: calc((84px + env(safe-area-inset-bottom)) / var(--uiz, 1)); max-width: calc((100vw - 16px) / var(--uiz, 1)); }
   #draftbar { max-width: calc((100vw - 16px) / var(--uiz, 1)); overflow-x: auto; scrollbar-width: none; }
@@ -1762,7 +1762,7 @@ html.vt-theme *, html.vt-theme *::before, html.vt-theme *::after { transition: n
   .p-title { min-width: 0; }
   #toolbar { right: calc((var(--view-right) + var(--safe-right) + 8px) / var(--uiz, 1)); bottom: calc((var(--view-bottom) + var(--safe-bottom) + 10px) / var(--uiz, 1)); transform: none; }
   #toolbar .lb { display: none; }
-  #toolbar .tbtn { width: clamp(32px, calc((var(--view-width) - var(--safe-left) - var(--safe-right) - 80px) / var(--uiz, 1) / 5 - 4px), 46px); }
+  #toolbar .tbtn { width: clamp(32px, calc((var(--view-width) - var(--safe-left) - var(--safe-right) - 80px) / var(--uiz, 1) / 6 - 4px), 46px); }
   #zoomCtl { left: calc((var(--view-left) + var(--safe-left) + 8px) / var(--uiz, 1)); bottom: calc((var(--view-bottom) + var(--safe-bottom) + 10px) / var(--uiz, 1)); }
   #buildStack { left: calc((var(--view-left) + var(--safe-left) + (var(--view-width) - var(--safe-left) - var(--safe-right)) / 2) / var(--uiz, 1)); bottom: calc(var(--mobile-build-bottom, 78px) / var(--uiz, 1)); max-width: calc((var(--view-width) - var(--safe-left) - var(--safe-right) - 16px) / var(--uiz, 1)); }
   #draftbar.hidden, #toolopts.hidden { display: none; }

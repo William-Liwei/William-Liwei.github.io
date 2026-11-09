@@ -12,7 +12,9 @@
     { id: 'nt', name: '南通轨道公司', city: '南通', year: 2012, strength: .75, lat: 32.010, lon: 120.864, color: '#518d51', neighbors: ['sz','sh'] },
     { id: 'hu', name: '湖州轨道公司', city: '湖州', year: 2014, strength: .65, lat: 30.865, lon: 120.105, color: '#aa664d', neighbors: ['jx','sz'] }
   ];
-  const IDS = new Set(DEFINITIONS.map(d => d.id)), MAX_STATIONS = O.MAX_STATIONS = 48, MAX_PROJECTS = 2;
+  const limits = CM.NPCProgression && CM.NPCProgression.LIMITS;
+  const IDS = new Set(DEFINITIONS.map(d => d.id)), MAX_STATIONS = O.MAX_STATIONS = limits ? limits.stationsTotal : 48, MAX_PROJECTS = limits ? limits.projectsPerCompany : 2;
+  O.MAX_COMPANY_STATIONS = limits ? limits.stationsPerCompany : MAX_STATIONS;
   const KINDS = ['grant', 'fare', 'ops', 'construction', 'fleet'];
   const runtime = new WeakMap();
   const defOf = id => DEFINITIONS.find(d => d.id === id);
@@ -86,19 +88,34 @@
     return g.city.regions.map(r => { const d = defOf(r.cityId); return !!d && r.cityId !== O.playerCity(g) && g.clock.y >= d.year; });
   };
   O.agreed = (g, id, stationId) => { const c = O.company(g, id); return !!c && c.agreements.includes(stationId); };
-  O.agree = function (g, id, stationId) {
+  O.accessStatus = function (g, id, stationId) {
     const c = O.company(g, id), st = g.net.stations[stationId];
     if (!c || !st || O.owner(st) !== id) return { ok: false, error: '请选择该公司的已建车站' };
-    if (g.clock.y < 2018) return { ok: false, error: '2018 年起开放跨公司换乘合作' };
+    const cell = g.city.cellAt(st.x, st.y);
+    if (cell < 0 || g.city.cellLocked(cell)) return { ok: false, error: '车站所在区域尚未向玩家开放建设' };
+    if (!Object.values(g.net.segments).some(s => (s.a === stationId || s.b === stationId) && O.owner(g.net.lines[s.line]) === id)) return { ok: false, error: '请等待该公司车站接入线路并开通' };
+    return { ok: true };
+  };
+  O.agree = function (g, id, stationId) {
+    const status = O.accessStatus(g, id, stationId); if (!status.ok) return status;
+    const c = O.company(g, id);
     if (!c.agreements.includes(stationId)) c.agreements.push(stationId);
     emit(g); return { ok: true };
   };
-  O.requestConnection = function (g, id, stationId) {
+  O.connectionStatus = function (g, id, stationId) {
     const c = O.company(g, id), st = g.net.stations[stationId];
     if (!c || !st || !O.isPlayer(st)) return { ok: false, error: '请选择自己的已建车站' };
-    const targetCity = O.cityAt(g, g.city.cellAt(st.x, st.y));
-    if (g.clock.y < 2025 || !defOf(id).neighbors.includes(targetCity)) return { ok: false, error: '2025 年起可邀请相邻城市公司建设跨城接驳线' };
-    if (c.projects.some(p => p.kind === 'cross')) return { ok: false, error: '该公司的跨城项目已经确定' };
+    if (!Object.values(g.net.segments).some(s => (s.a === stationId || s.b === stationId) && O.isPlayer(g.net.lines[s.line]))) return { ok: false, error: '请选择已接入本公司线路的运营车站' };
+    const targetCity = O.cityAt(g, g.city.cellAt(st.x, st.y)), d = defOf(id), allowedYear = targetCity === O.playerCity(g) ? 2025 : 2018;
+    if (!d || targetCity !== id && !d.neighbors.includes(targetCity)) return { ok: false, error: '请选择该公司所在城市或相邻城市内的已建车站', targetCity, allowedYear };
+    if (g.clock.y < allowedYear) return { ok: false, error: allowedYear + ' 年起可邀请该公司建设接驳线', targetCity, allowedYear };
+    if (c.projects.some(p => p.kind === 'cross' && p.phase !== 'open')) return { ok: false, error: '该公司的接驳工程已在推进，请等待当前工程开通', targetCity, allowedYear };
+    if (c.projects.some(p => p.kind === 'cross' && p.phase === 'open' && p.target === stationId)) return { ok: false, error: '该公司已经开通通往这座车站的接驳线', targetCity, allowedYear };
+    return { ok: true, targetCity, allowedYear };
+  };
+  O.requestConnection = function (g, id, stationId) {
+    const status = O.connectionStatus(g, id, stationId); if (!status.ok) return status;
+    const c = O.company(g, id), st = g.net.stations[stationId];
     c.request = stationId; c.crossPermit = true; log(g, id, defOf(id).name + '收到接驳申请', '将评估连接「' + st.name + '」的联运换乘，建设和列车由该公司出资。'); return { ok: true };
   };
   function anchor(g, d) { const p = CM.GEO.proj; return [(d.lon - p.lon0) * p.kx, (p.lat0 - d.lat) * p.ky]; }
@@ -117,14 +134,28 @@
   function evaluatePoints(g, c, points, kind, target) {
     const view = O.cityView(g, c.id), draft = M.clone(g.net), lid = M.newLine(draft, defOf(c.id).city + (kind === 'cross' ? '联络线' : '城区线'));
     draft.lines[lid].ownerId = c.id; draft.lines[lid].color = defOf(c.id).color;
+    const service = CM.NPCProgression && CM.NPCProgression.service ? CM.NPCProgression.service(g, c) : null;
+    const size = service && service.stationSize === 'L' ? 'L' : 'M';
     const ids = [];
     const stops = [];
     for (const p of points) {
-      if (p.stationId) { const st = draft.stations[p.stationId]; if (!st || U.dist(st.x,st.y,p.x,p.y) > .01 || O.isPlayer(st) && c.request !== st.id) return null; stops.push(st.id); continue; }
-      const id = M.addStation(draft, p.x, p.y, { size: 'M', type: 'underground' }, view); draft.stations[id].ownerId = c.id; ids.push(id); stops.push(id);
+      if (p.stationId) { const st = draft.stations[p.stationId]; if (!st || U.dist(st.x,st.y,p.x,p.y) > .01 || !O.canBuildCell(g, g.city.cellAt(p.x,p.y), c.id) || kind !== 'cross' && O.owner(st) !== c.id || O.isPlayer(st) && c.request !== st.id) return null; stops.push(st.id); continue; }
+      const id = M.addStation(draft, p.x, p.y, { size, type: 'underground' }, view); draft.stations[id].ownerId = c.id; ids.push(id); stops.push(id);
     }
     for (let i = 1; i < stops.length; i++) M.addSegment(draft, lid, stops[i - 1], stops[i], [], 'underground');
+    // A shared elevated/surface station gains a paid underground platform for
+    // this line. Its original company keeps the station and all other platforms.
+    for (const point of points) if (point.stationId && M.platType(draft.stations[point.stationId], lid) !== 'underground') {
+      const station = draft.stations[point.stationId]; station.lv = Object.assign({}, station.lv, { [lid]: 'underground' });
+    }
     const ev = M.evaluate(draft, g.net, view, g.clock.y);
+    // The evaluator also reports existing lines made incompatible by later
+    // landmarks, permits or rules. They must not veto an unrelated new company
+    // corridor. Keep every check touching this project's new or shared assets,
+    // including spacing against an existing player station and endpoint works.
+    const projectRefs = new Set([lid, ...stops]);
+    for (const [sid, seg] of Object.entries(draft.segments)) if (!g.net.segments[sid]) projectRefs.add(sid);
+    ev.conflicts = ev.conflicts.filter(x => !x.ref || projectRefs.has(x.ref) || projectRefs.has(x.ref2));
     if (ev.demolitions.some(x => CM.Property && CM.Property.find(g, x.c) && CM.Property.find(g, x.c).owned)) return null;
     if (ev.conflicts.length || !(ev.total > 0) || !Number.isFinite(ev.total)) return null;
     const C = M.compile(draft, view), quote = CM.Fleet && CM.Fleet.quoteOwned ? CM.Fleet.quoteOwned(g, C, c.id, [lid]) : null;
@@ -137,28 +168,39 @@
     if (kind === 'cross') {
       if (g.clock.y < 2018 || !home.length) return null;
       const targets = used.filter(s => O.owner(s) !== id && (c.request ? s.id === c.request : O.owner(s) !== 'player') && O.canBuildCell(g, g.city.cellAt(s.x, s.y), id));
-      let pair = null;
-      for (const a of home) for (const b of targets) { const dist = U.dist(a.x, a.y, b.x, b.y); if (dist > 12 && dist < 240 && (!pair || dist < pair.dist)) pair = { a, b, dist }; }
-      if (!pair) return null;
-      // Shared end stations are immutable assets of their original owner. The
-      // player's end is used only following an explicit connection request.
-      const points = [{ x: pair.a.x, y: pair.a.y, stationId: pair.a.id }];
-      for (let i = 1; i < 3; i++) {
-        const t = i / 3, x = pair.a.x * (1 - t) + pair.b.x * t, y = pair.a.y * (1 - t) + pair.b.y * t;
-        const p = candidateSite(g, view, x, y, id, used.concat(points), false); if (!p) return null; points.push(p);
+      const pairs = [];
+      for (const a of home) for (const b of targets) { const dist = U.dist(a.x, a.y, b.x, b.y); if (dist > 12 && dist < 240) pairs.push({ a, b, dist }); }
+      pairs.sort((a, b) => a.dist - b.dist);
+      // Shared endpoints retain ownership and every existing line's platform.
+      // The player's end is used only following an explicit connection request.
+      for (const pair of pairs.slice(0, 12)) {
+        const points = [{ x: pair.a.x, y: pair.a.y, stationId: pair.a.id }];
+        for (let i = 1; i < 3; i++) {
+          const t = i / 3, x = pair.a.x * (1 - t) + pair.b.x * t, y = pair.a.y * (1 - t) + pair.b.y * t;
+          const p = candidateSite(g, view, x, y, id, used.concat(points), false); if (!p) break; points.push(p);
+        }
+        if (points.length !== 3) continue;
+        points.push({ x: pair.b.x, y: pair.b.y, stationId: pair.b.id });
+        const result = evaluatePoints(g, c, points, kind, pair.b.id); if (result) return result;
       }
-      points.push({ x: pair.b.x, y: pair.b.y, stationId: pair.b.id });
-      return evaluatePoints(g, c, points, kind, pair.b.id);
+      return null;
     }
-    const a = anchor(g, d), candidates = [];
-    for (const ang of [0, Math.PI / 2, Math.PI / 4, -Math.PI / 4]) {
+    const a = anchor(g, d), candidates = [], built = c.projects.filter(p => p.kind === 'local' && p.phase === 'open').length;
+    const offsets = [[0, 0]];
+    if (built) {
+      const span = 6 * Math.ceil(built / 4);
+      offsets.push([span, 0], [-span, 0], [0, span], [0, -span]);
+    }
+    for (const offset of offsets) for (const ang of [0, Math.PI / 2, Math.PI / 4, -Math.PI / 4]) {
       const points = []; let score = 0;
       for (const q of [-12, -4, 4, 12]) {
-        const p = candidateSite(g, view, a[0] + Math.cos(ang) * q, a[1] + Math.sin(ang) * q, id, used.concat(points), true); if (!p) break;
+        const x = a[0] + offset[0] + Math.cos(ang) * q, y = a[1] + offset[1] + Math.sin(ang) * q;
+        const shared = built && home.filter(st => !points.some(p => p.stationId === st.id) && U.dist(st.x, st.y, x, y) < 2).sort((u, v) => U.dist(u.x,u.y,x,y) - U.dist(v.x,v.y,x,y))[0];
+        const p = shared ? { x: shared.x, y: shared.y, stationId: shared.id } : candidateSite(g, view, x, y, id, used.concat(points), true); if (!p) break;
         const k = g.city.cellAt(p.x, p.y), nearest = used.reduce((v, st) => Math.min(v, U.dist(st.x, st.y, p.x, p.y) * CFG.CELL_M), Infinity);
         score += (g.city.pop[k] + g.city.jobs[k]) * (.15 + .85 * Math.min(1, nearest / CFG.walk.maxAccessM)); points.push(p);
       }
-      if (points.length !== 4) continue;
+      if (points.length !== 4 || points.filter(p => !p.stationId).length < 2) continue;
       candidates.push({ points, score });
     }
     // Site scores do not depend on the construction evaluation. Validate in score
@@ -195,20 +237,20 @@
   // Engineering advances share one monthly slot; overdue completions precede
   // new proposals. Live retries never rotate ledgers or issue another grant.
   function advance(g, onlyOverdue) {
-    const s = g.operators, ym = g.ym(), ci = g.econ.costIndex(g.clock.y);
+    const s = g.operators, ym = g.ym(), ci = g.econ.costIndex(g.clock.y), policy = CM.NPCProgression;
     if (g.draft || s.lastBuild === ym || !CM.Fleet || !CM.Fleet.quoteOwned) return;
     const count = Object.values(g.net.stations).filter(st => !O.isPlayer(st)).length;
     const entries = DEFINITIONS.map((d, index) => ({ d, index, c: s.companies[d.id] })).filter(x => x.c);
     entries.forEach(x => { x.p = x.c.projects.find(p => p.phase !== 'open'); });
-    entries.sort((a, b) => { const ad = a.p && a.p.phase === 'building' && a.p.due <= ym, bd = b.p && b.p.phase === 'building' && b.p.due <= ym; return Number(bd) - Number(ad) || (ad && bd ? a.p.due - b.p.due : 0) || a.index - b.index; });
+    entries.sort((a, b) => { const ad = a.p && a.p.phase === 'building' && a.p.due <= ym, bd = b.p && b.p.phase === 'building' && b.p.due <= ym; return Number(bd) - Number(ad) || (ad && bd ? a.p.due - b.p.due : 0) || (policy && policy.priority ? policy.priority(g, b.c) - policy.priority(g, a.c) : 0) || a.index - b.index; });
     for (const entry of entries) {
       const d = entry.d, c = entry.c; let p = entry.p;
       if (onlyOverdue && (!p || p.phase !== 'building' || p.due > ym)) continue;
       if (!p) {
         if (c.projects.length >= MAX_PROJECTS || count + 4 > MAX_STATIONS) continue;
-        const kind = c.projects.length ? 'cross' : 'local';
-        if (kind === 'cross' && (g.clock.y < 2018 || ym < c.projects[0].opened + 36)) continue;
-        const plan = O.plan(g, c.id, kind); if (!plan) { c.note = '等待合适走廊与可建设场地'; continue; }
+        const kind = policy && policy.nextProject ? policy.nextProject(g, c) : c.projects.length ? 'cross' : 'local';
+        if (!kind || kind === 'cross' && (g.clock.y < 2018 || !policy && ym < c.projects[0].opened + 36)) continue;
+        const plan = O.plan(g, c.id, kind) || (policy && kind === 'cross' ? O.plan(g, c.id, 'local') : null); if (!plan) { c.note = '等待合适走廊与可建设场地'; continue; }
         p = startProject(g, c, plan); s.lastBuild = ym; return true;
       }
       if (p.phase === 'building' && ym < p.due) continue;
@@ -216,7 +258,7 @@
       if (!plan) { c.note = '走廊需重新评估，暂缓施工';
         if (!onlyOverdue && ym % 6 === 0 || onlyOverdue && p.phase === 'building' && p.due < ym) {
           const alternative = O.plan(g, c.id, p.kind);
-          if (alternative && c.funds >= alternative.cost) {
+          if (alternative) {
             p.points = alternative.points; p.target = alternative.target; p.estimate = alternative.cost;
             if (p.phase === 'building') {
               p.due = ym + 3; c.note = '调整走廊，延长三个月完成复核'; s.lastBuild = ym;
@@ -232,11 +274,12 @@
         if (c.funds < plan.cost + 20000 * ci) { c.note = '筹资中，尚缺 ' + U.fmtMoney(Math.max(0, plan.cost + 20000 * ci - c.funds)); continue; }
         // Construction capital is reserved and paid at opening against the latest
         // validated bill, so a stale plan never charges for assets that did not open.
-        p.phase = 'building'; p.start = ym; p.due = ym + (p.kind === 'cross' ? 30 : 24); c.note = '施工中';
+        p.phase = 'building'; p.start = ym; p.due = ym + (policy && policy.duration ? policy.duration(g, c, p.kind) : p.kind === 'cross' ? 30 : 24); c.note = '施工中';
         log(g, c.id, defOf(c.id).city + (p.kind === 'cross' ? '联络线' : '城区线') + '开工', '预计 ' + Math.floor(p.due / 12) + ' 年 ' + (p.due % 12 + 1) + ' 月开通；建设款预留在公司账内。'); s.lastBuild = ym; return true;
       }
       if (c.funds + 1e-7 < plan.cost) { c.note = '等待追加资金'; continue; }
       if (count + plan.ids.length > MAX_STATIONS) { c.note = '区域公司站点数量已达上限'; continue; }
+      if (policy && policy.profile && policy.profile(g, c.id)?.stations + plan.ids.length > policy.LIMITS.stationsPerCompany) { c.note = '本公司站点数量已达上限'; continue; }
       book(g, c, 'construction', plan.ev.total, false); book(g, c, 'fleet', plan.quote.cost, false);
       for (const dm of plan.ev.demolitions) g.city.demolish(dm.c, dm.frac);
       for (const id of plan.ids) { plan.draft.stations[id].built = [g.clock.y, g.clock.m]; plan.draft.stations[id].site = [plan.draft.stations[id].x, plan.draft.stations[id].y]; }
@@ -269,7 +312,7 @@
   };
   function retryKey(g) {
     const due = Object.values(g.operators.companies).flatMap(c => c.projects.filter(p => p.phase === 'building' && p.due <= g.ym()).map(p => [c.id, c.funds + 1e-7 >= p.estimate, c.crossPermit, c.request, p.id, p.phase, p.due, p.estimate, p.target, p.points]));
-    return due.length ? JSON.stringify([g.ym(), g.netVersion, g.city.geoVer, g.city.terrainVer, g.city.roadVersion, g.property && g.property.rev, g.fleet && g.fleet.ver, due]) : null;
+    return due.length ? JSON.stringify([g.ym(), g.netVersion, g.city.geoVer, g.city.terrainVer, g.city.lockVer, g.city.roadVersion, g.property && g.property.rev, g.fleet && g.fleet.ver, due]) : null;
   }
   O.poll = function (g) {
     if (!O.enabled(g) || !g.operators || !g.model) return false;
@@ -289,14 +332,16 @@
   };
   O.monthly = function (g) {
     const s = O.ensure(g); if (!s || s.lastMonth === g.ym()) return; s.lastMonth = g.ym();
-    const ym = g.ym(), ci = g.econ.costIndex(g.clock.y);
+    const ym = g.ym(), ci = g.econ.costIndex(g.clock.y), policy = CM.NPCProgression;
+    if (policy && policy.month) policy.month(g);
     for (let i = 0; i < DEFINITIONS.length; i++) {
       const d = DEFINITIONS[i]; if (d.id === O.playerCity(g) || g.clock.y < d.year || ym < s.since + i * 2) continue;
       let c = s.companies[d.id];
+      const grants = policy && policy.grants ? policy.grants(g, d.id, ci) : { initial: 220000 * d.strength * ci, monthly: 12000 * d.strength * ci };
       if (!c) { c = s.companies[d.id] = { id: d.id, founded: ym, funds: 0, total: moneyFields(), cur: monthFields(ym), history: [], projects: [], agreements: [], request: null, crossPermit: false, note: '独立筹资', lastDay: null };
-        book(g, c, 'grant', 220000 * d.strength * ci, true); log(g, d.id, d.name + '开始规划', '当地资金独立建账，不受玩家建设解锁影响；初始注资 ' + U.fmtMoney(c.funds) + '。');
+        book(g, c, 'grant', grants.initial, true); log(g, d.id, d.name + '开始规划', '当地资金独立建账，不受玩家建设解锁影响；初始注资 ' + U.fmtMoney(c.funds) + '。');
       }
-      rotate(c, ym); book(g, c, 'grant', 12000 * d.strength * ci, true);
+      rotate(c, ym); book(g, c, 'grant', grants.monthly, true);
       if (!g.draft && CM.Fleet && CM.Fleet.maintainOwned) CM.Fleet.maintainOwned(g, c.id);
     }
     O.updateSatisfaction(g);
@@ -322,7 +367,7 @@
     const fields = o => { if (!o || KINDS.some(k => !finite(o[k], 0, 1e15))) fail(); };
     const row = o => { fields(o); if (!integer(o.ym, 0, 120000)) fail(); };
     for (const [id, c] of Object.entries(s.companies)) {
-      if (!IDS.has(id) || !c || c.id !== id || !integer(c.founded, 0, 120000) || !finite(c.funds, -1e12, 1e15) || !Array.isArray(c.projects) || c.projects.length > 2 || !Array.isArray(c.history) || c.history.length > 24 || !Array.isArray(c.agreements) || c.agreements.length > 48 || typeof c.note !== 'string' || c.note.length > 180) fail();
+      if (!IDS.has(id) || !c || c.id !== id || !integer(c.founded, 0, 120000) || !finite(c.funds, -1e12, 1e15) || !Array.isArray(c.projects) || c.projects.length > MAX_PROJECTS || !Array.isArray(c.history) || c.history.length > 24 || !Array.isArray(c.agreements) || c.agreements.length > MAX_STATIONS || typeof c.note !== 'string' || c.note.length > 180) fail();
       if (c.sat != null && !finite(c.sat, 0, 100) || c.satYM != null && !integer(c.satYM, 0, 120000)) fail();
       fields(c.total); row(c.cur); c.history.forEach(row);
       const balance = c.total.grant + c.total.fare - c.total.ops - c.total.construction - c.total.fleet;
@@ -332,6 +377,7 @@
       if (c.agreements.some(x => typeof x !== 'string' || x.length > 80)) fail();
       if (c.lastDay && (!finite(c.lastDay.fare, 0, 1e12) || !finite(c.lastDay.ops, 0, 1e12) || !finite(c.lastDay.pkm, 0, 1e15) || !['wd','we'].includes(c.lastDay.dt))) fail();
       const seen = new Set();
+      if (c.projects.filter(p => p && p.phase !== 'open').length > 1) fail();
       for (const p of c.projects) {
         if (!p || typeof p.id !== 'string' || p.id.length > 80 || seen.has(p.id) || !['local','cross'].includes(p.kind) || !['funding','building','open'].includes(p.phase) || !Array.isArray(p.points) || p.points.length !== 4 || p.points.some(q => !q || !finite(q.x,0,dimensions ? dimensions.W - 1e-8 : 10000) || !finite(q.y,0,dimensions ? dimensions.H - 1e-8 : 10000) || q.stationId != null && (typeof q.stationId !== 'string' || q.stationId.length > 80))) fail(); seen.add(p.id);
         for (const k of ['proposed','start','due','opened']) if (!integer(p[k], -1, 120000)) fail();
@@ -358,11 +404,14 @@
       if (typeof raw !== 'string' || raw !== 'player' && !IDS.has(raw)) fail();
       return raw;
     };
-    let n = 0;
+    let n = 0; const stationCounts = new Map();
     for (const table of [net && net.lines, net && net.stations]) for (const x of Object.values(table || {})) {
       const id = assetOwner(x); if (id === 'player') continue;
       if (!IDS.has(id) || id === (playerCity || 'sh') || !saved || !saved.companies[id]) fail();
-      if (table === net.stations && ++n > MAX_STATIONS) fail();
+      if (table === net.stations) {
+        stationCounts.set(id, (stationCounts.get(id) || 0) + 1);
+        if (++n > MAX_STATIONS || stationCounts.get(id) > O.MAX_COMPANY_STATIONS) fail();
+      }
     }
     for (const seg of Object.values(net && net.segments || {})) {
       const explicit = seg && seg.ownerId != null;
@@ -377,5 +426,5 @@
     for (const c of Object.values(saved && saved.companies || {})) for (const p of c.projects) if (p.phase === 'open' && (!net.lines[p.line] || O.owner(net.lines[p.line]) !== c.id)) fail();
   };
   O.serialize = function (g) { if (!g.operators) return undefined; O.validate(g.operators, g.city); return clean(g.operators); };
-  O.restore = function (g, saved) { O.validate(saved, g.city); if (g.net) O.validateAssets(saved, g.net, null, g.playerCity); O.attach(g); if (saved) g.operators = clean(saved); else O.ensure(g); };
+  O.restore = function (g, saved) { O.validate(saved, g.city); if (g.net) O.validateAssets(saved, g.net, null, g.playerCity); runtime.delete(g); O.attach(g); if (saved) g.operators = clean(saved); else O.ensure(g); };
 })(window.CM = window.CM || {});

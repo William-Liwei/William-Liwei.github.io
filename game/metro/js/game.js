@@ -732,7 +732,7 @@
     for (const id of fv.lines) { const L = d.net.lines[id] || this.net.lines[id]; if (L) fv.names[id] = L.name; }
     M.normalizeLines(d.net);
     // Global normalization must never rewrite another company's unchanged assets.
-    for (const kind of ['stations', 'segments', 'lines']) for (const id in this.net[kind]) if (M.ownerId(this.net[kind][id], this.net) !== 'player') d.net[kind][id] = M.clone(this.net[kind][id]);
+    for (const kind of ['stations', 'segments', 'lines']) for (const id in this.net[kind]) if (M.ownerId(this.net[kind][id], this.net) !== 'player') d.net[kind][id] = kind === 'stations' ? M.playerStation(this.net, d.net, id) : M.clone(this.net[kind][id]);
     for (const id in d.net.segments) if (M.ownerId(d.net.segments[id], d.net) === 'player') d.net.segments[id].base = null;
     const summary = ev.changes.add.length + ' 项新建、' + ev.changes.mod.length + ' 项修改、' + ev.changes.del.length + ' 项拆除';
     // 拥堵变化的对比基准：新增车站的建设确认前，记下此刻的工作日早高峰道路拥堵（拥堵图层「建设以来」与之对比）

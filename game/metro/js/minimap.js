@@ -103,9 +103,9 @@
     }
     const obstacles = [ui.toolbar, ui.bstack, ui.brDock, ui.scaleBar, ui.newsHost, ui.legendCard, ui.dock, ui.layerPanel,
       document.getElementById('followCard'), document.querySelector('.ops-pop')].filter(isVisible).map(function (el) { return el.getBoundingClientRect(); }).filter(function (r) { return r.width > 0 && r.height > 0; });
-    const place = function (open) {
+    const place = function (open, edgeRight = right) {
       const width = (open ? W + 16 : 126) * z, height = (open ? H + (compact ? 74 : 66) : compact ? 44 : 36) * z;
-      const edge = Math.max(v.left + gap + width, right), box = { left: edge - width, right: edge, top: bottom - height, bottom: bottom };
+      const edge = Math.max(v.left + gap + width, edgeRight), box = { left: edge - width, right: edge, top: bottom - height, bottom: bottom };
       for (let pass = 0; pass <= obstacles.length; pass++) {
         let moved = false;
         for (const o of obstacles) if (intersects(box, o)) { box.bottom = o.top - gap; box.top = box.bottom - height; moved = true; }
@@ -115,8 +115,13 @@
     };
     let open = this.wantOpen, box = place(open);
     if (open && (box.top < top || box.right > v.right - gap)) { open = false; box = place(false); }
+    const fits = function (b) { return b.top >= top && b.left >= v.left + gap && b.right <= v.right - gap && !obstacles.some(function (o) { return intersects(b, o); }); };
+    if (!fits(box)) {
+      for (const o of obstacles) { const candidate = place(false, o.left - gap); if (fits(candidate)) { box = candidate; open = false; break; } }
+    }
     this.setExpanded(open);
-    // A short screen may have only a button-sized strip of map above its drawer.
+    // Never clamp the radar onto construction controls on a very short screen.
+    this.root.style.visibility = fits(box) ? '' : 'hidden';
     const safeTop = Math.max(top, box.top);
     this.root.style.left = (Math.max(v.left + gap, box.left) / z) + 'px';
     this.root.style.top = (safeTop / z) + 'px';

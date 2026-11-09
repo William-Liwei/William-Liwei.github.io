@@ -739,7 +739,9 @@
     if (!playerScope(g)) return true;
     const rt = scopeRuntime(g); if (rt.regions.has(id)) return rt.regions.get(id);
     const city = g.city, k = city.regions.findIndex(function (r) { return r.id === id; }); let open = false;
-    if (k >= 0) { const cells = city.regions[k].cells; if (cells) open = cells.some(function (c) { return rt.mask[c] === 0 && (!city.landFrac || city.landFrac[c] >= .1); });
+    // Generated regions store a cell count here; some compact fixtures instead
+    // provide an explicit list. Never call an array method on the real count.
+    if (k >= 0) { const cells = city.regions[k].cells; if (cells && typeof cells.some === 'function') open = cells.some(function (c) { return rt.mask[c] === 0 && (!city.landFrac || city.landFrac[c] >= .1); });
       else for (let c = 0; c < city.N; c++) if (city.region[c] === k && rt.mask[c] === 0 && (!city.landFrac || city.landFrac[c] >= .1)) { open = true; break; } }
     rt.regions.set(id, open); return open;
   };

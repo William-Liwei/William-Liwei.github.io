@@ -34,6 +34,7 @@
     targetMemo = { el: el, key: key, allowed: allowed }; return allowed;
   }
   function blocked(g) {
+    if (tools.tool === 'pan') return true;
     if (!g || g.preview || g.pending || g.jumping || document.hidden || (CM.isLoading && CM.isLoading())) return true;
     if (tools.ptr || tools.drag || tools.pinch || (tools.touches && tools.touches.size) || (g.draft && g.draft.liveSnap)) return true;
     if (ui.blocking() || ui.opsApp || ui.voApp || ui.dropdown || ui.searchEl || ui.linePicker || ui._keyCap || ui.propertyPick || typing(document.activeElement)) return true;

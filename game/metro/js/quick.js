@@ -49,6 +49,10 @@
   function lineOf(sel) { const n = net(), s = sel.kind === 'seg' ? n.segments[sel.id] : null; return s ? s.line : null; }
   function stationActs(id) {
     const n = net(), s = n.stations[id]; if (!s) return [];
+    if (M.ownerId(s) !== 'player') return [
+      { icon: 'route', label: '换乘接入与绘线', fn: function (b) { popDraw(id, b); } },
+      { icon: 'layers', label: '查看换乘与本公司站台', fn: function () { ui.openObj('station', id, 'build'); } },
+    ];
     const acts = [
       { icon: 'pencil', label: '改名', fn: function (b) { popRename('station', id, b); } },
       { icon: 'route', label: '从这里绘线', fn: function (b) { popDraw(id, b); } },
@@ -68,6 +72,7 @@
   function lineActs(segId) {
     const n = net(), sg = n.segments[segId]; if (!sg) return [];
     const lid = sg.line;
+    if (M.ownerId(sg, n) !== 'player') return [{ icon: 'train', label: '查看线路与车队', fn: function () { ui.openObj('line', lid, 'ops'); } }];
     return [
       { icon: 'pencil', label: '改名', fn: function (b) { popRename('line', lid, b); } },
       { icon: 'palette', label: '改颜色', fn: function (b) { popColor(lid, b); } },
@@ -82,7 +87,7 @@
   // 经过本站、可在本站拆开的线路（本站是线路中间站）
   function splitLines(sid) {
     const n = net();
-    return M.stationLines(n, sid).filter(function (lid) { const tp = M.lineTopo(n, lid); return (tp.topo === 'path' || tp.topo === 'branch') && tp.adj && tp.adj.get(sid) && tp.adj.get(sid).length >= 2; });
+    return M.stationLines(n, sid).filter(function (lid) { const tp = M.lineTopo(n, lid); return M.ownerId(n.lines[lid]) === 'player' && (tp.topo === 'path' || tp.topo === 'branch') && tp.adj && tp.adj.get(sid) && tp.adj.get(sid).length >= 2; });
   }
 
   // ---------------- 快捷按钮条 ----------------
@@ -115,7 +120,8 @@
     if (k === key) return;
     key = k;
     bar.innerHTML = '';
-    bar.appendChild(h('button', { class: 'ob-name', 'data-tip': '改名', onclick: function (e) { popRename(cur.kind === 'station' ? 'station' : 'line', cur.kind === 'station' ? cur.id : lineOf(cur), e.currentTarget); } },
+    const owned = cur.kind === 'station' ? M.ownerId(n.stations[cur.id]) === 'player' : M.ownerId(n.segments[cur.id], n) === 'player';
+    bar.appendChild(h('button', { class: 'ob-name', 'data-tip': owned ? '改名' : '详情', onclick: function (e) { if (!owned) { ui.openObj(cur.kind === 'station' ? 'station' : 'line', cur.kind === 'station' ? cur.id : lineOf(cur), 'info'); return; } popRename(cur.kind === 'station' ? 'station' : 'line', cur.kind === 'station' ? cur.id : lineOf(cur), e.currentTarget); } },
       color ? h('span', { class: 'dot', style: { background: color } }) : ic('station', 14), h('span', null, name)));
     for (const a of actsFor(cur)) bar.appendChild(h('button', { class: 'ob-btn' + (a.danger ? ' danger' : ''), 'data-tip': a.label, 'aria-label': a.label, onclick: function (e) { snd('soft'); a.fn(e.currentTarget); } }, ic(a.icon, 17)));
     bar.appendChild(h('button', { class: 'ob-btn', 'data-tip': '详情', 'aria-label': '详情', onclick: function () { if (cur.kind === 'station') ui.openObj('station', cur.id, 'info'); else ui.openObj('line', lineOf(cur) + '|' + cur.id, 'info'); } }, ic('info', 17)));
@@ -220,11 +226,12 @@
     const n = net(), rows = [];
     for (const lid of M.stationLines(n, sid)) {
       const tp = M.lineTopo(n, lid), L = n.lines[lid];
+      if (M.ownerId(L) !== 'player') continue;
       if (tp.topo === 'loop' || tp.topo === 'invalid' || !tp.adj || !tp.adj.get(sid)) continue;
       const branch = tp.adj.get(sid).length >= 2;
-      rows.push([L, branch ? '画 ' + L.name + ' 支线' : '延长 ' + L.name, function () { closePop(); ui.startDraw(sid, lid, branch); }]);
+      rows.push([L, branch ? '画 ' + L.name + ' 支线' : '延长 ' + L.name, function () { closePop(); if (M.ownerId(n.stations[sid]) !== 'player') ui.startInterchange(sid, lid, branch); else ui.startDraw(sid, lid, branch); }]);
     }
-    rows.push([null, '新建一条线路', function () { closePop(); ui.startDraw(sid, 'new'); }]);
+    rows.push([null, '新建一条线路', function () { closePop(); if (M.ownerId(n.stations[sid]) !== 'player') ui.startInterchange(sid, 'new'); else ui.startDraw(sid, 'new'); }]);
     return rows;
   }
   function listBody(rows) {
@@ -258,7 +265,7 @@
   // 线路组织：贯通（并入本线）、在中间站拆开、支线转为独立线路
   function popOrg(lid, anchor) {
     const g = game(), n = net(), L = n.lines[lid], tp = M.lineTopo(n, lid), body = h('div');
-    const others = Object.keys(n.lines).filter(function (o) { return o !== lid && M.sharedStations(n, lid, o).length; });
+    const others = Object.keys(n.lines).filter(function (o) { return o !== lid && M.ownerId(n.lines[o]) === M.ownerId(L) && M.sharedStations(n, lid, o).length; });
     if (others.length) {
       body.appendChild(h('div', { class: 'qpop-k' }, '贯通：把另一条线并入本线'));
       body.appendChild(listBody(others.map(function (o) {

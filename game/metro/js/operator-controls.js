@@ -14,6 +14,20 @@
   const companyLink = function (ui, id) { return action('查看公司', function () { ui.openPage('operators', id); }, 'ghost'); };
   const locked = function (ui, g, id) { return h('div', { class: 'callout info' }, h('b', null, nameOf(g, id)), h('p', null, '资产由该公司独立经营。可查看客流、列车和合作进度。'), companyLink(ui, id)); };
   const refuse = function (ui) { const error = '这是其他公司的资产，只能查看运营情况'; if (ui && ui.toast) ui.toast(error, 'info'); return { error: error }; };
+  X.stationAccess = function (ui, sid) {
+    const g = ui.g(), st = g.net.stations[sid];
+    if (!st || mine(st)) return { ok: !!st };
+    const id = owner(st), O = CM.Operators;
+    if (O.agreed(g, id, sid)) return { ok: true };
+    const result = O.agree(g, id, sid);
+    if (result.ok) { ui.markUnsaved(); ui.scheduleAutosave(); ui.toast('已免费签订「' + st.name + '」的换乘接入协议', 'good'); }
+    else ui.toast(result.error, 'warn');
+    return result;
+  };
+  UI.prototype.startInterchange = function (sid, lid, branch) {
+    if (!X.stationAccess(this, sid).ok) return;
+    this.startDraw(sid, lid || 'new', branch);
+  };
 
   const operating = function (g) {
     const build = function () {
@@ -105,9 +119,25 @@
     const g = this.g(), s = netOf(g).stations[id]; if (!s || mine(s)) return stationPage.apply(this, arguments);
     const self = this, el = h('div'), C = g.compiled, k = C.sIndex.get(id), sd = g.model.stDaily, fresh = sd && !g.model.dailyStale;
     el.append(locked(this, g, owner(s)), this.kv([['车站规模', CM.CFG.metro.sizeName[s.size]], ['建设形式', CM.CFG.metro.typeName[s.type]], ['日进站', fresh && k != null ? U.fmtPeople(sd.inn[k]) + ' 人次' : '等待客流更新'], ['日换乘', fresh && k != null ? U.fmtPeople(sd.xfer[k]) + ' 人次' : '等待客流更新']]));
-    for (const lid of M.stationLines(g.net, id)) { const l = g.net.lines[lid]; el.appendChild(action(l.name + ' · ' + nameOf(g, owner(l)), function () { self.openPage('line', lid); }, 'ghost')); }
-    const c = CM.Operators.company(g, owner(s)), agreed = c && CM.Operators.agreed(g, owner(s), id);
-    el.appendChild(h('div', { class: 'op-cooperate' }, h('b', null, '换乘接入'), h('p', { class: 'note' }, agreed ? '已签订本站接入协议。可把本公司线路接到现有站台；车站产权和原公司线路保持独立。' : '2018 年起可签订接入协议。跨区轨道仍需满足本公司的地区建设权限。'), action(agreed ? '接入协议已签订' : '签订本站接入协议', function () { if (agreed) return; const r = CM.Operators.agree(g, owner(s), id); self.toast(r.error || '接入协议已生效', r.error ? 'warn' : 'good'); if (r.ok) { self.markUnsaved(); self.scheduleAutosave(); self.rerenderPage(); } }, 'ghost')));
+    const n = netOf(g), ownLines = M.stationLines(n, id).filter(function (lid) { return mine(n.lines[lid]); });
+    for (const lid of M.stationLines(n, id)) { const l = n.lines[lid]; el.appendChild(action(l.name + ' · ' + nameOf(g, owner(l)), function () { self.openPage('line', lid); }, 'ghost')); }
+    const c = CM.Operators.company(g, owner(s)), agreed = c && CM.Operators.agreed(g, owner(s), id), access = CM.Operators.accessStatus(g, owner(s), id);
+    const connect = action(agreed ? '从本站新建换乘线' : '签约并从本站绘线', function () { self.startInterchange(id, 'new'); });
+    connect.disabled = !access.ok;
+    el.appendChild(h('div', { class: 'op-cooperate' }, h('b', null, '换乘接入'), h('p', { class: 'note' }, '本站协议免费。把本公司线路连接到这座已有车站即可站内换乘；直接用绘线工具连接也会自动签约。轨道、增设站台与本公司列车在确认草案时按报价支付。'), !access.ok ? h('p', { class: 'note warn' }, access.error) : h('p', { class: 'note' }, agreed ? '本站接入协议已生效。车站产权和原公司线路保持独立。' : '已具备本站接入条件，无需等待跨城接驳工程。'), connect));
+    for (const lid of ownLines) {
+      const l = n.lines[lid], tp = M.lineTopo(n, lid), current = M.platType(s, lid), controls = h('div', { class: 'seg-ctl' });
+      for (const type of ['underground', 'surface', 'elevated']) controls.appendChild(action(CM.CFG.metro.typeName[type], function () {
+        const result = g.edit(function (draft) { M.setPlatform(draft, id, lid, type); });
+        if (result.error) self.toast(result.error, 'warn'); else self.rerenderPage();
+      }, current === type ? 'on' : 'ghost'));
+      const section = h('section', { class: 'op-cooperate' }, h('b', null, l.name + ' · 本公司站台'), controls, h('p', { class: 'note' }, '只调整本线路站台，建设费用进入草案。站厅、规模和其他公司的站台由产权公司管理。'));
+      if ((tp.topo === 'path' || tp.topo === 'branch') && tp.adj && tp.adj.get(id)) {
+        const branch = tp.adj.get(id).length >= 2;
+        section.appendChild(action(branch ? '从本站绘制本线支线' : '从本站继续延长本线', function () { self.startInterchange(id, lid, branch); }, 'ghost'));
+      }
+      el.appendChild(section);
+    }
     el.appendChild(action('定位车站', function () { self.flyTo(s.x, s.y, 30); }));
     return { title: s.name + ' 站', el: el };
   };
@@ -133,6 +163,18 @@
   if (CM.LineEdit) { const setStops = CM.LineEdit.setStops; CM.LineEdit.setStops = function (g, lid) { return g.net.lines[lid] && !mine(g.net.lines[lid]) ? { error: '不能修改其他公司的停靠方案' } : setStops.apply(this, arguments); }; }
   if (CM.Tools && CM.Tools.prototype.startRouteDrag) { const drag = CM.Tools.prototype.startRouteDrag; CM.Tools.prototype.startRouteDrag = function (e) { const id = this.R.pickSegment(e.clientX, e.clientY), n = this.net(), s = id && n.segments[id]; if (s && M.ownerId(s, n) !== 'player') return; return drag.apply(this, arguments); }; }
   if (CM.Tools && CM.Tools.prototype.endLines) { const ends = CM.Tools.prototype.endLines; CM.Tools.prototype.endLines = function () { const net = this.net(); return ends.apply(this, arguments).filter(function (lid) { return mine(net.lines[lid]); }); }; }
+  if (CM.Tools && CM.Tools.prototype.lineClick) {
+    const click = CM.Tools.prototype.lineClick;
+    CM.Tools.prototype.lineClick = function (w, st, seg, mod) {
+      if (!mod && st && st !== this.chain) {
+        for (const sid of [this.chain, st]) {
+          const station = sid && this.net().stations[sid];
+          if (station && !mine(station) && !X.stationAccess(this.ui, sid).ok) return;
+        }
+      }
+      return click.apply(this, arguments);
+    };
+  }
 
   UI.prototype.page_operators = function (selected) {
     const g = this.g(), self = this, el = h('div', { class: 'operators-page' });
@@ -175,11 +217,19 @@
         if (status && status.text && p.phase !== 'open') card.appendChild(h('p', { class: 'note' + (late ? ' warn' : '') }, status.text));
         el.appendChild(card);
       }
+      const partnerStations = row.stations.filter(function (s) { return M.stationLines(g.net, s.id).some(function (lid) { return owner(g.net.lines[lid]) === row.id; }); });
+      if (partnerStations.length) {
+        const stationPicker = h('select', { 'aria-label': '选择换乘接入车站' }, partnerStations.map(function (s) { return h('option', { value: s.id }, s.name); }));
+        el.appendChild(h('section', { class: 'op-cooperate' }, h('b', null, '本公司线路接入对方车站'), h('p', { class: 'note' }, '地区开放后即可免费签约，在现有车站连接本公司线路。'), stationPicker, action('查看车站并接入', function () { const s = g.net.stations[stationPicker.value]; if (s) { self.openPage('station', s.id); self.flyTo(s.x, s.y, 30); } }, 'ghost')));
+      }
       const ownStations = Object.values(g.net.stations).filter(function (s) { return mine(s) && g.compiled.serviced[g.compiled.sIndex.get(s.id)]; });
       const target = h('select', { 'aria-label': '合作接驳的本公司车站' }, ownStations.map(function (s) { return h('option', { value: s.id }, s.name); }));
-      const invite = action(c.crossPermit ? '更新接驳目标' : '授权进入本城并申请接驳', function () { const r = CM.Operators.requestConnection(g, row.id, target.value); self.toast(r.error || '接驳申请已提交，工程由该公司独立出资', r.error ? 'warn' : 'good'); if (r.ok) { self.markUnsaved(); self.scheduleAutosave(); self.rerenderPage(); } });
-      invite.disabled = g.clock.y < 2025 || !ownStations.length || !d.neighbors.includes(g.playerCity || 'sh') || c.projects.some(function (p) { return p.kind === 'cross'; });
-      el.appendChild(h('section', { class: 'op-cooperate' }, h('b', null, '跨城合作'), h('p', { class: 'note' }, '2025 年起可邀请相邻公司接入你的运营站。点击授权后，该公司才可进入本城，按自己的资金和工程安排建设；你的车站、线路与列车继续归你。' + (c.crossPermit ? ' 已给予该公司本城接入许可。' : ' 尚未给予本城接入许可。')), target, invite));
+      if (c.request && ownStations.some(function (s) { return s.id === c.request; })) target.value = c.request;
+      else { const candidate = ownStations.find(function (s) { return CM.Operators.connectionStatus(g, row.id, s.id).ok; }); if (candidate) target.value = candidate.id; }
+      const invite = action(c.request ? '更新接驳申请' : '申请对方修建接驳', function () { const r = CM.Operators.requestConnection(g, row.id, target.value); self.toast(r.error || '接驳申请已提交，工程由该公司独立出资', r.error ? 'warn' : 'good'); if (r.ok) { self.markUnsaved(); self.scheduleAutosave(); self.rerenderPage(); } });
+      const statusText = h('p', { class: 'note' }), showStatus = function () { const status = CM.Operators.connectionStatus(g, row.id, target.value); invite.disabled = !status.ok; statusText.textContent = status.ok ? '可以申请。接驳工程按对方资金与施工进度推进。' : status.error; };
+      target.addEventListener('change', showStatus); showStatus();
+      el.appendChild(h('section', { class: 'op-cooperate' }, h('b', null, '邀请对方修建接驳线'), h('p', { class: 'note' }, '2018 年起可邀请对方接入其建设范围内的本公司运营站；进入你的主城仍需 2025 年并授权。建设和购车由对方出资，你的资产继续归你。' + (c.crossPermit ? ' 已给予该公司主城接入许可。' : ' 尚未给予主城接入许可。')), target, statusText, invite));
       const history = h('details', null, h('summary', null, '公司独立月账 · 最近 ' + c.history.length + ' 月'));
       if (!c.history.length) history.appendChild(h('p', { class: 'note' }, '第一个完整结算月后展示。'));
       for (const x of c.history.slice().reverse()) history.appendChild(h('p', { class: 'note' }, h('b', null, when(x.ym)), h('br'), '注资 ' + U.fmtMoney(x.grant) + ' · 票款 ' + U.fmtMoney(x.fare) + ' · 运营费 ' + U.fmtMoney(x.ops) + ' · 建设与购车 ' + U.fmtMoney(x.construction + x.fleet)));

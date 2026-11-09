@@ -167,6 +167,7 @@
     this.toolInd = h('span', { class: 'tind' });
     this.toolbar = h('nav', { id: 'toolbar', class: 'hud glass hidden' }, this.toolInd,
       tb('select', 'cursor', '选择', 'tool.select', function () { self.tools.setTool('select'); }),
+      tb('pan', 'move', '移动', 'tool.pan', function () { self.tools.setTool('pan'); }),
       tb('station', 'station', '建站', 'tool.station', function () { self.tools.setTool('station'); }),
       tb('line', 'route', '绘线', 'tool.line', function () { self.tools.setTool('line'); }),
       tb('edit', 'pencil', '修改', 'tool.edit', function () { self.tools.setTool('edit'); }),
@@ -1020,7 +1021,9 @@
   // ======================== 工具坞与视图 ========================
   UI.prototype.renderToolbar = function () {
     const g = this.g(), t = this.tools ? this.tools.tool : 'select';
-    for (const k of ['select', 'station', 'line', 'edit', 'demolish']) this.tbtns[k].classList.toggle('on', t === k);
+    for (const k of ['select', 'pan', 'station', 'line', 'edit', 'demolish']) {
+      this.tbtns[k].classList.toggle('on', t === k); this.tbtns[k].setAttribute('aria-pressed', String(t === k));
+    }
     // 当前工具的滑动高亮
     const ab = this.tbtns[t];
     if (ab && ab.offsetWidth) {
@@ -1145,6 +1148,13 @@
   UI.prototype.renderToolOpts = function () {
     const g = this.g(), T = this.tools, el = this.toolopts;
     if (!el) return;
+    if (g && T && T.tool === 'pan') {
+      const locked = T.panLocked(), key = 'pan|' + locked;
+      if (this._toKey !== key) {
+        this._toKey = key; el.replaceChildren(h('div', { class: 'to-hint' }, ic('move'), h('span', null, locked ? '单指轻滑移动地图 · 单击或 Esc 返回选择' : '单指轻滑移动地图 · 单击地图可连续移动 · Esc 返回选择')));
+      }
+      el.classList.remove('hidden', 'has-snap', 'has-color'); return;
+    }
     if (!g || !T || T.tool === 'select') {
       el.classList.add('hidden'); this._replacingToolOpts = true;
       try { el.innerHTML = ''; } finally { this._replacingToolOpts = false; }

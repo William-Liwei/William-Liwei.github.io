@@ -16,6 +16,7 @@
     ['jumpMonth', '推进 1 个月', 'time', ['Period']],
     ['jumpYear', '推进 1 年', 'time', ['Shift+Period']],
     ['tool.select', '选择', 'tool', ['KeyV']],
+    ['tool.pan', '移动地图', 'tool', ['KeyQ']],
     ['tool.station', '建站', 'tool', ['KeyB']],
     ['tool.line', '绘线', 'tool', ['KeyL']],
     ['tool.edit', '修改', 'tool', ['KeyE']],

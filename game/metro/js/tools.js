@@ -29,14 +29,51 @@
     this.cancelDrag();
     if (this.ui.closeLinePicker) this.ui.closeLinePicker();
     this.tool = t;
+    this.resetPan();
+    if (t === 'pan') {
+      if (CM.Follow && CM.Follow.active()) CM.Follow.stop();
+      if (CM.EdgePan) CM.EdgePan.reset();
+      this.requestPanLock();
+    } else this.exitPanLock();
     this.chain = null; this.bends = []; this.drag = null; this.hint = null; this.hover = null; this.lineLock = false; this.snapPt = null; this.lastSeg = null; this.meas = { pts: [], done: false };
+    if (t === 'pan') { this.cursor = null; this.cursorOut = true; this.portalHover = null; }
     this.ui.setTooltip(null);
     this.ui.onToolChange(t);
+    this.R.cv.style.cursor = t === 'pan' ? 'var(--cur-grab)' : '';
+  };
+  Tools.prototype.resetPan = function () { this.hoverPan = null; };
+  Tools.prototype.panLocked = function () { return document.pointerLockElement === this.R.cv; };
+  Tools.prototype.exitPanLock = function () {
+    if (this.panLocked() && document.exitPointerLock) document.exitPointerLock();
+  };
+  Tools.prototype.requestPanLock = function () {
+    if (this.tool !== 'pan' || this.panBlocked() || !this.R.cv.requestPointerLock || this.panLocked()) return;
+    const self = this;
+    try {
+      const pending = this.R.cv.requestPointerLock();
+      if (pending && pending.then) pending.then(function () {
+        if (self.tool !== 'pan' || self.panBlocked()) self.exitPanLock();
+      }, function () { self.resetPan(); });
+    } catch (err) { this.resetPan(); } // Older browsers can reject synchronously.
+  };
+  Tools.prototype.panBlocked = function () {
+    const g = this.game(), ui = this.ui, focus = document.activeElement;
+    return !g || g.preview || g.jumping || document.hidden || (CM.isLoading && CM.isLoading()) || ui.blocking() ||
+      ui.opsApp || ui.voApp || ui.dropdown || ui.searchEl || ui.linePicker || ui._keyCap ||
+      (focus && (/^(INPUT|TEXTAREA|SELECT)$/.test(focus.tagName) || focus.isContentEditable)) ||
+      (CM.Quick && CM.Quick.busy && CM.Quick.busy()) || (ui.layerPanelOpen && ui.layerPanelOpen()) ||
+      (ui.timeOptions && Object.values(ui.timeOptions).some(function (o) { return o.menu && !o.menu.classList.contains('off'); }));
+  };
+  Tools.prototype.panMove = function (dx, dy) {
+    if (!Number.isFinite(dx) || !Number.isFinite(dy) || (!dx && !dy)) return;
+    if (CM.Follow && CM.Follow.active()) CM.Follow.stop();
+    this.R.panBy(dx, dy);
   };
   // 中断未完成的拖动：恢复拖动前草案，不留下阻塞保存的 liveSnap。
   Tools.prototype.cancelDrag = function () {
     const g = this.game(), active = !!this.drag || !!(g && g.draft && g.draft.liveSnap);
     this.drag = null; this.ptr = null; this.boxSel = null;
+    this.resetPan();
     if (g && g.draft && g.draft.liveSnap) g.endLive(false);
     return active;
   };
@@ -57,13 +94,34 @@
     window.addEventListener('pointermove', function (e) { if (self.touchMove(e)) return; self.onMove(e); });
     window.addEventListener('pointerup', function (e) { if (self.touchUp(e)) return; self.onUp(e); });
     window.addEventListener('pointercancel', function (e) { if (self.touchUp(e)) return; self.cancelDrag(); });
-    cv.addEventListener('wheel', function (e) { e.preventDefault(); if (!self.game()) return; const k = e.deltaMode === 1 ? 40 : 1; self.R.zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * k * 0.0016)); }, { passive: false });
+    cv.addEventListener('wheel', function (e) {
+      e.preventDefault(); self.resetPan(); if (!self.game() || self.ui.blocking() || self.tool === 'pan' && self.panBlocked()) return;
+      const k = e.deltaMode === 1 ? 40 : 1;
+      if (self.tool === 'pan' && !e.ctrlKey && !e.metaKey) {
+        self.panMove(-e.deltaX * (e.deltaMode === 2 ? window.innerWidth : k), -e.deltaY * (e.deltaMode === 2 ? window.innerHeight : k));
+      } else self.R.zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * k * 0.0016));
+    }, { passive: false });
+    cv.addEventListener('pointerleave', function () { self.resetPan(); });
+    window.addEventListener('mousemove', function (e) {
+      if (!self.panLocked()) return;
+      if (self.tool !== 'pan' || self.panBlocked()) { self.exitPanLock(); return; }
+      self.panMove(e.movementX, e.movementY);
+    });
+    document.addEventListener('pointerlockchange', function () {
+      const owned = self.panLocked(); self.resetPan();
+      if (owned && (self.tool !== 'pan' || self.panBlocked())) { self.exitPanLock(); return; }
+      if (!owned && self._panWasLocked && self.tool === 'pan') self.setTool('select');
+      self._panWasLocked = owned;
+      if (self.ui.renderToolOpts) self.ui.renderToolOpts();
+    });
+    document.addEventListener('pointerlockerror', function () { self.resetPan(); });
+    document.addEventListener('visibilitychange', function () { self.resetPan(); if (document.hidden) self.exitPanLock(); });
     cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
     cv.addEventListener('dblclick', function (e) { self.onDbl(e); });
     window.addEventListener('keydown', function (e) { self.onKey(e); });
     window.addEventListener('keyup', function (e) { self.keys.delete(e.code); self.keyMods = { ctrl: e.ctrlKey || e.metaKey, alt: e.altKey, shift: e.shiftKey }; });
     window.addEventListener('blur', function () { self.keys.clear(); self.keyMods = {}; });
-    window.addEventListener('blur', function () { self.keys.clear(); self.cancelDrag(); if (self.touches) self.touches.clear(); self.pinch = null; });
+    window.addEventListener('blur', function () { self.keys.clear(); self.cancelDrag(); self.exitPanLock(); if (self.touches) self.touches.clear(); self.pinch = null; });
   };
   // ---------------- 触屏：双指缩放与平移 ----------------
   // 第二根手指按下时进入缩放：取消单指的点击 / 拖动，按两指距离缩放、按中点平移；返回 true 表示事件已处理
@@ -101,6 +159,8 @@
   };
   Tools.prototype.onDown = function (e) {
     const g = this.game(); if (!g || this.ui.blocking()) return;
+    this.resetPan();
+    if (this.tool === 'pan' && this.panLocked()) { this.setTool('select'); return; }
     try { if (this.R.cv.setPointerCapture) this.R.cv.setPointerCapture(e.pointerId); } catch (err) { /* 指针已失效时忽略 */ }
     this.ptr = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, button: e.button, moved: false, shift: e.shiftKey, alt: e.altKey, t: performance.now() };
     if (e.button === 1) { this.ptr.pan = true; e.preventDefault(); return; }
@@ -119,6 +179,18 @@
     const g = this.game(); if (!g) return;
     const R = this.R;
     this.mouse = { x: e.clientX, y: e.clientY };
+    if (this.tool === 'pan') {
+      if (this.panLocked()) return; // Locked input arrives as relative mousemove, once.
+      if (this.panBlocked()) { this.resetPan(); return; }
+      if (!this.ptr) {
+        const previous = this.hoverPan;
+        if (e.target !== R.cv || e.pointerType !== 'mouse' || e.isPrimary === false || e.buttons) { this.resetPan(); return; }
+        this.hoverPan = { x: e.clientX, y: e.clientY, pointerId: e.pointerId, game: g };
+        if (previous && previous.pointerId === e.pointerId && previous.game === g) this.panMove(e.clientX - previous.x, e.clientY - previous.y);
+        return;
+      }
+      this.resetPan();
+    }
     if (this.ptr) {
       const dx = e.clientX - this.ptr.x, dy = e.clientY - this.ptr.y;
       if (!this.ptr.moved && Math.hypot(e.clientX - this.ptr.sx, e.clientY - this.ptr.sy) > (e.pointerType === 'touch' ? 10 : 4)) this.ptr.moved = true;
@@ -200,6 +272,10 @@
   Tools.prototype.stationOpts = function (w) { const o = { size: this.stationSize, type: this.buildType }; if (this.stationTod) o.tod = this.stationTod; if (w.portal) o.portal = w.portal; return o; };
   Tools.prototype.updateHover = function (sx, sy, mod) {
     const g = this.game(), R = this.R;
+    if (this.tool === 'pan') {
+      this.cursor = this.hover = this.hint = this.snapPt = this.portalHover = null; this.cursorOut = true;
+      this.ui.setTooltip(null); R.cv.style.cursor = 'var(--cur-grab)'; return;
+    }
     if (this.drag && this.drag.kind === 'reroute' && this.ptr && this.ptr.moved) return;
     let w = this.world(sx, sy, this.buildH());
     this.cursor = { sx: sx, sy: sy, x: w.x, y: w.y, mod: mod }; this.cursorOut = false;
@@ -563,6 +639,7 @@
   // ---------------- 点击 ----------------
   Tools.prototype.onClick = function (sx, sy, mod, multiKey) {
     const g = this.game(), R = this.R;
+    if (this.tool === 'pan') { this.requestPanLock(); return; }
     if (g.jumping) return;
     let w = this.world(sx, sy, this.buildH());
     const ui = this.ui;
@@ -896,6 +973,7 @@
       case 'jumpQuarter': ui.jump(3); break;
       case 'jumpYear': ui.jump(12); break;
       case 'tool.select': this.setTool('select'); break;
+      case 'tool.pan': this.setTool(this.tool === 'pan' ? 'select' : 'pan'); break;
       case 'tool.station': this.setTool('station'); break;
       case 'tool.line': this.setTool('line'); break;
       case 'tool.edit': this.setTool('edit'); break;
@@ -931,6 +1009,7 @@
   };
   Tools.prototype.escape = function () {
     const ui = this.ui;
+    if (this.tool === 'pan') { this.setTool('select'); return; }
     if (ui.propertyPick) { ui.propertyPick = false; ui.setTooltip(null); ui.toast('已取消地块选择', 'info'); return; }
     if (this.drag && this.drag.kind === 'reroute') { this.cancelDrag(); this.hint = null; ui.setTooltip(null); return; }
     // 快捷操作的气泡或右键菜单打开时，Esc 只关闭它们
@@ -958,6 +1037,7 @@
   };
   // 每帧：键盘平移
   Tools.prototype.tick = function (dt) {
+    if (this.tool === 'pan' && this.panBlocked()) { this.resetPan(); this.exitPanLock(); }
     const K = this.keys; if (!K.size || !this.game()) return;
     const focus = document.activeElement;
     if (this.ui.blocking() || this.ui.opsApp || this.ui.voApp || this.ui.dropdown || this.ui.searchEl || this.ui._keyCap || (focus && (/^(INPUT|TEXTAREA|SELECT)$/.test(focus.tagName) || focus.isContentEditable))) { this.keys.clear(); this.keyMods = {}; return; }
