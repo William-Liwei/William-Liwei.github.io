@@ -2,7 +2,7 @@ window.ABOUT_DATA = {
   profile: {
     role: "Incoming PhD Student in Computer Science",
     affiliation: "Shanghai Jiao Tong University × Beijing Zhongguancun Academy",
-    phdPeriod: "2027-",
+    phdPeriod: "2027–",
     undergraduate: "Computer Science and Technology, Shanghai University",
     undergraduatePeriod: "2023-2027",
     advisors: "",
@@ -11,7 +11,7 @@ window.ABOUT_DATA = {
       { school: "SJTU × Beijing Zhongguancun Academy", label: "Incoming PhD · 2027–" },
       { school: "Shanghai University", label: "Undergraduate · 2023–2027" }
     ],
-    bio: "I am an undergraduate in Computer Science and Technology at Shanghai University (2023–2027). In 2027, I will join Shanghai Jiao Tong University × Beijing Zhongguancun Academy as a PhD student.",
+    bio: "I am an undergraduate in Computer Science and Technology at Shanghai University (2023–2027) and will begin my PhD in 2027.",
     research: "I study how to learn from structured and temporal data, with a focus on forecasting, clustering, and generation under heterogeneity and uncertainty."
   },
   personalInfo: {
@@ -37,7 +37,7 @@ window.ABOUT_DATA = {
     { year: 2025, month: 8, content: "Awarded First Prize in the <strong>Baidu Star Programming Contest - Talent Track</strong> and <strong>MaTiBei Collegiate Programming Contest</strong>." },
     { year: 2025, month: 6, content: "Two papers (SWIFT, TimeFlowDiffuser) accepted for <strong>Oral Presentation</strong> at <strong>ICANN 2025 (CCF-C)</strong>." },
     { year: 2025, month: 5, content: "Two papers (LWSpace, EnergyPatchTST) accepted for <strong>Oral Presentation</strong> at <strong>ICIC 2025 (CCF-C)</strong>." },
-    { year: 2025, month: 5, content: "The self-developed <strong>CCF-Online</strong> academic conference portal is now live." },
+    { year: 2025, month: 5, content: "The self-developed <strong>CCF Online</strong> academic conference portal is now live." },
     { year: 2024, month: 11, content: "Awarded Second Prize in the 'E-Cloud Cup' Shanghai Collegiate Cloud Computing Application Contest." },
     { year: 2024, month: 7, content: "Awarded Gold Medal in the university-level China 'Internet+' Innovation Competition." }
   ],
@@ -112,14 +112,14 @@ window.ABOUT_DATA = {
       thumbnail: "sdflow.png",
       summary: "Generates time series in parallel by combining a low-rank latent space with similarity-guided flow matching, connecting the generative process to the geometry of temporal data.",
       abstract: "SDFlow introduces a similarity-driven, non-autoregressive flow-matching framework for time-series generation in high-dimensional discrete latent spaces. By learning a low-rank subspace and initializing generation with similarity-guided manifold anchors, it aligns the generative process with the geometry of real temporal data and supports parallel synthesis.",
-      bibtex: `@misc{li2026sdflow,
-      title={SDFlow: Similarity-Driven Flow Matching for Time Series Generation}, 
-      author={Li, Wei and Feng, Shibo and Wu, Pengcheng and Gao, Xingyu and Wu, Min and Zhao, Peilin},
-      year={2026},
-      eprint={2605.05736},
-      archivePrefix={arXiv},
-      primaryClass={cs.AI},
-      url={https://arxiv.org/abs/2605.05736}, 
+      bibtex: `@inproceedings{li2026sdflow,
+  title={SDFlow: Similarity-Driven Flow Matching for Time Series Generation},
+  author={Li, Wei and Feng, Shibo and Wu, Pengcheng and Gao, Xingyu and Wu, Min and Zhao, Peilin},
+  booktitle={Advances in Neural Information Processing Systems},
+  year={2026},
+  eprint={2605.05736},
+  archivePrefix={arXiv},
+  url={https://arxiv.org/abs/2605.05736}
 }`
     },
     {
@@ -329,7 +329,7 @@ window.ABOUT_DATA = {
     }
   ],
   projects: [
-    { title: "'CCF-Online' Academic Conference Portal", desc: "Independently developed and deployed an online portal that scrapes and integrates data from multiple sources to provide researchers with efficient access to academic conference information.", tags: ["Independent Project", "Scrapy", "JavaScript"], links: [{ type: "live_demo", url: "https://www.weili.space/ccf/" }] },
+    { title: "CCF Online Academic Conference Portal", desc: "Independently developed and deployed an online portal that scrapes and integrates data from multiple sources to provide researchers with efficient access to academic conference information.", tags: ["Independent Project", "Scrapy", "JavaScript"], links: [{ type: "live_demo", url: "/ccf/" }] },
     { title: "SHU Prophet: An Intelligent Time-Series Forecasting & Decision Platform", desc: "Engineered 'SHU Prophet,' a full-stack intelligent platform for advanced time-series analysis. This project integrates a suite of self-developed models with an interactive AI Agent (LangChain & LLM) to automate data analysis, generate insightful reports, and bridge the gap between complex algorithms and intuitive decision-making.", tags: ["Time Series Forecasting", "Full-Stack", "AI Agent", "LangChain", "Vue.js", "Python", "Flask", "ECharts"], links: [{ type: "github", url: "https://github.com/William-Liwei/shuprophet" }] },
     { title: "Cloud-based Automated Course Selection System", desc: "Led the development of a cloud-hosted system that automates the course selection process, featuring an LLM-based sentiment analysis module for course reviews. Award-winning project.", tags: ["Project Lead", "Flask", "Playwright", "Cloud Computing"], links: [] },
     { title: "Cultural Heritage Database System", desc: "Developed a digital management platform for the University's Key Laboratory of Silicate Cultural Heritage, supporting multi-source data entry, retrieval, and visualization.", tags: ["Database Design", "MySQL", "Data Visualization"], links: [] },
@@ -365,7 +365,7 @@ window.ABOUT_DATA = {
       month_end: 9,
       details: [
         "Co-led <strong>SDFlow (NeurIPS 2026)</strong> as first-listed co-first author: similarity-driven, non-autoregressive Flow Matching in a low-rank VQ latent space for long-horizon generation.",
-        "Extending the line to multiscale discrete representations and long-sequence generation, covering method design, implementation, and evaluation."
+        "Extended the line to multiscale discrete representations with <strong>UniFlow</strong> (arXiv preprint, co-first author), covering method design, implementation, and evaluation."
       ]
     },
     {
@@ -398,7 +398,7 @@ window.ABOUT_DATA = {
       type: "Research",
       title: "Time-Series Forecasting & Deep Learning",
       affiliation: "Research Study | Mentor: <strong>Prof. Fenglei Yang</strong> (Shanghai University)",
-      display_order: 4,
+      display_order: 6,
       year_start: 2024,
       month_start: 1,
       year_end: 2024,
@@ -411,7 +411,7 @@ window.ABOUT_DATA = {
       type: "Part-time",
       title: "LLM Capability Enhancement & Alignment",
       affiliation: "ByteDance | Xpert Program",
-      display_order: 6,
+      display_order: 4,
       year_start: 2025,
       month_start: 8,
       year_end: null,
