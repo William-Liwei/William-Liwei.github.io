@@ -656,7 +656,7 @@
   UI.prototype.lineSpeedBlock = function (lid) {
     const g = this.g(), self = this, MM = CM.Metro, net = g.draft ? g.draft.net : g.net, L = net.lines[lid], cur = MM.lineKmh(L), y = g.clock.y;
     const rail = CM.RailSystems, system = rail ? rail.id(L) : 'metro', grades = rail ? rail.grades(L) : CFG.metro.speedGrades;
-    let tight = Infinity; for (const s of MM.lineSegs(net, lid)) { const v = MM.segGeom(net, s, g.city).minRadiusM; if (isFinite(v)) tight = Math.min(tight, v); }
+    const tight = MM.lineGeometry(g, lid).minRadiusM;
     const ctl = h('div', { class: 'seg-ctl sm' }, grades.map(function (x) {
       const open = F.speedOpen(F.cityId(g), y, x.kmh, system), over = isFinite(tight) && tight < x.minR, on = cur === x.kmh;
       const tip = x.kmh + ' km/h：最小转弯半径 ' + x.minR + ' m，运营成本 ×' + x.ops.toFixed(2) + (x.track ? '，轨道造价附加 ' + Math.round(x.track * 100) + '%' : '') + (open.ok ? '' : '；需要最高速度不低于 ' + x.kmh + ' km/h 的车型' + (open.year ? '（' + open.year + ' 年起开放）' : '')) + (over ? '；本线最急处约 ' + Math.round(tight) + ' m，要先放缓弯道' : '');

@@ -206,6 +206,7 @@
     if (payload && payload.rulesRevision != null && (!Number.isSafeInteger(payload.rulesRevision) || payload.rulesRevision < 0 || payload.rulesRevision > (CFG.RULES_REVISION || 0))) throw new Error('存档使用了当前游戏尚不支持的经营与建设规则，请使用对应版本载入');
     const ok = payload && payload.meta && payload.clock && payload.city && payload.net && payload.econ && payload.tasks;
     if (!ok) throw new Error('存档缺少必要数据');
+    if (CM.Metro) { const error = CM.Metro.validate(payload.net); if (error) throw new Error('存档线网无效：' + error); }
     if (CM.Operators) { CM.Operators.validate(payload.operators); CM.Operators.validateAssets(payload.operators, payload.net, payload.fleet, payload.meta.playerCity || 'sh'); }
     if (CM.Automation) CM.Automation.validate(payload.automation);
     if (CM.Development) CM.Development.validate(payload.development);

@@ -74,7 +74,8 @@
   M.typeH = function (type) { return CFG.metro.height[type] || 0; };
 
   // ---------------- 几何 ----------------
-  const geomCache = new Map();
+  const geomCache = new Map(), compiledGeometry = new WeakMap();
+  const geometryState = function (city) { return [city, city.geoVer || 0, city.terrainVer || 0, city.lockVer || 0, !!city.unlockAll]; };
   // 玩家可编辑的控制点：起点站、转弯点、终点站
   M.userControl = function (net, seg) {
     const A = net.stations[seg.a], B = net.stations[seg.b];
@@ -894,14 +895,23 @@
   };
   // 网络完整性：区段两端车站与所属线路必须存在（异常编辑据此回滚）
   M.validate = function (net) {
-    if (CM.RailSystems) for (const id in net.lines) { const L = net.lines[id];
-      if (L.railSystem != null && !CM.RailSystems.valid(L.railSystem)) return '线路轨道制式无效';
-      if (L.speed != null && !CM.RailSystems.grades(L).some(function (x) { return x.kmh === L.speed; })) return '运行速度不适用于该轨道制式';
+    const record = function (v) { return !!v && typeof v === 'object' && !Array.isArray(v); };
+    if (!record(net) || !record(net.stations) || !record(net.lines) || !record(net.segments)) return '线网数据不完整';
+    for (const id of Object.keys(net.stations)) {
+      const s = net.stations[id];
+      if (!record(s) || !Number.isFinite(s.x) || !Number.isFinite(s.y)) return '车站 ' + id + ' 的坐标无效';
     }
-    for (const id in net.segments) {
+    for (const id of Object.keys(net.lines)) { const L = net.lines[id];
+      if (!record(L)) return '线路 ' + id + ' 的数据不完整';
+      if (CM.RailSystems && L.railSystem != null && !CM.RailSystems.valid(L.railSystem)) return '线路轨道制式无效';
+      if (CM.RailSystems && L.speed != null && !CM.RailSystems.grades(L).some(function (x) { return x.kmh === L.speed; })) return '运行速度不适用于该轨道制式';
+    }
+    for (const id of Object.keys(net.segments)) {
       const s = net.segments[id];
-      if (!net.stations[s.a] || !net.stations[s.b]) return '轨道 ' + id + ' 的端点车站不存在';
-      if (!net.lines[s.line]) return '轨道 ' + id + ' 所属线路不存在';
+      if (!record(s)) return '轨道 ' + id + ' 的数据不完整';
+      if (!Object.prototype.hasOwnProperty.call(net.stations, s.a) || !Object.prototype.hasOwnProperty.call(net.stations, s.b)) return '轨道 ' + id + ' 的端点车站不存在';
+      if (!Object.prototype.hasOwnProperty.call(net.lines, s.line)) return '轨道 ' + id + ' 所属线路不存在';
+      if (s.pts != null && (!Array.isArray(s.pts) || s.pts.some(function (p) { return !Array.isArray(p) || p.length !== 2 || !Number.isFinite(p[0]) || !Number.isFinite(p[1]); }))) return '轨道 ' + id + ' 的转弯点无效';
     }
     return null;
   };
@@ -1009,7 +1019,29 @@
       cars: minCars, cap: minCars * (rail ? rail.cap : mc.carCap), railSystem: rail ? rail.id : 'metro', dwell: dwell, runSec: runSec, cycleSec: loop ? runSec + dwell * n : 2 * runSec + 2 * dwell * Math.max(0, n - 2) + 2 * mc.turnaround, lenM: cum[cum.length - 1] * CFG.CELL_M, kmh: B.kmh, opsK: B.opsK,
     };
   };
-  M.compile = function (net, city) { return M.withSegIndex([net], function () { return compile(net, city); }); };
+  M.compile = function (net, city) { return M.withSegIndex([net], function () {
+    const C = compile(net, city); compiledGeometry.set(C, geometryState(city)); return C;
+  }); };
+  // Details and speed controls share the actual compiled geometry. An uncompiled
+  // draft is inspected with one temporary segment index; never compile the whole
+  // network or reuse an older draft merely to open a line's panel.
+  M.lineGeometry = function (g, lid) {
+    const d = g.draft, net = d ? d.net : g.net;
+    const candidate = d ? (d.compVer === d.ver ? d.compiled : null) : g.compiled;
+    const oldState = candidate && compiledGeometry.get(candidate), state = geometryState(g.city);
+    const C = candidate && candidate.net === net && oldState && oldState.every(function (v, i) { return v === state[i]; }) ? candidate : null;
+    return M.withSegIndex([net], function () {
+      const segs = M.lineSegs(net, lid), geometry = new Map();
+      let lenM = 0, minRadiusM = Infinity;
+      for (const s of segs) {
+        // Partner permissions can change independently of the player's lockVer.
+        const cs = C && M.ownerId(s, net) === 'player' && C.segs.get(s.id), geo = cs ? cs.g : M.segGeom(net, s, g.city);
+        geometry.set(s.id, geo); lenM += geo.lenM;
+        if (Number.isFinite(geo.minRadiusM)) minRadiusM = Math.min(minRadiusM, geo.minRadiusM);
+      }
+      return { segs: segs, geometry: geometry, lenM: lenM, minRadiusM: minRadiusM, tp: C && C.topo.get(lid) || M.lineTopo(net, lid) };
+    });
+  };
   function compile(net, city) {
     const C = { net: net, stations: [], sIndex: new Map(), segs: new Map(), lines: [], routes: [], baseRoutes: [], topo: new Map() };
     const ids = M.sortIds(Object.keys(net.stations));

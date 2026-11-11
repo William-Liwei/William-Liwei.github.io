@@ -565,9 +565,7 @@
     const line = net.lines[lid];
     if (!line) return null;
     const el = h('div');
-    const tp = M.lineTopo(net, lid);
-    const segs = M.lineSegs(net, lid);
-    let len = 0; for (const s of segs) len += M.segGeom(net, s, g.city).lenM;
+    const geometry = M.lineGeometry(g, lid), tp = geometry.tp, segs = geometry.segs, len = geometry.lenM;
     el.appendChild(h('div', { class: 'row', style: { marginBottom: '8px', flexWrap: 'wrap' } }, h('span', { class: 'swatch', style: { background: AX.line(line), width: '22px', height: '8px' } }), h('span', { class: 'tag' }, M.TOPO_NAME[tp.topo]), h('span', { class: 'tag', 'data-tip': '运行速度：最小转弯半径 ' + M.minRadius(line) + ' m' }, M.lineKmh(line) + ' km/h'), h('span', { class: 'tag' }, U.fmtKm(len)), h('span', { class: 'tag' }, tp.stations.length + ' 站'), !g.net.lines[lid] ? h('span', { class: 'tag info' }, '草案中') : null, h('span', { class: 'grow' }), this.favBtn('lines', lid)));
     // 分页（v2.1 第二轮）：「概况」看客流、运营与车站，「编辑」集中颜色、贯通与拆开、区段与拆除；名称点标题修改，颜色也可点标题前的彩色徽标
     let tab = !g.net.lines[lid] ? 'build' : ((this._tab && this._tab.line) || 'info');
@@ -753,7 +751,7 @@
       // 选中区段
       const seg = segId ? net.segments[segId] : null;
       if (seg) {
-        const geo = M.segGeom(net, seg, g.city);
+        const geo = geometry.geometry.get(seg.id) || M.segGeom(net, seg, g.city);
         el.appendChild(this.sec('ln-seg', '选中区段：' + net.stations[seg.a].name + '—' + net.stations[seg.b].name, '', function () {
           const b = h('div');
           b.appendChild(self.kv([['长度', U.fmtKm(geo.lenM)], ['建设方式', CFG.metro.typeName[seg.type]], geo.waterM > 1 ? ['跨江', (seg.type === 'underground' ? '越江隧道 ' : '跨江桥梁 ') + U.fmtKm(geo.waterM)] : null, geo.hillM > 1 ? ['山体隧道', U.fmtKm(geo.hillM)] : null, ['最小曲线半径', isFinite(geo.minRadiusM) ? Math.round(geo.minRadiusM) + ' m' : '直线']]));

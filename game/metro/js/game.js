@@ -958,6 +958,8 @@
     };
   };
   Game.restoreGen = function* (s, sync) {
+    const networkError = M.validate(s && s.net);
+    if (networkError) throw new Error('存档线网无效：' + networkError);
     const g = new Game();
     let complete = false;
     try {
