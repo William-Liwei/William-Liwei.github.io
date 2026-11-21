@@ -1,5 +1,5 @@
 import {
-  conferenceIdentity, createConferenceIndex, findConferenceRows, latestConferenceYears, nextConferenceDeadline,
+  matchesConferenceRegion, matchesRank, conferenceIdentity, createConferenceIndex, findConferenceRows, latestConferenceYears, nextConferenceDeadline,
   deadlineStage, deadlineRoundsHTML, conferenceCopyText, matchesConferenceStatus, journalPartitionLines as partitionLines, journalSearchText, searchTerms, esc, formatCountdown, formatInZone, parseTimezone, pickDeadline, processConferences, safeUrl, wallTimeToUtc
 } from './lib.js';
 import {favoriteKey, readStored, writeStored, favoriteSet, serializeFavoritesBackup, importFavoritesBackup, FAVORITES_BACKUP_MAX_BYTES, FAVORITES_KEY, PREFERENCES_KEY} from './preferences.js';
@@ -288,14 +288,15 @@ const TABS = {
     defaultSort: { key: 'deadline', dir: 'asc' },
     filters: [
       { key: 'sub', label: '领域', options: () => Object.entries(SUB_NAMES) },
-      { key: 'rank', label: 'CCF 等级', options: () => [['A', 'A 类'], ['B', 'B 类'], ['C', 'C 类'], ['N', '非 CCF']] },
+      { key: 'rank', label: 'CCF 等级', type: 'multi', options: () => [['A', 'A 类'], ['B', 'B 类'], ['C', 'C 类'], ['N', '非 CCF']] },
+      { key: 'region', label: '会议地点', options: () => [['china', '中国（含港澳台）'], ['asia', '亚洲'], ['nearby', '亚洲及大洋洲'], ['online', '线上']] },
       { key: 'status', label: '截稿状态', options: () => [['open', '全文未截稿'], ['week', '7 天内截稿'], ['month', '30 天内截稿'], ['90days', '90 天内截稿'], ['registration', '摘要、全文均未截止'], ['passed', '全文已截稿'], ['tbd', '待公布']] },
       { key: 'tz', label: '截稿时间显示为', def: 'bj', noAll: true, options: () => [['bj', '北京时间'], ['local', '本机时区'], ['orig', '会议原时区']] },
       { key: 'latest', label: '只看每个会议最新一届', offLabel: '显示所有年份', type: 'check', def: '1' }
     ],
     match(r, f) {
       if (f.sub !== 'all' && r.sub !== f.sub) return false;
-      if (f.rank !== 'all' && r.rank !== f.rank) return false;
+      if (!matchesRank(r.rank, f.rank) || !matchesConferenceRegion(r.place, f.region)) return false;
       if (f.latest === '1' && !r.latest) return false;
       return matchesConferenceStatus(r,f.status);
     },
@@ -328,11 +329,11 @@ const TABS = {
     filters: [
       { key: 'cat', label: '领域', options: () => unique(data.ccf, 'category') },
       { key: 'type', label: '类型', options: () => [['期刊', '期刊'], ['会议', '会议']] },
-      { key: 'level', label: '级别', options: () => [['A', 'A 类'], ['B', 'B 类'], ['C', 'C 类']] },
+      { key: 'level', label: '级别', type: 'multi', options: () => [['A', 'A 类'], ['B', 'B 类'], ['C', 'C 类']] },
       { key: 'pub', label: '出版社', options: () => unique(data.ccf, 'publisher') }
     ],
     match: (r, f) => (f.cat === 'all' || r.category === f.cat) && (f.type === 'all' || r.type === f.type)
-      && (f.level === 'all' || r.level === f.level) && (f.pub === 'all' || r.publisher === f.pub),
+      && matchesRank(r.level, f.level) && (f.pub === 'all' || r.publisher === f.pub),
     sortValue: {
       name: (r) => (r.name || r.full).toLowerCase(),
       level: (r) => RANK_ORDER[r.level] ?? 3
@@ -510,6 +511,11 @@ function renderFilters() {
       return `<label class="check"><input type="checkbox" id="${id}" data-filter="${f.key}"${values[f.key] === '1' ? ' checked' : ''}>${esc(f.label)}</label>`;
     }
     const options = f.options();
+    if (f.type === 'multi') {
+      const selected = values[f.key] === 'all' ? [] : values[f.key].split(',').filter(v => options.some(([key]) => key === v));
+      values[f.key] = selected.length ? selected.join(',') : 'all';
+      return `<fieldset class="multi-filter"><legend>${esc(f.label)}</legend><div>${options.map(([v, label]) => `<label><input type="checkbox" data-filter="${f.key}" value="${esc(v)}"${selected.includes(v) ? ' checked' : ''}>${esc(label)}</label>`).join('')}</div></fieldset>`;
+    }
     if (values[f.key] !== (f.def ?? 'all') && !options.some(([v]) => v === values[f.key])) values[f.key] = f.def ?? 'all';
     const all = f.noAll ? '' : '<option value="all">全部</option>';
     const opts = options.map(([v, label]) => `<option value="${esc(v)}"${v === values[f.key] ? ' selected' : ''}>${esc(label)}</option>`).join('');
@@ -523,7 +529,7 @@ function renderFilterSummary() {
   const chips = changed.map((f) => {
     const value = values[f.key];
     const label = f.type === 'check' ? (value === '1' ? f.label : f.offLabel || f.label)
-      : `${f.label}：${f.options().find(([v]) => v === value)?.[1] || value}`;
+      : `${f.label}：${f.type === 'multi' ? value.split(',').map(v => f.options().find(([k]) => k === v)?.[1] || v).join('、') : f.options().find(([v]) => v === value)?.[1] || value}`;
     return { key: f.key, label };
   });
   if (state.q) chips.unshift({ key: 'q', label: `搜索：${state.q}` });
@@ -843,7 +849,11 @@ function bindEvents() {
   $('#filters').addEventListener('change', (e) => {
     const key = e.target.dataset.filter;
     if (!key) return;
-    state.filters[state.tab][key] = e.target.type === 'checkbox' ? (e.target.checked ? '1' : '0') : e.target.value;
+    const filter = TABS[state.tab].filters.find(f => f.key === key);
+    if (filter?.type === 'multi') {
+      const selected = [...$('#filters').querySelectorAll('input[data-filter="' + key + '"]:checked')].map(input => input.value);
+      state.filters[state.tab][key] = selected.length ? selected.join(',') : 'all';
+    } else state.filters[state.tab][key] = e.target.type === 'checkbox' ? (e.target.checked ? '1' : '0') : e.target.value;
     state.page = 1;
     render();
   });

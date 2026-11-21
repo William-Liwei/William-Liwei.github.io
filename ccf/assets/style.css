@@ -423,3 +423,9 @@ th[aria-sort="descending"] .sort-btn::after { content: "↓"; opacity: 1; color:
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+.multi-filter { border: 0; margin: 0; padding: 0; min-width: 0; }
+.multi-filter legend { padding: 0; margin-bottom: 6px; font-size: .76rem; font-weight: 500; color: var(--muted); }
+.multi-filter > div { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-height: 40px; }
+.filters .multi-filter label { display: flex; align-items: center; gap: 4px; color: var(--ink-soft); font-size: .82rem; white-space: nowrap; }
+.multi-filter input { accent-color: var(--gold-bg); width: 16px; height: 16px; }

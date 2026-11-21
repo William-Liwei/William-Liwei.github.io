@@ -24,8 +24,8 @@ Base URL: `https://www.weili.space/ccf/`
 
 | Task | Parameters |
 | --- | --- |
-| Conference deadlines | `tab=conf`; `q` for abbreviation or full name; `sub` for field; `rank=A`, `B`, `C` or `N`; `status=open`, `week`, `month`, `90days`, `registration`, `passed` or `tbd`; `latest=1` for the latest edition (default), `latest=0` for all years; `tz=bj` for Beijing time (default), `orig` for original conference time, `local` for the browser's timezone. |
-| CCF recommended list | `tab=ccf`; `q` for name or publisher; `level=A`, `B` or `C`; `type=会议` or `期刊`; `cat` and `pub` use exact values shown in the field and publisher dropdowns. |
+| Conference deadlines | `tab=conf`; `q` for abbreviation or full name; `sub` for field; `rank=A`, `B`, `C` or `N` (comma-separated for multiple, e.g. `rank=A,B`); `region=china`, `asia`, `nearby` (Asia and Oceania), or `online`; `status=open`, `week`, `month`, `90days`, `registration`, `passed` or `tbd`; `latest=1` for the latest edition (default), `latest=0` for all years; `tz=bj` for Beijing time (default), `orig` for original conference time, `local` for the browser's timezone. |
+| CCF recommended list | `tab=ccf`; `q` for name or publisher; `level=A`, `B` or `C` (comma-separated for multiple); `type=会议` or `期刊`; `cat` and `pub` use exact values shown in the field and publisher dropdowns. |
 | Journal partitions | `tab=jcr`; `q` for journal name, ISSN or eISSN; `quart=Q1` through `Q4`; `cas=1` through `4`; `xr=1` through `4`; `ccf=any`, `A`, `B` or `C`; `top=1` for CAS Top; `nowarn=1` to exclude warning-listed journals. |
 
 Conference field codes: `AI` artificial intelligence; `CG` graphics and multimedia; `CT` theory; `DB` databases, data mining and information retrieval; `DS` architecture, parallel/distributed computing and storage; `HI` HCI and ubiquitous computing; `MX` interdisciplinary; `NW` networks; `SC` security; `SE` software engineering, systems and programming languages.
@@ -49,3 +49,5 @@ Examples:
 - Acceptance rates may refer to a different year from the listed conference edition. Preserve the displayed rate year.
 - Mention the displayed update time or edition years, and any stale-data warning relevant to the answer. Browser refresh can differ from the bundled snapshot; do not call all results real-time.
 - If the browser cannot run JavaScript or data fails to load, report that limitation rather than inventing results. Querying does not require changing favorites, exporting files, joining a group or contacting the maintainer.
+
+Location filters use the edition’s published place text; unknown or unrecognized locations are excluded. Hybrid events appear by their physical location. China includes Hong Kong, Macau and Taiwan.

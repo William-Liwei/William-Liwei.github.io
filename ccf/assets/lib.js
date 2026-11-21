@@ -455,3 +455,22 @@ export function safeUrl(value) {
   const s = String(value ?? '').trim();
   return /^https?:\/\/[^\s"'<>]+$/i.test(s) ? s : '';
 }
+
+// Location comes from the specific conference edition, not its deadline timezone.
+export function matchesConferenceRegion(place, region) {
+  if (region === 'all') return true;
+  const value = String(place || '').toLowerCase();
+  const china = /\b(china|chinese|hong kong|macau|macao|taiwan|taipei|kaohsiung|hsinchu|beijing|shanghai|shenzhen|guangzhou)\b|中国|香港|澳门|台湾/;
+  const asia = /\b(japan|tokyo|kyoto|osaka|korea|seoul|busan|jeju|singapore|malaysia|kuala lumpur|thailand|bangkok|vietnam|hanoi|danang|india|bengaluru|bangalore|indonesia|bali|cambodia|siem reap|philippines|israel|turkey|türkiye|istanbul|uae|united arab emirates|dubai)\b|日本|韩国|新加坡/;
+  const oceania = /\b(australia|sydney|melbourne|brisbane|perth|new zealand|auckland|wellington)\b|澳大利亚|新西兰/;
+  const onlineOnly = /^(virtual|online|virtual conference|online only|tbd|to be announced|暂无|待定|线上)$/i.test(value.trim());
+  if (region === 'online') return onlineOnly && /virtual|online|线上/.test(value);
+  if (onlineOnly || !value.trim()) return false;
+  if (region === 'china') return china.test(value);
+  if (region === 'asia') return china.test(value) || asia.test(value);
+  if (region === 'nearby') return china.test(value) || asia.test(value) || oceania.test(value);
+  return false;
+}
+export function matchesRank(rank, selected) {
+  return selected === 'all' || selected.split(',').includes(rank || 'N');
+}
