@@ -9,11 +9,11 @@
   const short = function (s) { return String(s || '').replace(/（.*?）/g, '').replace(/一带$/, ''); };
   // 发帖人：按话题与地点生成固定的昵称与头像颜色
   const ROLE = {
-    cover: ['打工人', '早起通勤族', '带娃的妈妈', '退休阿姨', '老街坊'],
+    cover: ['打工人', '早起通勤族', '带娃的妈妈', '退休阿姨', '老街坊', '夜班护士', '外卖小哥'],
     newst: ['新住户', '上班族', '大学生', '老街坊', '通勤小王'],
     xfer: ['换乘达人', '通勤族', '拖箱子的旅客', '腿脚不便的阿伯'],
-    crowd: ['早高峰幸存者', '挤地铁的上班族', '学生党', '沙丁鱼本鱼'],
-    fare: ['精打细算的上班族', '学生党', '退休阿姨'],
+    crowd: ['早高峰幸存者', '挤地铁的上班族', '学生党', '沙丁鱼本鱼', '实习生'],
+    fare: ['精打细算的上班族', '学生党', '退休阿姨', '刚毕业的'],
     road: ['开车上班的', '公交司机', '出租车师傅', '骑车通勤族'],
     fac: ['带老人看病的', '周末逛街的', '来旅游的', '看球的球迷'],
     line: ['通勤族', '上班族', '线路粉丝'],
@@ -24,26 +24,34 @@
   const author = function (topic, place, seed, role) { const nick = (place ? short(place) : '') + (role || pick(ROLE[topic] || ROLE.city, seed)); return { nick: nick, color: AVA[seed % AVA.length], ch: nick.charAt(0), handle: '@' + (HANDLE[topic] || 'rider') + '_' + (1000 + seed % 9000) }; };
   // 设施类反馈的发帖人按设施类型（医院、商圈、景点、球场、大学…）
   const FAC_ROLE = { hosp: '带老人看病的', shop: '周末逛街的', cbd: '写字楼上班族', scenic: '来旅游的', park: '周末遛娃的', stadium: '看球的球迷', venue: '看展的', uni: '大学生' };
-  // 反馈措辞：每个话题两三种说法，按对象稳定选取
+  // 反馈措辞（v3.0 玩家建议「要有活人感」）：每个话题四到六种说法，带上接孩子、加班、下雨天、拖行李这些日常细节；按对象与月份稳定选取
   const SAY = {
-    cover: ['{p}住了这么多人，最近的地铁站还要走二十多分钟，什么时候能修到我们这儿？', '每天从{p}出门先挤公交再换地铁，单程一个多小时。', '{p}这边连个地铁站都没有，下雨天出门太难了。'],
-    newst: ['我家附近终于有地铁了！{s}站开通，出门走几分钟就到。', '{s}站开通后上班少走好远，早上能多睡二十分钟。', '第一次从{s}站坐地铁，车站很新，人也不多。'],
-    xfer: ['在{s}换乘到{t}要出站走 {m} 米再进站，太绕了。', '{s}和{t}要是能在一个站里换乘就好了，现在要走 {m} 米。'],
-    level: ['在{s}站换乘要上下好几层，每次多走两三分钟。', '{s}站换乘的楼梯太长了，提着东西很累。'],
-    crowd: ['早高峰{s}站排队进站排到了出口外面。', '{s}站早上人太多了，闸机前挤成一团。'],
-    linecrowd: ['{l}早高峰太挤了，在{s}站等了两趟才挤上去。', '{l}从{s}到{t}这段车厢里转身都难，能不能加车？'],
-    linegood: ['{l}准点又快，从{s}坐到{t}很省心。', '每天坐{l}通勤，比以前开车稳定多了。'],
-    fare: ['票价有点贵，每天来回要 {f}。', '地铁是方便，可每月光车费就要不少钱。'],
-    road: ['{r}早高峰堵得动不了，要是有地铁就好了。', '每天在{r}上堵半小时，羡慕住在地铁边的同事。'],
-    roadok: ['{r}最近好像没那么堵了，地铁分走了不少人。'],
-    fac: ['去{x}还得打车或转好几趟公交，附近没有地铁站。', '{x}离最近的地铁站太远了，希望能修过去。'],
-    impact: ['新线开通后，地铁出行多了 {d}，身边越来越多人改坐地铁。', '新线开通以后上班终于不用堵在路上了。'],
-    satlow: ['地铁修得太慢了，城市都长这么大了。', '希望地铁规划多听听乘客的声音。'],
-    sathigh: ['这几年坐地铁越来越方便了，给地铁点个赞。', '地铁越修越好，出门基本不用开车了。'],
+    cover: ['{p}住了这么多人，最近的地铁站还要走二十多分钟，什么时候能修到我们这儿？', '每天从{p}出门先挤公交再换地铁，单程一个多小时。', '{p}这边连个地铁站都没有，下雨天出门太难了。',
+      '送完孩子再去赶公交，{p}的早上永远在跑。地铁要是能修过来，至少能省半小时。', '搬到{p}三年了，朋友问坐地铁怎么来，我都不知道怎么回答。', '加班到十点，从地铁站回{p}还得打车，一个月光打车就花不少。'],
+    newst: ['我家附近终于有地铁了！{s}站开通，出门走几分钟就到。', '{s}站开通后上班少走好远，早上能多睡二十分钟。', '第一次从{s}站坐地铁，车站很新，人也不多。',
+      '带我妈去{s}站转了一圈，她说以后去医院不用再等我开车送了。', '{s}站开通第一天就去打卡了，出口正对着菜市场，太方便了。', '以前去市区要倒两趟公交，现在从{s}站一坐就到，周末终于愿意出门了。'],
+    xfer: ['在{s}换乘到{t}要出站走 {m} 米再进站，太绕了。', '{s}和{t}要是能在一个站里换乘就好了，现在要走 {m} 米。',
+      '拖着行李箱从{s}走到{t}，{m} 米走了快十分钟，下次还是打车吧。', '每天在{s}出站换{t}，夏天走一趟一身汗。'],
+    level: ['在{s}站换乘要上下好几层，每次多走两三分钟。', '{s}站换乘的楼梯太长了，提着东西很累。', '{s}站换乘一会儿上一会儿下，第一次来的人肯定会迷路。'],
+    crowd: ['早高峰{s}站排队进站排到了出口外面。', '{s}站早上人太多了，闸机前挤成一团。', '八点在{s}站等车，前面排了三层人，眼睁睁看着车开走。', '{s}站的早高峰，手机都掏不出来。'],
+    linecrowd: ['{l}早高峰太挤了，在{s}站等了两趟才挤上去。', '{l}从{s}到{t}这段车厢里转身都难，能不能加车？',
+      '{l}每天早上从{s}挤到{t}，包都挤变形了。', '又是被{l}挤成照片的一天。{s}到{t}这段，求多开几趟车。'],
+    linegood: ['{l}准点又快，从{s}坐到{t}很省心。', '每天坐{l}通勤，比以前开车稳定多了。', '{l}越坐越喜欢，{s}到{t}从来没迟到过。', '下班坐{l}还能有个座，刷两集剧就到家了。'],
+    fare: ['票价有点贵，每天来回要 {f}。', '地铁是方便，可每月光车费就要不少钱。', '每天来回 {f}，一个月算下来比午饭还贵。', '能不能出个月票？天天来回 {f}，学生党有点吃不消。'],
+    road: ['{r}早高峰堵得动不了，要是有地铁就好了。', '每天在{r}上堵半小时，羡慕住在地铁边的同事。', '{r}又堵成停车场了，导航说还要四十分钟。', '开车走{r}上班，一路刹车踩到脚酸。'],
+    roadok: ['{r}最近好像没那么堵了，地铁分走了不少人。', '今天走{r}居然一路绿灯，是不是大家都去坐地铁了？'],
+    fac: ['去{x}还得打车或转好几趟公交，附近没有地铁站。', '{x}离最近的地铁站太远了，希望能修过去。', '每次去{x}都要提前一小时出门，路上全靠公交。'],
+    // 设施旁边已有车站（v2.9 玩家反馈：龙翔桥站走 5 分钟就到湖滨商圈，乘客却抱怨接驳要走很远）：问题在到访者住的地方
+    facnear: ['{x}门口就有{s}站，可我住的地方附近没有地铁，去一趟还得先打车。', '去{x}坐地铁倒是方便，就是从我家到地铁站太远。'],
+    impact: ['新线开通后，地铁出行多了 {d}，身边越来越多人改坐地铁。', '新线开通以后上班终于不用堵在路上了。', '新线开通后我把车卖了，每天坐地铁看看书也挺好。'],
+    satlow: ['地铁修得太慢了，城市都长这么大了。', '希望地铁规划多听听乘客的声音。', '说真的，这几年地铁的进步没赶上城市的变化。'],
+    sathigh: ['这几年坐地铁越来越方便了，给地铁点个赞。', '地铁越修越好，出门基本不用开车了。', '外地朋友来玩都说这里地铁方便，挺自豪的。'],
   };
   // 同一话题的多条反馈依次换用不同说法
   let used = {};
   const say = function (arr, seed) { const k = arr[0]; used[k] = used[k] == null ? seed % arr.length : used[k] + 1; return arr[used[k] % arr.length]; };
+  // 金额（当地货币）：10 以上取整，1 以上一位小数，更小的两位小数
+  const money = function (v) { const a = Math.abs(v); return (a >= 10 ? String(Math.round(v)) : a >= 1 ? v.toFixed(1) : v.toFixed(2)) + ' ' + CFG.money.unit; };
   const fill = function (t, v) { return t.replace(/\{(\w)\}/g, function (m, k) { return v[k] != null ? v[k] : ''; }); };
   const Voices = { cache: null };
   // 生成本月的反馈（周平均日、工作日早高峰等已发布结果）；kind：bad 吐槽 / good 点赞 / idea 建议
@@ -106,7 +114,7 @@
     // 票价负担（与满意度同一公式）
     const sf = g.econ.satFactors;
     const fv = sf ? (sf.factors.find(function (f) { return /票价负担/.test(f.label); }) || {}).v || 0 : 0;
-    if (fv < -1.5 && d.metro > 0) { const f2 = U.cur(d.avgFare * 2).toFixed(1); post('bad', 'fare', fill(say(SAY.fare, ym), { f: f2 + ' ' + CFG.money.unit }), d.metro * 0.3, null, ['票价'], '', null, ['fare', { f: f2 }], { f: U.cur(d.avgFare).toFixed(2) }); }
+    if (fv < -1.5 && d.metro > 0 && d.avgFare > 0 && U.cur(d.avgFare * 2) >= 0.1) { const f2 = money(U.cur(d.avgFare * 2)); post('bad', 'fare', fill(say(SAY.fare, ym), { f: f2 }), d.metro * 0.3, null, ['票价'], '', null, ['fare', { f: f2 }], { fu: money(U.cur(d.avgFare)) }); }
     // 道路拥堵：工作日早高峰最拥堵的主要道路（按拥堵车公里）
     const road = m.road, P = m.resultsFor('wd').per[0], byName = new Map();
     for (const L of road.links) { if (!L.name || L.cls < 3) continue; const w = roadShare(L); if (!(w > 0)) continue; for (let k = 0; k < 2; k++) { const a = 2 * L.id + k, x = P.arcTime[a] / road.arcT0[a]; if (x < 1.35) continue; byName.set(L.name, (byName.get(L.name) || 0) + P.arcVol[a] * L.lenM / 1000 * (x - 1) * w); } }
@@ -122,7 +130,20 @@
       const fs = [];
       for (const f of m.fn.list) { if (f.T.hub || !homeCell(g.city.cellAt(f.x, f.y)) || !T.facServable(g.city, f)) continue; const r = CM.Tasks.facShareOf(m, f, CM.Tasks.facBasis(f)); if (r && r.vol > 4000 && r.share < 0.08) fs.push([f, r.vol, r.share]); }
       fs.sort(function (a, b) { return b[1] - a[1]; });
-      for (const x of fs.slice(0, 2)) post('idea', 'fac', fill(say(SAY.fac, hash(x[0].id) + ym), { x: x[0].name }), x[1], { fac: x[0].id }, ['接驳'], '', FAC_ROLE[x[0].t], ['fac', { x: short(x[0].name) }], { x: short(x[0].name), vol: x[1], share: x[2] });
+      // 设施步行 10 分钟内已有运营车站时，不说「附近没有地铁站」，改说到访者住处离地铁远
+      const acc = m.net.acc, C2 = m.net.C;
+      for (const x of fs.slice(0, 2)) {
+        const k2 = m.fn.list.indexOf(x[0]);
+        const nearby = acc && k2 >= 0 && acc.NZ === m.fn.NZ ? acc.zl[m.Z + k2] : null;
+        const nb = nearby && nearby.find(function (o) {
+          return o.w <= 10 && ((C2.stationRoutes && C2.stationRoutes[o.s]) || []).some(function (r) {
+            return m.resultsFor('wd').per.some(function (p) { return CM.Model.boardFreq(p, m.net, r) > 0; });
+          });
+        });
+        const ns = nb && C2.stations[nb.s];
+        if (ns) post('idea', 'fac', fill(say(SAY.facnear, hash(x[0].id) + ym), { x: x[0].name, s: ns.name }), x[1], { fac: x[0].id }, ['覆盖'], '', FAC_ROLE[x[0].t], ['fac', { x: short(x[0].name) }], { x: short(x[0].name), vol: x[1], share: x[2], s: ns.name, w: Math.max(1, Math.round(nb.w)) });
+        else post('idea', 'fac', fill(say(SAY.fac, hash(x[0].id) + ym), { x: x[0].name }), x[1], { fac: x[0].id }, ['接驳'], '', FAC_ROLE[x[0].t], ['fac', { x: short(x[0].name) }], { x: short(x[0].name), vol: x[1], share: x[2] });
+      }
     }
     // 总体口碑
     if (g.econ.sat >= 75) post('good', 'city', pick(SAY.sathigh, ym), 5000, null, ['点赞'], d.cityName || CM.DATA.city, null, ['line', {}], { sat: g.econ.sat, share: d.metroShare || 0 });
@@ -173,6 +194,7 @@
   // 评论区（v2.3）：每条动态两三条回复，内容引用同一份模拟数据（片区人口与最近车站、车站负荷、换乘步行、线路满载率、
   // 道路拥堵指数、设施到访与地铁比例、票价……），运营方账号对其中一部分作出说明。按动态固定，不随机
   const RP = {
+    facnear: ['{x}每天约 {vol}人次到访，坐地铁来的只有 {share}。', '{s}站离{x}步行约 {w} 分钟，可到访的人多数住得离地铁站很远，线网铺开以后会好起来。'],
     cover: ['{p}这一片住着约 {pop}人，离最近的「{st}」站直线还有 {km} km。', '+1，每天出门光走到车站就要二十多分钟。'],
     coverOff: '已收到。{p}的居住人口与通勤需求已经记录，线网规划会优先研究这一带。',
     newst: ['{s}站开通后，日均进出站约 {flow}人次，比想象中热闹。', '在这里还能换乘 {lines}，方便多了。', '终于不用再转两趟公交了！'],
@@ -184,18 +206,32 @@
     lineCrowd: ['{l}最挤的一段早高峰满载率约 {lf}。', '{l}每天上车约 {riders}人次，不挤才怪。', '能不能升级沿线车站，把列车加长？'],
     lineGood: ['{l}每天上车约 {riders}人次，早高峰最挤的区段满载率也只有 {lf}。', '同感，换乘也方便。'],
     impact: ['地铁出行分担率已经到 {share}。', '新线开通后，每天多了约 {add}人次坐地铁。'],
-    fare: ['平均每次乘车约 {f} 元。', '能不能出个月票或学生优惠？', '票款也要养活运营，地铁本来就不太赚钱。'],
+    fare: ['平均每次乘车约 {fu}。', '能不能出个月票或学生优惠？', '票款也要养活运营，地铁本来就不太赚钱。'],
     road: ['{r}早高峰拥堵指数约 {ci}（1.0 为畅通，1.6 以上为严重拥堵）。', '坐地铁至少能准时到。'],
     roadOk: ['{r}最近确实顺多了。', '车少了，公交也快了。'],
     fac: ['{x}每天约 {vol}人次到访，坐地铁来的只有 {share}。', '附近要是有站，周末肯定更方便。'],
+    facnear: ['{x}每天约 {vol}人次到访，坐地铁来的只有 {share}。', '{s}站离{x}步行约 {w} 分钟，可到访的人多数住得离地铁站很远，线网铺开以后会好起来。'],
     city: ['本月乘客满意度 {sat} 分，地铁分担率 {share}。', '同意！'],
   };
+  // 路人闲聊（v3.0）：不引用数据的日常回复，按帖子固定选取；楼主接话按话题
+  const CHAT = {
+    cover: ['同一片的，早上公交站排队排到马路上。', '我们小区群里天天在问地铁什么时候来。', '前几年就说要规划了，到现在还没动静。', '晚上打车要等半天，司机还不太愿意来。'],
+    newst: ['昨天去坐了，站里很凉快！', '房东已经在说要涨房租了……', '出口那边能不能多放点共享单车？', '恭喜恭喜，我们那儿还在等。'],
+    xfer: ['下雨天走这段最难受。', '第一次来还以为自己走错了。', '换乘通道要是能加个顶棚就好了。', '老人小孩走这一段真的累。'],
+    crowd: ['同款早高峰，我已经练成单脚站立了。', '每天早上都在怀疑人生。', '错峰吧，八点半以后会好一点。', '上周差点被挤下车……'],
+    line: ['确实，比公交靠谱多了。', '这条线开得很稳，站着都能看书。', '晚上回家还能有座，幸福。', '早上能准点到公司，全靠它。'],
+    fare: ['学生能打折就好了。', '算下来还是比开车便宜，就是每天心疼一下。', '公司有交通补贴的举个手。', '多坐几站少坐几站，价格差不了多少。'],
+    road: ['同堵，我在车里把早饭都吃完了。', '每天在这条路上能听完一整张专辑。', '骑电动车都比开车快。', '下雨天更别提了。'],
+    fac: ['上次去等公交等了半个小时。', '周末带孩子去，公交挤得不行。', '修个站吧，真的很需要。', '附近停车也难，只能打车。'],
+    city: ['确实，这几年变化挺大的。', '外地朋友也这么说。', '还有进步空间，继续加油。', '希望明年更好。'],
+  };
+  const OP = { cover: '谢谢大家顶，希望规划的人能看到。', newst: '下次约着一起去打卡！', xfer: '是啊，尤其是拿着东西的时候。', crowd: '看来不止我一个人这样……', line: '对，推荐给大家。', fare: '主要是天天都要坐，积少成多。', road: '明天试试坐地铁。', fac: '对，就差一个站。', city: '一起加油。' };
   const fillN = function (t, v) { return t.replace(/\{(\w+)\}/g, function (m, k) { return v[k] != null ? v[k] : ''; }); };
   Voices.replies = function (g, p) {
     const M = p.meta || {}, out = [], off = { nick: (CM.DATA.city || '') + '地铁', handle: '@metro_official', color: 'var(--x-blue)', ch: '', official: true };
-    const add = function (tpl, v, official) {
+    const add = function (tpl, v, official, who, to) {
       const sd = hash(p.id + ':' + out.length);
-      out.push({ id: sd, who: official ? off : author(p.topic, null, sd), text: fillN(tpl, v), ago: Math.max(1, p.ago - sd % Math.max(1, p.ago)), likes: Math.max(1, Math.round(p.likes * (0.04 + (sd % 30) / 100))), official: !!official });
+      out.push({ id: sd, who: official ? off : (who || author(p.topic, null, sd)), text: fillN(tpl, v), ago: Math.max(1, p.ago - sd % Math.max(1, p.ago)), likes: Math.max(1, Math.round(p.likes * (0.04 + (sd % 30) / 100))), official: !!official, op: who === p.who, to: to || null });
     };
     const pct = function (v) { return U.fmtPct(v, 0); }, ppl = function (v) { return U.fmtPeople(v); };
     switch (p.topic) {
@@ -204,11 +240,16 @@
       case 'xfer': if (M.levels) { const v = { s: M.s, xf: ppl(M.xf || 0) }; add(RP.level[0], v); add(RP.level[1], v); } else { const v = { s: M.s, t: M.t, m: M.m, min: Math.ceil((M.m || 0) / CFG.walk.mPerMin), xf: ppl(M.xf || 0) }; add(RP.xfer[0], v); add(RP.xfer[1], v); add(RP.xferOff, v, true); } break;
       case 'crowd': if (M.l) { const v = { l: M.l, lf: pct(M.lf || 0), riders: ppl(M.riders || 0) }; add(RP.lineCrowd[0], v); add(RP.lineCrowd[1], v); add(RP.lineCrowd[2], v); } else { const v = { s: M.s, peak: U.fmtInt(M.peak || 0), cap: U.fmtInt(M.cap || 0), pct: pct((M.peak || 0) / Math.max(1, M.cap || 1)) }; add(RP.crowd[0], v); add(RP.crowd[1], v); add(RP.crowdOff, v, true); } break;
       case 'line': if (M.l) { const v = { l: M.l, riders: ppl(M.riders || 0), lf: pct(M.lf || 0) }; add(RP.lineGood[0], v); add(RP.lineGood[1], v); } else { const v = { share: pct(M.share || 0), add: ppl(Math.max(0, M.add || 0)) }; add(RP.impact[0], v); add(RP.impact[1], v); } break;
-      case 'fare': { const v = { f: M.f }; add(RP.fare[0], v); add(RP.fare[1], v); add(RP.fare[2], v, true); break; }
+      case 'fare': { const v = { fu: M.fu || (M.f ? M.f + ' ' + CFG.money.unit : '') }; if (v.fu) add(RP.fare[0], v); add(RP.fare[1], v); add(RP.fare[2], v, true); break; }
       case 'road': { const v = { r: M.r, ci: (M.ci || 1).toFixed(2) }; if (M.ok) { add(RP.roadOk[0], v); add(RP.roadOk[1], v); } else { add(RP.road[0], v); add(RP.road[1], v); } break; }
-      case 'fac': { const v = { x: M.x, vol: ppl(M.vol || 0), share: pct(M.share || 0) }; add(RP.fac[0], v); add(RP.fac[1], v); break; }
+      case 'fac': { const v = { x: M.x, vol: ppl(M.vol || 0), share: pct(M.share || 0), s: M.s || '', w: M.w || 0 }, R2 = M.s ? RP.facnear : RP.fac; add(R2[0], v); add(R2[1], v); break; }
       default: { const v = { sat: Math.round(M.sat || g.econ.sat), share: pct(M.share || 0) }; add(RP.city[0], v); add(RP.city[1], v); }
     }
+    // 路人闲聊插在第二条，有时回复的是楼上；约三分之一的帖子楼主接一句（官方说明保持在最后）
+    const tk = CHAT[p.topic] ? p.topic : 'city', hs = hash('chat' + p.id), offi = out.length && out[out.length - 1].official ? out.pop() : null;
+    const prev = out.length ? out[0] : null; add(CHAT[tk][hs % CHAT[tk].length], {}, false, null, prev && hs % 2 ? prev.who.handle : null);
+    if (hs % 3 === 0 && OP[tk]) add(OP[tk], {}, false, p.who, out[out.length - 1].who.handle);
+    if (offi) out.push(offi);
     return out;
   };
   CM.Voices = Voices;
@@ -231,22 +272,26 @@
   CM.UI.prototype.openVoicesApp = function (view) {
     const g = this.g(); if (!g) return;
     if (this.voApp) { if (view) this.voApp.show(view); else this.voApp.close(); return; }
-    const self = this, st = { f: this._voF || 'all', q: '', view: view || 'feed' }, I18 = function (el) { if (CM.I18n) CM.I18n.localize(el); return el; };
+    const self = this, st = { f: this._voF || 'all', q: '', topic: '', view: view || 'feed' }, I18 = function (el) { if (CM.I18n) CM.I18n.localize(el); return el; };
     const liked = this._voLiked || (this._voLiked = new Set()), shared = this._voShared || (this._voShared = new Set());
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     // 英文界面：头像上的字取翻译后名字的首字母（单个汉字没法翻译）；分句之间补空格
-    const en = !!CM.I18n && CM.I18n.get() === 'en', sp = en ? ' ' : '';
-    const AV = function (who) { if (!en) return who.ch; const t = CM.I18n.text(who.nick).replace(/[^A-Za-z]/g, ''); return (t.charAt(0) || '·').toUpperCase(); };
+    const isEnglish = function () { return CM.I18n && CM.I18n.get() === 'en'; };
+    const topicText = function (tag) { return CM.I18n ? CM.I18n.text(tag) : tag; };
+    const AV = function (who) {
+      const glyph = isEnglish() ? (CM.I18n.text(who.nick).match(/[A-Za-z]/)?.[0] || '·').toUpperCase() : topicText(who.ch);
+      return h('span', { 'data-no-i18n': '' }, glyph);
+    };
     let closing = false, list = [];
     const back = h('div', { class: 'vx-back', onclick: function () { close(); } });
     const app = h('div', { class: 'vx-app', role: 'dialog', 'aria-modal': 'true', 'aria-label': '地铁圈 · 乘客之声', tabindex: '-1' });
     const search = h('input', { type: 'search', class: 'vx-q', placeholder: '搜索动态、地点或 #话题', 'aria-label': '搜索动态', autocomplete: 'off' });
-    search.addEventListener('input', function () { st.q = search.value.trim(); drawFeed(); });
+    search.addEventListener('input', function () { st.topic = ''; st.q = search.value.trim(); drawFeed(); });
     const tl = h('main', { class: 'vx-tl' }), head = h('div', { class: 'vx-head' }), feed = h('div', { class: 'vx-feed' }), side = h('aside', { class: 'vx-side' });
     tl.append(head, feed);
     // 关闭 App 后再执行（定位、打开详情），地图不被窗口挡住
     const then = function (fn) { return function () { close(fn); }; };
-    const setQ = function (q) { st.q = q; search.value = q; app.classList.remove('side-open'); if (st.view !== 'feed') setView('feed'); else drawFeed(); tl.scrollTop = 0; };
+    const setQ = function (tag) { st.topic = tag; st.q = search.value = topicText(tag); app.classList.remove('side-open'); if (st.view !== 'feed') setView('feed'); else drawFeed(); tl.scrollTop = 0; };
     // 视图：feed 时间线、following 关注的市民、sat 居民满意度（原指标详情页，融入 App），以及从中打开的 post 帖子与评论区、user 市民主页；
     // 打开帖子或主页时记下来处，左上角的返回箭头回到原来的视图和滚动位置
     st.root = st.view; st.hist = [];
@@ -265,7 +310,7 @@
     const when = function (p) { return p.ym && p.ym < g.ym() ? ymText(p.ym) : p.ago + '天'; };
     const nav = function (icon, label, fn, on) { return h('button', { class: 'vx-nav' + (on ? ' on' : ''), 'aria-label': label, onclick: fn }, ic(icon, 22), h('span', null, label)); };
     const navs = {
-      home: nav('home', '首页', function () { st.f = 'all'; st.q = ''; search.value = ''; setView('feed'); }, st.view === 'feed'),
+      home: nav('home', '首页', function () { st.f = 'all'; st.topic = ''; st.q = ''; search.value = ''; setView('feed'); }, st.view === 'feed'),
       fol: nav('people', '关注的人', function () { setView('following'); }, st.view === 'following'),
       sat: nav('smile', '满意度', function () { setView('sat'); }, st.view === 'sat'),
     };
@@ -322,6 +367,7 @@
     const toggle = function (set, p, el, base) { if (set.has(p.id)) set.delete(p.id); else set.add(p.id); const on = set.has(p.id); sfx(on ? (set === liked ? 'like' : 'repost') : 'tap'); el.classList.toggle('on', on); el.querySelector('.vx-n').textContent = num(base + (on ? 1 : 0)); if (on) el.classList.add('pop'); setTimeout(function () { el.classList.remove('pop'); }, 400); };
     // 运营方置顶：本月满意度、最认可与最需改进的方面，以及由满意度推算的投票结果
     const official = function () {
+      const sp = isEnglish() ? ' ' : '';
       const sat = g.econ.sat, hist = g.history, sf = g.econ.satFactors, fs = sf ? sf.factors : [], record = hist.length > 1 ? hist[hist.length - 2] : null;
       const scoped = CM.PlayerMetrics && CM.PlayerMetrics.enabled(g), satKey = g.econ.satScope && g.econ.satScope.scopeKey;
       const prev = record && (!scoped || record.satCityId === (sf && sf.cityId) && record.satScopeKey === satKey && !!satKey) ? record.sat : null;
@@ -351,7 +397,7 @@
       return h('article', { class: 'vx-post k-' + p.kind + ' clickable' + (isNew ? ' new' : ''), onclick: function (e) { if (!e.target.closest('button')) openPost(p); } },
         h('button', { class: 'vx-ava', style: { background: p.who.color }, 'aria-label': '查看主页', onclick: user }, AV(p.who)),
         h('div', { class: 'vx-body' },
-          h('div', { class: 'vx-who' }, h('button', { class: 'vx-nick', onclick: user }, p.who.nick), CM.Voices.isFollowed(g, p.who.handle) ? h('span', { class: 'vx-fol', 'data-tip': '已关注' }, ic('people', 12)) : null, h('span', { class: 'vx-hd' }, p.who.handle + ' · ' + when(p)), isNew ? h('span', { class: 'vx-newtag' }, en ? 'New' : '新') : null, h('span', { class: 'grow' }), h('span', { class: 'vx-kind' }, KIND[p.kind])),
+          h('div', { class: 'vx-who' }, h('button', { class: 'vx-nick', onclick: user }, p.who.nick), CM.Voices.isFollowed(g, p.who.handle) ? h('span', { class: 'vx-fol', 'data-tip': '已关注' }, ic('people', 12)) : null, h('span', { class: 'vx-hd' }, p.who.handle + ' · ' + when(p)), isNew ? h('span', { class: 'vx-newtag' }, '新') : null, h('span', { class: 'grow' }), h('span', { class: 'vx-kind' }, KIND[p.kind])),
           h('p', { class: 'vx-text' }, p.text + ' ', p.tags.map(function (t) { return h('button', { class: 'vx-tag', onclick: function () { setQ('#' + t); } }, '#' + t); })),
           p.pic && CM.Sketch && CM.Sketch.doodle ? h('div', { class: 'vx-media', html: CM.Sketch.doodle(p.pic[0], p.id, p.pic[1]) }) : null,
           h('div', { class: 'vx-acts' },
@@ -363,9 +409,15 @@
     const match = function (p) {
       if (st.f !== 'all' && p.kind !== st.f) return false;
       if (!st.q) return true;
-      if (st.q.charAt(0) === '#') return p.tags.indexOf(st.q.slice(1)) >= 0;
+      if (st.topic) return p.tags.includes(st.topic.slice(1));
       const q = st.q.toLowerCase();
-      return (p.text + ' ' + p.who.nick + ' ' + p.place + ' ' + p.tags.join(' ')).toLowerCase().indexOf(q) >= 0;
+      if (q.startsWith('#')) return p.tags.some(function (tag) {
+        return q === ('#' + tag).toLowerCase() || q === topicText('#' + tag).toLowerCase();
+      });
+      return [p.text, p.who.nick, p.place, ...p.tags].some(function (value) {
+        const haystack = CM.I18n ? CM.I18n.search(value || '') : String(value || '').toLowerCase();
+        return haystack.includes(q);
+      });
     };
     const drawFeed = function () {
       const shown = list.filter(match), nodes = [];
@@ -430,8 +482,8 @@
         return h('article', { class: 'vx-post vx-reply' + (r.official ? ' official-r' : '') },
           h('span', { class: 'vx-ava', style: { background: r.who.color } }, r.official ? ic('metro', 18) : AV(r.who)),
           h('div', { class: 'vx-body' },
-            h('div', { class: 'vx-who' }, h('b', null, r.who.nick), r.official ? h('span', { class: 'vx-vb', html: XI.verified }) : null, h('span', { class: 'vx-hd' }, r.who.handle + ' · ' + r.ago + '天')),
-            h('div', { class: 'vx-to' }, '回复 ', h('span', null, p.who.handle)),
+            h('div', { class: 'vx-who' }, h('b', null, r.who.nick), r.official ? h('span', { class: 'vx-vb', html: XI.verified }) : null, r.op ? h('span', { class: 'vx-optag' }, '作者') : null, h('span', { class: 'vx-hd' }, r.who.handle + ' · ' + r.ago + '天')),
+            h('div', { class: 'vx-to' }, '回复 ', h('span', null, r.to || p.who.handle)),
             h('p', { class: 'vx-text' }, r.text),
             h('div', { class: 'vx-acts' }, h('span', { class: 'vx-act' }, h('span', { class: 'vx-ib', html: XI.reply })), h('span', { class: 'vx-act' }, h('span', { class: 'vx-ib', html: XI.like }), h('span', { class: 'vx-n' }, num(r.likes))))));
       });
@@ -484,6 +536,7 @@
       I18(head); I18(feed);
     };
     const draw = function () {
+      if (st.topic) st.q = search.value = topicText(st.topic);
       list = CM.Voices.generate(g);
       const counts = { all: list.length, bad: 0, good: 0, idea: 0 }; for (const p of list) counts[p.kind]++;
       if (st.view === 'feed') head.replaceChildren(

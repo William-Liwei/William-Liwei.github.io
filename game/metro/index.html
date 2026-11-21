@@ -29,7 +29,9 @@
       try { s = JSON.parse(localStorage.getItem('cm1.settings') || 'null'); t = (s && s.theme) || localStorage.getItem('cm1.theme') || 'auto'; } catch (e) {}
       if (t !== 'light' && t !== 'dark') t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       document.documentElement.setAttribute('data-theme', t);
-      if (s && s.uiScale) document.documentElement.style.setProperty('--uiz', String(s.uiScale));
+      var z = s && Number(s.uiScale) > 0 && isFinite(Number(s.uiScale)) ? Number(s.uiScale) : 1;
+      if (window.matchMedia && window.matchMedia('(max-width: 760px), (max-width: 1024px) and (max-height: 520px) and (pointer: coarse)').matches) z = Math.max(0.85, z * 0.9);
+      document.documentElement.style.setProperty('--uiz', String(z));
     })();
   </script>
   <link rel="stylesheet" href="css/style.css">
@@ -44,6 +46,7 @@
 </head>
 <body>
   <canvas id="map" aria-label="城市地图"></canvas>
+  <div id="menubg" aria-hidden="true"><div class="mbg-cam"><i class="mbg-l"></i><i class="mbg-d"></i></div></div>
   <div id="app"></div>
   <noscript>本游戏需要启用 JavaScript。</noscript>
   <script src="js/util.js"></script>
@@ -59,17 +62,18 @@
   <script src="js/geo.js"></script>
   <script src="js/data_gz.js"></script>
   <script src="js/data_tutorial.js"></script>
-  <script src="js/geo_hz.js"></script>
+  <script src="js/geo_hz.js" type="application/city-metro-geo"></script>
+  <script src="js/geo-index.js"></script>
   <script src="js/data_hz.js"></script>
-  <script src="js/geo_hk.js"></script>
+  <script src="js/geo_hk.js" type="application/city-metro-geo"></script>
   <script src="js/data_hk.js"></script>
-  <script src="js/geo_tk.js"></script>
+  <script src="js/geo_tk.js" type="application/city-metro-geo"></script>
   <script src="js/data_tk.js"></script>
-  <script src="js/geo_tp.js"></script>
+  <script src="js/geo_tp.js" type="application/city-metro-geo"></script>
   <script src="js/data_tp.js"></script>
-  <script src="js/geo_pa.js"></script>
+  <script src="js/geo_pa.js" type="application/city-metro-geo"></script>
   <script src="js/data_pa.js"></script>
-  <script src="js/geo_wh.js"></script>
+  <script src="js/geo_wh.js" type="application/city-metro-geo"></script>
   <script src="js/data_wh.js"></script>
   <script src="js/geo_sh.js"></script>
   <script src="js/geo_sh_region.js"></script>
@@ -80,6 +84,18 @@
   <script src="js/data_sh_city.js"></script>
   <script src="js/geo_bj.js"></script>
   <script src="js/data_bj.js"></script>
+  <script src="js/geo_ld.js" type="application/city-metro-geo"></script>
+  <script src="js/data_ld.js"></script>
+  <script src="js/geo_sz.js" type="application/city-metro-geo"></script>
+  <script src="js/data_sz.js"></script>
+  <script src="js/geo_sg.js" type="application/city-metro-geo"></script>
+  <script src="js/data_sg.js"></script>
+  <script src="js/geo_ny.js" type="application/city-metro-geo"></script>
+  <script src="js/data_ny.js"></script>
+  <script src="js/geo_sy.js" type="application/city-metro-geo"></script>
+  <script src="js/data_sy.js"></script>
+  <script src="js/terminals.js"></script>
+  <script src="js/traits.js"></script>
   <script src="js/maps.js"></script>
   <script src="js/company-roles.js"></script>
   <script src="js/data_eras.js"></script>
@@ -90,6 +106,7 @@
   <script src="js/metro.js"></script>
   <script src="js/road-kernel.js"></script>
   <script src="js/sim.js"></script>
+  <script src="js/bgnet.js"></script>
   <script src="js/economy.js"></script>
   <script src="js/property.js"></script>
   <script src="js/future.js"></script>
@@ -101,6 +118,7 @@
   <script src="js/regional-metrics.js"></script>
   <script src="js/player-metrics.js"></script>
   <script src="js/city-dynamics.js"></script>
+  <script src="js/citylink.js"></script>
   <script src="js/game.js"></script>
   <script src="js/milestones.js"></script>
   <script src="js/sim-stamp.js"></script>
@@ -132,13 +150,17 @@
   <script src="js/reports.js"></script>
   <script src="js/voices.js"></script>
   <script src="js/ops-data.js"></script>
+  <script src="js/takeover.js"></script>
   <script src="js/opsapp.js"></script>
   <script src="js/auto-alerts.js"></script>
   <script src="js/line-edit.js"></script>
   <script src="js/hubs.js"></script>
   <script src="js/statistics.js"></script>
   <script src="js/stats.js"></script>
+  <script src="js/netlayout.js"></script>
   <script src="js/netmap.js"></script>
+  <script src="js/netreplay.js"></script>
+  <script src="js/review.js"></script>
   <script src="js/follow.js"></script>
   <script src="js/tutorial.js"></script>
   <script src="js/quick.js"></script>
@@ -146,6 +168,8 @@
   <script src="js/operator-controls.js"></script>
   <script src="js/edge-pan.js"></script>
   <script src="js/minimap.js"></script>
+  <script src="js/menubg-data.js"></script>
+  <script src="js/menubg.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

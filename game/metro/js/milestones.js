@@ -54,19 +54,28 @@
   }
   // ---------- 网络状态 ----------
   const owned = function (asset) { return !!asset && (!asset.ownerId || asset.ownerId === 'player'); };
-  function netInfo(g) {
-    const C = g.compiled, net = g.net;
-    return M.withSegIndex([net], function () {
-    let km = 0, crossM = 0, river = null;
-    if (C && C.segs) C.segs.forEach(function (cs) {
-      if (!cs.g || !cs.seg || !owned(net.lines[cs.seg.line]) || !owned(cs.seg)) return;
-      km += cs.g.lenM / 1000;
-      if (cs.g.waterM > 30 && cs.g.waterM > crossM) {
-        crossM = cs.g.waterM;
-        const a = net.stations[cs.seg.a], b = net.stations[cs.seg.b];
-        if (a && b) river = g.city.riverNameAt((a.x + b.x) / 2, (a.y + b.y) / 2);
-      }
+  // 首次跨越的水体（v3.1）：各区段实际跨过的有名水体中最长的一处（City.waterCrossings），跨水不到 30 m 的不算。
+  // 无名水面（鱼塘、明渠、无名河段）不再按本城主要河流记「首次跨越」，等线路真正跨过有名水体时再记。按编译结果缓存
+  const crossCache = new WeakMap();
+  function crossing(g) {
+    const C = g.compiled;
+    if (!C || !C.segs || !g.city.waterCrossings) return { river: null, m: 0 };
+    let r = crossCache.get(C);
+    if (r) return r;
+    r = { river: null, m: 0 };
+    C.segs.forEach(function (cs) {
+      if (!cs.g || !cs.seg || !owned(g.net.lines[cs.seg.line]) || !owned(cs.seg) || !(cs.g.waterM > 30)) return;
+      for (const w of g.city.waterCrossings(cs.g.pts)) if (w.name && w.m > 30 && w.m > r.m) { r.river = w.name; r.m = w.m; }
     });
+    crossCache.set(C, r);
+    return r;
+  }
+  function netInfo(g) {
+    const C = g.compiled, net = g.net, cr = crossing(g);
+    return M.withSegIndex([net], function () {
+    let km = 0;
+    const crossM = cr.m, river = cr.river;
+    if (C && C.segs) C.segs.forEach(function (cs) { if (cs.g && cs.seg && owned(net.lines[cs.seg.line]) && owned(cs.seg)) km += cs.g.lenM / 1000; });
     let lines = 0, loop = null, xfer = null, first = null;
     for (const lid of M.sortIds(Object.keys(net.lines))) {
       if (!owned(net.lines[lid])) continue;
@@ -76,7 +85,7 @@
       if (!first) first = { L: net.lines[lid], tp: tp };
       if (tp.topo === 'loop' && !loop) loop = net.lines[lid];
     }
-    for (const id in net.stations) if (owned(net.stations[id]) && M.stationLines(net, id).filter(lid => owned(net.lines[lid])).length >= 2) { xfer = net.stations[id]; break; }
+    for (const id in net.stations) if (!net.stations[id].v && owned(net.stations[id]) && M.stationLines(net, id).filter(lid => owned(net.lines[lid])).length >= 2) { xfer = net.stations[id]; break; }
     return { km: km, lines: lines, river: river, crossM: crossM, loop: loop, xfer: xfer, first: first };
     });
   }

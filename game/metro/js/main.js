@@ -74,7 +74,7 @@
     const root = document.documentElement, request = ++themeRequest;
     if (themeTransition) { try { themeTransition.skipTransition(); } catch (e) { /* 已完成 */ } }
     if (root.dataset.theme === name && R.themeName === name) { reveal(); return; }
-    if (typeof document.startViewTransition === 'function' && !CM.Settings.reducedMotion() && R.frame > 0 && !document.hidden && !waiting) {
+    if (typeof document.startViewTransition === 'function' && !CM.Settings.reducedMotion() && (!R.game || R.frame > 0) && !document.hidden && !waiting) {
       const p = lastThemePoint && performance.now() - lastThemePoint.at < 1500 ? lastThemePoint : { x: R.w - 40, y: 40 };
       root.style.setProperty('--vt-x', p.x + 'px'); root.style.setProperty('--vt-y', p.y + 'px');
       root.style.setProperty('--vt-r', (Math.ceil(Math.hypot(Math.max(p.x, R.w - p.x), Math.max(p.y, R.h - p.y))) + 2) + 'px');
@@ -83,7 +83,9 @@
         const transition = themeTransition = document.startViewTransition(async function () {
           if (request !== themeRequest) return;
           if (R.themeName !== name) R.setTheme(name);
-          reveal(); R.warm(800);
+          reveal();
+          if (!R.game) return;
+          R.warm(800);
           const until = performance.now() + 800;
           while (request === themeRequest && R.game && !R.sharpReady() && !document.hidden && performance.now() < until) {
             await new Promise(function (resolve) { setTimeout(resolve, 0); });
@@ -97,67 +99,36 @@
         return;
       } catch (e) { themeTransition = null; root.classList.remove('vt-theme'); }
     }
-    if (R.themeName !== name) { crossfade(reveal); R.setTheme(name); }
+    if (R.themeName !== name && R.game) { crossfade(reveal); R.setTheme(name); }
+    else if (R.themeName !== name) { R.setTheme(name); applyReveal(reveal); }
     else applyReveal(reveal);
   };
   CM.Settings.apply();
 
-  // 开始界面背景：2012 年前后的城市与几条示意地铁线（真实车站位置）
-  let preview = null, previewT = 0;
-  function makePreview() {
-    const city = new CM.City();
-    city.generate(19900101, 2012);
-    const M = CM.Metro, net = M.empty(), P = {}, byName = {};
-    for (const p of CM.DATA.places) P[p[0]] = p;
-    // 颜色按广州地铁配色：1 号线黄、2 号线蓝、3 号线橙、5 号线红
-    const LINES = [
-      ['#f3d03e', ['坑口', '花地湾', '芳村', '黄沙', '陈家祠', '西门口', '公园前', '农讲所', '烈士陵园', '东山口', '杨箕', '体育西路', '体育中心']],
-      ['#00629b', ['白云公园', '三元里', '越秀公园', '纪念堂', '公园前', '海珠广场', '江南西', '昌岗', '东晓南', '南洲']],
-      ['#eca154', ['五山', '华师', '岗顶', '石牌桥', '体育西路', '珠江新城', '广州塔', '客村', '沥滘', '厦滘']],
-      ['#c5003e', ['西村', '小北', '淘金', '区庄', '动物园', '杨箕', '珠江新城', '猎德', '潭村', '员村', '车陂', '东圃', '鱼珠', '大沙地']],
-    ];
-    for (const L of LINES) {
-      const lid = M.newLine(net); net.lines[lid].color = L[0];
-      let prev = null;
-      for (const nm of L[1]) {
-        const p = P[nm]; if (!p) continue;
-        let sid = byName[nm];
-        if (!sid) { sid = M.addStation(net, p[1], p[2], { size: 'M', type: 'underground' }, city); net.stations[sid].name = nm; byName[nm] = sid; }
-        if (prev && prev !== sid) M.addSegment(net, lid, prev, sid, [], 'underground');
-        prev = sid;
-      }
-    }
-    M.normalizeLines(net);
-    return { city: city, net: net, compiled: M.compile(net, city), draft: null, preview: true, clock: { y: 2012, m: 6, d: 1, minute: 600 }, netVersion: 0 };
-  }
-  // 开始界面背景：镜头沿一条环形路线缓慢巡游几处城市地标（位置与缩放用 Catmull-Rom 平滑插值，速度约 0.3–0.5 格/秒，
-  // 新进入画面的地图块少，保持流畅），同时列车在示意线路上运行、汽车在道路上行驶。菜单在左侧，焦点放在画面偏右
-  const TOUR = [[44, 39.5, 17.5], [48.6, 45, 19], [44.5, 50.5, 17.5], [31, 45.5, 17], [18.5, 45.5, 18.5], [22, 37.5, 18], [34, 37.5, 17], [47.5, 34.5, 18.5]].map(p => [p[0] + (CM.MAPS.gz.extent.dx || 0), p[1] + (CM.MAPS.gz.extent.dy || 0), p[2]]);
-  const TOUR_SEG = 24;   // 每段秒数
-  function previewCamera(dt) {
-    // Hold the first camera until visible ground and buildings have been filled.
-    // Keep the existing per-frame rendering budget; subsequent views keep cruising.
-    if (preview && R.game === preview && !preview.ready) {
-      if (R.frame > (preview.firstFrame || 0) + 1 && R.sharpReady()) preview.ready = true;
-      else dt = 0;
-    }
-    previewT += dt;
-    const n = TOUR.length, u = (previewT / TOUR_SEG) % n, k = Math.floor(u), f = u - k;
-    const P = function (i) { return TOUR[((i % n) + n) % n]; };
-    const cr = function (j) {
-      const p0 = P(k - 1)[j], p1 = P(k)[j], p2 = P(k + 1)[j], p3 = P(k + 2)[j];
-      return 0.5 * (2 * p1 + (-p0 + p2) * f + (2 * p0 - 5 * p1 + 4 * p2 - p3) * f * f + (-p0 + 3 * p1 - 3 * p2 + p3) * f * f * f);
-    };
-    const c = R.cam;
-    c.view = 1; c.fly = null; c.anchor = null;
-    c.zoom = c.tz = cr(2);
-    const d = R.screenToWorldDelta(R.w * 0.14, 0);
-    c.cx = cr(0) - d.x; c.cy = cr(1) - d.y;
+  const menuBg = document.getElementById('menubg');
+  function showMenuBg(on) {
+    menuBg.classList.toggle('off', !on);
+    CM.MenuBg.run(on);
   }
   function fail(e, what) {
     console.error(e);
     ui.openScreen(CM.U.h('div', { class: 'card' }, CM.U.h('h2', null, what + '失败'), CM.U.h('div', { class: 'callout bad' }, String(e && e.message || e)),
       CM.U.h('div', { class: 'modal-actions' }, CM.U.h('button', { class: 'btn primary', onclick: function () { if (CM.game) ui.closeScreen(); else ui.showStart(); } }, '确定'))));
+  }
+  function geoLoadError(error, mapId, retry, isNew) {
+    const h = CM.U.h;
+    console.warn(error.message, error.file);
+    const back = function () {
+      if (CM.game) ui.closeScreen();
+      else if (isNew) ui.showMapSelect(mapId);
+      else ui.showSaveManager(false, mapId);
+    };
+    ui.openScreen(h('div', { class: 'card' }, ui.cardHead('error', 'b-red', '无法载入地图'),
+      ui.callout('bad', 'error', error.message),
+      h('p', { class: 'note' }, '请检查网络连接后重试。若游戏刚更新，可以刷新页面后再进入。'),
+      h('div', { class: 'modal-actions' },
+        h('button', { class: 'btn', onclick: back }, '返回'),
+        h('button', { class: 'btn primary', onclick: retry }, '重试载入'))), back);
   }
   function start(g, isNew) {
     if (CM.Soundscape) CM.Soundscape.reset();
@@ -165,15 +136,16 @@
     if (CM.Tutorial) CM.Tutorial.detach();
     if (CM.game && CM.game !== g && CM.game.model) CM.game.model.retired = true;   // 旧进度的交通求解不再占用工作线程
     CM.game = g;
-    if (CM.Fleet) CM.Fleet.ensure(g);   // 车队（v2.5）：新局的既有线路与旧存档按当前运营所需建立车队，并接入模拟
+    if (CM.Fleet) CM.Fleet.ensure(g, isNew);   // 车队（v2.5）：新局的既有线路与旧存档按当前运营所需建立车队，并接入模拟
     R.setGame(g);
-    canvas.classList.add('map-in');   // 快速进入游戏时，菜单背景任务可能尚未执行
+    CM.releaseGeos();
+    showMenuBg(false);
     CM.agents.reset();
-    tools.tool = 'select'; tools.chain = null; tools.bends = []; tools.lineChoice = 'new';
+    tools.tool = 'select'; tools.chain = null; tools.bends = []; tools.pointMode = ''; tools.lineChoice = 'new';
     tools.newLineColor = null; tools.newLineSpeed = null; tools.clearMeasure();
     tools.drag = tools.ptr = tools.cursor = tools.hover = tools.hint = tools.snapPt = tools.mouse = tools.portalHover = null;
     tools.lineLock = false; tools.keys.clear(); tools.keyMods = {};
-    if (tools.touches) tools.touches.clear(); tools.pinch = null;
+    tools.resetTouches();
     ui.setTooltip(null); R.cv.style.cursor = '';
     ui.attachGame(g);
     // 新开局随后要显示简报：载入卡片直接换成简报，不先关掉界面层（v2.3：以前会露出一帧游戏界面再盖上，看起来闪一下）
@@ -222,24 +194,33 @@
     clearTimeout(job.timer);
     if (CM.CarPool && CM.CarPool.onReq === job.resume) CM.CarPool.onReq = null;
     if (job.gen) job.gen.return();
+    if (job.releaseGeo) job.releaseGeo();
   }
   function runLoad(mapId, message, makeGen, isNew, what) {
     if (loading) return;   // 包括尚未开始的延时任务，防止快速重复点击启动两次载入
+    mapId = CM.MAPS[mapId] ? mapId : 'gz';
     const prev = CM.game;
     const job = loading = { gen: null, timer: null, waitAt: null, reported: -1, reportedLabel: null, mapId: CM.mapId, prevRetired: prev && prev.model && prev.model.retired };
     if (prev && prev.model) prev.model.retired = true;
     if (CM.CarPool) CM.CarPool.onReq = null;
     ui.showLoading(message, isNew ? (message.includes('推演') ? 'pre' : 'new') : 'load', mapId);
+    if (!CM.geoReady(mapId)) CM.loadProgress(0.02, '正在下载地图数据…');
     const end = function () {
       clearTimeout(job.timer);
       if (CM.CarPool && CM.CarPool.onReq === job.resume) CM.CarPool.onReq = null;
+      if (job.releaseGeo) job.releaseGeo();
       loading = null;
     };
     const step = function () {
       if (loading !== job) return;
       clearTimeout(job.timer);
       try {
-        if (!job.gen) { CM.useMap(mapId); job.gen = makeGen(); }
+        if (job.geoError) throw job.geoError;
+        if (!job.gen) {
+          CM.useMap(mapId);
+          if (job.releaseGeo) job.releaseGeo();
+          job.gen = makeGen();
+        }
         const t0 = performance.now();
         for (;;) {
           const r = job.gen.next();
@@ -268,15 +249,22 @@
         if (e && e.code === 'LOAD_TIMEOUT') for (const pool of [CM.SkimPool, CM.OdPool, CM.CarPool]) if (pool) pool.fail('载入计算长时间未响应');
         CM.useMap(job.mapId || 'gz');
         if (prev && CM.CompanyRoles) CM.CompanyRoles.configure(prev.mapId, prev.playerCity);
+        CM.releaseGeos();
         if (prev && CM.game === prev) {
           if (prev.model) prev.model.retired = job.prevRetired;
           if (CM.applyMoneyEra) CM.applyMoneyEra(prev.clock.y, prev.clock.m);
         }
-        if (what === '载入存档') ui.showLoadError(e, ui._loadingSlotId); else fail(e, what);
+        if (e?.code === 'GEO_LOAD') geoLoadError(e, mapId, function () { runLoad(mapId, message, makeGen, isNew, what); }, isNew);
+        else if (what === '载入存档') ui.showLoadError(e, ui._loadingSlotId); else fail(e, what);
       }
     };
     job.resume = function () { if (loading === job) { clearTimeout(job.timer); job.timer = setTimeout(step, 0); } };
-    job.timer = setTimeout(step, Math.max(60, (ui._zoomUntil || 0) - performance.now()));
+    const queue = function () { if (loading === job) job.timer = setTimeout(step, Math.max(60, (ui._zoomUntil || 0) - performance.now())); };
+    CM.holdGeo(mapId).then(function () {
+      if (loading !== job) { CM.unholdGeo(mapId); return; }
+      job.releaseGeo = function () { job.releaseGeo = null; CM.unholdGeo(mapId); };
+      queue();
+    }, function (error) { job.geoError = error; queue(); });
   }
   // opts.map：地图（默认广州）；opts.tutorial：新手教程
   CM.newGame = function (opts) {
@@ -290,6 +278,12 @@
     if (CM.Soundscape) CM.Soundscape.reset();
     runLoad((data.meta && data.meta.map) || 'gz', '正在载入存档并恢复城市与交通状态…', function () { return CM.Game.restoreGen(data); }, false, '载入存档');
   };
+  let workerReleaseTimer;
+  function releaseIdleWorkers() {
+    if (CM.game || loading) return;
+    const settled = [CM.CarPool, CM.OdPool, CM.SkimPool].map(function (pool) { return !pool || pool.release(); });
+    if (settled.includes(false)) workerReleaseTimer = setTimeout(releaseIdleWorkers, 500);
+  }
   CM.endGame = function () {
     ui._slotLoadRequest = null;
     cancelLoad();
@@ -298,9 +292,13 @@
     ui.clearCelebrations();
     if (CM.game && CM.game.model) CM.game.model.retired = true;   // 返回主菜单：放弃旧进度尚未发出的交通计算
     CM.game = null;
+    ui._opsYm = ui._opsDaily = ui._revenueLegend = ui._bgLegend = ui._totCity = ui.voSeen = null;
+    if (CM.Voices) CM.Voices.cache = null;
+    if (CM.CityLink) CM.CityLink.clear();
     if (CM.Follow) CM.Follow.stop(true);
     if (CM.Tutorial) CM.Tutorial.detach();
     CM.useMap('gz');   // 开始界面背景是广州
+    CM.releaseGeos();
     ui.closeSearch();
     if (CM.NetMap) CM.NetMap.close();
     if (CM.Stats && CM.Stats.isOpen()) CM.Stats.close();
@@ -308,18 +306,17 @@
     ui.showHUD(false);
     ui.setTooltip(null);
     CM.agents.reset();
-    crossfade();   // 从游戏画面淡入开始界面背景，掩盖地图块的重新绘制
+    showMenuBg(true);
     // 清掉游戏里的视图状态：分析图层、选中与高亮、建设工具、相机飞行与缩放锚点、地下视图、特效
     ui.layer = 'none'; R.layer = 'none'; R.heatKey = ''; R.layerFade = 0;
     ui.selection = null; ui.highlightLine = null; ui.multi = null;
-    tools.tool = 'select'; tools.chain = null; tools.bends = []; tools.drag = null; tools.ptr = null; tools.hover = null; tools.keys.clear();
+    tools.tool = 'select'; tools.chain = null; tools.bends = []; tools.pointMode = ''; tools.drag = null; tools.ptr = null; tools.hover = null; tools.keys.clear(); tools.resetTouches();
     R.cv.style.cursor = '';
-    if (!preview) preview = makePreview();
-    R.setGame(preview);
-    preview.ready = false; preview.firstFrame = R.frame;
+    R.setGame(null);
     R.fx = [];
-    R.cam.t = 1; R.cam.under = R.cam.tu = 0; R.cam.fly = null; R.cam.anchor = null;
-    previewCamera(0);
+    R.render(0, ui);
+    clearTimeout(workerReleaseTimer);
+    workerReleaseTimer = setTimeout(releaseIdleWorkers, 500);
   };
 
   let last = performance.now(), fpsAcc = 0, fpsN = 0, lastJumpPaint = -1e9, lastCoveredPaint = -1e9, wasCovered = false;
@@ -330,12 +327,13 @@
       && !(R.fx && R.fx.length) && !R.hl && !R.cam.fly && !R.overviewJob && !CM.Follow.active() && !CM.Tutorial.active();
   };
   function frame(t) {
+    requestAnimationFrame(frame);
     const workStarted = performance.now();
     R.frameWorkStart = workStarted;
     const dt = Math.min(0.1, Math.max(0, (t - last) / 1000));
     last = t;
     // 新进度载入中（地图数据已切换到新城市）：暂停模拟与绘制，画面停在载入界面下的最后一帧
-    if (loading) { requestAnimationFrame(frame); return; }
+    if (loading) return;
     const g = CM.game;
     if (g) {
       try { g.update(dt); } catch (e) { console.error(e); }
@@ -349,7 +347,8 @@
       try { CM.agents.updatePreview(dt, preview, R); } catch (e) { console.error(e); }
     }
     // 跳月 / 跳年期间画面被推进卡片遮住、列车车辆静止：地图降频重绘，把时间留给结算
-    const jumpHold = g && g.jumping && t - lastJumpPaint < CFG.perf.jumpRenderMs;
+    const overlay = !!(g && CM.NetMap && CM.NetMap.isOpen());
+    const jumpHold = overlay || (g && g.jumping && t - lastJumpPaint < CFG.perf.jumpRenderMs);
     // 静止画面降频（v2.5 性能）：暂停、没有操作、没有待补的地图块和动画时每 6 帧才重绘一次，把 CPU 与 GPU 省下来
     const still = !jumpHold && g && isStill(g, t);
     idleN = still ? idleN + 1 : 0;
@@ -372,16 +371,14 @@
     if (paint) R.noteFrameTime(performance.now() - workStarted);   // 暂停期间的空帧不计入画质自适应
     fpsAcc += dt; fpsN++;
     if (fpsAcc > 1) { R.stats.fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
-    requestAnimationFrame(frame);
   }
   window.addEventListener('beforeunload', function () { if (!loading && CM.game && !ui.isSaved()) ui.doAutosave(); });
   window.addEventListener('resize', function () { R.resize(); });
 
   R.resize();
-  R.cam.zoom = R.cam.tz = 17; R.cam.view = 1; R.cam.t = 1; previewCamera(0);
+  R.cam.zoom = R.cam.tz = 17; R.cam.view = 1; R.cam.t = 1;
   requestAnimationFrame(frame);
-  // 先显示开始界面，再在下一帧之后生成背景城市，地图淡入（打开不卡顿）
-  canvas.classList.add('map-intro');
+  showMenuBg(true);
   CM.Save.init().then(function () { ui.showStart(); }, function () { ui.showStart(); });
   setTimeout(function () {
     if (loading) return;   // 当前配置已属于载入中的城市，不能用它生成广州菜单背景

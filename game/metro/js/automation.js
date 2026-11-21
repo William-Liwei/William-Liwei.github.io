@@ -199,7 +199,7 @@
     if (plan.moves.length) {
       const rows = new Map();
       for (const m of plan.moves) { const key = m.lid + ':' + m.svc; if (!rows.has(key)) rows.set(key, { lid: m.lid, svc: m.svc, name: m.name, ids: [] }); rows.get(key).ids.push(m.id); }
-      F.applyAlloc(g, { needs: Array.from(rows.values()) });
+      F.applyAlloc(g, { needs: Array.from(rows.values()), fleetVer: g.fleet.ver, netVer: g.netVersion, ym: g.ym(), result: g.model.resultsFor('wd') });
     }
     if (p.buy && plan.moves.length < A.MAX_TRANSFERS) {
       // Purchase at most the configured number of real, available trains. Sorting by

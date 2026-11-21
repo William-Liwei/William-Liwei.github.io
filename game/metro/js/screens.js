@@ -5,7 +5,7 @@
   const h = U.h, ic = CM.icon;
   const snd = function (name) { if (CM.Sound) CM.Sound.play(name); };
   const LEVEL = ['入门', '普通', '进阶', '挑战'];
-  const REGION_ORDER = ['中国内地', '中国香港', '中国台湾', '日本', '法国', '虚构'];
+  const REGION_ORDER = ['中国内地', '中国香港', '中国台湾', '日本', '新加坡', '法国', '英国', '美国', '澳大利亚', '虚构'];
 
   // 公告是否已读（本机记录；无法访问本地存储时视为已读，不打扰）
   const NEWS_KEY = 'cm1.newsSeen';
@@ -26,7 +26,7 @@
   const eraOf = function (mp) { return Math.floor(mp.cfg.START.y / 10) * 10; };
   const eraName = function (e) { return e + ' 年代'; };
   // 鼠标/笔横拖筛选，触屏保留原生惯性滚动；捕获原按钮以保留普通点击。
-  function scrollFilters(chips) {
+  UI.dragStrip = function (chips, item) {
     let drag = null, suppressClick = false;
     const edges = function () {
       const max = Math.max(0, chips.scrollWidth - chips.clientWidth);
@@ -45,7 +45,7 @@
       if (!e.isPrimary || e.button !== 0) return;
       suppressClick = false;
       if (e.pointerType === 'touch' || chips.scrollWidth <= chips.clientWidth + 1) return;
-      const owner = e.target.closest('.fchip') || chips;
+      const owner = e.target.closest(item) || chips;
       drag = { id: e.pointerId, x: e.clientX, y: e.clientY, left: chips.scrollLeft,
         scale: chips.getBoundingClientRect().width / (chips.offsetWidth || 1), owner: owner, moved: false };
       owner.setPointerCapture(e.pointerId);
@@ -78,7 +78,7 @@
       for (const button of chips.children) observer.observe(button);
     }
     requestAnimationFrame(edges);
-  }
+  };
 
 
   // ======================== 开始界面 ========================
@@ -131,7 +131,14 @@
 
   // ======================== 选择地图 ========================
   UI.prototype.showMapSelect = function (selId, tr) {
-    const self = this, all = CM.MAP_ORDER.slice();
+    const self = this, all = [], added = new Set();
+    const linked = id => CM.MAPS[id].data.cityLink?.map;
+    for (const id of CM.MAP_ORDER) {
+      if (added.has(id)) continue;
+      all.push(id); added.add(id);
+      const other = linked(id);
+      if (other && CM.MAPS[other] && !added.has(other)) { all.push(other); added.add(other); }
+    }
     let sel = selId && CM.MAPS[selId] ? selId : (this._mapSel && CM.MAPS[this._mapSel] ? this._mapSel : all[0]);
     const F = this._mapFilter || (this._mapFilter = { q: '', era: 'all', region: 'all', type: 'all' }), freeOpts = this._freeOpts || (this._freeOpts = {});
     if (!F.type) F.type = 'all';
@@ -156,7 +163,7 @@
           drawList();
         } }, o[1]));
       }
-      scrollFilters(chips);
+      UI.dragStrip(chips, '.fchip');
       return h('div', { class: 'ms2-frow' }, h('span', { class: 'ms2-fl' }, ic(icon, 14), label), chips);
     };
     const filters = h('div', { class: 'ms2-filters' },
@@ -178,9 +185,10 @@
       return true;
     };
     all.forEach(function (id, k) {
+      const other = CM.MAPS[linked(id)];
       const mp = CM.MAPS[id], n = CM.Save.list(id).length;
       const it = h('button', { class: 'ms2-item', role: 'option', 'data-id': id, style: { animationDelay: (0.03 * Math.min(k, 8)) + 's' }, onclick: function () { pick(id); }, ondblclick: function () { pick(id); goPrimary(); } },
-        h('span', { class: 'ms2-thumb' }, CM.thumbInto(h('img', { alt: '' }), id, theme), mp.tutorial ? h('span', { class: 'ms2-flag' }, '教程') : null),
+        h('span', { class: 'ms2-thumb' }, CM.thumbInto(h('img', { alt: '' }), id, theme), mp.tutorial ? h('span', { class: 'ms2-flag' }, '教程') : other ? h('span', { class: 'ms2-flag link', 'data-tip': '与' + other.name + '口岸相连' }, '口岸') : null),
         h('span', { class: 'ms2-it' },
           h('span', { class: 'ms2-name' }, h('b', null, mp.tutorial ? (mp.data.city || mp.name) : mp.name), h('em', null, String(mp.cfg.START.y))),
           h('small', null, mp.tagline || mp.sub),
@@ -214,7 +222,7 @@
         if (mp.tutorial) CM.newGame({ map: sel, mode: 'free', tutorial: true, name: '新手教程 · ' + mp.data.city });
         else CM.newGame({ map: sel, mode: mode, playerCity: role ? role.id : undefined, name: (free ? '自由建造' : '经营挑战') + ' · ' + (role ? role.company : mp.data.city) + ' ' + yr, startYear: free && yr > y0 ? yr : null, unlockAll: free && fo.unlock });
       };
-      // 自由建造：点击按钮展开一行选项（起始年份滑块、解锁全图、开始），按钮说明显示当前选择
+      // 自由建造选项置于顶层，避免被选图面板和手机上的滚动容器裁切。
       const freeParts = function () {
         const hEnd = (mp.cfg.growth && mp.cfg.growth.histEnd) || 2020;
         fo.year = U.clamp(fo.year, y0, hEnd);
@@ -226,15 +234,42 @@
         };
         const slider = h('input', { type: 'range', min: y0, max: hEnd, step: 1, value: fo.year, 'aria-label': '起始年份', oninput: function () { fo.year = +slider.value; show(); } });
         const sw = h('button', { class: 'switch' + (fo.unlock ? ' on' : ''), role: 'switch', 'aria-checked': fo.unlock ? 'true' : 'false', 'aria-label': '解锁全图', 'data-silent': '1', onclick: function () { fo.unlock = !fo.unlock; sw.classList.toggle('on', fo.unlock); sw.setAttribute('aria-checked', fo.unlock ? 'true' : 'false'); snd('toggle'); show(); } }, h('i'));
-        const pop = h('div', { class: 'map-free' + (fo.open ? ' open' : '') },
+        const pop = h('dialog', { class: 'map-free', 'aria-label': '自由建造选项' },
           h('label', { class: 'fo-item fo-yr', 'data-tip': '晚于默认年份开局时，之前的城市发展按历史推演' }, h('span', { class: 'fo-k' }, '起始年份'), slider, yv),
           h('label', { class: 'fo-item', 'data-tip': '尚未开放的区域也可以建设地铁' }, h('span', { class: 'fo-k' }, '解锁全图'), sw),
-          h('button', { class: 'btn primary fo-go', onclick: function () { start('free'); } }, ic('play', 14), '开始'));
-        const btn = h('button', { class: 'map-mode free-toggle' + (fo.open ? ' open' : ''), 'aria-expanded': fo.open ? 'true' : 'false', 'data-silent': '1',
-          onclick: function () { fo.open = !fo.open; btn.classList.toggle('open', fo.open); pop.classList.toggle('open', fo.open); btn.setAttribute('aria-expanded', fo.open ? 'true' : 'false'); snd(fo.open ? 'open' : 'close'); } },
+          h('button', { class: 'btn primary fo-go', onclick: function () { pop.close(); start('free'); } }, ic('play', 14), '开始'));
+        const btn = h('button', { class: 'map-mode free-toggle', 'aria-expanded': 'false', 'aria-haspopup': 'dialog', 'data-silent': '1',
+          onclick: function () {
+            const r = btn.getBoundingClientRect();
+            pop.style.setProperty('--free-left', r.left + 'px');
+            pop.style.setProperty('--free-bottom', (window.innerHeight - r.top + 8) + 'px');
+            pop.showModal();
+            pop.classList.add('open');
+            btn.classList.add('open');
+            btn.setAttribute('aria-expanded', 'true');
+            snd('open');
+          } },
           h('span', { class: 'badge b-teal' }, ic('sparkle')), h('span', { class: 'grow' }, h('b', null, '自由建造'), desc), ic('chev', 16));
+        pop.addEventListener('click', function (e) {
+          if (e.target !== pop) return;
+          const r = pop.getBoundingClientRect();
+          if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) pop.close();
+        });
+        pop.addEventListener('keydown', function (e) {
+          if (e.key !== 'Escape') return;
+          e.preventDefault();
+          e.stopPropagation();
+          pop.close();
+        });
+        pop.addEventListener('close', function () {
+          if (pop.open) return;
+          pop.classList.remove('open');
+          btn.classList.remove('open');
+          btn.setAttribute('aria-expanded', 'false');
+          snd('close');
+        });
         show();
-        return [btn, pop];
+        return h('div', { class: 'free-wrap' }, btn, pop);
       };
       const modeBtn = function (mode, icon, badge, title, desc, primary) {
         return h('button', { class: 'map-mode' + (primary ? ' primary' : ''), onclick: function () { start(mode); } },
@@ -252,7 +287,7 @@
           h('div', { class: 'ms2-tagline' }, role ? '长三角同图经营 · ' + role.progression : mp.tagline || mp.sub),
           h('div', { class: 'msel-chips' }, levelEl(mp.difficulty || 2), (role ? [role.name + '公司', '城市群', '分期开放'] : mp.tags || []).map(function (t) { return h('span', { class: 'tag glass-tag' }, t); }))),
         h('div', { class: 'ms2-facts' }, fl.map(function (f) { return h('div', null, h('span', null, f[0]), h('b', { title: f[1] }, f[1])); })));
-      const feats = h('div', { class: 'ms2-feats' }, (mp.features || []).map(function (f, k) {
+      const feats = h('div', { class: 'ms2-feats' }, (CM.Traits.cards(mp).concat(mp.features || []).slice(0, 4)).map(function (f, k) {
         return h('div', { class: 'ms2-feat', style: { animationDelay: (0.04 * k) + 's' } }, h('span', { class: 'badge ' + ['b-blue', 'b-teal', 'b-orange', 'b-violet'][k % 4] }, ic(f[0], 15)), h('div', null, h('b', null, f[1]), h('small', null, f[2])));
       }));
       // 大事年表：开局 + 关键历史节点，按历史阶段（与游戏内阶段同色）分组；没有大事的阶段补一个「阶段开始」节点
@@ -269,13 +304,13 @@
         if (col) ev.style.setProperty('--ec', col);
         tl.appendChild(ev);
       });
-      // 开始方式：经营挑战（主按钮）、自由建造（展开选项）、继续、读取存档
+      // 开始方式：经营挑战（主按钮）、自由建造（弹出选项）、继续、读取存档
       const acts = h('div', { class: 'ms2-acts' });
       if (mp.tutorial) acts.appendChild(modeBtn('free', 'play', 'b-teal', '开始教程', '主线 13 步、约 12 分钟：规划、管理与经营（不限资金）', true));
       else {
         const ch = modeBtn('challenge', 'trophy', 'b-gold', '经营挑战', '初始资金 ' + U.fmtMoney(role ? role.funds : mp.cfg.economy.startFunds, undefined, mp.cfg.money), true);
         ch.dataset.tip = '新游戏 · 拨款随城市经济变化'; acts.appendChild(ch);
-        acts.append.apply(acts, freeParts());
+        acts.appendChild(freeParts());
       }
       acts.appendChild(h('button', { class: 'map-mode sub', disabled: latest ? null : true, 'data-tip': latest ? latest.name + ' · ' + fmtDate(latest) : null, onclick: function () { if (latest) self.loadSlot(latest.slotId); } },
         h('span', { class: 'badge b-blue' }, ic('clock')), h('span', { class: 'grow' }, h('b', null, mp.tutorial ? '继续教程' : '继续游戏'), h('small', null, latest ? latest.name + ' · ' + fmtDate(latest) : '该地图还没有存档')), ic('chev', 16)));
@@ -326,12 +361,15 @@
     const root = h('div', { class: 'ms2', tabindex: '-1' }, rail, stage);
     // 键盘：↑↓ 切换地图，Enter 开始（主按钮）
     root.addEventListener('keydown', function (e) {
+      if (e.isComposing || e.keyCode === 229 || e.defaultPrevented) return;
       if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Enter') return;
-      if (e.key === 'Enter') { if (e.target === search || e.target === root) { e.preventDefault(); goPrimary(); } return; }
+      if (e.key === 'Enter') { if ((e.target === search || e.target === root) && items[sel] && !items[sel].classList.contains('hidden-el')) { e.preventDefault(); goPrimary(); } return; }
+      if (e.target !== root && e.target !== search && !list.contains(e.target)) return;
       const vis = all.filter(function (id) { return !items[id].classList.contains('hidden-el'); });
       if (!vis.length) return;
       e.preventDefault();
-      const k = vis.indexOf(sel), n = vis[(k + (e.key === 'ArrowDown' ? 1 : -1) + vis.length) % vis.length];
+      const k = vis.indexOf(sel), dir = e.key === 'ArrowDown' ? 1 : -1;
+      const n = vis[k < 0 ? (dir > 0 ? 0 : vis.length - 1) : (k + dir + vis.length) % vis.length];
       pick(n);
     });
     drawStage(); drawList();
@@ -353,12 +391,16 @@
     const hero = h('div', { class: 'brief-hero' }, CM.thumbInto(h('img', { alt: '' }), mp.id, theme),
       h('div', { class: 'brief-hero-tx' }, h('div', { class: 'msel-kicker' }, h('span', null, '开局简报'), h('i'), h('span', null, y0 + ' 年 1 月')), h('h2', null, (D.city || mp.name) + ' · ' + y0), h('div', { class: 'msel-tagline' }, mp.tagline || '')));
     const parts = [hero];
-    // 东京等：开局接管既有地铁
-    if (B.inherit && g.mapInit && g.mapInit.metro) {
-      const n = CM.Milestones ? CM.Milestones.netInfo(g) : null, lines = Object.values(g.net.lines), L = lines[0];
-      parts.push(h('div', { class: 'brief-inherit', style: { '--lc': L ? CM.Accessibility.line(L) : 'var(--accent)' } },
-        h('span', { class: 'bi-line' }), h('span', { class: 'badge' }, ic('train')),
-        h('div', { class: 'grow' }, h('b', null, '你接管了' + (lines.length ? lines.map(l => l.name).join('与') : '既有地铁')), h('small', null, g.mapInit.metro)),
+    // 开局接管既有地铁（东京银座线、北京 1 号线与环线）：有开局线路的地图都显示；多条线时左侧色条按线路分段
+    if (g.mapInit && g.mapInit.metro) {
+      const n = CM.Milestones ? CM.Milestones.netInfo(g) : null, Ls = Object.values(g.net.lines), cols = Ls.map(function (l) { return CM.Accessibility.line(l); });
+      // 线路名以数字开头时前面留空格（「你接管了 1 号线与 2 号线」，与界面其他处的数字排版一致）
+      const sp = function (s) { return (/^\d/.test(s) ? ' ' : '') + s; }, names = Ls.map(function (l) { return l.name; });
+      const title = names.length > 1 ? names.slice(0, -1).map(sp).join('、') + '与' + sp(names[names.length - 1]) : sp(names[0] || '既有地铁');
+      const stripe = cols.length > 1 ? { background: 'linear-gradient(180deg, ' + cols.map(function (c, k) { return c + ' ' + (100 * k / cols.length) + '% ' + (100 * (k + 1) / cols.length) + '%'; }).join(', ') + ')' } : null;
+      parts.push(h('div', { class: 'brief-inherit', style: { '--lc': cols[0] || 'var(--accent)' } },
+        h('span', { class: 'bi-line', style: stripe }), h('span', { class: 'badge' }, ic('train')),
+        h('div', { class: 'grow' }, h('b', null, '你接管了' + title), h('small', null, g.mapInit.metro)),
         h('div', { class: 'bi-stats' },
           h('div', null, h('b', null, String(Object.keys(g.net.stations).length)), h('span', null, '座车站')),
           n ? h('div', null, h('b', null, U.fmtNum(n.km, 1)), h('span', null, '公里')) : null,
@@ -446,7 +488,7 @@
       list.appendChild(sec);
     });
     const card = h('div', { class: 'card news' },
-      h('div', { class: 'card-head' }, h('span', { class: 'badge b-violet' }, ic('megaphone')), h('div', { class: 'grow' }, h('h2', null, '更新公告'), h('div', { class: 'tiny muted' }, '当前版本 V' + ((CM.NEWS || [])[0]?.v || CFG.GAME_VERSION))),
+      h('div', { class: 'card-head' }, h('span', { class: 'badge b-violet' }, ic('megaphone')), h('div', { class: 'grow' }, h('h2', null, '更新公告'), h('div', { class: 'tiny muted' }, '当前版本 V' + CFG.GAME_VERSION)),
         h('button', { class: 'iconbtn', 'data-tip': '关闭', 'data-key': 'Esc', onclick: close }, ic('close'))),
       list);
     this.openScreen(card, close);

@@ -2,15 +2,15 @@
 // 全局参数。PRD 中标注"待确认"的数值在此给出可调整的默认值（DEFAULT），评审确认后只需修改本文件。
 (function (CM) {
   CM.CFG = {
-    GAME_VERSION: '1.3.1',
-    TRAFFIC_MODEL: 4,      // 轻量交通更新；与显示版本独立，确保 v3 存档仍触发安全迁移
-    RULES_REVISION: 15,    // Adaptive company growth and compatible shared-station platforms.
+    GAME_VERSION: '1.4.0',
+    TRAFFIC_MODEL: 6,
+    RULES_REVISION: 18,
     SAVE_FORMAT: 'city-metro-save',
     SAVE_VERSION: 2,
     SAVE_MIN_VERSION: 2,   // 1.1 起地图改为真实地理，旧版存档的城市数据与之不兼容
 
-    // 地图：每格 250 m，120×144 格 ≈ 30 km × 36 km；交通小区 4×4 格（1 km²）
-    W: 120, H: 144, CELL_M: 250, ZONE: 4,
+    // 广州：每格 250 m，152×228 格对应 38 km × 57 km，交通小区边长为 4 格。
+    W: 152, H: 228, CELL_M: 250, ZONE: 4,
     START: { y: 1990, m: 1, d: 1, minute: 6 * 60 },
     // 货币与价格基年（各地图在 maps.js 中替换）：内部金额单位为「万 + 本城货币」，票价为本城货币
     money: { code: 'CNY', unit: '元', wan: '万元', yi: '亿元', sym: '¥' },
@@ -89,11 +89,11 @@
       accel: 0.9, dwell: 30, turnaround: 150,
       latAccel: 0.8,            // 弯道横向加速度上限 → 弯道限速
       carCap: 310,              // 每节车厢定员
-      carsBySize: { S: 4, M: 6, L: 8 }, // 列车编组受沿线最小站台限制
+      carsBySize: { S: 4, M: 6, L: 8, XL: 8 }, // 列车编组受沿线最小站台限制
       fMin: [8, 6, 8, 4],       // 各时段最低发车频率（列/小时）DEFAULT
       fMax: 30,                 // 最小间隔 2 分钟
       targetLF: 0.85,
-      stationCap: { S: 15000, M: 35000, L: 70000 }, // 车站每小时进出站+换乘能力 DEFAULT
+      stationCap: { S: 15000, M: 35000, L: 70000, XL: 140000 }, // 车站每小时进出站+换乘能力 DEFAULT
       minSpacingM: 100,         // 独立车站最小间距；站外换乘仍按实际步行路径上限判断
       // 线形约束（参考城市轨道交通设计规范的量级，DEFAULT）
       minRadiusM: 250,          // 正线最小曲线半径：低于此值不允许
@@ -112,7 +112,7 @@
       levelM: { underground: -15, surface: 0, elevated: 12 }, // 轨面高程（米）
       levelFactor: 0.6,         // 天地换乘：同站增设另一层站台按该建设方式车站造价的 60% 计（共用站厅与出入口）DEFAULT
       levelXferMin: 1.5,        // 天地换乘：进出非主站台层多走的垂直通道时间（分钟，上下车各计一次）DEFAULT
-      sizeName: { S: '小型', M: '中型', L: '大型' },
+      sizeName: { S: '小型', M: '中型', L: '大型', XL: '超大型' },
       typeName: { underground: '地下', surface: '地面', elevated: '高架' },
       height: { underground: -0.11, surface: 0.0, elevated: 0.075 }, // 视觉高度（格）
     },
@@ -137,6 +137,7 @@
         track: { underground: 0, surface: 0.7, elevated: 0.18 },
         station: { underground: 0.25, surface: 0.8, elevated: 0.6 },
       },
+      stationFoot: { surface: { w: 0.3, k: 2 }, elevated: { w: 0.2, k: 1.4 } },
       freeMoveM: 250,           // 车站移动不超过此距离免费 DEFAULT
       freeLengthM: 300,         // 线形调整导致增长不超过此值免费 DEFAULT
       relocationFactor: 0.5,    // 大范围搬迁按新站造价比例收费
@@ -145,7 +146,7 @@
 
     ops: {
       carKmCost: 0.0009,        // 万元/车厢公里（≈9 元）
-      stationDaily: { S: 1.5, M: 2.6, L: 4.5 }, // 万元/天
+      stationDaily: { S: 1.5, M: 2.6, L: 4.5, XL: 7.6 }, // 万元/天
       serviceHours: 18,
       inflation: 0.04,
     },
@@ -163,7 +164,16 @@
       fareSens: 10.8, fareOver: 25,
       walkW: 1.6, waitW: 1.5,
       transferPen: 4, outTransferPen: 6,
+      // 地铁站内换乘的基础惩罚（v2.9）：同台换乘只计这一项；节点换乘两侧站台各多走 0.5 分钟通道（步行权重计后约合原来的 4 分钟），
+      // 天地换乘再加垂直通道（见 metro.levelXferMin、Metro.xferKind）。站外换乘沿用原来的总惩罚。
+      xferBase: 2.4,
       carAccess: 4,             // 停车与取车附加分钟
+      // 枢纽接驳（v2.9 玩家反馈：主要火车站客流太少）：往返火车站、机场的旅客带着行李、多不开自家车、打车要排队，
+      // 同样的地铁条件下比一般出行更愿意乘地铁，相当于地铁一侧少算这么多分钟
+      hubAsc: 18,
+      // 枢纽旅客的接驳（v2.9）：住处步行范围外的旅客可打车或坐公交到 km 公里内最近的地铁站，再乘地铁往返车站、机场；
+      // 接驳计 min 分钟 + 每公里 perKm 分钟，越远越少人这样走，最多 k 的人愿意
+      hubFeed: { km: 5, k: 0.6, min: 6, perKm: 2.5 },
       // 以下为估算曲线：[年份, 值]
       vot: [[1990, 2.5], [1995, 5], [2000, 9], [2005, 14], [2010, 22], [2015, 32], [2020, 42], [2030, 58], [2050, 80]], // 元/小时
       carCostPerKm: [[1990, 0.40], [2000, 0.60], [2010, 0.85], [2020, 1.0], [2050, 1.2]],
@@ -191,6 +201,7 @@
     },
 
     economy: {
+      opsSubsidy: 0.5,          // 上月运营缺口按财力补一半
       startFunds: 300000,       // 经营挑战初始资金 30 亿元 DEFAULT
       grantBase: [[1990, 15000], [2000, 32000], [2010, 70000], [2020, 110000], [2050, 180000]], // 万元/月
       debtLimit: -200000,       // 负债下限（随通胀调整）DEFAULT
@@ -211,7 +222,7 @@
 
     growth: {
       // v2.1 地图扩大后包含番禺市桥、钟村、南村与白云嘉禾、均禾一带（估算：1990 年约增加 45 万人，2020 年约增加 140 万人）
-      popCurve: [[1990, 3.28e6], [1995, 3.9e6], [2000, 4.85e6], [2005, 5.95e6], [2010, 7.3e6], [2015, 8.2e6], [2020, 9.1e6], [2030, 10.0e6], [2045, 10.8e6], [2070, 11.4e6], [2300, 11.9e6]],
+      popCurve: [[1990, 3.78e6], [1995, 4.38e6], [2000, 5.39e6], [2005, 6.71e6], [2010, 8.44e6], [2015, 9.66e6], [2020, 10.9e6], [2030, 12.2e6], [2045, 13.33e6], [2070, 14.25e6], [2300, 14.88e6]],
       histEnd: 2020,            // 此后为模拟增长
       jobsRatio: [[1990, 0.50], [2000, 0.53], [2010, 0.56], [2030, 0.58]],
       metroBoostMax: 0.06,

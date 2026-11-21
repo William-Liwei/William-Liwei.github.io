@@ -211,6 +211,10 @@ window.CM = window.CM || {};
   };
 
   // ---------- 格式化 ----------
+  U.fileDate = function (y, m) {
+    if (CM.I18n && CM.I18n.get() === 'en') return String(y) + (m == null ? '' : '-' + U.pad2(m));
+    return y + '年' + (m == null ? '' : m + '月');
+  };
   U.pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
   // 未开放区域的说明：按参考年份开放，或长期不开放（如军用机场，见区域的 lockNote）
   U.regionLock = function (rg, city) {
@@ -367,4 +371,12 @@ window.CM = window.CM || {};
   U.Emitter = Emitter;
 
   CM.U = U;
+  // Browser download shared by network maps and city review posters.
+  U.downloadBlob = function (blob, filename) {
+    if (!blob || !blob.size) throw new Error('无法生成文件');
+    const url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    try { a.click(); } finally { setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 1500); }
+  };
 })(window.CM);

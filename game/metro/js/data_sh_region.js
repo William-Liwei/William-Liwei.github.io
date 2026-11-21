@@ -7,6 +7,7 @@
  const ll=(lat,lon)=>[+((lon-P.lon0)*P.kx).toFixed(2),+((P.lat0-lat)*P.ky).toFixed(2)];
  const point=(name,lat,lon)=>{const candidates=G.places.filter(p=>p[0]===name||p[0]===name.replace(/站$/,''));const q=ll(lat,lon);const p=candidates.find(p=>Math.hypot(p[1]-q[0],p[2]-q[1])<12);return p?[p[1],p[2]]:q;};
  const anchor=(name,lat,lon,r=5)=>{const p=point(name,lat,lon);return {name,x:p[0],y:p[1],r};};
+ D.traits = (D.traits || []).concat([{use:'finance',flavor:'cn'}]);
  const oldRegions=D.regions.map(r=>r.id).concat(D.defaultRegion.id),oldLandmarks=D.landmarks.map(l=>l.id);
  const first=Object.assign({},m.extent,{newW:152,newH:152,oldZone:4,newZone:4});
  m.extent=[first,{from:2,dx:544,dy:288,oldW:152,oldH:152,oldZone:4,newZone:20,newW:940,newH:640,oldRegionIds:oldRegions,oldLandmarkIds:oldLandmarks,note:'扩展为上海全域与苏州区域地图；原线网平移保留，交通统计改用 5 km 小区'}];

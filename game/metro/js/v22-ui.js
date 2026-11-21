@@ -35,7 +35,8 @@
     const dark = document.documentElement.dataset.theme === 'dark', bgOn = !!(this._stageBg && this._stageBg.classList.contains('on')), mp = mapId && CM.MAPS[mapId];
     const again = /\bld-screen\b/.test(this.screen.className) && this.screen.className.indexOf('hidden') < 0;   // 读档的第二段载入：原地更新，不再播放入场
     this.openScreen(h('div', { class: 'card ld-card' }, logo, this._loadNote, track, h('div', { class: 'ld-row' }, stage, pct)), null, mp ? 'ld-screen' + (again ? ' noanim' : '') : '', mp && !again ? (bgOn ? 'zoom' : 'fade') : null);
-    if (mp && !bgOn) this.stageBg(CM.mapThumb(mapId, dark ? 'dark' : 'light'));
+    const thumb = mp && !bgOn ? CM.mapThumb(mapId, dark ? 'dark' : 'light') : null;
+    if (thumb) this.stageBg(thumb);
     const L = this._ld = { goal: 0.02, disp: 0, cap: 0.08, done: false, t: performance.now(), t0: performance.now(), fill: fill, head: head, pct: pct, stage: stage, stops: track.querySelectorAll('.ld-stop'), at: stops };
     const tick = function (now) {
       if (self._ld !== L || !fill.isConnected) return;
@@ -127,8 +128,6 @@
       h('span', { class: 'ec-dot' }), h('span', { class: 'tx' }, h('span', { class: 'k' }, '发展阶段'), h('span', { class: 'v' }, '')), h('span', { class: 'ec-prog' }, h('i')));
     this.pills.date.el.insertAdjacentElement('afterend', this.eraChip);
     this.histHost = h('div', { id: 'histHost' }); this.feed.appendChild(this.histHost); this.clearHist();
-    // 阶段背景先整段翻译再分行；切语言时重新构造，避免逐行翻译遗留混排。
-    if (CM.I18n) CM.I18n.on(() => { if (this.topIs(['era'])) this.rerenderPage(); });
   };
   const attach = UI.prototype.attachGame;
   UI.prototype.attachGame = function (g) {

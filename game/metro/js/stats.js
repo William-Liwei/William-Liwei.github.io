@@ -1,5 +1,5 @@
 'use strict';
-// 统计面板：概览指标卡 + 交通 / 城市 / 财政 / 线路图表（SVG，悬停十字线与提示、图例）
+// 统计面板：概览指标卡 + 交通 / 城市 / 财政 / 线路图表（SVG，悬停十字线与提示、图例、表格视图）
 (function (CM) {
   const AX = CM.Accessibility;
   const U = CM.U;
@@ -9,7 +9,7 @@
     light: ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#e34948'],
     dark: ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#008300', '#9085e9', '#e66767'],
   };
-  const TABS = [['overview', '概览', 'chart'], ['regional', '城市与区域', 'map'], ['traffic', '交通', 'metro'], ['tickets', '票务', 'ticket'], ['econ', '经济', 'trend'], ['finance', '财政', 'wallet'], ['milestones', '城市纪事', 'book']];
+  const TABS = [['overview', '概览', 'chart'], ['regional', '城市与区域', 'map'], ['traffic', '交通', 'metro'], ['tickets', '票务', 'ticket'], ['econ', '经济', 'trend'], ['finance', '财政', 'wallet'], ['milestones', '城市纪事', 'book'], ['traits', '城市特色', 'sparkle'], ['review', '城市总评', 'star']];
   let ui = null, tab = 'overview', range = 'all', isOpen = false, charts = [], body = null, sig = '';
 
   function pal() { return AX.enabled() ? AX.palette() : PALETTE[document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light']; }
@@ -363,8 +363,8 @@
       const cy = new Map(); for (const r of E.ledger) cy.set(r.y, (cy.get(r.y) || 0) + (r.commerce || 0));
       for (const o of rows) o.r.commerce = cy.get(o.r.y) || 0;
     }
-    const inc = function (r) { return (r.grant || 0) + (r.fare || 0) + (r.reward || 0) + (r.commerce || 0) + (r.ppp || 0) + (r.fleetSale || 0); };
-    const exp = function (r) { return (r.construction || 0) + (r.demolition || 0) + (r.upgrade || 0) + (r.relocation || 0) + (r.ops || 0) + (r.todCost || 0) + (r.pppOut || 0); };
+    const inc = CM.Economy.incomeOf;
+    const exp = function (r) { return (r.construction || 0) + (r.demolition || 0) + (r.upgrade || 0) + (r.relocation || 0) + CM.Economy.opsOf(r) + (r.pppOut || 0); };
     const svc = function (r) { return (r.interest || 0) + (r.principal || 0) + (r.penalty || 0); };
     const anyDebt = E.ledger.some(function (r) { return r.bond || svc(r); }) || E.bonds.length;
     const cg = h('div', { class: 'chart-grid' });
@@ -612,6 +612,91 @@
     drawBook(0);
     requestAnimationFrame(function () { syncTl(false); });
   }
+  // ---------- 城市特色：招牌大卡 → 特色线（小列车停在当前年份）→ 其余机制的图鉴。内容都由机制库生成 ----------
+  function pageTraits(g, el) {
+    const T = CM.Traits, groups = T.view(g), seed = g.mapId, D = CM.DATA, mp = CM.curMap();
+    const all = []; groups.forEach(function (m) { m.items.forEach(function (x) { x.mod = m; all.push(x); }); });
+    const stamp = function (x) { return h('span', { class: 'tr-stamp ' + (x.state.cls || 'off') }, x.state.text); };
+    const goBtn = function (x) {
+      if (!x.place) return null;
+      return h('button', { class: 'tr-go', 'data-tip': '在地图上看', 'aria-label': '在地图上看', onclick: function () {
+        const p = x.place, u = ui; Stats.close();
+        if (p.region) { const k = g.city.regions.findIndex(function (r) { return r.id === p.region; }); if (k >= 0) u.locateRegion(k); } else u.locatePoint(p.x, p.y, p.label, p.r);
+      } }, CM.icon('pin', 13));
+    };
+    const hint = function (x) { return x.hint ? h('div', { class: 'tr-hint' + (x.hint.good ? ' good' : '') }, CM.icon(x.hint.good ? 'check' : 'clock', 12), h('span', null, x.hint.text)) : null; };
+    const why = function (x) { return h('p', { class: 'tr-why' }, h('i', null, '史实'), h('span', null, x.why)); };
+    // 抬头：城市与八个模块（本城没有的模块暗着，不是每座城市都要有）
+    el.appendChild(h('div', { class: 'ms-head2' }, h('div', { class: 'ms-ttl' }, h('span', { class: 'badge b-violet' }, CM.icon('sparkle')),
+      h('div', null, h('h3', null, (D.city || '城市') + '的城市特色'), h('small', null, mp.tagline || '')))));
+    const mods = h('div', { class: 'tr-mods' });
+    for (const k in T.MODULES) {
+      const M = T.MODULES[k], m = groups.find(function (q) { return q.id === k; });
+      mods.appendChild(h('button', { class: 'tr-mod' + (m ? ' on' : ''), disabled: m ? null : true, 'data-tip': m ? null : '这座城市没有选用这一类', 'data-silent': '1', onclick: function () {
+        const t = el.querySelector('[data-mod="' + k + '"]'); if (!t) return;
+        t.scrollIntoView({ behavior: CM.Settings.reducedMotion() ? 'auto' : 'smooth', block: 'center' }); t.classList.remove('flash'); void t.offsetWidth; t.classList.add('flash');
+      } }, CM.icon(M.icon, 14), h('span', null, M.name), m ? h('b', null, String(m.items.length)) : null));
+    }
+    el.appendChild(mods);
+    // 招牌
+    const stars = all.filter(function (x) { return x.star; });
+    if (stars.length) el.appendChild(h('div', { class: 'tr-stars n' + stars.length }, stars.map(function (x, i) {
+      return h('article', { class: 'tr-star', 'data-mod': x.mod.id, style: { animationDelay: (i * 0.07) + 's' } },
+        h('div', { class: 'tr-art', html: CM.Sketch.traitArt(x.use, seed + i) }), stamp(x),
+        h('div', { class: 'tr-body' }, h('div', { class: 'tr-kind' }, CM.icon(x.mod.icon, 12), h('span', null, x.kind), goBtn(x)), h('h4', null, x.label), h('p', { class: 'tr-text' }, x.text), h('p', { class: 'tr-eff' }, x.effect), hint(x), why(x)));
+    })));
+    // 特色线：开局和史料末年是两端的终点站，中间是有年份的机制；已经过去的一段点亮，小列车停在现在
+    const S = T.stops(), y0 = CM.CFG.START.y, end = Math.max((CM.CFG.growth && CM.CFG.growth.histEnd) || 2020, S.length ? S[S.length - 1].y : 0);
+    if (S.length) {
+      const nodes = [{ y: y0, m: 1, label: '开局', term: true }].concat(S, [{ y: end, m: 12, label: end > g.clock.y ? '史料截止' : '模拟未来', term: true }]);
+      const now = g.year(), at = function (q) { return q.y + (q.m - 1) / 12; }, n = nodes.length;
+      let idx = n - 1, frac = 0;
+      for (let i = 0; i + 1 < n; i++) if (now < at(nodes[i + 1])) { idx = i; frac = U.clamp((now - at(nodes[i])) / Math.max(0.01, at(nodes[i + 1]) - at(nodes[i])), 0, 1); break; }
+      const posOf = function (v) { return (v + 0.5) / n * 100; }, pos = posOf(idx + frac);
+      const col = (D.lineColorsNice && D.lineColorsNice[0]) || '#2f7dd1';
+      const line = h('div', { class: 'tr-line', style: { '--tr-c': col, minWidth: (n * 72) + 'px', gridTemplateColumns: 'repeat(' + n + ', 1fr)' } });
+      line.appendChild(h('i', { class: 'tr-rail', style: { left: posOf(0) + '%', right: (100 - posOf(n - 1)) + '%' } }));
+      line.appendChild(h('i', { class: 'tr-rail done', style: { left: posOf(0) + '%', width: Math.max(0, pos - posOf(0)) + '%' } }));
+      nodes.forEach(function (q, i) {
+        const past = i <= idx, st = q.t ? (q.use === 'foresight' ? (g.foresight && g.foresight[q.t.id] ? (g.foresight[q.t.id].hit ? 'hit' : 'miss') : '') : '') : '';
+        line.appendChild(h('div', { class: 'tr-stop' + (i % 2 ? ' up' : ' down') + (past ? ' past' : '') + (q.term ? ' term' : '') + (st ? ' ' + st : ''), 'data-tip': q.t ? T.LIB[q.use].name + '：' + T.LIB[q.use].effect(q.t) : null },
+          h('span', { class: 'tr-dot' }, q.t ? CM.icon(T.MODULES[T.LIB[q.use].mod].icon, 12) : null),
+          h('div', { class: 'tr-lb' }, h('b', null, String(q.y)), h('span', null, q.label), q.sub ? h('small', null, q.sub) : null)));
+      });
+      line.appendChild(h('div', { class: 'tr-train', style: { left: pos + '%' } }, h('span', { class: 'tr-now' }, String(g.clock.y)), h('span', { class: 'tr-car', html: '<svg viewBox="0 0 44 18" width="44" height="18"><rect x="1" y="1" width="42" height="13" rx="5" fill="var(--tr-c)" stroke="#fff" stroke-width="1.2"/><rect x="6" y="4" width="7" height="5" rx="1" fill="#fff"/><rect x="17" y="4" width="7" height="5" rx="1" fill="#fff"/><rect x="28" y="4" width="10" height="5" rx="1.5" fill="#fff"/><circle cx="11" cy="15.5" r="2" fill="var(--ink,#334)"/><circle cx="33" cy="15.5" r="2" fill="var(--ink,#334)"/></svg>' })));
+      el.appendChild(h('div', { class: 'tr-sec' }, h('b', null, '特色线'), h('small', null, '每一站是这座城市会遇到的一件大事，列车停在现在')));
+      el.appendChild(h('div', { class: 'tr-linewrap' }, line));
+    }
+    // 考古发现（v3.0）：本局在保护区施工时的发现，按时间倒序；展示加成写明起止年份
+    if (T.Arch && T.Arch.on()) {
+      const F = (g.finds || []).slice().reverse(), now = g.year();
+      el.appendChild(h('div', { class: 'tr-sec' }, h('b', null, '考古发现'), h('small', null, '在保护区确认地下工程时判定；发现后另付调查与保护费，工期不变')));
+      const box = h('div', { class: 'tr-finds' });
+      if (!F.length) box.appendChild(h('div', { class: 'tr-find-empty' }, '还没有发现。保护区内的地下车站和隧道在确认建设时判定，草案栏会提示概率。'));
+      for (const q of F) {
+        const st = !q.fac ? { cls: '', text: '已入藏' } : now < q.from ? { cls: 'info', text: Math.floor(q.from) + ' 年展出' } : now < q.to + 2 ? { cls: 'good', text: '展示中' } : { cls: '', text: '已结束' };
+        const art = CM.Sketch ? CM.Sketch.traitArt('archaeo', q.id) : '';
+        const pic = art ? h('div', { class: 'tr-artifact still', html: art }) : h('span', { class: 'badge b-violet' }, CM.icon('search', 14));
+        box.appendChild(h('article', { class: 'tr-find' + (art ? ' has-art' : '') }, pic,
+          h('h4', null, h('span', null, q.site), ' · ', h('span', null, q.kind)),
+          h('span', { class: 'tr-stamp ' + (st.cls || 'off') }, st.text),
+          h('p', null, q.y + ' 年 ' + q.m + ' 月发现，调查与保护费 ' + U.fmtMoney(q.fee) + '。' + (q.fac ? '在' + q.facName + '展示：' + Math.floor(q.from) + '–' + Math.floor(q.to) + ' 年游客约多 ' + Math.round((q.k - 1) * 100) + '%，之后两年回落。' : '附近没有对外开放的景点，文物移交博物馆收藏。')),
+          h('button', { class: 'tr-go', 'data-tip': '在地图上看', 'aria-label': '在地图上看', onclick: function () { Stats.close(); ui.locatePoint(q.x, q.yy, q.site, 1.2); } }, CM.icon('pin', 13))));
+      }
+      el.appendChild(box);
+    }
+    // 其余机制
+    const rest = all.filter(function (x) { return !x.star; });
+    if (rest.length) {
+      el.appendChild(h('div', { class: 'tr-sec' }, h('b', null, '城市图鉴'), h('small', null, '这座城市还有这些不一样的地方')));
+      const seen = {};
+      el.appendChild(h('div', { class: 'tr-cards' }, rest.map(function (x, i) {
+        const first = !seen[x.mod.id] && !el.querySelector('.tr-star[data-mod="' + x.mod.id + '"]'); seen[x.mod.id] = 1;
+        return h('article', { class: 'tr-card', 'data-mod': first ? x.mod.id : null }, h('div', { class: 'tr-thumb', html: CM.Sketch.traitArt(x.use, seed + 't' + i) }),
+          h('div', { class: 'tr-body' }, h('div', { class: 'tr-kind' }, CM.icon(x.mod.icon, 12), h('span', null, x.kind), goBtn(x), stamp(x)), h('h4', null, x.label), h('p', { class: 'tr-eff' }, x.effect), hint(x), why(x)));
+      })));
+    }
+  }
   function pageTickets(g, el) {
     if (CM.Statistics) CM.Statistics.render(g, el, { ui: ui, palette: pal(), refresh: function () {
       const active = document.activeElement, group = active && active.closest ? active.closest('[aria-label]') : null;
@@ -625,8 +710,10 @@
     } });
     else el.appendChild(h('div', { class: 'empty-chart' }, '票务统计尚未载入。'));
   }
-  const PAGES = { regional: function (g, el) { if (CM.RegionalMetrics && CM.RegionalMetrics.enabled(g)) el.appendChild(CM.RegionalMetrics.panel(ui, g, function () { renderBody(g, false, true); })); }, overview: pageOverview, traffic: pageTraffic, tickets: pageTickets, econ: pageEcon, finance: pageFinance, milestones: pageMilestones };
+  const PAGES = { regional: function (g, el) { if (CM.RegionalMetrics && CM.RegionalMetrics.enabled(g)) el.appendChild(CM.RegionalMetrics.panel(ui, g, function () { renderBody(g, false, true); })); }, overview: pageOverview, traffic: pageTraffic, tickets: pageTickets, econ: pageEcon, finance: pageFinance, milestones: pageMilestones, traits: pageTraits, review: function (g, el) { if (CM.Review) CM.Review.page(g, el); } };
   const NOTES = {
+    review: '城市进入模拟阶段时自动生成一次，不影响游戏数值。',
+    traits: '特色来自这座城市的真实情况；数值是游戏设定。',
     tickets: '所有票量与票款分段来自实际选中的乘车路径；图表不把平均乘距推算成客票分布。',
     milestones: '只记录关键节点：地铁建设的「第一次」与里程关口、客流与分担率关口、人口关口、本地图的重大历史事件、地标落成与填海成陆。',
     econ: '按年记录：每年 1 月结算上一年。游戏结果为本局地图范围的模拟值；预测只包含已经发生的事件；参考数据为全国或地区口径的近似值，与地图范围数据分开显示。',
@@ -656,9 +743,10 @@
   function syncTabs(g, instant) {
     const free = g.econ.isFree(), eco = !!(g.macro && CM.Macro);
     const regional = CM.RegionalMetrics && CM.RegionalMetrics.enabled(g);
-    if ((tab === 'finance' && free) || (tab === 'econ' && !eco) || (tab === 'regional' && !regional)) tab = 'overview';
+    const noTr = !CM.Traits || !CM.Traits.view(g).length;
+    if ((tab === 'finance' && free) || (tab === 'econ' && !eco) || (tab === 'regional' && !regional) || (tab === 'traits' && noTr)) tab = 'overview';
     for (const k in tabBtns) {
-      tabBtns[k].style.display = (k === 'finance' && free) || (k === 'econ' && !eco) || (k === 'regional' && !regional) ? 'none' : '';
+      tabBtns[k].style.display = (k === 'finance' && free) || (k === 'econ' && !eco) || (k === 'regional' && !regional) || (k === 'traits' && noTr) ? 'none' : '';
       tabBtns[k].classList.toggle('on', k === tab); tabBtns[k].setAttribute('aria-selected', k === tab ? 'true' : 'false');
     }
     const b = tabBtns[tab];
@@ -704,6 +792,8 @@
     if (tab === 'tickets') return ['tickets', g.clock.y, g.clock.m, g.clock.d, g.model.version, g.model.trafficReady(), CM.Model.fareKey(g.econ.fare), g.netVersion, g.fleet ? g.fleet.ver : 0, g.statistics ? g.statistics.events.length : 0, th].join('|');
     const local = homeMetrics(g), scope = local ? local.scopeKey + '|' + local.ready : '';
     if (tab === 'milestones') return 'ms|' + n + '|' + th + '|' + scope + '|' + g.model.version + '|' + g.city.version + '|' + (window.innerWidth < 820 ? 1 : 2);
+    if (tab === 'traits') return 'tr|' + g.clock.y + '-' + g.clock.m + '|' + (g.foresight ? Object.keys(g.foresight).length : 0) + '|' + g.netVersion + '|' + (g.finds ? g.finds.length : 0) + '|' + th;
+    if (tab === 'review') return 'rev|' + (g.cityReview ? g.cityReview.when + '|' + (g.cityReview.thumb ? 1 : 0) : 0) + '|' + th;
     if (tab === 'econ') return 'ec|' + g.clock.y + '-' + g.clock.m + '|' + (g.macro ? g.macro.rec.length + '|' + g.macro.gv : '') + '|' + th;
     return g.clock.y + '-' + g.clock.m + '-' + g.clock.d + '|' + (g.model.dailyStale ? 0 : 1) + '|' + g.history.length + '|' + g.econ.ledger.length + '|' + g.netVersion + '|' + th + '|' + n + '|' + scope + '|' + g.model.version + '|' + g.city.version;
   }

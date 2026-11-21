@@ -74,7 +74,7 @@
     let road=roadGuards.get(rd);
     if(!road||road.graph!==r||road.version!==m.roadVer){road={graph:r,version:m.roadVer,hashes:arrayGuards([r.outStart,r.outArc,r.arcFrom,r.arcTo,r.arcT0,r.arcCap,rd.start,rd.nodes,rd.times,rd.km])};roadGuards.set(rd,road);}
     let metro=metroGuards.get(n);if(!metro){metro=arrayGuards([n.eFrom,n.eTo,n.eT0]);metroGuards.set(n,metro);}
-    return JSON.stringify([g.mapId,m.year,CM.Model.fareKey(m.fare),m.Z,m.fn.ids,n.routeKey,n.C.stations.map(s=>[s.id,s.x,s.y,s.size]),road.hashes.concat(metro)]);
+    return JSON.stringify([g.mapId,m.year,CM.Model.fareKey(m.fare),m.Z,m.od.skim.fp,m.fn.ids,n.routeKey,n.C.stations.map(s=>[s.id,s.x,s.y,s.size]),road.hashes.concat(metro)]);
   }
   function capture(g){
     const m=g&&g.model;if(leasedBytes>=MAX_ENTRY/2||!CM.SIM_STAMP||!m||!m.settled||m.gen||m.solving||g.pending||g.jumping||m.predJob||m.hasReviewWork()||!m.trafficReady())return null;
@@ -126,13 +126,15 @@
       const staged=[];const seen=new Set();
       for(const row of meta.periods){
         if(!['wd','we'].includes(row.dt)||!Number.isInteger(row.p)||row.p<0||row.p>3||seen.has(row.dt+row.p))return false;seen.add(row.dt+row.p);
-        const P=m.ctxs[row.dt].per[row.p],S=row.scalars,E=S.error;m.allocStatArrays(P);
+        const P=m.ctxs[row.dt].per[row.p],S=row.scalars,E=S.error;m.allocStatArrays(P);m.alignSkims(P,m.od);
         if(!Number.isSafeInteger(S.solveSteps)||S.solveSteps<1||!Number.isSafeInteger(S.quiet)||S.quiet<0||typeof S.stable!=='boolean'||![0,6,12].includes(S.reviewLimit)||!E||Object.values(E).some(v=>!Number.isFinite(v))||!S.stats||Object.values(S.stats).some(v=>!Number.isFinite(v))||S.facKey!==m.fn.key)return false;
         const values={},keys=Object.keys(P).filter(k=>ArrayBuffer.isView(P[k]));if(row.arrays.length!==keys.length)return false;
         for(const a of row.arrays){const old=P[a.name];if(!keys.includes(a.name)||values[a.name]||!old||a.type!==old.constructor.name||a.length!==old.length||!Number.isInteger(a.offset)||a.offset<0||a.offset%old.BYTES_PER_ELEMENT)return false;const v=new old.constructor(record.data,a.offset,a.length);values[a.name]=v;}
         staged.push({P,S,values});
       }
       for(const {P,S,values}of staged){for(const k of scalars)if(S[k]!==undefined)P[k]=S[k];Object.assign(P,values);P.solveSignature={net:m.net,od:m.od,year:m.year,fare:CM.Model.fareKey(m.fare),road:m.roadVer,habit:m.habitVer||0};}
+      // 缓存保存的是站对需求，恢复日汇总前按同一组参数重建背景交通的路径表。
+      if(CM.BgNet&&m.ctxs.wd.per[0].bgDS)CM.BgNet.forModel(m,m.params());
       verified.delete(record);
       m.computeDaily();m.gen=null;Object.assign(m,C);m.settledAt={year:m.year,fare:CM.Model.fareKey(m.fare),city:m.city.version,road:m.city.roadVersion,net:m.net,od:m.od};g.trafficCacheHit=true;return true;
     }catch(e){return false;}

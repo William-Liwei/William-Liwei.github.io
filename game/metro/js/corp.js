@@ -42,7 +42,7 @@
     jp: { name: '公私合作', from: 1970, note: '参照日本地方政府与民间企业合资建设、运营轨道的做法' }
   };
   const MAP_FLAVOR={gz:'cn',hz:'cn',wh:'cn',sh:'cn','sh-city':'cn',bj:'cn',hk:'hk',tp:'tw',pa:'fr',tk:'jp'};
-  Corp.flavor = function (g) { return g ? FLAVOR[MAP_FLAVOR[g.mapId]] || null : null; };
+  Corp.flavor = function (g) { const map = g && CM.MAPS[g.mapId]; return g ? (CM.Traits && CM.Traits.FLAVOR[(map ? map.data : CM.DATA).corpFlavor]) || FLAVOR[MAP_FLAVOR[g.mapId]] || null : null; };
   Corp.enabled = function (g) { return !!g && !!g.econ && g.econ.mode === 'challenge' && !g.tutorial && !CM.DATA.noDynTasks && !!Corp.flavor(g); };
   Corp.grade = function (r) { return r >= 80 ? 'A' : (r >= 60 ? 'B' : (r >= 40 ? 'C' : 'D')); };
   // 履约信誉与拨款：50 分 ×1.00，100 分 ×1.05，0 分 ×0.95
@@ -109,7 +109,7 @@
     const s = C.stations[best.ns], area = { name: g.zoneName(best.z), x: +m.zCx[best.z].toFixed(2), y: +m.zCy[best.z].toFixed(2), r: 3 };
     if (!siteOK(g.city, area)) { P.cool['z:' + best.z] = ym + 24; return null; }
     const hub = { name: s.name, x: s.x, y: s.y, r: 1.2 }, km = best.nd * CFG.CELL_M / 1000, ci = g.econ.costIndex(g.clock.y);
-    const E = Math.round((CM.Tasks.estimateLink(g, [hub, area]) + Math.max(0, Math.round(km / 1.4) - 1) * CFG.cost.station.underground.M * ci) / 1000) * 1000;
+    const E = CM.Tasks.roundMoney(CM.Tasks.estimateLink(g, [hub, area]) + Math.max(0, Math.round(km / 1.4) - 1) * CFG.cost.station.underground.M * ci);
     return { z: best.z, area: area, anchors: [hub, area], km: km, est: E, pj: best.pj, buildM: U.clamp(Math.round((24 + 5 * km) / 6) * 6, 30, 72) };
   };
   const upgradeCand = function (g, P) {
@@ -169,15 +169,22 @@
   // ---------------- 履约 ----------------
   const context = function (g) {
     const m = g.model, C = CM.Tasks.playerCompiled ? CM.Tasks.playerCompiled(g) : m.net ? m.net.C : g.compiled, sd = m.stDaily && !m.dailyStale ? m.stDaily : null;
-    const crowd = new Map(); for (const x of CM.Tasks.crowdOf(g)) crowd.set(x.lid, Math.max(crowd.get(x.lid) || 0, x.lf));
+    const crowd = new Map(); for (const x of CM.Tasks.crowdOf(g)) if (!x.noTrain) crowd.set(x.lid, Math.max(crowd.get(x.lid) || 0, x.lf));
     const f = CM.Macro && g.macro ? CM.Macro.cityFactors(g) : null;
     const d = CM.PlayerMetrics && CM.PlayerMetrics.enabled(g) ? CM.PlayerMetrics.snapshot(g) : CM.Tasks.scopedDaily(g);
     return { C: C, sd: sd, crowd: crowd, fare: d.avgFare || 0, ready: d.ready !== false && m.trafficReady(), cyc: f ? U.clamp(f.com, 0.7, 1.25) : 1 };
   };
   const areaIdx = function (ctx, a) { const C = ctx.C, out = []; if (!C || !a) return out; for (let i = 0; i < C.stations.length; i++) if (C.serviced[i] && U.dist(C.stations[i].x, C.stations[i].y, a.x, a.y) <= a.r + 0.5) out.push(i); return out; };
   const scope = function (g, c) {
-    if (c.type === 'upgrade') return g.tasks.evaluate({ type: 'lineCars', line: c.line, target: 8, start: c.cars0 }, g);
-    return g.tasks.evaluate({ type: 'connect', anchors: c.anchors }, g);
+    const upgrade = c.type === 'upgrade', t = upgrade ? { type: 'lineCars', line: c.line, target: 8, start: c.cars0 } : { type: 'connect', anchors: c.anchors };
+    const built = g.tasks.evaluate(t, g), m = g.model, net = m.net;
+    if (!built.ok || !net || !m.trafficReady()) return Object.assign({}, built, { ok: false });
+    for (const dt of ['wd', 'we']) for (const p of m.resultsFor(dt).per) {
+      const running = function (r) { return CM.Model.boardFreq(p, net, r) > 0; };
+      if (!upgrade && g.tasks.evaluate(t, g, running).ok) return built;
+      if (upgrade && net.C.routes.some(function (rt, r) { return rt.lineId === c.line && running(r); })) return built;
+    }
+    return { ok: false, value: built.value, text: '合同范围内的服务中断' };
   };
   Corp.scopeStatus = function (g, c) { return CM.Tasks.scopeStatus(c.type === 'upgrade' ? { type: 'lineCars', line: c.line, target: 8 } : { type: 'connect', anchors: c.anchors, zone: c.zone }, g); };
   // Locked projects retain their commitments, but the clock and payments pause.
@@ -192,14 +199,15 @@
     const sc = scope(g, c), idx = c.type === 'upgrade' ? [] : areaIdx(ctx, c.area);
     const lines = new Set(c.type === 'upgrade' ? [c.line] : []);
     for (const i of idx) for (const l of ctx.C.stationLines[i] || []) lines.add(l);
-    let lf = 0; lines.forEach(function (l) { lf = Math.max(lf, ctx.crowd.get(l) || 0); });
+    let lf = null; lines.forEach(function (l) { if (ctx.crowd.has(l)) lf = Math.max(lf || 0, ctx.crowd.get(l)); });
     const lim = c.type === 'upgrade' ? 1.0 : 1.1;
+    const crowd = lf != null && lf <= lim;
     let inn = 0; if (ctx.sd) for (const i of idx) inn += ctx.sd.inn[i] || 0;
-    return { conn: !!sc.ok, lf: lf, lim: lim, crowd: lf <= lim, n: (sc.ok ? 1 : 0) + (lf <= lim ? 1 : 0), inn: inn, r: c.forecast > 0 && ctx.sd ? inn / c.forecast : null };
+    return { conn: !!sc.ok, lf: lf, lim: lim, crowd: crowd, n: (sc.ok ? 1 : 0) + (crowd ? 1 : 0), inn: inn, r: c.forecast > 0 && ctx.sd ? inn / c.forecast : null };
   };
   // 物业收益与持有成本记入车站商业收入 / 成本（月末流水按月汇总），其余逐笔记入合同收支
-  const pay = function (g, c, key, v, note) { if (!(v > 0.05)) return; const prop = key === 'prop'; g.econ.income(prop ? 'commerce' : 'ppp', v); c.paid[key] = (c.paid[key] || 0) + v; if (!prop) g.econ.log('ppp', v, 'gen', note + '：' + c.title, when(g)); };
-  const charge = function (g, c, key, v, note) { if (!(v > 0.05)) return; const hold = key === 'hold'; g.econ.spend(hold ? 'todCost' : 'pppOut', v); c.paid[key] = (c.paid[key] || 0) + v; if (!hold) g.econ.log('pppOut', -v, 'gen', note + '：' + c.title, when(g)); };
+  const pay = function (g, c, key, v, note) { if (!(v > CM.Economy.MONEY_EPS)) return; const prop = key === 'prop'; g.econ.income(prop ? 'commerce' : 'ppp', v); c.paid[key] = (c.paid[key] || 0) + v; if (!prop) g.econ.log('ppp', v, 'gen', note + '：' + c.title, when(g)); };
+  const charge = function (g, c, key, v, note) { if (!(v > CM.Economy.MONEY_EPS)) return; const hold = key === 'hold'; g.econ.spend(hold ? 'todCost' : 'pppOut', v); c.paid[key] = (c.paid[key] || 0) + v; if (!hold) g.econ.log('pppOut', -v, 'gen', note + '：' + c.title, when(g)); };
   const close = function (g, P, c, status, why) {
     c.status = status; c.closed = g.ym(); if (why) c.why = why;
     P.contracts.splice(P.contracts.indexOf(c), 1); P.closed.push(c); if (P.closed.length > 30) P.closed.shift();
@@ -245,8 +253,13 @@
       else if (ym >= c.deadline) fail(g, P, c, '到 ' + ymText(c.deadline) + ' 仍未完成建设');
       return;
     }
+    // 少站长线的旧物业合同可能缺少客流预测，在可用数据出现时补算一次。
+    if (c.type === 'tod' && !(c.forecast > 0)) {
+      const F = forecast(g, ctx, c.area);
+      if (F > 0) c.forecast = F;
+    }
     const k = kpis(g, c, ctx), apF = k.n === 2 ? 1 : (k.n === 1 ? 0.7 : 0.3);
-    c.kpi = { conn: k.conn, lf: +k.lf.toFixed(3), lim: k.lim, crowd: k.crowd, f: apF, r: k.r == null ? null : +k.r.toFixed(3), inn: Math.round(k.inn) };
+    c.kpi = { conn: k.conn, lf: k.lf == null ? null : +k.lf.toFixed(3), lim: k.lim, crowd: k.crowd, f: apF, r: k.r == null ? null : +k.r.toFixed(3), inn: Math.round(k.inn) };
     pay(g, c, 'ap', c.opt.apM * apF, '可用性付费' + (apF < 1 ? '（考核扣减 ' + Math.round((1 - apF) * 100) + '%）' : ''));
     if (apF < 1) c.paid.cut = (c.paid.cut || 0) + c.opt.apM * (1 - apF);
     // 客流风险分担：按本月实际天数、全网平均每次票价折算
@@ -254,14 +267,15 @@
       const days = U.daysInMonth(g.clock.y, g.clock.m === 1 ? 12 : g.clock.m - 1), base = c.forecast * days * ctx.fare / 10000;
       if (c.opt.mrg && k.r < c.opt.mrg.lo) pay(g, c, 'mrg', (c.opt.mrg.lo - k.r) * base * c.opt.mrg.k, '客流保底补偿');
       if (c.opt.share && k.r > c.opt.share.hi) charge(g, c, 'share', (k.r - c.opt.share.hi) * base * c.opt.share.k, '超额客流分成');
-      // 铁路＋物业：物业收益随片区客流（活力）与经济周期，持有成本固定；客流低迷或经济下行时亏损
-      if (c.opt.propM > 0) { pay(g, c, 'prop', c.opt.propM * U.clamp(k.r, 0, 1.6) * ctx.cyc, '物业开发收益'); charge(g, c, 'hold', c.opt.holdM, '物业持有与运营成本'); }
+      // 铁路＋物业：物业收益随片区客流（活力）与经济周期变化。
+      if (c.opt.propM > 0) pay(g, c, 'prop', c.opt.propM * U.clamp(k.r, 0, 1.6) * ctx.cyc, '物业开发收益');
       c.hist = (c.hist || []).concat([[ym, +k.r.toFixed(3)]]).slice(-24);
     }
+    charge(g, c, 'hold', c.opt.holdM, '物业持有与运营成本');
     c.offline = k.conn ? 0 : (c.offline || 0) + 1;
     P.rating = U.clamp(P.rating + (k.n === 2 ? 0.25 : -1.5), 0, 100);
     if (c.offline >= 3) { fail(g, P, c, '服务连续 3 个月中断'); return; }
-    if (k.n < 2 && !c.warned) { c.warned = ym; say(g, '合同考核未达标：' + c.title, (k.conn ? '' : '合同范围内的服务中断；') + (k.crowd ? '' : '最拥挤区段早高峰满载率 ' + U.fmtPct(k.lf, 0) + '，高于 ' + U.fmtPct(k.lim, 0) + '；') + '本月可用性付费只付 ' + Math.round(apF * 100) + '%。', 'warn'); }
+    if (k.n < 2 && !c.warned) { c.warned = ym; say(g, '合同考核未达标：' + c.title, (k.conn ? '' : '合同范围内的服务中断；') + (k.crowd ? '' : k.lf == null ? '早高峰没有列车运行；' : '最拥挤区段早高峰满载率 ' + U.fmtPct(k.lf, 0) + '，高于 ' + U.fmtPct(k.lim, 0) + '；') + '本月可用性付费只付 ' + Math.round(apF * 100) + '%。', 'warn'); }
     if (k.n === 2) c.warned = 0;
     if (ym >= c.opsEnd) {
       P.rating = U.clamp(P.rating + 5, 0, 100); close(g, P, c, 'done');
@@ -271,6 +285,24 @@
 
   // ---------------- 月度结算（game.monthGen 在任务之后、拨款之前调用） ----------------
   const fresh = function (g) { return { v: 1, since: g.ym(), rating: 60, tenders: [], contracts: [], closed: [], seq: 1, next: g.ym(), cool: {} }; };
+  Corp.restore = function (s, ym) {
+    if (!s || !Array.isArray(s.contracts)) return null;
+    const tenders = Array.isArray(s.tenders) ? s.tenders : [], closed = Array.isArray(s.closed) ? s.closed : [];
+    const retired = tenders.filter(function (t) { return t.type === 'upgrade'; });
+    if (!retired.length && tenders === s.tenders && closed === s.closed) return s;
+    const pending = retired.filter(function (t) { return t.bid; }).map(function (t) {
+      return Object.assign({}, t, { status: 'cancelled', closed: ym, why: '扩容改造招标已停止，本次投标取消，未扣费且不影响信誉' });
+    });
+    return Object.assign({}, s, {
+      tenders: tenders.filter(function (t) { return t.type !== 'upgrade'; }),
+      closed: closed.concat(pending).slice(-30),
+    });
+  };
+  function cancelBid(g, P, t, why) {
+    t.status = 'cancelled'; t.closed = g.ym(); t.why = why;
+    P.closed.push(t); if (P.closed.length > 30) P.closed.shift();
+    say(g, '投标取消：' + t.title, why);
+  }
   Corp.monthly = function (g) {
     if (!Corp.enabled(g)) return;
     Corp.rebasePlayerScope(g);
@@ -290,12 +322,15 @@
       P.tenders.splice(P.tenders.indexOf(t), 1);
       // 兼容旧档中超额待评标的项目：不超限签约、不扣保证金，也不扣信誉。
       if (P.contracts.length >= RULE.active) {
-        t.status = 'cancelled'; t.closed = ym; t.why = '履约名额已满，本次投标取消，未扣费且不影响信誉';
-        P.closed.push(t); if (P.closed.length > 30) P.closed.shift();
-        say(g, '投标取消：' + t.title, t.why); continue;
+        cancelBid(g, P, t, '履约名额已满，本次投标取消，未扣费且不影响信誉');
+        continue;
       }
       const o = t.opts.find(function (x) { return x.key === t.bid.opt; }), p = t.bid.p;
       if (new U.RNG(hash(g.seed + ':' + t.id)).next() < p) {
+        if (E.funds < o.bond + o.land) {
+          cancelBid(g, P, t, '评标时一般资金不足，本次投标取消，未扣费且不影响信誉');
+          continue;
+        }
         const c = Object.assign({}, t, { opt: o, signed: ym, deadline: ym + t.buildM, phase: 'build', paid: {}, status: 'active' });
         delete c.opts; delete c.bid; delete c.expires;
         P.contracts.push(c);
@@ -450,8 +485,15 @@
     // 招标中
     body.appendChild(h('div', { class: 'fl-h tk-sech' }, ic('megaphone', 14), '招标中 · ' + P.tenders.length));
     if (!P.tenders.length) body.appendChild(h('div', { class: 'note' }, '暂无招标。政府约每 ' + RULE.every + ' 个月按城市需要提出一个项目' + (P.next > ym ? '（下次约 ' + ymText(P.next) + '）' : '') + '；不接合同也可以自主建设。'));
+    const docHead = function (type, record, status, bid) {
+      return h('div', { class: 'pp-doc' },
+        h('b', null, type),
+        record.id ? h('span', { class: 'pp-no' }, 'No. ' + String(record.id).toUpperCase()) : null,
+        h('span', { class: 'pp-stamp' + (bid ? ' blue' : '') }, status));
+    };
     for (const t of P.tenders) {
-      const c = h('div', { class: 'tk-card pp-card pp-tender' + (t.bid ? ' bid' : '') });
+      const c = h('div', { class: 'tk-card pp-card pp-paper pp-tender' + (t.bid ? ' bid' : '') });
+      c.appendChild(docHead('招标文件', t, t.bid ? '已投标' : '招标中', t.bid));
       c.appendChild(h('div', { class: 'tk-top' }, h('span', { class: 'badge b-blue' }, ic(TYPE[t.type].icon)),
         h('div', { class: 'grow' }, h('div', { class: 'tk-meta' }, typeTag(t), h('span', { class: 'tiny muted' }, t.bid ? '已投标' : (t.expires > ym ? '还可投标 ' + (t.expires - ym) + ' 个月' : '本月截止投标'))), h('b', { class: 'tk-title' }, t.title))));
       c.appendChild(h('div', { class: 'tk-desc' }, t.desc));
@@ -488,7 +530,8 @@
     if (!P.contracts.length) body.appendChild(h('div', { class: 'note' }, '还没有履约中的合同。'));
     for (const c of P.contracts) {
       const o = c.opt, left = c.phase === 'build' ? c.deadline - ym : c.opsEnd - ym, urg = c.phase === 'build' && left <= 6 ? ' hot' : (c.phase === 'build' && left <= 12 ? ' warm' : '');
-      const card = h('div', { class: 'tk-card pp-card' + urg + (c.phase === 'ops' && c.kpi && c.kpi.f === 1 ? ' ok' : '') });
+      const card = h('div', { class: 'tk-card pp-card pp-paper' + urg + (c.phase === 'ops' && c.kpi && c.kpi.f === 1 ? ' ok' : '') });
+      card.appendChild(docHead(c.phase === 'ops' ? '建设运营合同' : '建设合同', c, c.phase === 'ops' ? '运营中' : '已签约'));
       card.appendChild(h('div', { class: 'tk-top' }, h('span', { class: 'badge b-blue' }, ic(TYPE[c.type].icon)),
         h('div', { class: 'grow' }, h('div', { class: 'tk-meta' }, typeTag(c), h('span', { class: 'tag ' + (c.phase === 'ops' ? 'good' : 'info') }, c.phase === 'ops' ? '运营期' : '建设期'), h('span', { class: 'tiny muted' }, o.name)), h('b', { class: 'tk-title' }, c.title)),
         c.phase === 'build' ? this.taskRing(c.prog ? c.prog.v : 0, '') : null));
@@ -518,6 +561,10 @@
         self.confirm('退出合同？', '保证金不予退还，未来 ' + RULE.fail.months + ' 个月拨款 ×' + RULE.fail.grant + '，满意度与履约信誉下降。已建的线路照常归公司运营。', '退出合同', function () { Corp.quit(g, c.id); done(); }, true, 'warn');
       } }, '退出合同'));
       if (acts.length) card.appendChild(h('div', { class: 'row', style: { marginTop: '6px', justifyContent: 'flex-end' } }, acts));
+      card.appendChild(h('div', { class: 'pp-sign' },
+        h('span', null, '甲方：', h('b', null, city + '政府')),
+        h('span', null, '乙方：', h('b', null, city + '地铁公司')),
+        c.signed != null ? h('span', null, '签订于 ' + ymText(c.signed)) : null));
       body.appendChild(card);
     }
     // 已结束
