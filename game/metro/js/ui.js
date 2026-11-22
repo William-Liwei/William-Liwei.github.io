@@ -152,7 +152,7 @@
       h('button', { 'data-tip': '放大', 'data-act': 'cam.zoomIn', 'data-side': 'right', onclick: function () { R.zoomAt(R.w / 2, R.h / 2, 1.5); } }, ic('plus')),
       h('button', { 'data-tip': '缩小', 'data-act': 'cam.zoomOut', 'data-side': 'right', onclick: function () { R.zoomAt(R.w / 2, R.h / 2, 1 / 1.5); } }, ic('minus')),
       // 2D 与 2.5D 都平滑回到全图。
-      this.compass = h('button', { class: 'compass', 'data-tip': '视角复位：回到全图', 'data-act': 'cam.fit', 'data-side': 'right', 'aria-label': '视角复位', onclick: function () { self.resetView(); },
+      this.compass = h('button', { class: 'compass', 'data-tip': '北向复位并查看全图', 'data-act': 'cam.fit', 'data-side': 'right', 'aria-label': '北向复位并查看全图', onclick: function () { R.resetNorth(); self.resetView(); },
         html: '<svg class="needle" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.2" fill="none" stroke="currentColor" stroke-opacity=".35" stroke-width="1.4"/><path d="M12 3.6 15.1 12H8.9Z" fill="#e0483e"/><path d="M12 20.4 8.9 12h6.2Z" fill="currentColor" fill-opacity=".55"/></svg>' }));
     if (CM.ZoomControls) CM.ZoomControls.init(this);
     this.dock = h('aside', { id: 'dock', class: 'hud glass hidden' },

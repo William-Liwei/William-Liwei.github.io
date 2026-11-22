@@ -25,10 +25,15 @@
     const range = element('input', 'zoom-range'); range.type = 'range'; range.id = 'mapZoomRange';
     range.min = '0'; range.max = String(STEPS); range.step = '1'; range.setAttribute('aria-label', '地图缩放');
     const ends = element('div', 'zoom-ends'); ends.append(element('span', '', '全域'), element('span', '', '细节'));
+    const rotate = element('div', 'rotation-actions');
+    const turnLeft = element('button', 'btn sm', '逆转 15°'), turnRight = element('button', 'btn sm', '顺转 15°');
+    turnLeft.type = turnRight.type = 'button';
+    turnLeft.setAttribute('aria-label', '逆时针旋转地图 15 度'); turnRight.setAttribute('aria-label', '顺时针旋转地图 15 度');
+    rotate.append(turnLeft, turnRight);
     const actions = element('div', 'zoom-actions');
     const fit = element('button', 'btn sm', '查看全图'), home = element('button', 'btn sm', '回到起始位置');
     fit.type = home.type = 'button'; actions.append(fit, home);
-    panel.append(head, range, ends, actions);
+    panel.append(head, range, ends, rotate, actions);
     ui.zoomCtl.insertBefore(button, ui.compass || null);
     document.getElementById('app').appendChild(panel);
     const state = ui._zoomControls = { button: button, panel: panel, range: range, value: value, open: false };
@@ -59,6 +64,8 @@
       else return;
       e.preventDefault(); range.value = String(n); apply();
     });
+    turnLeft.addEventListener('click', function () { ui.R.rotateView(-Math.PI / 12); Z.update(ui); });
+    turnRight.addEventListener('click', function () { ui.R.rotateView(Math.PI / 12); Z.update(ui); });
     fit.addEventListener('click', function () { ui.resetView(); toggle(false, true); });
     home.addEventListener('click', function () {
       const g = CM.game; if (!g) return;
@@ -85,6 +92,7 @@
   Z.update = function (ui) {
     const state = ui && ui._zoomControls; if (!state) return;
     const R = ui.R, zoom = R.clampZoom(R.cam.tz), label = percent(zoom), limits = R.zoomLimits();
+    if (ui.compass) { const needle = ui.compass.querySelector('.needle'); if (needle) needle.style.transform = 'rotate(' + (Math.round((R.cam.rotation || 0) * 180 / Math.PI * 1e6) / 1e6) + 'deg)'; }
     if (state.label !== label) {
       state.label = label; state.button.textContent = label; state.value.textContent = label;
       state.range.setAttribute('aria-valuetext', label);

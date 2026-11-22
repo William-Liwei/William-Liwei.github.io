@@ -152,7 +152,7 @@
     const briefNext = isNew && !g.tutorial && CM.DATA.briefing && ui.showBriefing;
     if (!briefNext) ui.closeScreen();
     const mp = CM.curMap(), cam = (g.mapId === 'sh' && CM.CompanyRoles && CM.CompanyRoles.camera(g.playerCity)) || mp.cam || { cx: CFG.W / 2, cy: CFG.H / 2, zoom: 18 };
-    R.cam.cx = cam.cx; R.cam.cy = cam.cy; R.cam.zoom = R.cam.tz = cam.zoom; R.cam.view = 1; R.cam.t = 1; R.cam.under = R.cam.tu = 0; R.cam.anchor = null; R.cam.fly = null;
+    R.cam.cx = cam.cx; R.cam.cy = cam.cy; R.cam.zoom = R.cam.tz = cam.zoom; R.cam.view = 1; R.cam.t = 1; R.cam.rotation = 0; R.cam.under = R.cam.tu = 0; R.cam.anchor = null; R.cam.fly = null;
     g.setSpeed(0);
     if (g.tutorial && CM.Tutorial) {
       if (isNew) ui.doAutosave(); else ui.markSaved(g, Date.now());

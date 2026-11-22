@@ -7,6 +7,8 @@
 #zoomPanel .zoom-range { display: block; width: 100%; min-width: 0; height: 40px; margin: 5px 0 0; padding: 0; cursor: ew-resize; accent-color: var(--accent); touch-action: none; }
 .zoom-ends { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin: -2px 0 12px; }
 .zoom-actions { display: flex; gap: 6px; }
+.rotation-actions { display: flex; gap: 6px; }
+.rotation-actions button { flex: 1; min-width: 0; padding: 4px 6px; font-variant-numeric: tabular-nums; }
 #zoomPanel .zoom-actions button { flex: 1; min-height: 36px; white-space: normal; line-height: 1.25; }
 #zoomPanel :focus-visible, #zoomCtl .zoom-value:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 body.cinema #zoomPanel, .panel-editing #zoomPanel { display: none; }

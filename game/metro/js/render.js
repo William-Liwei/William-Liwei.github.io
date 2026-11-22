@@ -83,7 +83,7 @@
   function Renderer(canvas) {
     this.cv = canvas; this.ctx = canvas.getContext('2d');
     this.dpr = 1; this.w = 0; this.h = 0;
-    this.cam = { cx: 30, cy: 40, zoom: 13, tz: 13, anchor: null, view: 0, t: 0, under: 0, tu: 0, fly: null };
+    this.cam = { cx: 30, cy: 40, zoom: 13, tz: 13, anchor: null, view: 0, t: 0, rotation: 0, under: 0, tu: 0, fly: null };
     this.ground = new Map(); this.iso = new Map(); this.cachePx = 0;
     this.overview = null; this.overviewStale = true; this.overviewAt = 0;
     this.frame = 0; this.time = 0;
@@ -705,17 +705,22 @@
 
   // ---------------- 相机 ----------------
   // 所有输入共用同一倍率范围。最远处随屏幕和两种投影变化，区域大地图在手机上也能完整看见。
-  Renderer.prototype.fitZoom = function (view, viewport) {
+  function viewMatrix(view, rotation) {
+    const t = U.easeInOut(view == null ? 0 : U.clamp(view, 0, 1));
+    const a = U.lerp(1, ISO[0], t), b = U.lerp(0, ISO[1], t), c = U.lerp(0, ISO[2], t), d = U.lerp(1, ISO[3], t);
+    const angle = Number.isFinite(rotation) ? rotation : 0, co = Math.cos(angle), si = Math.sin(angle);
+    return [co * a - si * c, co * b - si * d, si * a + co * c, si * b + co * d];
+  }
+  Renderer.prototype.fitZoom = function (view, viewport, rotation) {
     const w = Math.max(1, this.w || window.innerWidth || 1), h = Math.max(1, this.h || window.innerHeight || 1);
     const vp = viewport || { x0: 0, y0: 0, x1: w, y1: h };
     const vw = Math.max(1, vp.x1 - vp.x0), vh = Math.max(1, vp.y1 - vp.y0), pad = Math.min(32, vw * 0.08, vh * 0.08);
-    const t = U.easeInOut(view == null ? this.cam.view : U.clamp(view, 0, 1));
-    const m00 = U.lerp(1, ISO[0], t), m01 = U.lerp(0, ISO[1], t), m10 = U.lerp(0, ISO[2], t), m11 = U.lerp(1, ISO[3], t);
-    return Math.min(MAX_ZOOM, (vw - 2 * pad) / (Math.abs(m00) * CFG.W + Math.abs(m01) * CFG.H),
-      (vh - 2 * pad) / (Math.abs(m10) * CFG.W + Math.abs(m11) * CFG.H));
+    const M = viewMatrix(view == null ? this.cam.view : view, rotation == null ? this.cam.rotation : rotation);
+    return Math.min(MAX_ZOOM, (vw - 2 * pad) / (Math.abs(M[0]) * CFG.W + Math.abs(M[1]) * CFG.H),
+      (vh - 2 * pad) / (Math.abs(M[2]) * CFG.W + Math.abs(M[3]) * CFG.H));
   };
   Renderer.prototype.zoomLimits = function () {
-    const key = [this.w || window.innerWidth, this.h || window.innerHeight, CFG.W, CFG.H].join(':');
+    const key = [this.w || window.innerWidth, this.h || window.innerHeight, CFG.W, CFG.H, (this.cam.rotation || 0).toFixed(3)].join(':');
     if (this._zoomLimitsKey !== key) {
       this._zoomLimitsKey = key;
       this._zoomLimits = { min: Math.max(0.01, Math.min(1, this.fitZoom(0), this.fitZoom(1)) * 0.45), max: MAX_ZOOM };
@@ -727,12 +732,11 @@
     return U.clamp(typeof zoom !== 'number' || Number.isNaN(zoom) ? 13 : zoom, lim.min, lim.max);
   };
   Renderer.prototype.computeTransform = function () {
-    const c = this.cam, t = U.easeInOut(c.t);
-    const m00 = U.lerp(1, ISO[0], t), m01 = U.lerp(0, ISO[1], t), m10 = U.lerp(0, ISO[2], t), m11 = U.lerp(1, ISO[3], t);
-    this.M = [m00, m01, m10, m11]; this.z = c.zoom;
-    this.det = m00 * m11 - m01 * m10;
-    this.ox = this.w / 2 - (m00 * c.cx + m01 * c.cy) * c.zoom;
-    this.oy = this.h / 2 - (m10 * c.cx + m11 * c.cy) * c.zoom;
+    const c = this.cam, t = U.easeInOut(c.t), M = viewMatrix(c.t, c.rotation || 0);
+    this.M = M; this.z = c.zoom;
+    this.det = M[0] * M[3] - M[1] * M[2];
+    this.ox = this.w / 2 - (M[0] * c.cx + M[1] * c.cy) * c.zoom;
+    this.oy = this.h / 2 - (M[2] * c.cx + M[3] * c.cy) * c.zoom;
     this.hs = c.zoom * HSF * t;
     this.tEase = t;
   };
@@ -770,6 +774,26 @@
     const c = this.cam;
     c.fly = { fx: c.cx, fy: c.cy, fz: this.clampZoom(c.zoom), tx: x, ty: y, tzm: this.clampZoom(zoom == null ? Math.max(c.zoom, 20) : zoom), t: 0 };
     c.anchor = null;
+  };
+  Renderer.prototype.rotateView = function (delta, viewport) {
+    const c = this.cam, ui = CM.ui;
+    if (!Number.isFinite(delta) || !delta) return;
+    const vp = viewport || (ui && ui.R === this && ui.mapViewport ? ui.mapViewport() : { x0: 0, y0: 0, x1: this.w, y1: this.h });
+    const oldFit = this.fitZoom(c.view, vp, c.rotation || 0), wasFit = c.zoom <= oldFit * 1.03;
+    c.rotation = ((c.rotation || 0) + delta) % (Math.PI * 2);
+    c.anchor = null; c.fly = null;
+    if (wasFit) {
+      const z = this.clampZoom(this.fitZoom(c.view, vp, c.rotation)), M = viewMatrix(c.view, c.rotation);
+      const dx = (vp.x0 + vp.x1) / 2 - this.w / 2, dy = (vp.y0 + vp.y1) / 2 - this.h / 2;
+      const det = M[0] * M[3] - M[1] * M[2];
+      c.cx = CFG.W / 2 - (M[3] * dx - M[1] * dy) / det / z;
+      c.cy = CFG.H / 2 - (M[0] * dy - M[2] * dx) / det / z;
+      c.zoom = c.tz = z;
+    } else c.zoom = c.tz = this.clampZoom(c.zoom);
+    this.clampCam(); this.computeTransform();
+  };
+  Renderer.prototype.resetNorth = function () {
+    this.cam.rotation = 0; this.cam.anchor = null; this.cam.fly = null; this.computeTransform();
   };
   Renderer.prototype.setView = function (iso) { this.cam.view = iso ? 1 : 0; };
   Renderer.prototype.setUnder = function (on) { this.cam.tu = on ? 1 : 0; };
@@ -5888,8 +5912,7 @@
     if (CM.Follow && CM.Follow.active()) CM.Follow.stop();
     const ui = CM.ui;
     const vp = viewport || (ui && ui.R === this && ui.mapViewport ? ui.mapViewport() : { x0: 0, y0: 0, x1: this.w, y1: this.h });
-    const z = this.clampZoom(this.fitZoom(this.cam.view, vp)), t = U.easeInOut(this.cam.view);
-    const M = [U.lerp(1, ISO[0], t), U.lerp(0, ISO[1], t), U.lerp(0, ISO[2], t), U.lerp(1, ISO[3], t)];
+    const z = this.clampZoom(this.fitZoom(this.cam.view, vp, this.cam.rotation)), M = viewMatrix(this.cam.view, this.cam.rotation);
     const dx = this.w / 2 - (vp.x0 + vp.x1) / 2, dy = this.h / 2 - (vp.y0 + vp.y1) / 2, det = M[0] * M[3] - M[1] * M[2];
     this.flyTo(CFG.W / 2 + (M[3] * dx - M[1] * dy) / det / z, CFG.H / 2 + (M[0] * dy - M[2] * dx) / det / z, z);
     this.cam.fly.duration = 0.9;

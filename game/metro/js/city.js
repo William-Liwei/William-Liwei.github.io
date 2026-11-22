@@ -1120,12 +1120,12 @@
   };
 
   // ---------------- 道路 ----------------
-  City.prototype.edgeVerts = function (e) {
-    const W = this.W, VW = this.VW;
-    if (e < this.eOff[1]) { const j = (e / W) | 0, i = e % W; return [j * VW + i, j * VW + i + 1]; }
-    if (e < this.eOff[2]) { const k = e - this.eOff[1]; const j = (k / VW) | 0, i = k % VW; return [j * VW + i, (j + 1) * VW + i]; }
-    if (e < this.eOff[3]) { const k = e - this.eOff[2]; const j = (k / W) | 0, i = k % W; return [j * VW + i, (j + 1) * VW + i + 1]; }
-    const k = e - this.eOff[3]; const j = (k / W) | 0, i = k % W; return [j * VW + i + 1, (j + 1) * VW + i];
+  City.prototype.edgeVerts = function (e, out) {
+    const W = this.W, VW = this.VW, uv = out || [0, 0];
+    if (e < this.eOff[1]) { const j = (e / W) | 0, i = e % W; uv[0] = j * VW + i; uv[1] = uv[0] + 1; return uv; }
+    if (e < this.eOff[2]) { const k = e - this.eOff[1]; const j = (k / VW) | 0, i = k % VW; uv[0] = j * VW + i; uv[1] = uv[0] + VW; return uv; }
+    if (e < this.eOff[3]) { const k = e - this.eOff[2]; const j = (k / W) | 0, i = k % W; uv[0] = j * VW + i; uv[1] = uv[0] + VW + 1; return uv; }
+    const k = e - this.eOff[3]; const j = (k / W) | 0, i = k % W; uv[0] = j * VW + i + 1; uv[1] = uv[0] + VW - 1; return uv;
   };
   // 两相邻顶点之间的边编号
   City.prototype.edgeBetween = function (i, j, ni, nj) {
@@ -1430,6 +1430,7 @@
   City.prototype.buildGraphsGen = function* () {
     const V = this.V, VW = this.VW, nTot = this.eCls.length;
     const vx = this.vx, vy = this.vy, CM_ = CFG.CELL_M;
+    const edgeBuf = [0, 0];
     // 地面铁路：没有通道处阻断支路与次干道（含步行），有通道时绕行（v1.9）
     this.computeRailBlock();
     yield;
@@ -1443,7 +1444,7 @@
       if ((this.eBlock[e] && c < 3) || this.eBlock[e] === 2) continue;
       if (eRail[e] === 2 && c < 3) continue;
       walkable[e] = 1;
-      const uv = this.edgeVerts(e); wDeg[uv[0]]++; wDeg[uv[1]]++;
+      const uv = this.edgeVerts(e, edgeBuf); wDeg[uv[0]]++; wDeg[uv[1]]++;
     }
     const wStart = new Int32Array(V + 1);
     for (let v = 0; v < V; v++) wStart[v + 1] = wStart[v] + wDeg[v];
@@ -1451,7 +1452,7 @@
     const fill = new Int32Array(V);
     for (let e = 0; e < nTot; e++) {
       if (!walkable[e]) continue;
-      const uv = this.edgeVerts(e), a = uv[0], b = uv[1];
+      const uv = this.edgeVerts(e, edgeBuf), a = uv[0], b = uv[1];
       const L = U.dist(vx[a], vy[a], vx[b], vy[b]) * CM_ + (this.eCls[e] < 3 ? eDet[e] : 0);
       wTo[wStart[a] + fill[a]] = b; wLen[wStart[a] + fill[a]] = L; fill[a]++;
       wTo[wStart[b] + fill[b]] = a; wLen[wStart[b] + fill[b]] = L; fill[b]++;
@@ -1480,14 +1481,14 @@
       const c = this.eCls[e];
       if (!carOn(e, c)) continue;
       carE.push(e);
-      const uv = this.edgeVerts(e); cDeg[uv[0]]++; cDeg[uv[1]]++;
+      const uv = this.edgeVerts(e, edgeBuf); cDeg[uv[0]]++; cDeg[uv[1]]++;
     }
     const cStart = new Int32Array(V + 1);
     for (let v = 0; v < V; v++) cStart[v + 1] = cStart[v] + cDeg[v];
     const cEdge = new Int32Array(cStart[V]);
     const cf = new Int32Array(V);
     for (const e of carE) {
-      const uv = this.edgeVerts(e);
+      const uv = this.edgeVerts(e, edgeBuf);
       cEdge[cStart[uv[0]] + cf[uv[0]]++] = e;
       cEdge[cStart[uv[1]] + cf[uv[1]]++] = e;
     }
@@ -1537,7 +1538,7 @@
       let cur = s, e = e0, lenM = 0, bridge = 0, guard = 0;
       for (;;) {
         visited[e] = 1;
-        const uv = self.edgeVerts(e);
+        const uv = self.edgeVerts(e, edgeBuf);
         const nxt = uv[0] === cur ? uv[1] : uv[0];
         lenM += U.dist(vx[cur], vy[cur], vx[nxt], vy[nxt]) * CM_ + detOf(e, self.eCls[e]);
         if (self.eBlock[e]) bridge = 1;
@@ -1554,7 +1555,7 @@
       if (!forced[v]) continue;
       for (let k = cStart[v]; k < cStart[v + 1]; k++) if (!visited[cEdge[k]]) walkChain(v, cEdge[k]);
     }
-    for (const e of carE) if (!visited[e]) { const uv = this.edgeVerts(e); forced[uv[0]] = 1; walkChain(uv[0], e); }
+    for (const e of carE) if (!visited[e]) { const uv = this.edgeVerts(e, edgeBuf); forced[uv[0]] = 1; walkChain(uv[0], e); }
 
     // 节点编号
     const vertNode = new Int32Array(V).fill(-1);
@@ -1603,7 +1604,7 @@
     this.nearArt = new Uint8Array(this.N);
     for (let e = 0; e < nTot; e++) {
       if (this.eCls[e] < 3) continue;
-      const uv = this.edgeVerts(e);
+      const uv = this.edgeVerts(e, edgeBuf);
       for (const v of uv) {
         const i = v % VW, j = (v / VW) | 0;
         for (let dj = -1; dj <= 0; dj++) for (let di = -1; di <= 0; di++) {
