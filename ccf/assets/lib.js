@@ -141,6 +141,17 @@ function buildAcceptanceIndex(accList) {
   return createConferenceIndex((accList || []).filter((item) => item?.title && Array.isArray(item.accept_rates)));
 }
 
+export function mergeAcceptanceHistory(rates) {
+  const years = new Map();
+  for (const entry of rates) {
+    const year = Number(entry?.year);
+    if (!Number.isInteger(year) || year < 1900 || year > 2999
+      || !Number.isFinite(entry.rate) || entry.rate < 0 || entry.rate > 1 || years.has(year)) continue;
+    years.set(year, { ...entry, year });
+  }
+  return [...years.values()].sort((a, b) => b.year - a.year);
+}
+
 // Flattens ccfddl YAML (already parsed) into one row per conference edition.
 export function processConferences(confList, accList) {
   const acc = buildAcceptanceIndex(accList);
@@ -155,10 +166,12 @@ export function processConferences(confList, accList) {
     if (ambiguous && matches && !matches.every((item) =>
       (conferenceDblp(conf) && conferenceDblp(item) === conferenceDblp(conf)) ||
       (conferenceSource(conf) && conferenceSource(item) === conferenceSource(conf)))) matches = null;
-    const rates = (matches || []).flatMap((item) => item.accept_rates)
-      .filter((r) => r?.year != null && typeof r.rate === 'number' && Number.isFinite(r.rate))
-      .map((r) => ({ year: Number(r.year), rate: r.rate, str: r.str || '' }))
-      .sort((a, b) => b.year - a.year);
+    const rates = mergeAcceptanceHistory((matches || []).flatMap((item) => item.accept_rates).filter(Boolean).map((r) => ({
+      year: r.year, rate: r.rate, str: r.str || '',
+      ...(Number.isInteger(r.accepted) && r.accepted >= 0 ? { accepted: r.accepted } : {}),
+      ...(Number.isInteger(r.submitted) && r.submitted > 0 ? { submitted: r.submitted } : {}),
+      ...(safeUrl(r.source) ? { source: safeUrl(r.source) } : {})
+    })));
     for (const c of conf.confs) {
       const timeline = (c.timeline || []).map((t) => {
         const round = { deadline: wallTimeToUtc(t.deadline, c.timezone) };
@@ -181,7 +194,8 @@ export function processConferences(confList, accList) {
         place: c.place || '',
         timezone: c.timezone || 'AoE',
         timeline,
-        acceptance: rate
+        acceptance: rate,
+        ...(rates.length ? { acceptanceHistory: rates } : {})
       });
     }
   }

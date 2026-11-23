@@ -1,5 +1,5 @@
 import {
-  matchesConferenceRegion, matchesRank, conferenceIdentity, createConferenceIndex, findConferenceRows, latestConferenceYears, nextConferenceDeadline,
+  matchesConferenceRegion, matchesRank, conferenceIdentity, createConferenceIndex, findConferenceRows, latestConferenceYears, mergeAcceptanceHistory, nextConferenceDeadline,
   deadlineStage, deadlineRoundsHTML, conferenceCopyText, matchesConferenceStatus, journalPartitionLines as partitionLines, journalSearchText, searchTerms, esc, formatCountdown, formatInZone, parseTimezone, pickDeadline, processConferences, safeUrl, wallTimeToUtc
 } from './lib.js';
 import {favoriteKey, readStored, writeStored, favoriteSet, serializeFavoritesBackup, importFavoritesBackup, FAVORITES_BACKUP_MAX_BYTES, FAVORITES_KEY, PREFERENCES_KEY} from './preferences.js';
@@ -13,6 +13,8 @@ let favorites = favoriteSet(readStored(storage, FAVORITES_KEY, []));
 
 const PAGE_SIZE = 50;
 const CONF_CACHE_KEY = 'ccfonline-conferences-v4';
+const HISTORY_DEFAULT_KEY = 'ccfonline-acceptance-open';
+const COMPARE_LIMIT = 4;
 const LEGACY_CACHE_KEYS = ['conferenceData_v2', 'acceptanceRateData_v2', 'lastUpdate_v2', 'ccfonline-conferences-v3'];
 const STALE_MS = 24 * 3600 * 1000;
 // ccfddl publishes the merged YAML on the `page` branch of ccfddl/ccfddl.github.io;
@@ -31,6 +33,10 @@ const SUB_NAMES = {
 const RANK_ORDER = { A: 0, B: 1, C: 2, N: 3 };
 
 const $ = (sel) => document.querySelector(sel);
+let openHistoryByDefault = readStored(storage, HISTORY_DEFAULT_KEY, false) === true;
+const historyOverrides = new Map();
+let comparisonRows = [];
+let selectedComparisons = new Set();
 
 // ---------- Data ----------
 
@@ -226,6 +232,7 @@ async function refreshConferences({ silent = false } = {}) {
 
 const rankBadge = (rank) => `<span class="rank rank-${esc(rank || 'N')}">${rank && rank !== 'N' ? esc(rank) : '—'}</span>`;
 const sub = (text) => (text ? `<span class="cell-sub">${text}</span>` : '');
+const missingValue = '<span class="muted">—</span>';
 
 function deadlineZone(mode, row) {
   if (mode === 'local') return null;
@@ -251,10 +258,98 @@ function deadlineCell(row) {
     + '</div>' + rounds;
 }
 
+function acceptanceHistory(row) {
+  const editions = findConferenceRows(data.confIndex, row) || [row];
+  const full = row.acceptanceHistory || editions.find((edition) => edition.acceptanceHistory?.length)?.acceptanceHistory || [];
+  return mergeAcceptanceHistory([...full, ...editions.map((edition) => edition.acceptance)]);
+}
+
+function acceptanceRateHTML(entry) {
+  const rate = `${(entry.rate * 100).toFixed(1)}%`;
+  const source = safeUrl(entry.source);
+  const text = source ? `<a href="${esc(source)}" target="_blank" rel="noopener" title="查看 ${entry.year} 年数据来源">${rate}</a>` : `<span>${rate}</span>`;
+  const counts = Number.isInteger(entry.accepted) && Number.isInteger(entry.submitted) && entry.accepted <= entry.submitted
+    ? sub(`${entry.accepted.toLocaleString()} / ${entry.submitted.toLocaleString()}`) : '';
+  return text + counts;
+}
+
+function acceptanceDetails(row, tab = state.tab) {
+  const entries = acceptanceHistory(row);
+  const key = JSON.stringify([tab, conferenceIdentity(row), row.year]);
+  const open = historyOverrides.get(key) ?? openHistoryByDefault;
+  const content = entries.length
+    ? `<dl>${entries.map((entry) => `<div><dt>${entry.year}</dt><dd>${acceptanceRateHTML(entry)}</dd></div>`).join('')}</dl>`
+    : '<p>暂无历年录用数据</p>';
+  return `<details class="acceptance-history" data-history-key="${esc(key)}"${open ? ' open' : ''}>`
+    + `<summary>历年录用率${entries.length ? `（${entries.length}）` : ''}</summary>${content}</details>`;
+}
+
 function acceptanceCell(row) {
   const a = row.acceptance;
-  if (!a) return '<span class="muted">—</span>';
-  return `<span title="${esc(a.str)}">${(a.rate * 100).toFixed(1)}%</span>${sub(`${esc(a.year)} 年`)}`;
+  const headline = a ? `<span title="${esc(a.str)}">${(a.rate * 100).toFixed(1)}%</span>${sub(`${esc(a.year)} 年`)}` : missingValue;
+  return headline + acceptanceDetails(row);
+}
+
+function savedConferences() {
+  const rows = new Map();
+  for (const row of data.conf || []) {
+    const key = favoriteKey(row, 'conf');
+    if (favorites.has(key) && (!rows.has(key) || row.year > rows.get(key).year)) rows.set(key, row);
+  }
+  for (const item of data.ccf || []) {
+    if (item.type !== '会议') continue;
+    const key = favoriteKey(item, 'ccf');
+    if (!favorites.has(key) || rows.has(key)) continue;
+    const matches = findConferenceRows(data.confIndex, item) || [];
+    const latest = matches.reduce((best, row) => !best || row.year > best.year ? row : best, null);
+    if (latest && rows.has(favoriteKey(latest, 'conf'))) continue;
+    rows.set(key, latest || { ...item, title: item.name || item.full, rank: item.level, link: item.url });
+  }
+  return [...rows].map(([key, row]) => ({ key, row })).sort((a, b) => a.row.title.localeCompare(b.row.title));
+}
+
+function renderComparison() {
+  const rows = comparisonRows.filter(({ key }) => selectedComparisons.has(key)).map(({ row }) => row);
+  const showTable = rows.length >= 2;
+  $('#compare-status').textContent = comparisonRows.length < 2 ? '请先收藏至少两个会议，即可并排对比。'
+    : showTable ? '截稿采用当前选择的时区。录用数 / 投稿数及统计口径以对应数据来源为准。' : '请再选会议，至少选择两个。';
+  $('#compare-options').hidden = comparisonRows.length < 2;
+  $('#compare-results').hidden = !showTable;
+  $('#compare-choices').querySelectorAll('input').forEach((input) => {
+    input.disabled = !input.checked && rows.length === COMPARE_LIMIT;
+  });
+  if (!showTable) {
+    $('#compare-results').innerHTML = '';
+    return;
+  }
+  const history = rows.map((row) => new Map(acceptanceHistory(row).map((entry) => [entry.year, entry])));
+  const years = [...new Set(history.flatMap((entries) => [...entries.keys()]))].sort((a, b) => b - a);
+  const line = (label, values) => `<tr><th scope="row">${label}</th>${values.map((value) => `<td>${value || missingValue}</td>`).join('')}</tr>`;
+  const headings = rows.map((row) => {
+    const label = esc([row.title, row.year].filter(Boolean).join(' '));
+    const url = safeUrl(row.link);
+    return `<th scope="col">${url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${label}</a>` : label}</th>`;
+  }).join('');
+  const deadline = (row) => row.dl
+    ? esc(formatInZone(row.dl.deadline, deadlineZone(state.filters.conf.tz, row), true)) : '待公布';
+  const annual = years.length
+    ? years.map((year) => line(`${year} 录用率`, history.map((entries) => entries.has(year) ? acceptanceRateHTML(entries.get(year)) : ''))).join('')
+    : line('历年录用率', rows.map(() => '暂无数据'));
+  $('#compare-results').innerHTML = `<table><thead><tr><th scope="col">会议</th>${headings}</tr></thead><tbody>`
+    + line('CCF', rows.map((row) => rankBadge(row.rank)))
+    + line('地点', rows.map((row) => esc(row.place || '')))
+    + line('全文截稿', rows.map(deadline))
+    + annual + '</tbody></table>';
+}
+
+function openComparison() {
+  comparisonRows = savedConferences();
+  selectedComparisons = new Set(comparisonRows.filter(({ key }) => selectedComparisons.has(key)).map(({ key }) => key));
+  if (selectedComparisons.size === 0) selectedComparisons = new Set(comparisonRows.slice(0, 2).map(({ key }) => key));
+  $('#compare-choices').innerHTML = comparisonRows.map(({ key, row }, i) =>
+    `<label><input type="checkbox" value="${i}"${selectedComparisons.has(key) ? ' checked' : ''}> ${esc(row.title)}</label>`).join('');
+  renderComparison();
+  $('#compare-dialog').showModal();
 }
 
 function journalMetrics(j, versions) {
@@ -351,9 +446,9 @@ const TABS = {
       { label: '指标 / 截稿', render: (r) => {
         if (r.type === '期刊') return journalMetrics(r, data.meta || {}) || '<span class="muted">未收录于 JCR</span>';
         const next = nextConferenceDeadline(data.confIndex, r);
-        if (!next) return '<span class="muted">—</span>';
-        return `<div class="deadline status-${next.status}"><time>${esc(formatInZone(next.deadline, BEIJING))}</time>`
-          + `<span class="countdown">${esc(next.year)} · ${esc(formatCountdown(next.deadline))}</span></div>`;
+        const headline = next ? `<div class="deadline status-${next.status}"><time>${esc(formatInZone(next.deadline, BEIJING))}</time>`
+          + `<span class="countdown">${esc(next.year)} · ${esc(formatCountdown(next.deadline))}</span></div>` : missingValue;
+        return headline + acceptanceDetails(r);
       } },
       { label: '', render: (r, i) => copyBtn(i) }
     ],
@@ -602,7 +697,12 @@ function render() {
   const start = (state.page - 1) * PAGE_SIZE;
   const sort = state.sort[state.tab];
   const focusedSort = document.activeElement?.closest('#thead [data-sort]')?.dataset.sort;
+  const focusedHistory = document.activeElement?.closest('#tbody details[data-history-key]')?.dataset.historyKey;
   const openRounds = new Set([...$('#tbody').querySelectorAll('details[data-rounds-key][open]')].map(node => node.dataset.roundsKey));
+  $('#tbody').querySelectorAll('details[data-history-key]').forEach((node) => {
+    if (node.open === openHistoryByDefault) historyOverrides.delete(node.dataset.historyKey);
+    else historyOverrides.set(node.dataset.historyKey, node.open);
+  });
 
   $('#thead').innerHTML = `<tr>${tab.columns.map((c) => {
     if (!c.sort) return `<th scope="col">${c.label ? esc(c.label) : '<span class="visually-hidden">操作</span>'}</th>`;
@@ -615,11 +715,18 @@ function render() {
     return `<td data-label="${esc(c.label)}"${cls}><div class="cell-value">${c.render(row, start + i)}</div></td>`;
   }).join('')}</tr>`).join('');
   $('#tbody').querySelectorAll('details[data-rounds-key]').forEach(node => { node.open = openRounds.has(node.dataset.roundsKey); });
+  if (focusedHistory) {
+    [...$('#tbody').querySelectorAll('details[data-history-key]')].find((node) => node.dataset.historyKey === focusedHistory)
+      ?.querySelector('summary').focus({ preventScroll: true });
+  }
 
   $('#empty').hidden = state.view.length > 0;
   $('#empty p').textContent = state.savedOnly ? '当前条件下没有收藏，试试取消“只看收藏”或调整筛选。' : '没有符合条件的结果，试试减少筛选条件。';
   $('#empty-keep-query').hidden = !state.q.trim();
   $('#favorites-only').checked = state.savedOnly;
+  $('#history-default').hidden = state.tab === 'jcr';
+  $('#compare-favorites').hidden = state.tab === 'jcr';
+  $('#history-default').setAttribute('aria-pressed', String(openHistoryByDefault));
   $('#favorites-count').textContent = new Set(data[state.tab].filter((r) => favorites.has(favoriteKey(r,state.tab))).map((r) => favoriteKey(r,state.tab))).size;
   $('#loading').hidden = true;
   $('#data-retry').hidden = true;
@@ -651,6 +758,8 @@ async function showTab(tab, { resetPage = true } = {}) {
   $('#data-retry').hidden = true;
   $('#export-calendar').disabled = true;
   $('#export-results').disabled = true;
+  $('#history-default').hidden = true;
+  $('#compare-favorites').hidden = true;
   $('#panel').setAttribute('aria-busy', 'true');
   if (!data[tab]) {
     $('#thead').innerHTML = '';
@@ -861,6 +970,21 @@ function bindEvents() {
     state.savedOnly = e.target.checked;
     state.page = 1;
     render();
+  });
+  $('#history-default').addEventListener('click', (e) => {
+    openHistoryByDefault = !openHistoryByDefault;
+    historyOverrides.clear();
+    writeStored(storage, HISTORY_DEFAULT_KEY, openHistoryByDefault);
+    e.currentTarget.setAttribute('aria-pressed', String(openHistoryByDefault));
+    $('#tbody').querySelectorAll('details[data-history-key]').forEach((node) => { node.open = openHistoryByDefault; });
+  });
+  $('#compare-favorites').addEventListener('click', openComparison);
+  $('#compare-choices').addEventListener('change', (e) => {
+    const key = comparisonRows[Number(e.target.value)]?.key;
+    if (!key) return;
+    if (e.target.checked) selectedComparisons.add(key);
+    else selectedComparisons.delete(key);
+    renderComparison();
   });
   $('#export-favorites').addEventListener('click', exportFavorites);
   $('#import-favorites').addEventListener('click', () => $('#favorites-file').click());

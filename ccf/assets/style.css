@@ -297,6 +297,34 @@ th[aria-sort="descending"] .sort-btn::after { content: "↓"; opacity: 1; color:
 .deadline-rounds time { display: inline; font: inherit; }
 .round-comment { color: var(--muted); overflow-wrap: anywhere; }
 
+.acceptance-history { min-width: 9rem; font-size: .78rem; white-space: normal; }
+.acceptance-history summary { padding-block: 7px; color: var(--gold); cursor: pointer; }
+.acceptance-history dl { margin: 0; max-height: 16rem; overflow: auto; }
+.acceptance-history dl > div { display: flex; justify-content: space-between; gap: 10px; padding: 5px 6px; border-top: 1px solid var(--line); }
+.acceptance-history dd { margin: 0; text-align: end; font-variant-numeric: tabular-nums; }
+.acceptance-history p { margin: 2px 0 8px; color: var(--muted); }
+.acceptance-history .cell-sub, .compare-dialog .cell-sub { font-size: .72rem; }
+#history-default[aria-pressed="true"] { border-color: var(--gold-bg); background: var(--gold-soft); color: var(--gold); }
+.compare-dialog {
+  box-sizing: border-box; width: min(860px, calc(100% - 24px)); max-height: calc(100dvh - 24px);
+  padding: clamp(14px, 4vw, 26px); overflow: auto;
+  border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink);
+}
+.compare-dialog::backdrop { background: rgb(0 0 0 / 48%); }
+.compare-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.compare-header h2 { margin: 0; font-size: 1.15rem; }
+.compare-options { margin: 0; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: .82rem; }
+#compare-choices { display: flex; flex-wrap: wrap; gap: 4px 14px; max-height: 8rem; overflow: auto; }
+#compare-choices label { display: flex; align-items: center; min-height: 30px; gap: 4px; overflow-wrap: anywhere; }
+#compare-choices input { accent-color: var(--gold-bg); }
+#compare-status { margin: 10px 0; font-size: .8rem; }
+.compare-table-wrap { overflow: auto; max-height: 52dvh; }
+.compare-table-wrap table { width: 100%; min-width: 360px; border-collapse: separate; border-spacing: 0; font-size: .84rem; }
+.compare-table-wrap :is(th, td) { min-width: 104px; padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.compare-table-wrap th:first-child { position: sticky; left: 0; z-index: 1; min-width: 84px; background: var(--surface); }
+.compare-table-wrap thead th { position: sticky; top: 0; z-index: 2; background: var(--surface); }
+.compare-table-wrap thead th:first-child { z-index: 3; }
+
 .pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 16px; }
 .pagination button {
   min-width: 36px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 8px;
