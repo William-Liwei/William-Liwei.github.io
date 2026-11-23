@@ -7767,6 +7767,13 @@ Object.assign(window.CM.I18N_EN, {
 
 Object.assign(window.CM.I18N_EN, {
   "地图缩放": "Map zoom",
+  "地图缩放与旋转": "Map zoom and rotation",
+  "地图缩放与旋转 {value}": "Map zoom and rotation {value}",
+  "缩放与旋转地图": "Zoom and rotate the map",
+  "逆转 15°": "Rotate left 15°",
+  "顺转 15°": "Rotate right 15°",
+  "逆时针旋转地图 15 度": "Rotate the map 15 degrees counterclockwise",
+  "顺时针旋转地图 15 度": "Rotate the map 15 degrees clockwise",
   "拖动滑条调整地图缩放": "Drag the slider to adjust map zoom",
   "全域": "Overview",
   "细节": "Detail",

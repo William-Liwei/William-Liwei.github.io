@@ -2,7 +2,7 @@
 // 全局参数。PRD 中标注"待确认"的数值在此给出可调整的默认值（DEFAULT），评审确认后只需修改本文件。
 (function (CM) {
   CM.CFG = {
-    GAME_VERSION: '1.4.1',
+    GAME_VERSION: '1.5.0',
     TRAFFIC_MODEL: 6,
     RULES_REVISION: 18,
     SAVE_FORMAT: 'city-metro-save',

@@ -695,6 +695,10 @@
     try { r = fn(d.net); } catch (e) { console.error(e); r = { error: '操作未能完成，已撤回（' + e.message + '）' }; }
     if (!(r && r.error)) { const bad = M.validate(d.net); if (bad) r = { error: '操作已撤回：' + bad }; }
     if (!(r && r.error)) { const bad = M.playerOwnershipError(this.net, d.net, this); if (bad) r = { error: bad }; }
+    if (!(r && r.error)) {
+      const conflict = CM.Operators?.constructionConflict?.(this, d.net, this.net);
+      if (conflict) r = { error: conflict.msg + '。' + conflict.how };
+    }
     if (r && r.error) {
       d.net = JSON.parse(snap); d.ver++;
       // 编译和运行中的预测可能仍引用编辑期间被改过的对象，回滚数据后一起作废。
@@ -713,9 +717,9 @@
   Game.prototype.liveEdit = function (fn) {
     const d = this.ensureDraft(), snap = JSON.stringify(d.net);
     let error;
-    try { fn(d.net); error = M.validate(d.net) || M.playerOwnershipError(this.net, d.net, this); }
+    try { fn(d.net); error = M.validate(d.net) || M.playerOwnershipError(this.net, d.net, this) || CM.Operators?.constructionConflict?.(this, d.net, this.net)?.msg; }
     catch (e) { error = e.message || '操作未能完成'; }
-    if (error) { d.net = JSON.parse(snap); return { error: error }; }
+    if (error) { d.net = JSON.parse(snap); d.ver++; this.invalidatePrediction(); return { error: error }; }
     d.ver++; this.invalidatePrediction(); this.emit('draftLive'); return { ok: true };
   };
   Game.prototype.endLive = function (changed) {
@@ -727,12 +731,16 @@
   };
   Game.prototype.undo = function () {
     const d = this.draft; if (!d || !d.undo.length) return false;
-    d.redo.push(JSON.stringify(d.net)); d.net = JSON.parse(d.undo.pop()); d.ver++;
+    const next = JSON.parse(d.undo.at(-1));
+    if (CM.Operators?.constructionConflict?.(this, next, this.net)) return false;
+    d.redo.push(JSON.stringify(d.net)); d.undo.pop(); d.net = next; d.ver++;
     this.invalidatePrediction(); this.emit('draft'); return true;
   };
   Game.prototype.redo = function () {
     const d = this.draft; if (!d || !d.redo.length) return false;
-    d.undo.push(JSON.stringify(d.net)); d.net = JSON.parse(d.redo.pop()); d.ver++;
+    const next = JSON.parse(d.redo.at(-1));
+    if (CM.Operators?.constructionConflict?.(this, next, this.net)) return false;
+    d.undo.push(JSON.stringify(d.net)); d.redo.pop(); d.net = next; d.ver++;
     this.invalidatePrediction(); this.emit('draft'); return true;
   };
   Game.prototype.cancelDraft = function () {
@@ -743,14 +751,17 @@
   };
   Game.prototype.draftEval = function () {
     const d = this.draft; if (!d) return null;
-    const fleetVer = this.fleet && this.fleet.ver;
-    if (d.evalVer !== d.ver || d.evalFleetVer !== fleetVer || d.evalYear !== this.clock.y) {
+    const fleetVer = this.fleet && this.fleet.ver, works = CM.Operators?.constructionWorks?.(this);
+    if (d.evalVer !== d.ver || d.evalFleetVer !== fleetVer || d.evalYear !== this.clock.y || d.evalWorks !== works) {
       d.eval = M.evaluate(d.net, this.net, this.city, this.clock.y);
+      const conflict = CM.Operators?.constructionConflict?.(this, d.net, this.net);
+      if (conflict) d.eval.conflicts.push(conflict);
       if (CM.Fleet && this.fleet) CM.Fleet.draftExtra(this, d.eval);   // 随线配车（v2.5）：新线与延长后补足最低服务所需列车，费用计入建设
       if (CM.Property) CM.Property.applyEstimate(this, d.eval);
       d.evalVer = d.ver;
       d.evalFleetVer = fleetVer;
       d.evalYear = this.clock.y;
+      d.evalWorks = works;
     }
     return d.eval;
   };

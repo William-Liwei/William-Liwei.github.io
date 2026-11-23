@@ -285,7 +285,8 @@
   };
   R.drawFacilitySprite = function (ctx, lm, lvl, alpha) {
     const a = this.P(lm.x, lm.y, 0), radius = Math.hypot(lm.w, lm.d) / CFG.CELL_M * this.z;
-    if (a.x + radius < 0 || a.x - radius > this.w || a.y + radius < 0 || a.y - radius > this.h + Math.max(100, lm.h * this.z * .012)) return;
+    const height = Math.max(100, (lm.h || 0) * this.z * .012);
+    if (!this.isoRectVisible(a, -radius, -radius - height, 2 * radius, 2 * radius + height)) return;
     const store = this._facilitySprites || (this._facilitySprites = new Map());
     const key = [lm.id, lvl, this.themeName, this._facm.ver, lm.x, lm.y, CM.Settings.get('lighting')].join(':');
     let e = store.get(key);
@@ -305,7 +306,7 @@
       }
     } else { store.delete(key); store.set(key, e); }
     const scale = this.z / lvl; ctx.globalAlpha = alpha;
-    ctx.drawImage(e.cv, a.x - e.ax * scale, a.y - e.ay * scale, e.cv.width * scale, e.cv.height * scale);
+    this.drawIsoSprite(ctx, e, a, scale);
   };
   R.drawTerrainLight = function (ctx) {
     const c = this.game.city, key = [c.uid, c.terrainVer, this.themeName].join(':'); let shade = this._shade;

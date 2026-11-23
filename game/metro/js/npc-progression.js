@@ -1,5 +1,5 @@
 'use strict';
-// Regional companies follow real player assets at a slower, city-scaled pace.
+// Regional operators fund their network from local demand and available capital.
 // This policy only supplies bounded budgets and construction targets; Operators
 // still validates every corridor and books the actual construction/fleet bill.
 (function (CM) {
@@ -7,14 +7,11 @@
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const number = v => Number.isFinite(v) && v > 0 ? v : 0;
   const owner = x => CM.Operators.owner(x);
-  // One place to tune the intended 15% slower development. Bounds are safety
-  // limits, not targets: small cities do not automatically fill the whole map.
   const RULES = N.RULES = Object.freeze({
-    pace: .85, populationWeight: .55, minCityScale: .45, maxCityScale: 1.35,
-    calendarLineMonths: 72, maxCalendarLines: 12, minimumObservationMonths: 24,
-    localMonthsMin: 6, localMonthsMax: 24, crossExtraMonths: 6,
-    initialGrant: 220000, initialPerTargetLine: 18000, maxInitialGrant: 900000,
-    monthlyGrant: 12000, maxMonthlyGrant: 120000, cashReserve: 20000,
+    peoplePerStation: 44000, minimumObservationMonths: 24, baseObservationMonths: 72,
+    localMonthsMin: 4, localMonthsMax: 14, crossExtraMonths: 4,
+    initialGrant: 390000, initialPerTargetLine: 70000, maxInitialGrant: 1300000,
+    monthlyGrant: 30000, maxMonthlyGrant: 180000, cashReserve: 20000,
     defaultProjectCost: 320000, cashProjects: 2, maxCashReserve: 4000000,
     localsPerCross: 3
   });
@@ -80,48 +77,45 @@
     if (!N.enabled(g)) return null;
     const rt = runtime(g), ym = g.ym(), old = rt.month;
     if (old && old.ym === ym && old.net === g.net && old.netVersion === g.netVersion && old.city === g.city && old.cityVersion === g.city.version && old.playerCity === CM.Operators.playerCity(g)) return old.value;
-    const definitions = CM.Operators.DEFINITIONS, playerId = CM.Operators.playerCity(g), playerDefinition = definitions.find(d => d.id === playerId) || definitions[0];
+    const definitions = CM.Operators.DEFINITIONS, playerId = CM.Operators.playerCity(g);
     const demo = demographics(g, definitions), network = assets(g, definitions), player = network.player;
-    const playerDemo = demo[playerId], startYear = CM.CFG.START && CM.CFG.START.y || 1990;
+    const startYear = CM.CFG.START && CM.CFG.START.y || 1990;
     const observedMonths = Math.max(RULES.minimumObservationMonths, ym - (Number.isFinite(player.firstBuilt) ? player.firstBuilt : Math.min(ym, startYear * 12)) + 1);
-    const playerInterval = player.lines ? observedMonths / player.lines : RULES.calendarLineMonths;
+    const playerInterval = player.lines ? observedMonths / player.lines : RULES.baseObservationMonths;
     const byId = {};
     for (const d of definitions) {
       if (d.id === playerId) continue;
-      const local = demo[d.id], fallback = number(d.strength) / Math.max(.1, number(playerDefinition.strength));
-      const popRatio = local && playerDemo && playerDemo.pop > 0 && local.pop > 0 ? local.pop / playerDemo.pop : fallback;
-      const jobsRatio = local && playerDemo && playerDemo.jobs > 0 && local.jobs > 0 ? local.jobs / playerDemo.jobs : fallback;
-      // Jobs are the same proxy used by the regional economic allocation. The
-      // square root keeps partial-map cities viable without copying metro scale.
-      const cityScale = clamp(Math.sqrt(RULES.populationWeight * popRatio + (1 - RULES.populationWeight) * jobsRatio), RULES.minCityScale, RULES.maxCityScale);
-      const calendarLines = Math.min(RULES.maxCalendarLines, 1 + Math.floor(Math.max(0, ym - d.year * 12) / RULES.calendarLineMonths));
-      const targetLines = clamp(Math.max(calendarLines, Math.floor(player.lines * RULES.pace * cityScale)), 1, N.LIMITS.projectsPerCompany);
-      const targetStations = clamp(Math.max(4 * targetLines, Math.floor(player.stations * RULES.pace * cityScale)), 4, N.LIMITS.stationsPerCompany);
-      const own = network[d.id], localMonths = clamp(Math.round(playerInterval / (RULES.pace * cityScale) - 2), RULES.localMonthsMin, RULES.localMonthsMax);
-      byId[d.id] = { id: d.id, strength: d.strength, cityScale, targetLines, targetStations, lines: own.lines, stations: own.stations, localMonths, calendarLines };
+      const local = demo[d.id], demand = number(local?.pop) + number(local?.jobs);
+      const cityScale = clamp(Math.sqrt(demand / 1200000), .55, 1.5);
+      const targetStations = clamp(Math.ceil(demand / RULES.peoplePerStation), 8, N.LIMITS.stationsPerCompany);
+      const targetLines = Math.ceil(targetStations / 14);
+      const own = network[d.id], annualStations = clamp(Math.round(3 + 2 * cityScale), 4, 6);
+      byId[d.id] = { id: d.id, strength: d.strength, cityScale, targetLines, targetStations, lines: own.lines, stations: own.stations, annualStations };
     }
     const value = { ym, player: Object.assign({ observedMonths, interval: playerInterval }, player), byId, stationsTotal: Object.values(byId).reduce((sum, p) => sum + p.stations, 0) };
     rt.counts.snapshots++; rt.month = { ym, net: g.net, netVersion: g.netVersion, city: g.city, cityVersion: g.city.version, playerCity: playerId, value }; return value;
   };
   N.profile = (g, id) => { const month = N.month(g); return month && month.byId[id] || null; };
-  N.duration = function (g, company, kind) {
-    const profile = N.profile(g, company.id), months = profile ? profile.localMonths : RULES.localMonthsMax;
+  N.duration = function (g, company, kind, stations) {
+    const profile = N.profile(g, company.id);
+    const months = clamp(Math.ceil((stations || 5) / Math.max(.8, profile?.cityScale || 1)) + 1, RULES.localMonthsMin, RULES.localMonthsMax);
     return months + (kind === 'cross' ? RULES.crossExtraMonths : 0);
   };
   N.priority = function (g, company) {
     const profile = N.profile(g, company.id);
-    return profile ? Math.max(0, profile.targetLines - profile.lines) / profile.targetLines : 0;
+    return profile ? Math.max(0, profile.targetStations - profile.stations) / profile.targetStations : 0;
   };
   N.nextProject = function (g, company) {
     const month = N.month(g), p = month && month.byId[company.id], projects = company.projects;
-    if (!p || projects.some(project => project.phase !== 'open') || projects.length >= N.LIMITS.projectsPerCompany || p.lines >= p.targetLines || p.stations + 4 > Math.min(p.targetStations, N.LIMITS.stationsPerCompany) || month.stationsTotal + 4 > N.LIMITS.stationsTotal) return null;
+    if (!p || projects.some(project => project.phase !== 'open') || projects.length >= N.LIMITS.projectsPerCompany || p.stations + 2 > N.LIMITS.stationsPerCompany || month.stationsTotal + 2 > N.LIMITS.stationsTotal) return null;
     const local = projects.filter(project => project.kind === 'local' && project.phase === 'open').length;
     const cross = projects.filter(project => project.kind === 'cross').length;
     // A missing cross-city corridor is optional: the caller falls back to local
     // work, so an unavailable neighbour never becomes a permanent project cap.
     const requested = company.request && !projects.some(project => project.kind === 'cross' && project.target === company.request);
-    if (g.clock.y >= 2018 && p.lines > 0 && (requested || local >= (cross + 1) * RULES.localsPerCross)) return 'cross';
-    return 'local';
+    const firstIntercity = cross === 0 && p.stations >= 4 && projects.some(project => project.phase === 'open' && project.opened <= month.ym - 12);
+    if (p.lines > 0 && (requested || g.clock.y >= 2018 && (firstIntercity || local >= (cross + 1) * RULES.localsPerCross))) return 'cross';
+    return p.stations < p.targetStations ? 'local' : null;
   };
   N.grants = function (g, id, costIndex) {
     const p = N.profile(g, id); if (!p) return { initial: 0, monthly: 0 };
@@ -142,6 +136,6 @@
   };
   N.service = function (g, company) {
     const month = N.month(g), p = month && month.byId[company.id];
-    return { stationSize: p && p.targetLines >= 8 && (g.clock.y >= 2020 || month.player.large >= Math.max(1, month.player.stations / 2)) ? 'L' : 'M' };
+    return { stationSize: p && p.targetStations >= 36 && g.clock.y >= 2020 ? 'L' : 'M' };
   };
 })(window.CM);

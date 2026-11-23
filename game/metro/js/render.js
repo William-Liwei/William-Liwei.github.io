@@ -91,7 +91,8 @@
     this.heat = null; this.heatKey = '';
     this.bFade = 0; this.roadVer = -1;
     this.labelsOn = true;
-    this.M = [1, 0, 0, 1]; this.z = 13; this.ox = 0; this.oy = 0; this.hs = 0; this.det = 1;
+    this.M = [1, 0, 0, 1]; this.z = 13; this.ox = 0; this.oy = 0; this.hx = 0; this.hs = 0; this.det = 1;
+    this.rotCos = 1; this.rotSin = 0; this.projectionVersion = 0;
     this.stats = { fps: 60, chunksDrawn: 0 };
     this.linkGrid = null; this.linkGridVer = -1;
     this.th = TH; this.themeName = 'light';
@@ -513,8 +514,25 @@
   Renderer.prototype.sharpReady = function () { return this.frame > 0 && this.stats.pendingVisible === 0; };
   Renderer.prototype.isoVisible = function (e, level, ci, cj, size) {
     const a = this.P(ci * size, cj * size, 0), sc = this.z / level, pad = 2.8 * this.z;
-    return e && !e.empty ? this.screenVisible(a.x - e.ax * sc, a.y - e.ay * sc, e.cv.width * sc, e.cv.height * sc, 2)
-      : this.screenVisible(a.x - size * ISO[0] * this.z - pad, a.y - MAX_H * HSF * this.z - pad, 2 * size * ISO[0] * this.z + 2 * pad, (2 * size * ISO[2] + MAX_H * HSF) * this.z + 2 * pad, 2);
+    if (e && !e.empty) return this.isoRectVisible(a, -e.ax * sc, -e.ay * sc, e.cv.width * sc, e.cv.height * sc);
+    return this.isoRectVisible(a, -size * ISO[0] * this.z - pad, -MAX_H * HSF * this.z - pad,
+      2 * size * ISO[0] * this.z + 2 * pad, (2 * size * ISO[2] + MAX_H * HSF) * this.z + 2 * pad);
+  };
+  Renderer.prototype.isoRectVisible = function (anchor, x, y, width, height) {
+    const cos = this.rotCos, sin = this.rotSin;
+    const dx = cos * width, ex = -sin * height, dy = sin * width, ey = cos * height;
+    return this.screenVisible(anchor.x + cos * x - sin * y + Math.min(0, dx) + Math.min(0, ex),
+      anchor.y + sin * x + cos * y + Math.min(0, dy) + Math.min(0, ey), Math.abs(dx) + Math.abs(ex), Math.abs(dy) + Math.abs(ey), 2);
+  };
+  // 立体图块在北向投影中生成。旋转贴图即可复用原缓存，底部和高度与地图投影使用同一个角度。
+  Renderer.prototype.drawIsoSprite = function (ctx, sprite, anchor, scale) {
+    const x = -sprite.ax * scale, y = -sprite.ay * scale;
+    const width = sprite.cv.width * scale, height = sprite.cv.height * scale;
+    if (this.rotation === 0) { ctx.drawImage(sprite.cv, anchor.x + x, anchor.y + y, width, height); return; }
+    ctx.save();
+    ctx.transform(this.rotCos, this.rotSin, -this.rotSin, this.rotCos, anchor.x, anchor.y);
+    ctx.drawImage(sprite.cv, x, y, width, height);
+    ctx.restore();
   };
   Renderer.prototype.screenVisible = function (x, y, w, h, pad) {
     pad = pad || 0;
@@ -644,6 +662,7 @@
     if (this.tiles && this.tiles.geo && this.tiles.geo !== CM.GEO) this.tiles.stop();
     if (g && typeof document !== 'undefined' && !this.tiles) this.tiles = new TilePool(this);
     this.heatLayers.clear(); this.segScreens = new WeakMap(); this.segDecos = new WeakMap(); this.metroOrder = null;
+    this._stationProjection = this._virtualNodes = this._draftRemoved = null;
     this.roadLabelGeom = new WeakMap(); this.textWidths.clear(); this._cgBmp = null;
     this.geoPaths = new WeakMap();
     this.labelImage = null;
@@ -705,24 +724,26 @@
 
   // ---------------- 相机 ----------------
   // 所有输入共用同一倍率范围。最远处随屏幕和两种投影变化，区域大地图在手机上也能完整看见。
-  function viewMatrix(view, rotation) {
-    const t = U.easeInOut(view == null ? 0 : U.clamp(view, 0, 1));
+  function viewMatrix(t, co, si) {
     const a = U.lerp(1, ISO[0], t), b = U.lerp(0, ISO[1], t), c = U.lerp(0, ISO[2], t), d = U.lerp(1, ISO[3], t);
-    const angle = Number.isFinite(rotation) ? rotation : 0, co = Math.cos(angle), si = Math.sin(angle);
     return [co * a - si * c, co * b - si * d, si * a + co * c, si * b + co * d];
+  }
+  function targetMatrix(view, angle) {
+    return viewMatrix(U.easeInOut(U.clamp(view, 0, 1)), Math.cos(angle || 0), Math.sin(angle || 0));
   }
   Renderer.prototype.fitZoom = function (view, viewport, rotation) {
     const w = Math.max(1, this.w || window.innerWidth || 1), h = Math.max(1, this.h || window.innerHeight || 1);
     const vp = viewport || { x0: 0, y0: 0, x1: w, y1: h };
     const vw = Math.max(1, vp.x1 - vp.x0), vh = Math.max(1, vp.y1 - vp.y0), pad = Math.min(32, vw * 0.08, vh * 0.08);
-    const M = viewMatrix(view == null ? this.cam.view : view, rotation == null ? this.cam.rotation : rotation);
+    const M = targetMatrix(view == null ? this.cam.view : view, rotation == null ? this.cam.rotation : rotation);
     return Math.min(MAX_ZOOM, (vw - 2 * pad) / (Math.abs(M[0]) * CFG.W + Math.abs(M[1]) * CFG.H),
       (vh - 2 * pad) / (Math.abs(M[2]) * CFG.W + Math.abs(M[3]) * CFG.H));
   };
   Renderer.prototype.zoomLimits = function () {
-    const key = [this.w || window.innerWidth, this.h || window.innerHeight, CFG.W, CFG.H, (this.cam.rotation || 0).toFixed(3)].join(':');
-    if (this._zoomLimitsKey !== key) {
-      this._zoomLimitsKey = key;
+    const w = this.w || window.innerWidth, h = this.h || window.innerHeight, rotation = this.cam.rotation || 0;
+    const key = this._zoomLimitsKey;
+    if (!key || key.w !== w || key.h !== h || key.mapW !== CFG.W || key.mapH !== CFG.H || key.rotation !== rotation) {
+      this._zoomLimitsKey = { w: w, h: h, mapW: CFG.W, mapH: CFG.H, rotation: rotation };
       this._zoomLimits = { min: Math.max(0.01, Math.min(1, this.fitZoom(0), this.fitZoom(1)) * 0.45), max: MAX_ZOOM };
     }
     return this._zoomLimits;
@@ -732,23 +753,33 @@
     return U.clamp(typeof zoom !== 'number' || Number.isNaN(zoom) ? 13 : zoom, lim.min, lim.max);
   };
   Renderer.prototype.computeTransform = function () {
-    const c = this.cam, t = U.easeInOut(c.t), M = viewMatrix(c.t, c.rotation || 0);
-    this.M = M; this.z = c.zoom;
-    this.det = M[0] * M[3] - M[1] * M[2];
+    const c = this.cam, angle = c.rotation || 0;
+    if (this.rotation !== angle || this._projectionView !== c.t) {
+      this.rotation = angle; this._projectionView = c.t;
+      this.rotCos = Math.cos(angle); this.rotSin = Math.sin(angle);
+      this.tEase = U.easeInOut(c.t);
+      const M = this.M = viewMatrix(this.tEase, this.rotCos, this.rotSin);
+      this.det = M[0] * M[3] - M[1] * M[2];
+      this.projectionVersion++;
+    }
+    const M = this.M, oldX = this.ox, oldY = this.oy, oldZoom = this.z;
+    this.z = c.zoom;
     this.ox = this.w / 2 - (M[0] * c.cx + M[1] * c.cy) * c.zoom;
     this.oy = this.h / 2 - (M[2] * c.cx + M[3] * c.cy) * c.zoom;
-    this.hs = c.zoom * HSF * t;
-    this.tEase = t;
+    if (oldX !== this.ox || oldY !== this.oy || oldZoom !== this.z) this.projectionVersion++;
+    const heightScale = this.z * HSF * this.tEase;
+    this.hx = heightScale * this.rotSin;
+    this.hs = heightScale * this.rotCos;
   };
   Renderer.prototype.P = function (x, y, h, out) {
     const M = this.M, z = this.z;
     out = out || {};
-    out.x = this.ox + (M[0] * x + M[1] * y) * z;
+    out.x = this.ox + (M[0] * x + M[1] * y) * z + (h || 0) * this.hx;
     out.y = this.oy + (M[2] * x + M[3] * y) * z - (h || 0) * this.hs;
     return out;
   };
   Renderer.prototype.unproject = function (sx, sy, h) {
-    const M = this.M, a = (sx - this.ox) / this.z, b = (sy + (h || 0) * this.hs - this.oy) / this.z;
+    const M = this.M, a = (sx - (h || 0) * this.hx - this.ox) / this.z, b = (sy + (h || 0) * this.hs - this.oy) / this.z;
     return { x: (M[3] * a - M[1] * b) / this.det, y: (-M[2] * a + M[0] * b) / this.det };
   };
   Renderer.prototype.screenToWorldDelta = function (dx, dy) {
@@ -783,7 +814,7 @@
     c.rotation = ((c.rotation || 0) + delta) % (Math.PI * 2);
     c.anchor = null; c.fly = null;
     if (wasFit) {
-      const z = this.clampZoom(this.fitZoom(c.view, vp, c.rotation)), M = viewMatrix(c.view, c.rotation);
+      const z = this.clampZoom(this.fitZoom(c.view, vp, c.rotation)), M = targetMatrix(c.view, c.rotation);
       const dx = (vp.x0 + vp.x1) / 2 - this.w / 2, dy = (vp.y0 + vp.y1) / 2 - this.h / 2;
       const det = M[0] * M[3] - M[1] * M[2];
       c.cx = CFG.W / 2 - (M[3] * dx - M[1] * dy) / det / z;
@@ -3154,9 +3185,14 @@
     ctx.fillRect(0, 0, this.cv.width, this.cv.height);
     const M = this.M, z = this.z;
     // 可见范围
-    const corners = [this.unproject(0, 0), this.unproject(this.w, 0), this.unproject(0, this.h + (t > 0 ? MAX_H * this.hs : 0)), this.unproject(this.w, this.h + (t > 0 ? MAX_H * this.hs : 0))];
+    const corners = [this.unproject(0, 0), this.unproject(this.w, 0), this.unproject(0, this.h), this.unproject(this.w, this.h)];
     let wx0 = 1e9, wy0 = 1e9, wx1 = -1e9, wy1 = -1e9;
     for (const p of corners) { wx0 = Math.min(wx0, p.x); wx1 = Math.max(wx1, p.x); wy0 = Math.min(wy0, p.y); wy1 = Math.max(wy1, p.y); }
+    if (t > 0) {
+      const high = this.screenToWorldDelta(-MAX_H * this.hx, MAX_H * this.hs);
+      wx0 += Math.min(0, high.x); wx1 += Math.max(0, high.x);
+      wy0 += Math.min(0, high.y); wy1 += Math.max(0, high.y);
+    }
     this.view = { x0: wx0 - 1, y0: wy0 - 1, x1: wx1 + 1, y1: wy1 + 1 };
     const tStart = performance.now();
     // ---- 地面 ----
@@ -3193,7 +3229,8 @@
           queue.push({ kind: 'g', key: key, lvl: lvl, ci: ci, cj: cj, d: Math.abs((ci + 0.5) * C - cam.cx) + Math.abs((cj + 0.5) * C - cam.cy) });
           if (!e) {
             // 退而使用较低分辨率的块
-            for (const L2 of LEVELS.slice().reverse()) {
+            for (let index = LEVELS.length - 1; index >= 0; index--) {
+              const L2 = LEVELS[index];
               if (L2 >= lvl) continue;
               const C2 = CHUNK_PX / L2, k2 = L2 + ':' + Math.floor(ci * C / C2) + ':' + Math.floor(cj * C / C2);
               const e2 = this.ground.get(k2);
@@ -3244,9 +3281,6 @@
       const C = this.isoChunkGeom(ilvl);
       const ci0 = Math.max(0, Math.floor(wx0 / C) - 1), ci1 = Math.min(Math.ceil(CFG.W / C) - 1, Math.floor(wx1 / C) + 1);
       const cj0 = Math.max(0, Math.floor(wy0 / C) - 1), cj1 = Math.min(Math.ceil(CFG.H / C) - 1, Math.floor(wy1 / C) + 1);
-      const list = [];
-      for (let cj = cj0; cj <= cj1; cj++) for (let ci = ci0; ci <= ci1; ci++) list.push([ci, cj]);
-      list.sort(function (a, b) { return (a[0] + a[1]) - (b[0] + b[1]) || a[0] - b[0]; });
       const buckets = agents && agentAlpha > 0 ? agents.bucket(C, this) : null;
       const sc = z / ilvl;
       // 地标按其中心所在分块归组，在该分块之后绘制（与前后建筑正确遮挡）
@@ -3264,8 +3298,13 @@
         const key = Math.floor(it.x / C) + ':' + Math.floor(it.y / C);
         let a = extraBy.get(key); if (!a) extraBy.set(key, a = []); a.push(it);
       }
-      for (const it of list) {
-        const ci = it[0], cj = it[1];
+      let landmarkLvl = 64;
+      const landmarkEff = z * Math.min(dpr, 1.5) * (1 - 0.28 * t);
+      for (const L of LEVELS) if (L >= landmarkEff * 0.85) { landmarkLvl = L; break; }
+      // 保持由远到近的遮挡顺序，直接按斜对角遍历，不创建和排序坐标对。
+      for (let depth = ci0 + cj0; ci0 <= ci1 && cj0 <= cj1 && depth <= ci1 + cj1; depth++)
+      for (let ci = Math.max(ci0, depth - cj1); ci <= Math.min(ci1, depth - cj0); ci++) {
+        const cj = depth - ci;
         if (buckets) { const bk = buckets.get(ci + ':' + cj); if (bk) agents.drawList(ctx, this, bk, agentAlpha); }
         const key = 'i' + ilvl + ':' + ci + ':' + cj;
         let e = this.iso.get(key);
@@ -3276,19 +3315,16 @@
           e.used = this.frame;
           const fade = Math.min(1, (this.time - e.born) / 0.25);
           ctx.globalAlpha = bAlpha * fade;
-          ctx.drawImage(e.cv, a.x - e.ax * sc, a.y - e.ay * sc, e.cv.width * sc, e.cv.height * sc);
+          this.drawIsoSprite(ctx, e, a, sc);
         } else if (visible && e) e.used = this.frame;
         const facilities = extraBy.get(ci + ':' + cj);
         if (facilities) for (const it of facilities) this.drawFacilitySprite(ctx, it.lm, Math.min(64, ilvl), bAlpha);
         const lks = lmBy.get(ci + ':' + cj);
         if (lks) for (const k of lks) {
-          let landmarkLvl = 64;
-          const landmarkEff = z * Math.min(dpr, 1.5) * (1 - 0.28 * t);
-          for (const L of LEVELS) if (L >= landmarkEff * 0.85) { landmarkLvl = L; break; }
           const sp = this.landmarkSprite(k, landmarkLvl), lm = D.landmarks[k], a = this.P(lm.x, lm.y, 0), ls = z / landmarkLvl;
-          if (!this.screenVisible(a.x - sp.ax * ls, a.y - sp.ay * ls, sp.cv.width * ls, sp.cv.height * ls, 2)) { sp.used = this.frame - 1; continue; }
+          if (!this.isoRectVisible(a, -sp.ax * ls, -sp.ay * ls, sp.cv.width * ls, sp.cv.height * ls)) { sp.used = this.frame - 1; continue; }
           ctx.globalAlpha = bAlpha * Math.min(1, (this.time - sp.born) / 0.25);
-          ctx.drawImage(sp.cv, a.x - sp.ax * ls, a.y - sp.ay * ls, sp.cv.width * ls, sp.cv.height * ls);
+          this.drawIsoSprite(ctx, sp, a, ls);
         }
       }
       ctx.globalAlpha = 1;
@@ -3305,6 +3341,7 @@
     this.drawDemolitions(ctx, under);
     this.drawScenicZones(ctx, under);
     this.drawHeritage(ctx, under);
+    this.drawOperatorWorks(ctx);
     this.drawMetro(ctx, ui);
     if (t > 0.05 && this.layer === "none") this.drawStationModels(ctx, g.draft && g.draft.compiled || g.compiled, under);
     this.drawVirtualNodes(ctx, g.draft && g.draft.compiled || g.compiled, ui, under);
@@ -3441,22 +3478,18 @@
   Renderer.prototype.trackH = function (type) { let hh = CFG.metro.height[type] || 0; if (hh < 0) hh = hh * U.smooth(this.cam.under) * UNDER_DEPTH; return hh; };
   Renderer.prototype.segScreen = function (cs, under, out) {
     const pts = cs.g.pts, hs = cs.h, n = pts.length;
-    // 缓存键每帧（及地下视图进度变化时）只拼一次
-    if (this._ssFrame !== this.frame || this._ssUnder !== under) { this._ssFrame = this.frame; this._ssUnder = under; this._ssKey = this.M.join(',') + ':' + this.z + ':' + this.ox + ':' + this.oy + ':' + under + ':' + this.hs; }
-    const key = this._ssKey;
-    let cached = !out && this.segScreens.get(cs);
-    if (cached && cached.key === key) return cached.arr;
+    const version = this.projectionVersion, cached = !out && this.segScreens.get(cs);
+    if (cached && cached.version === version && cached.under === under) return cached.arr;
     const arr = out || (cached ? cached.arr : new Float32Array(n * 2));
-    const uw = U.smooth(under);
-    const ty = cs.seg.type;
+    const uw = U.smooth(under), M = this.M, z = this.z;
     for (let i = 0; i < n; i++) {
       let h = hs[i];
       if (h < 0) h = h * uw * UNDER_DEPTH;
-      const M = this.M, z = this.z;
-      arr[i * 2] = this.ox + (M[0] * pts[i][0] + M[1] * pts[i][1]) * z;
+      arr[i * 2] = this.ox + (M[0] * pts[i][0] + M[1] * pts[i][1]) * z + h * this.hx;
       arr[i * 2 + 1] = this.oy + (M[2] * pts[i][0] + M[3] * pts[i][1]) * z - h * this.hs;
     }
-    if (!out) this.segScreens.set(cs, { key: key, arr: arr });
+    if (cached) { cached.version = version; cached.under = under; }
+    else if (!out) this.segScreens.set(cs, { version: version, under: under, arr: arr });
     return arr;
   };
   // 地铁线网（v2.6 性能）：几千座车站时逐段描边、逐站画圆是最重的一步，这里分三层省下来——
@@ -3575,6 +3608,9 @@
   };
   // 本帧的车站屏幕位置（拾取、站名与图层用；对象复用，不产生垃圾）
   Renderer.prototype.updateStationPx = function (C, rs, under) {
+    const previous = this._stationProjection, version = this.projectionVersion;
+    if (previous && previous.C === C && previous.rs === rs && previous.version === version &&
+      previous.under === under && previous.w === this.w && previous.h === this.h) return;
     const v = this.view, n = C.stations.length, R0 = U.clamp(this.z * 0.11, 3.2, 9);
     let objs = this._stObjs; if (!objs || objs.length < n) objs = this._stObjs = Array.from({ length: Math.max(n, 64) }, function () { return { x: 0, y: 0, r: 0, id: '' }; });
     const out = this.stPx || (this.stPx = []); out.length = n;
@@ -3586,6 +3622,7 @@
       o.r = R0 * (s.size === 'S' ? 0.8 : s.size === 'L' ? 1.3 : s.size === 'XL' ? 1.55 : 1) * (rs.inter[i] ? 1.4 : 1); o.id = s.id;
       out[i] = o;
     }
+    this._stationProjection = { C: C, rs: rs, version: version, under: under, w: this.w, h: this.h };
   };
   // 轨道与车站（不含选中与草案标记）。v：参与绘制的世界范围（缓存图比屏幕大一圈）
   Renderer.prototype.paintMetro = function (ctx, C, ix, rs, v, under, t, lw, LS, hlLine, lyrDim, draft) {
@@ -3711,19 +3748,59 @@
     ctx.globalAlpha = 1;
   };
   // 平面视图的线网缓存图：比屏幕大一圈。平移在边距内直接贴图（对齐到物理像素），缩放时先缩放旧图，停下或约 120 ms 后重画
+  Renderer.prototype.drawOperatorWorks = function (ctx) {
+    const works = CM.Operators?.constructionWorks?.(this.game);
+    if (!works?.length) return;
+    const view = this.view, point = {};
+    ctx.save(); ctx.setLineDash([6, 5]); ctx.lineWidth = 2.5; ctx.globalAlpha = .82;
+    for (const work of works) {
+      const height = this.trackH(work.trackType);
+      ctx.strokeStyle = work.color;
+      ctx.beginPath();
+      for (let index = 0; index < work.tracks.length; index++) {
+        const track = work.tracks[index], box = work.bounds[index];
+        if (box[2] < view.x0 || box[0] > view.x1 || box[3] < view.y0 || box[1] > view.y1) continue;
+        for (let i = 0; i < track.length; i++) {
+          this.P(track[i][0], track[i][1], height, point);
+          if (i) ctx.lineTo(point.x, point.y); else ctx.moveTo(point.x, point.y);
+        }
+      }
+      ctx.stroke();
+      ctx.beginPath();
+      for (const station of work.points) {
+        if (station.x < view.x0 || station.x > view.x1 || station.y < view.y0 || station.y > view.y1) continue;
+        this.P(station.x, station.y, height, point);
+        ctx.moveTo(point.x + 6, point.y); ctx.arc(point.x, point.y, 6, 0, Math.PI * 2);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  };
   Renderer.prototype.drawVirtualNodes = function (ctx, C, ui, under) {
     this._vnPx = null;
     if (!C) return;
     const net = C.net, tool = ui && ui.tools ? ui.tools.tool : null, sel = ui ? ui.selection : null, v = this.view;
     const show = tool === 'line' || tool === 'edit' || tool === 'select' || tool === 'demolish';
     if (!net || (!show && !(sel && sel.kind === 'station' && net.stations[sel.id] && net.stations[sel.id].v))) return;
+    let index = this._virtualNodes;
+    if (!index || index.C !== C) {
+      const nodes = new Map();
+      for (const id in net.stations) if (net.stations[id].v) nodes.set(id, { id: id, station: net.stations[id], line: null });
+      if (nodes.size) for (const id in net.segments) {
+        const s = net.segments[id], from = nodes.get(s.a), to = nodes.get(s.b);
+        if (from && !from.line) from.line = s.line;
+        if (to && !to.line) to.line = s.line;
+      }
+      index = this._virtualNodes = { C: C, nodes: nodes };
+    }
+    if (!index.nodes.size) return;
     const px = this._vnPx = [];   // 本帧虚拟节点的屏幕位置（拾取用，见 pickStation）
-    const r = U.clamp(this.z * 0.07, 2.6, 6), tmp = this._vnTmp || (this._vnTmp = { x: 0, y: 0 }), M = CM.Metro;
-    for (const id in net.stations) {
-      const s = net.stations[id]; if (!s.v) continue;
+    const r = U.clamp(this.z * 0.07, 2.6, 6), tmp = this._vnTmp || (this._vnTmp = { x: 0, y: 0 });
+    for (const node of index.nodes.values()) {
+      const id = node.id, s = node.station;
       if (s.x < v.x0 - 1 || s.x > v.x1 + 1 || s.y < v.y0 - 1 || s.y > v.y1 + 1) continue;
       if (!show && sel.id !== id) continue;
-      const lid = M.stationLines(net, id)[0], L = lid ? net.lines[lid] : null;
+      const L = node.line ? net.lines[node.line] : null;
       let hh = CFG.metro.height[s.type]; if (hh < 0) hh = hh * under * UNDER_DEPTH;
       const p = this.P(s.x, s.y, hh, tmp), on = sel && sel.kind === 'station' && sel.id === id;
       px.push({ id: id, x: p.x, y: p.y });
@@ -3735,7 +3812,7 @@
   Renderer.prototype.blitMetroLayer = function (ctx, C, ix, rs, lw, LS, hlLine, lyrDim) {
     const w = this.w, h = this.h, dpr = this.dpr, mx = Math.round(w * 0.18), my = Math.round(h * 0.18), z = this.z, ox = this.ox, oy = this.oy, cam = this.cam, now = performance.now();
     const key = ix.seq + '|' + rs.sig + '|' + (hlLine || '') + '|' + Math.round(lyrDim * 40) + '|' + this.detail.tier + '|' + this.game.netVersion + '|' + (this.game.city.terrainVer || 0) + '|' + w + '|' + h + '|' + (rs.mnet ? rs.xLinks.length : -1);
-    let L = this._mLayer, redo = !L || L.key !== key;
+    let L = this._mLayer, redo = !L || L.key !== key || L.rotation !== this.rotation || L.dpr !== dpr;
     if (!redo) {
       const k = z / L.z;
       if (Math.abs(k - 1) < 1e-6) redo = Math.abs(ox - L.ox) > mx || Math.abs(oy - L.oy) > my;
@@ -3751,9 +3828,11 @@
       const x = L.ctx || (L.ctx = L.cv.getContext('2d')), v = this.view;
       x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, cw, ch); x.setTransform(dpr, 0, 0, dpr, mx * dpr, my * dpr);
       this._paintMg = Math.max(mx, my);
-      this.paintMetro(x, C, ix, rs, { x0: v.x0 - mx / z, y0: v.y0 - my / z, x1: v.x1 + mx / z, y1: v.y1 + my / z }, 0, 0, lw, LS, hlLine, lyrDim, null);
+      const mxWorld = (Math.abs(this.rotCos) * mx + Math.abs(this.rotSin) * my) / z;
+      const myWorld = (Math.abs(this.rotSin) * mx + Math.abs(this.rotCos) * my) / z;
+      this.paintMetro(x, C, ix, rs, { x0: v.x0 - mxWorld, y0: v.y0 - myWorld, x1: v.x1 + mxWorld, y1: v.y1 + myWorld }, 0, 0, lw, LS, hlLine, lyrDim, null);
       this._paintMg = 0;
-      L.key = key; L.z = z; L.ox = ox; L.oy = oy; L.at = now;
+      L.key = key; L.z = z; L.ox = ox; L.oy = oy; L.at = now; L.rotation = this.rotation; L.dpr = dpr;
     }
     const k = z / L.z;
     if (Math.abs(k - 1) < 1e-6) ctx.drawImage(L.cv, Math.round((ox - L.ox - mx) * dpr) / dpr, Math.round((oy - L.oy - my) * dpr) / dpr, w + 2 * mx, h + 2 * my);
@@ -3773,16 +3852,19 @@
     if (!this.segPx) this.segPx = new SegPx(this);
     // 草案中被删除的正式轨道（虚影）
     if (draft) {
-      g.compiled.segs.forEach((cs, id) => {
-        if (draft.segs.has(id)) return;
-        let inBase = false;
-        draft.segs.forEach(function (d) { if (d.seg.base && d.seg.base.indexOf(id) >= 0) inBase = true; });
-        if (inBase) return;
+      let removed = this._draftRemoved;
+      if (!removed || removed.draft !== draft || removed.original !== g.compiled) {
+        const replaced = new Set(), segments = [];
+        for (const cs of draft.segs.values()) if (cs.seg.base) for (const id of cs.seg.base) replaced.add(id);
+        for (const [id, cs] of g.compiled.segs) if (!draft.segs.has(id) && !replaced.has(id)) segments.push(cs);
+        removed = this._draftRemoved = { draft: draft, original: g.compiled, segments: segments };
+      }
+      for (const cs of removed.segments) {
         const arr = this.segScreen(cs, under);
         ctx.strokeStyle = 'rgba(214,48,49,0.55)'; ctx.lineWidth = lw; ctx.setLineDash([lw * 1.2, lw * 1.2]);
         this.strokeArr(ctx, arr); ctx.setLineDash([]);
-      });
-    }
+      }
+    } else this._draftRemoved = null;
     if (!this.metroOrder || this.metroOrder.C !== C) {
       const order = [], rank = { underground: 0, surface: 1, elevated: 2 };
       C.segs.forEach(function (cs) {
@@ -4599,7 +4681,11 @@
       else if (t.station && net.stations[t.station]) add(net.stations[t.station].x, net.stations[t.station].y, net.stations[t.station].name);
       else if (t.fac) { const f = CM.Fac.byId(t.fac); if (f) add(f.x, f.y, f.name); }
       else if (t.zone !== undefined) add(g.model.zCx[t.zone], g.model.zCy[t.zone]);
-      else if (t.line && net.lines[t.line]) { const list = CM.Metro.lineTopo(net, t.line).stations, s = net.stations[list[list.length >> 1]]; if (s) add(s.x, s.y, net.lines[t.line].name); }
+      else if (t.line && net.lines[t.line]) {
+        const topo = g.compiled && g.compiled.net === net && g.compiled.topo.get(t.line);
+        const list = (topo || CM.Metro.lineTopo(net, t.line)).stations, s = net.stations[list[list.length >> 1]];
+        if (s) add(s.x, s.y, net.lines[t.line].name);
+      }
     }
     return out;
   };
@@ -5644,7 +5730,7 @@
     this.mapLabA = U.clamp((this.mapLabA == null ? (this.mapLabelsOn !== false ? 1 : 0) : this.mapLabA) + (this.mapLabelsOn !== false ? step : -step), 0, 1);
     if (this.labA < 0.01 && this.mapLabA < 0.01 && !this.labelsOn && this.mapLabelsOn === false && this.layer === 'none') { this.labelImage = null; return; }
     const sig = [this.w, this.h, this.dpr, this.cam.under, this.tEase > 0.5, this.bFade > 0.5, g.city.version, g.clock.y, g.clock.m, g.netVersion, this.layer, AX.flag(), this.themeName, document.fonts ? document.fonts.status : '', this.layerSig(), !!this.labelsOn, this.mapLabelsOn !== false, !!CM.Settings.get('lineTags')].join('|');
-    const camKey = this.z + ':' + this.ox + ':' + this.oy + ':' + this.hs + ':' + this.projKey, now = performance.now(), moving = camKey !== this._lblCam;
+    const camKey = this.projectionVersion, now = performance.now(), moving = camKey !== this._lblCam;
     this._lblCam = camKey;
     let L = this.labelImage;
     let redo = !L || !L.items || L.sig !== sig || L.C !== this.drawnC;
@@ -5912,7 +5998,7 @@
     if (CM.Follow && CM.Follow.active()) CM.Follow.stop();
     const ui = CM.ui;
     const vp = viewport || (ui && ui.R === this && ui.mapViewport ? ui.mapViewport() : { x0: 0, y0: 0, x1: this.w, y1: this.h });
-    const z = this.clampZoom(this.fitZoom(this.cam.view, vp, this.cam.rotation)), M = viewMatrix(this.cam.view, this.cam.rotation);
+    const z = this.clampZoom(this.fitZoom(this.cam.view, vp, this.cam.rotation)), M = targetMatrix(this.cam.view, this.cam.rotation);
     const dx = this.w / 2 - (vp.x0 + vp.x1) / 2, dy = this.h / 2 - (vp.y0 + vp.y1) / 2, det = M[0] * M[3] - M[1] * M[2];
     this.flyTo(CFG.W / 2 + (M[3] * dx - M[1] * dy) / det / z, CFG.H / 2 + (M[0] * dy - M[2] * dx) / det / z, z);
     this.cam.fly.duration = 0.9;

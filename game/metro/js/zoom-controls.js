@@ -15,11 +15,11 @@
   Z.init = function (ui) {
     if (ui._zoomControls) return;
     const button = element('button', 'zoom-value');
-    button.type = 'button'; button.setAttribute('aria-label', '地图缩放');
-    button.setAttribute('data-tip', '拖动滑条调整地图缩放'); button.setAttribute('data-side', 'right');
+    button.type = 'button'; button.setAttribute('aria-label', '地图缩放与旋转');
+    button.setAttribute('data-tip', '缩放与旋转地图'); button.setAttribute('data-side', 'right');
     button.setAttribute('aria-haspopup', 'dialog'); button.setAttribute('aria-expanded', 'false'); button.setAttribute('aria-controls', 'zoomPanel');
     const panel = element('div', 'glass'); panel.id = 'zoomPanel'; panel.hidden = true; panel.inert = true;
-    panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', '地图缩放');
+    panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', '地图缩放与旋转');
     const head = element('div', 'zoom-heading'), label = element('label', '', '地图缩放'), value = element('output', 'zoom-readout');
     label.htmlFor = 'mapZoomRange'; value.htmlFor = 'mapZoomRange'; head.append(label, value);
     const range = element('input', 'zoom-range'); range.type = 'range'; range.id = 'mapZoomRange';
@@ -36,7 +36,8 @@
     panel.append(head, range, ends, rotate, actions);
     ui.zoomCtl.insertBefore(button, ui.compass || null);
     document.getElementById('app').appendChild(panel);
-    const state = ui._zoomControls = { button: button, panel: panel, range: range, value: value, open: false };
+    const needle = ui.compass && ui.compass.querySelector('.needle');
+    const state = ui._zoomControls = { button: button, panel: panel, range: range, value: value, needle: needle, open: false };
     const toggle = function (on, focus) {
       if (!on && panel.contains(document.activeElement)) document.activeElement.blur();
       state.open = on; panel.hidden = !on; panel.inert = !on;
@@ -91,14 +92,22 @@
   };
   Z.update = function (ui) {
     const state = ui && ui._zoomControls; if (!state) return;
-    const R = ui.R, zoom = R.clampZoom(R.cam.tz), label = percent(zoom), limits = R.zoomLimits();
-    if (ui.compass) { const needle = ui.compass.querySelector('.needle'); if (needle) needle.style.transform = 'rotate(' + (Math.round((R.cam.rotation || 0) * 180 / Math.PI * 1e6) / 1e6) + 'deg)'; }
-    if (state.label !== label) {
-      state.label = label; state.button.textContent = label; state.value.textContent = label;
-      state.range.setAttribute('aria-valuetext', label);
-      state.button.setAttribute('aria-label', '地图缩放' + ' ' + label);
+    const R = ui.R, limits = R.zoomLimits(), zoom = R.clampZoom(R.cam.tz), rotation = R.cam.rotation || 0;
+    if (state.needle && state.rotation !== rotation) {
+      state.rotation = rotation;
+      state.needle.style.transform = 'rotate(' + (Math.round(rotation * 180 / Math.PI * 1e6) / 1e6) + 'deg)';
     }
-    const next = String(Z.toSlider(zoom, limits)); if (state.range.value !== next) state.range.value = next;
+    if (state.zoom !== zoom || state.limits !== limits) {
+      state.zoom = zoom; state.limits = limits;
+      const label = percent(zoom);
+      if (state.label !== label) {
+        state.label = label; state.button.textContent = label; state.value.textContent = label;
+        state.range.setAttribute('aria-valuetext', label);
+        state.button.setAttribute('aria-label', '地图缩放与旋转 ' + label);
+      }
+      state.sliderValue = String(Z.toSlider(zoom, limits));
+    }
+    if (state.range.value !== state.sliderValue) state.range.value = state.sliderValue;
     if (!state.open) return;
     if (!CM.game || (ui.blocking && ui.blocking()) || (ui.dock && ui.dock.classList.contains('hidden')) || document.body.classList.contains('cinema') || document.documentElement.classList.contains('panel-editing')) { state.close(); return; }
     const rect = state.button.getBoundingClientRect(), panel = state.panel, viewport = window.visualViewport;
