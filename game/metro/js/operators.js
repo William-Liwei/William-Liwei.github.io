@@ -14,7 +14,7 @@
   ];
   const limits = CM.NPCProgression && CM.NPCProgression.LIMITS;
   const IDS = new Set(DEFINITIONS.map(d => d.id)), MAX_STATIONS = O.MAX_STATIONS = limits ? limits.stationsTotal : 48, MAX_PROJECTS = limits ? limits.projectsPerCompany : 2;
-  const MAX_STOPS = 32, MONTHLY_ACTIONS = 4, DEMAND_GRID = 8, NEW_LINE_GROWTH = 0.12;
+  const MAX_STOPS = 32, MONTHLY_ACTIONS = 4, DEMAND_GRID = 8, NEW_LINE_GROWTH = 0.12, COOPERATION_PAUSE = 6;
   O.MAX_COMPANY_STATIONS = limits ? limits.stationsPerCompany : MAX_STATIONS;
   const KINDS = ['grant', 'fare', 'ops', 'construction', 'fleet'];
   const runtime = new WeakMap();
@@ -66,22 +66,22 @@
     if (r && r.cityId) return r.cityId;
     const k = city.lockRegion ? city.lockRegion(cell) : -1, base = city.regions[k]; return base && base.cityId || null;
   };
-  O.canBuildCell = function (g, cell, id) {
+  O.canBuildCell = function (g, cell, id, previewPermit = false) {
     if (!g || !g.city || !integer(cell, 0, g.city.N - 1)) return false;
     if (!id || id === 'player') return !g.city.cellLocked(cell);
     const d = defOf(id); if (!d || id === O.playerCity(g) || !O.enabled(g) || g.clock.y < d.year) return false;
     if (g.city.landFrac[cell] < .1) return true; // Geography, bridge/tunnel and station checks still apply.
     const cityId = O.cityAt(g, cell); if (cityId === id) return true;
     if (g.clock.y < 2018 || !d.neighbors.includes(cityId)) return false;
-    return cityId !== O.playerCity(g) || g.clock.y >= 2025 && !!(O.company(g, id) && O.company(g, id).crossPermit);
+    return cityId !== O.playerCity(g) || g.clock.y >= 2025 && (previewPermit || !!O.company(g, id)?.crossPermit);
   };
-  O.cityView = function (g, id) {
+  O.cityView = function (g, id, previewPermit = false) {
     O.attach(g); if (!id || id === 'player') return g.city;
     let r = runtime.get(g); if (!r) { r = { views: new Map() }; runtime.set(g, r); }
-    const key = id + ':' + g.ym() + ':' + O.playerCity(g) + ':' + (O.company(g, id) && O.company(g, id).crossPermit ? 1 : 0), old = r.views.get(id);
+    const key = id + ':' + g.ym() + ':' + O.playerCity(g) + ':' + (previewPermit || O.company(g, id)?.crossPermit ? 1 : 0), old = r.views.get(id);
     if (old && old.permissionKey === key) return old;
     const view = Object.create(g.city); view.operatorOwnerId = id; view.permissionKey = key;
-    view.cellLocked = c => !O.canBuildCell(g, c, id); view.lockText = () => '不在该公司当前可建设的城市范围';
+    view.cellLocked = c => !O.canBuildCell(g, c, id, previewPermit); view.lockText = () => '不在该公司当前可建设的城市范围';
     r.views.set(id, view); return view;
   };
   O.developmentRegions = function (g) {
@@ -103,10 +103,11 @@
     if (!c.agreements.includes(stationId)) c.agreements.push(stationId);
     emit(g); return { ok: true };
   };
-  O.connectionStatus = function (g, id, stationId) {
+  O.connectionStatus = function (g, id, stationId, playerStops) {
     const c = O.company(g, id), st = g.net.stations[stationId];
     if (!c || !st || !O.isPlayer(st)) return { ok: false, error: '请选择自己的已建车站' };
-    if (!Object.values(g.net.segments).some(s => (s.a === stationId || s.b === stationId) && O.isPlayer(g.net.lines[s.line]))) return { ok: false, error: '请选择已接入本公司线路的运营车站' };
+    const connected = playerStops ? playerStops.has(stationId) : Object.values(g.net.segments).some(s => (s.a === stationId || s.b === stationId) && O.isPlayer(g.net.lines[s.line]));
+    if (!connected) return { ok: false, error: '请选择已接入本公司线路的运营车站' };
     const targetCity = O.cityAt(g, g.city.cellAt(st.x, st.y)), d = defOf(id);
     const allowedYear = targetCity === id ? d?.year : targetCity === O.playerCity(g) ? 2025 : 2018;
     if (!d || targetCity !== id && !d.neighbors.includes(targetCity)) return { ok: false, error: '请选择该公司所在城市或相邻城市内的已建车站', targetCity, allowedYear };
@@ -118,9 +119,18 @@
   O.requestConnection = function (g, id, stationId) {
     const status = O.connectionStatus(g, id, stationId); if (!status.ok) return status;
     const c = O.company(g, id), st = g.net.stations[stationId];
-    c.request = stationId; c.offer = null;
+    c.request = stationId; c.offer = null; delete c.deferred;
     if (status.targetCity === O.playerCity(g)) c.crossPermit = true;
     log(g, id, defOf(id).name + '收到接驳申请', '将评估连接「' + st.name + '」的联运换乘，建设和列车由该公司出资。'); return { ok: true };
+  };
+  O.deferred = (g, c) => c.deferred?.until > g.ym() ? c.deferred : null;
+  O.deferConnection = function (g, id) {
+    const c = O.company(g, id), station = c?.offer;
+    if (!station || !O.connectionStatus(g, id, station).ok) return { ok: false, error: '该接驳提案已失效' };
+    c.offer = null;
+    c.deferred = { station, until: g.ym() + COOPERATION_PAUSE };
+    log(g, id, defOf(id).name + '继续自主建设', '暂缓联运合作六个月，对方可继续争取这一带的客流。');
+    return { ok: true };
   };
   const noWorks = [];
   // Both the map preview and the geometry checks use the booked alignment.
@@ -140,6 +150,12 @@
     return r.works;
   };
   function invalidateWorks(g) { const r = runtime.get(g); if (r) r.works = null; }
+  O.fundingPreview = function (g, id, projectId) {
+    const project = O.company(g, id)?.projects.find(p => p.id === projectId && p.phase === 'funding');
+    if (!project) return null;
+    const tracks = project.points.slice(1).map((p, i) => [[project.points[i].x, project.points[i].y], [p.x, p.y]]);
+    return { color: defOf(id).color, points: project.points, tracks, bounds: tracks.map(pathBox), trackType: project.trackType || 'underground' };
+  };
   const pathBoxes = new WeakMap();
   function pathBox(path) {
     let box = pathBoxes.get(path);
@@ -219,7 +235,7 @@
     let best = null, score = -Infinity;
     for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
       const px = x + dx, py = y + dy, c = g.city.cellAt(px, py);
-      if (c < 0 || !O.canBuildCell(g, c, owner) || homeOnly && O.cityAt(g, c) !== owner || !M.checkSite(view, px, py, 'underground').ok) continue;
+      if (c < 0 || view.cellLocked(c) || homeOnly && O.cityAt(g, c) !== owner || !M.checkSite(view, px, py, 'underground').ok) continue;
       if (CM.Property && CM.Property.find && CM.Property.find(g, c)?.owned) continue;
       if (used.some(s => U.dist(s.x, s.y, px, py) * CFG.CELL_M < Math.max(250, CFG.metro.minSpacingM))) continue;
       const val = Math.log1p(g.city.pop[c] + g.city.jobs[c]) - Math.hypot(dx, dy) * .8;
@@ -227,8 +243,8 @@
     }
     return best;
   }
-  function evaluatePoints(g, c, points, kind, target, extension, project, trackType = 'underground') {
-    const view = O.cityView(g, c.id), draft = M.clone(g.net);
+  function evaluatePoints(g, c, points, kind, target, extension, project, trackType = 'underground', previewView = null) {
+    const view = previewView || O.cityView(g, c.id), draft = M.clone(g.net);
     if (extension && (!draft.lines[extension] || O.owner(draft.lines[extension]) !== c.id)) return null;
     const lid = extension || M.newLine(draft, defOf(c.id).city + (kind === 'cross' ? '联络线' : '城区线'));
     if (!extension) { draft.lines[lid].ownerId = c.id; draft.lines[lid].color = defOf(c.id).color; }
@@ -246,7 +262,7 @@
     const ids = [];
     const stops = [], segments = [];
     for (const p of points) {
-      if (p.stationId) { const st = draft.stations[p.stationId]; if (!st || U.dist(st.x,st.y,p.x,p.y) > .01 || !O.canBuildCell(g, g.city.cellAt(p.x,p.y), c.id) || kind !== 'cross' && O.owner(st) !== c.id || O.isPlayer(st) && c.request !== st.id) return null; stops.push(st.id); continue; }
+      if (p.stationId) { const st = draft.stations[p.stationId]; if (!st || U.dist(st.x,st.y,p.x,p.y) > .01 || view.cellLocked(g.city.cellAt(p.x,p.y)) || kind !== 'cross' && O.owner(st) !== c.id || O.isPlayer(st) && (previewView ? target : c.request) !== st.id) return null; stops.push(st.id); continue; }
       const id = M.addStation(draft, p.x, p.y, { size, type: trackType }, view); draft.stations[id].ownerId = c.id; ids.push(id); stops.push(id);
     }
     for (let i = 1; i < stops.length; i++) {
@@ -320,17 +336,20 @@
   function proposeConnections(g) {
     const stations = Object.values(g.net.stations).filter(s => !s.v);
     if (!stations.some(O.isPlayer) || !stations.some(s => !O.isPlayer(s))) return;
+    const playerStops = new Set();
+    for (const seg of Object.values(g.net.segments)) if (O.isPlayer(g.net.lines[seg.line])) { playerStops.add(seg.a); playerStops.add(seg.b); }
+    if (!playerStops.size) return;
     const tiles = demandTiles(g);
     for (const c of Object.values(g.operators.companies)) {
-      if (c.request || c.projects.some(p => p.kind === 'cross' && p.phase !== 'open')) continue;
+      if (c.request || O.deferred(g, c) || c.projects.some(p => p.kind === 'cross' && p.phase !== 'open')) continue;
       const home = stations.filter(s => O.owner(s) === c.id);
       let best = null, score = 0;
       if (home.length) for (const station of stations) {
         if (!O.isPlayer(station)) continue;
-        const status = O.connectionStatus(g, c.id, station.id);
+        const status = O.connectionStatus(g, c.id, station.id, playerStops);
         if (!status.ok) continue;
-        const distance = home.reduce((d, s) => Math.min(d, U.dist(s.x, s.y, station.x, station.y)), Infinity);
-        if (distance < 12 || distance > 120) continue;
+        const distance = home.reduce((d, s) => { const sep = U.dist(s.x, s.y, station.x, station.y); return sep >= 3 ? Math.min(d, sep) : d; }, Infinity);
+        if (distance > 120) continue;
         let demand = 0;
         for (const tile of tiles[status.targetCity]?.values() || []) if (U.dist(tile.x, tile.y, station.x, station.y) < 12) demand += tile.mass;
         const merit = demand / (12 + distance);
@@ -400,6 +419,13 @@
     if (limit < 1) return null;
     const sites = localDemand(g, c.id, used);
     const unmet = sites.reduce((sum, s) => sum + s.demand, 0);
+    const rival = g.net.stations[O.deferred(g, c)?.station];
+    if (rival) {
+      // Compete for the nearby catchment with the company's ordinary budget
+      // and legal sites. Keep the underlying demand baseline for growth.
+      for (const site of sites) site.demand *= 1 + .35 * Math.max(0, 1 - U.dist(rival.x, rival.y, site.x, site.y) / 32);
+      sites.sort((a, b) => b.demand - a.demand);
+    }
     const planned = [];
     const occupied = used.concat(O.constructionWorks(g).filter(w => w.project !== excluded).flatMap(w => w.points));
     for (const site of sites.slice(0, 64)) {
@@ -437,7 +463,7 @@
     if (extension && (!newLine || newLine.score < extension.score * 1.4)) return extension;
     return newLine;
   }
-  function planThroughStation(g, c, view, target, used, reserved, excluded) {
+  function planThroughStation(g, c, view, target, used, reserved, excluded, preview) {
     const stop = { x: target.x, y: target.y, stationId: target.id };
     const terminals = localTerminals(g, c.id).filter(t => {
       const distance = U.dist(t.x, t.y, stop.x, stop.y);
@@ -468,22 +494,21 @@
       if (attempted.size >= 6) break;
       attempted.add(key);
       const first = { x: terminal.x, y: terminal.y, stationId: terminal.stationId };
-      const plan = evaluatePoints(g, c, [first, stop, next], 'cross', stop.stationId, terminal.line, excluded, terminal.trackType);
+      const plan = evaluatePoints(g, c, [first, stop, next], 'cross', stop.stationId, terminal.line, excluded, terminal.trackType, preview ? view : null);
       if (plan) return plan;
     }
     return null;
   }
-  O.plan = function (g, id, kind, excluded) {
-    const c = O.company(g, id), d = defOf(id); if (!c || !d) return null;
-    const view = O.cityView(g, id), used = Object.values(g.net.stations), home = used.filter(s => O.owner(s) === id && !s.v);
-    if (kind !== 'cross') return planLocal(g, c, view, used, excluded);
-    if ((!c.request && g.clock.y < 2018) || !home.length) return null;
-    const targets = used.filter(s => !s.v && O.owner(s) !== id && (c.request ? s.id === c.request : O.owner(s) !== 'player') &&
-      O.canBuildCell(g, g.city.cellAt(s.x, s.y), id) && (!O.isPlayer(s) || O.connectionStatus(g, id, s.id).ok || excluded?.target === s.id) &&
+  function planCross(g, c, view, used, excluded, previewStation) {
+    const id = c.id, requested = previewStation || c.request;
+    const home = used.filter(s => O.owner(s) === id && !s.v);
+    if ((!requested && g.clock.y < 2018) || !home.length) return null;
+    const targets = used.filter(s => !s.v && O.owner(s) !== id && (requested ? s.id === requested : O.owner(s) !== 'player') &&
+      !view.cellLocked(g.city.cellAt(s.x, s.y)) && (!O.isPlayer(s) || previewStation || O.connectionStatus(g, id, s.id).ok || excluded?.target === s.id) &&
       !c.projects.some(p => p !== excluded && p.phase === 'open' && p.target === s.id));
     const reserved = O.constructionWorks(g).filter(w => w.project !== excluded).flatMap(w => w.points);
-    if (c.request && targets.length) {
-      const through = planThroughStation(g, c, view, targets[0], used, reserved, excluded);
+    if (requested && targets.length) {
+      const through = planThroughStation(g, c, view, targets[0], used, reserved, excluded, previewStation);
       if (through) return through;
     }
     const districts = demandTiles(g);
@@ -513,10 +538,26 @@
         }
         if (points.length !== stopCount - 1) continue;
         points.push({ x: pair.b.x, y: pair.b.y, stationId: pair.b.id });
-        const result = evaluatePoints(g, c, points, kind, pair.b.id, null, excluded); if (result) return result;
+        const result = evaluatePoints(g, c, points, 'cross', pair.b.id, null, excluded, 'underground', previewStation ? view : null);
+        if (result) return result;
       }
     }
     return null;
+  }
+  O.plan = function (g, id, kind, excluded) {
+    const c = O.company(g, id); if (!c || !defOf(id)) return null;
+    const view = O.cityView(g, id), used = Object.values(g.net.stations);
+    return kind === 'cross' ? planCross(g, c, view, used, excluded) : planLocal(g, c, view, used, excluded);
+  };
+  O.previewConnection = function (g, id, stationId) {
+    const status = O.connectionStatus(g, id, stationId);
+    if (!status.ok) return status;
+    const c = O.company(g, id), view = O.cityView(g, id, status.targetCity === O.playerCity(g));
+    const plan = planCross(g, c, view, Object.values(g.net.stations), null, stationId);
+    if (!plan) return { ok: false, error: '目前没有通过建设校验的接驳走廊。' };
+    return { ok: true, stationId, color: defOf(id).color, points: plan.points, tracks: plan.tracks,
+      bounds: plan.tracks.map(pathBox), trackType: plan.trackType, extension: plan.extension, estimate: plan.cost,
+      months: CM.NPCProgression?.duration(g, c, 'cross', plan.ids.length) || 30 };
   };
   function startProject(g, c, plan) {
     const p = { id: c.id + ':' + (c.projects.length + 1), kind: plan.kind, phase: 'funding', points: plan.points, target: plan.target,
@@ -553,8 +594,12 @@
       if (!p) {
         if (c.projects.length >= MAX_PROJECTS || count + 4 > MAX_STATIONS) continue;
         const kind = policy && policy.nextProject ? policy.nextProject(g, c) : c.projects.length ? 'cross' : 'local';
-        if (!kind || kind === 'cross' && (g.clock.y < 2018 && !c.request || !policy && ym < c.projects[0].opened + 36)) continue;
-        const plan = O.plan(g, c.id, kind) || (policy && kind === 'cross' ? O.plan(g, c.id, 'local') : null); if (!plan) { c.note = '等待合适走廊与可建设场地'; continue; }
+        const localFirst = kind !== 'local' && !c.request && !!O.deferred(g, c);
+        if (!kind && !localFirst) continue;
+        const canCross = kind !== 'cross' || (g.clock.y >= 2018 || c.request) && (policy || ym >= c.projects[0].opened + 36);
+        const plan = (localFirst && O.plan(g, c.id, 'local')) || (kind && canCross && O.plan(g, c.id, kind)) ||
+          (policy && kind === 'cross' && !localFirst ? O.plan(g, c.id, 'local') : null);
+        if (!plan) { c.note = '等待合适走廊与可建设场地'; continue; }
         startProject(g, c, plan); return c.id;
       }
       if (p.phase === 'building' && (ym < p.due || g.draft)) continue;
@@ -697,6 +742,7 @@
       if (Math.abs(balance - c.funds) > Math.max(.001, Math.abs(balance) * 1e-9)) fail();
       if (typeof c.crossPermit !== 'boolean') fail();
       if (c.offer != null && (typeof c.offer !== 'string' || c.offer.length > 80)) fail();
+      if (c.deferred != null && (typeof c.deferred.station !== 'string' || c.deferred.station.length > 80 || !integer(c.deferred.until, 0, 120000))) fail();
       if (c.request !== null && (typeof c.request !== 'string' || c.request.length > 80)) fail();
       if (c.agreements.some(x => typeof x !== 'string' || x.length > 80)) fail();
       if (c.lastDay && (!finite(c.lastDay.fare, 0, 1e12) || !finite(c.lastDay.ops, 0, 1e12) || !finite(c.lastDay.pkm, 0, 1e15) || !['wd','we'].includes(c.lastDay.dt))) fail();
@@ -719,7 +765,7 @@
   function clean(s) {
     const out = { v: 1, since: s.since, lastMonth: s.lastMonth, lastDay: s.lastDay, lastBuild: s.lastBuild, buildActions: s.buildActions || 1, companies: {}, indexHistory: (s.indexHistory || []).map(r => ({ ym: r.ym, values: r.values.map(v => ({ownerId:v.ownerId,score:v.score,annualProfit:v.annualProfit,riders:v.riders,service:v.service,debt:v.debt})) })), log: s.log.map(e => ({ ym:e.ym,ownerId:e.ownerId,title:e.title,desc:e.desc })) };
     const fields = x => Object.fromEntries(KINDS.map(k => [k,x[k]])), row = x => Object.assign({ym:x.ym},fields(x));
-    for (const [id,c] of Object.entries(s.companies)) out.companies[id] = { id, founded:c.founded, funds:c.funds, total:fields(c.total),cur:row(c.cur),history:c.history.map(row),agreements:c.agreements.slice(),request:c.request,offer:c.offer || null,crossPermit:c.crossPermit,note:c.note,...(c.sat == null ? {} : {sat:c.sat,satYM:c.satYM}),lastDay:c.lastDay?{fare:c.lastDay.fare,ops:c.lastDay.ops,pkm:c.lastDay.pkm,dt:c.lastDay.dt}:null,
+    for (const [id,c] of Object.entries(s.companies)) out.companies[id] = { id, founded:c.founded, funds:c.funds, total:fields(c.total),cur:row(c.cur),history:c.history.map(row),agreements:c.agreements.slice(),request:c.request,offer:c.offer || null,...(c.deferred ? {deferred:{station:c.deferred.station,until:c.deferred.until}} : {}),crossPermit:c.crossPermit,note:c.note,...(c.sat == null ? {} : {sat:c.sat,satYM:c.satYM}),lastDay:c.lastDay?{fare:c.lastDay.fare,ops:c.lastDay.ops,pkm:c.lastDay.pkm,dt:c.lastDay.dt}:null,
       projects:c.projects.map(p=>({id:p.id,kind:p.kind,phase:p.phase,points:p.points.map(q=>Object.assign({x:q.x,y:q.y},q.stationId?{stationId:q.stationId}:{})),target:p.target,proposed:p.proposed,start:p.start,due:p.due,opened:p.opened,estimate:p.estimate,construction:p.construction,fleet:p.fleet,line:p.line,extension:p.extension || null,
         ...(p.demandAfter == null ? {} : { demandAfter:p.demandAfter }), ...(p.tracks ? { tracks:p.tracks.map(track => track.map(pt => pt.slice())) } : {}), trackType:p.trackType || 'underground'})) };
     return out;

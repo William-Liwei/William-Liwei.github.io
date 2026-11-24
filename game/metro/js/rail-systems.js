@@ -36,6 +36,24 @@
   };
   R.modelFits = function (model, system) { return (model.systems || ['metro']).indexOf(typeof system === 'string' ? system : R.id(system)) >= 0; };
   R.stationFactor = function (net, sid) { let value = 0; for (const lid of CM.Metro.stationLines(net, sid)) value = Math.max(value, R.get(net.lines[lid]).station); return value || 1; };
+  R.summary = function (line, compact) {
+    const s = R.get(line), grade = R.grade(line);
+    const value = (label, text) => h('div', null, h('small', null, label), h('b', null, text));
+    return h('section', { class: 'rail-profile' + (compact ? ' compact' : ''), 'data-system': s.id },
+      h('div', { class: 'rail-heading' }, h('b', null, s.name), h('span', null, s.desc)),
+      h('div', { class: 'rail-values' }, value('设计限速', grade.kmh + ' km/h'), value('最小曲线', grade.minR + ' m'),
+        value('制式编组上限', s.cars + ' 节'), value('参考每节定员', s.cap + ' 人')),
+      compact ? null : h('p', { class: 'note' }, '轨道造价 ×' + s.track.toFixed(2) + ' · 车站造价 ×' + s.station.toFixed(2) +
+        ' · 基础运营系数 ×' + s.ops.toFixed(2) + '。实际编组还受沿线站台与车型限制。'));
+  };
+  function comparison(current) {
+    const table = h('table', { class: 'tbl rail-compare' }, h('tr', null,
+      ...['制式', '默认速度', '每节定员', '编组上限', '默认转弯半径', '轨道造价'].map(k => h('th', null, k))));
+    for (const s of R.SYSTEMS) table.appendChild(h('tr', { class: s.id === current ? 'current' : '' },
+      h('th', { scope: 'row' }, s.name), h('td', null, s.speed + ' km/h'), h('td', null, s.cap + ' 人'),
+      h('td', null, s.cars + ' 节'), h('td', null, R.grade({ railSystem: s.id }).minR + ' m'), h('td', null, '×' + s.track.toFixed(2))));
+    return h('details', { class: 'rail-compare-wrap' }, h('summary', null, '比较各轨道制式'), h('div', { class: 'tbl-wrap' }, table));
+  }
   R.control = function (ui, lid) {
     const g = ui.g(), net = g.draft ? g.draft.net : g.net, line = net.lines[lid], current = R.get(line), mapId = CM.Fleet ? CM.Fleet.cityId(g) : g.mapId;
     const select = h('select', { class: 'mc-q', 'aria-label': '轨道制式', onchange: function () {
@@ -50,7 +68,7 @@
       else { ui.markUnsaved(); ui.scheduleAutosave(); ui.toast('制式调整已加入草案；确认时收取改造费，不兼容列车将退回车辆段', 'info'); ui.rerenderPage(); }
     } }, R.SYSTEMS.map(function (s) { const available = R.pickSpeed(mapId, g.clock.y, s.id) != null; return h('option', { value: s.id, selected: s.id === current.id ? true : null, disabled: available ? null : true }, s.name + (g.clock.y < s.from ? ' · ' + s.from + ' 年开放' : available ? '' : ' · 等待兼容车型')); }));
     return h('div', { class: 'fo-speed' }, h('div', { class: 'fo-speed-h' }, h('b', { class: 'grow' }, '轨道制式'), select),
-      h('div', { class: 'tiny muted' }, current.desc + ' 轨道造价 ×' + current.track.toFixed(2) + '，车站造价 ×' + current.station.toFixed(2) + '，最长 ' + current.cars + ' 节。'),
+      comparison(current.id),
       h('div', { class: 'tiny muted' }, '参数为游戏估算。制式与提速改造均须确认草案；不兼容列车退回车辆段，不会被出售。'));
   };
 })(window.CM);

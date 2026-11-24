@@ -487,7 +487,12 @@
   // 车站规模（v2.7）：超大型站在城市进入最后一个历史阶段后解锁，教程地图没有；已有的超大型站一直可选
   M.xlYear = function () { const D = CM.DATA, S = D.stages; return D.fictional || !S || !S.length ? Infinity : S[S.length - 1][0]; };
   M.xlUnlocked = function (y) { return y >= M.xlYear(); };
-  M.sizeList = function (y, cur) { return M.xlUnlocked(y) || cur === 'XL' ? ['S', 'M', 'L', 'XL'] : ['S', 'M', 'L']; };
+  const stationSizes = ['S', 'M', 'L', 'XL'];
+  M.sizeList = function (y, cur) { return stationSizes.slice(0, M.xlUnlocked(y) || cur === 'XL' ? 4 : 3); };
+  M.sizeAtLeast = function (size, minimum) {
+    const rank = stationSizes.indexOf(minimum);
+    return rank >= 0 && stationSizes.indexOf(size) >= rank;
+  };
   // 站台方向相对已建是否有实质变化（v2.6.1）：接新区段时自动锁定的方向等于原来的方向，不算改动，也不算既有区段改线
   M.platDirChanged = function (off, draft, sid, lid) {
     const a0 = draft.stations[sid], b0 = off.stations[sid], a = a0 && a0.pd && a0.pd[lid], b = b0 && b0.pd && b0.pd[lid];
@@ -888,6 +893,35 @@
     return { station: sid, dist: d, co: co.length };
   };
   M.removeSegment = function (net, segId) { delete net.segments[segId]; return M.normalizeLines(net); };
+  M.lineRemoval = function (net, lid) {
+    const line = net.lines[lid];
+    if (!line || M.ownerId(line) !== 'player') return { error: '只能拆除本公司的线路' };
+    const segments = [], stops = new Set(), otherStops = new Set();
+    for (const s of Object.values(net.segments)) {
+      if (s.line === lid) { segments.push(s.id); stops.add(s.a); stops.add(s.b); }
+      else { otherStops.add(s.a); otherStops.add(s.b); }
+    }
+    const stations = [], nodes = [];
+    let shared = 0;
+    for (const sid of stops) {
+      const s = net.stations[sid];
+      if (!s) continue;
+      if (otherStops.has(sid)) { if (!s.v) shared++; continue; }
+      if (M.ownerId(s) !== 'player' || s.portal || s.tk) continue;
+      (s.v ? nodes : stations).push(sid);
+    }
+    return { segments, stations, nodes, shared };
+  };
+  M.removeLine = function (net, lid, removeStations = false) {
+    const removal = M.lineRemoval(net, lid);
+    if (removal.error) return removal;
+    for (const id of removal.segments) delete net.segments[id];
+    for (const id of removal.nodes) delete net.stations[id];
+    if (removeStations) for (const id of removal.stations) delete net.stations[id];
+    delete net.lines[lid];
+    M.normalizeLevels(net);
+    return removal;
+  };
   const dropStation = function (net, sid, notes) {
     const st = net.stations[sid];
     const byLine = new Map();
@@ -939,7 +973,6 @@
   // 合并车站（v3.1 玩家建议：移动车站碰到另一座车站时可以直接合并为换乘站）：from 的区段全部接到 into，from 删除；
   // 两站之间原有的区段去掉，同一线路接到同一对车站的重复区段只留一条；from 各线路的站台层与站台方向带到 into（into 已有该线路时保留 into 的），
   // 规模取两站中较大的。虚拟节点和接管来的车站不合并。之后统一整理线路
-  const SIZE_RANK = { S: 0, M: 1, L: 2, XL: 3 };
   M.canMerge = function (net, from, into) {
     const A = net.stations[from], B = net.stations[into];
     return !!(A && B && from !== into && !M.isVirt(A) && !M.isVirt(B) && !A.tk && !B.tk);
@@ -963,7 +996,7 @@
       const lv = M.platType(A, lid); if (lv !== M.platType(B, lid)) { B.lv = Object.assign({}, B.lv || {}); B.lv[lid] = lv; }
       if (A.pd && A.pd[lid] != null) { B.pd = Object.assign({}, B.pd || {}); B.pd[lid] = A.pd[lid]; }
     }
-    if ((SIZE_RANK[A.size] || 0) > (SIZE_RANK[B.size] || 0)) B.size = A.size;
+    if (stationSizes.indexOf(A.size) > stationSizes.indexOf(B.size)) B.size = A.size;
     const seen = new Set();
     for (const id in net.segments) {
       const s = net.segments[id];
@@ -1351,7 +1384,7 @@
     const error = M.hubEligibility(net, sid, level); if (error) return { error: error };
     const s = net.stations[sid], spec = M.HUBS[level];
     s.hub = level;
-    if (['S', 'M', 'L'].indexOf(s.size) < ['S', 'M', 'L'].indexOf(spec.size)) s.size = spec.size;
+    if (!M.sizeAtLeast(s.size, spec.size)) s.size = spec.size;
     return { hub: level };
   };
   M.stationCost = function (type, size, year) { return CFG.cost.station[type][size] * costIndex(year); };
@@ -1573,7 +1606,7 @@
         for (const lid of M.stationLines(draft, id)) res.affectedLines.add(lid);
       }
       if (hub) {
-        const hs = M.HUBS[hub], tooSmall = ['S', 'M', 'L'].indexOf(s.size) < ['S', 'M', 'L'].indexOf(hs.size);
+        const hs = M.HUBS[hub], tooSmall = !M.sizeAtLeast(s.size, hs.size);
         const reason = hub > oldHub ? M.hubEligibility(draft, id, hub) : null;
         if (tooSmall || reason) conflict({ type: 'hub', kind: 'station', ref: id, x: s.x, y: s.y, msg: '「' + s.name + '」' + (reason || hs.name + '需要' + CFG.metro.sizeName[hs.size] + '站台'), how: '接入足够线路并升级站台，或在「规模与枢纽」中关闭枢纽大厅。', fixes: [] });
         if (M.stationLines(draft, id).length < hs.lines) warn('「' + s.name + '」枢纽线路减少：大厅保留并继续收取维护费，请补充线路或关闭大厅。', s.x, s.y, id, 'station');

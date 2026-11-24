@@ -71,6 +71,29 @@
     const selected = g.playerCity || 'sh', metrics = operating(g);
     return CM.Operators.DEFINITIONS.map(function (d) { return snapshot(g, d.id === selected ? 'player' : d.id, metrics); });
   };
+  function market(g, row, player) {
+    const C = g.compiled, local = { player: 0, rival: 0, shared: 0 };
+    if (C) C.stations.forEach(function (s, k) {
+      if (!C.serviced[k] || CM.Operators.cityAt(g, g.city.cellAt(s.x, s.y)) !== row.id) return;
+      const companies = new Set(Array.from(C.stationRoutes[k] || [], ri => owner(C.routes[ri]?.line)));
+      if (companies.has('player')) local.player++;
+      if (companies.has(row.id)) local.rival++;
+      if (companies.has('player') && companies.has(row.id)) local.shared++;
+    });
+    const table = h('table', { class: 'tbl op-market' },
+      h('tr', null, h('th', null, '运营对比'), h('th', null, '你'), h('th', null, row.name)));
+    const stat = function (title, yours, theirs) { table.appendChild(h('tr', null, h('th', { scope: 'row' }, title), h('td', null, yours), h('td', null, theirs))); };
+    stat(row.def.city + '境内停靠站', local.player, local.rival);
+    stat('全网日上车', player.fresh ? U.fmtPeople(player.riders) : '—', row.fresh ? U.fmtPeople(row.riders) : '—');
+    stat('全网上月票款', player.last ? U.fmtMoney(player.fare) : '—', row.last ? U.fmtMoney(row.fare) : '—');
+    return h('section', { class: 'op-cooperate' }, h('div', { class: 'fl-h' }, '竞争与合作'),
+      h('div', { class: 'tbl-wrap' }, table),
+      h('p', { class: 'note' }, row.def.city + '境内两家公司共同停靠 ' + local.shared + ' 站。上车人次含换乘上车。'));
+  }
+  function showPreview(ui, g, id, plan) {
+    ui.operatorPreview = { game: g, id, netVersion: g.netVersion, draft: g.draft, draftVersion: g.draft?.ver, ym: g.ym(), plan };
+    ui.flyToStations(plan.points);
+  }
   X.recordMonth = function (g) {
     if (!enabled(g) || !g.operators || !g.model || g.model.dailyStale || !g.model.stDaily || !g.model.net || g.model.net.C !== g.compiled || !g.model.trafficReady()) return false;
     const history = g.operators.indexHistory || (g.operators.indexHistory = []), ym = g.ym();
@@ -182,6 +205,10 @@
     const all = X.rows(g), row = all.find(function (r) { return r.id === selected; });
     const go = function (id) { self.openPage('operators', id, { replaceTop: true }); };
     if (!row) {
+      const offers = all.filter(r => r.company?.offer && CM.Operators.connectionStatus(g, r.id, r.company.offer).ok);
+      if (offers.length) el.appendChild(h('section', { class: 'op-cooperate' }, h('div', { class: 'fl-h' }, '待处理的合作提案'),
+        offers.map(r => h('div', { class: 'op-offer-row' }, h('span', null, r.name + ' · ' + g.net.stations[r.company.offer].name),
+          action('查看提案', () => go(r.id), 'ghost')))));
       el.appendChild(h('p', { class: 'note' }, '上海、苏州、无锡、常州、南通、嘉兴、湖州各有一家轨道公司。每家公司独立筹资、购车和经营；地图边缘的其他辖区只展示当前覆盖范围。'));
       const ranking = all.slice().sort(function (a, b) { return Number(b.active) - Number(a.active) || b.score - a.score; });
       const table = h('table', { class: 'tbl op-ranking' }, h('tr', null, h('th', null, '公司'), h('th', null, '模拟估值指数'), h('th', null, '日上车人次'), h('th', null, '主城满意度'), h('th', null, '线网')));
@@ -200,6 +227,8 @@
     const projectStatus = activeProject && CM.Operators.projectStatus && CM.Operators.projectStatus(g, c, activeProject);
     const companyStatus = projectStatus && (projectStatus.overdue || activeProject.phase === 'building' && activeProject.due === g.ym()) ? projectStatus.label : c && c.note;
     el.append(action('← 全部公司与排行', function () { go(null); }, 'ghost'), h('div', { class: 'op-company-head' }, h('span', { class: 'swatch', style: { background: d.color } }), h('b', null, row.name), h('span', { class: 'tag' }, row.id === 'player' ? '你的公司' : c ? companyStatus : d.year + ' 年起筹备')));
+    const decisions = h('div');
+    if (c) el.appendChild(decisions);
     el.appendChild(this.kv([['所属城市', d.city], ['主城满意度', row.sat == null ? '更新中' : Math.round(row.sat) + ' / 100'], ['线网 / 自有车站 / 列车', U.fmtNum(row.km, 1) + ' km / ' + row.stations.length + ' 站 / ' + row.trains.length + ' 列'], ['公司资金', U.fmtMoney(row.funds)], ['公司债务', U.fmtMoney(row.debt)], ['上月票款 / 运营费', row.last ? U.fmtMoney(row.fare) + ' / ' + U.fmtMoney(row.ops) : '尚无完整月账'], ['上月运营结余', row.last ? U.fmtMoney(row.monthProfit) : '尚无完整月账'], ['日上车人次', row.fresh ? U.fmtPeople(row.riders) : '等待客流更新'], ['高峰运力充足率', U.fmtPct(row.service, 0) + '（可用 ' + row.available + ' / 需要 ' + row.needed + ' 列）'], ['经营指数', U.fmtNum(row.score, 1) + ' · 游戏比较指标']]));
     el.appendChild(h('p', { class: 'note' }, '筹建年份、资本强度与工程进度为游戏规则；不代表现实公司的财务或历史线路。城市经济阶段不同，资金与当地需求决定实际开工。'));
     el.appendChild(X.trend(g, row.id));
@@ -217,6 +246,12 @@
         const projectName = p.extension ? (p.kind === 'cross' ? '干线延伸及换乘' : '干线延伸') : p.kind === 'cross' ? '接驳联络线' : '本城城区线';
         const card = h('div', { class: 'op-project' }, h('b', null, projectName + ' · ' + phase), h('small', null, stationText + (p.phase === 'open' ? when(p.opened) + ' 开通 · 建设与购车实际支出 ' + U.fmtMoney(p.construction + p.fleet) : '概算 ' + U.fmtMoney(p.estimate) + timing)));
         if (status && status.text && p.phase !== 'open') card.appendChild(h('p', { class: 'note' + (late ? ' warn' : '') }, status.text));
+        if (p.phase === 'funding') card.appendChild(action('查看筹资走廊', function () {
+          const plan = CM.Operators.fundingPreview(g, row.id, p.id);
+          if (!plan) return;
+          showPreview(self, g, row.id, plan);
+          self.toast('点线为筹资走廊，可用于提前规划你的线路', 'info');
+        }, 'ghost'));
         if (p.phase === 'building' && p.points?.length) card.appendChild(action('定位施工虚线', function () { const pt = p.points[Math.floor(p.points.length / 2)]; self.flyTo(pt.x, pt.y, 11); }, 'ghost'));
         el.appendChild(card);
       }
@@ -225,24 +260,46 @@
         const stationPicker = h('select', { 'aria-label': '选择换乘接入车站' }, partnerStations.map(function (s) { return h('option', { value: s.id }, s.name); }));
         el.appendChild(h('section', { class: 'op-cooperate' }, h('b', null, '本公司线路接入对方车站'), h('p', { class: 'note' }, '地区开放后即可免费签约，在现有车站连接本公司线路。'), stationPicker, action('查看车站并接入', function () { const s = g.net.stations[stationPicker.value]; if (s) { self.openPage('station', s.id); self.flyTo(s.x, s.y, 30); } }, 'ghost')));
       }
+      const O = CM.Operators;
       const ownStations = Object.values(g.net.stations).filter(function (s) { return mine(s) && g.compiled.serviced[g.compiled.sIndex.get(s.id)]; });
-      const offer = c.offer && g.net.stations[c.offer];
-      if (offer && CM.Operators.connectionStatus(g, row.id, offer.id).ok) {
-        el.appendChild(h('section', { class: 'op-cooperate' }, h('b', null, '对方希望接入「' + offer.name + '」'),
-          h('p', { class: 'note' }, 'AI 优先延伸现有干线，经本站换乘后继续覆盖沿线客流。走廊不合适时会尝试修建接驳联络线。'),
-          action('同意接驳', function () {
-            const result = CM.Operators.requestConnection(g, row.id, offer.id);
-            self.toast(result.error || '已同意接驳，建设由对方出资', result.error ? 'warn' : 'good');
-            if (result.ok) { self.markUnsaved(); self.scheduleAutosave(); self.rerenderPage(); }
-          })));
-      }
+      const offer = c.offer && O.connectionStatus(g, row.id, c.offer).ok ? g.net.stations[c.offer] : null;
+      const deferred = O.deferred(g, c);
       const target = h('select', { 'aria-label': '合作接驳的本公司车站' }, ownStations.map(function (s) { return h('option', { value: s.id }, s.name); }));
-      if (c.request && ownStations.some(function (s) { return s.id === c.request; })) target.value = c.request;
-      else { const candidate = ownStations.find(function (s) { return CM.Operators.connectionStatus(g, row.id, s.id).ok; }); if (candidate) target.value = candidate.id; }
-      const invite = action(c.request ? '更新接驳申请' : '申请对方修建接驳', function () { const r = CM.Operators.requestConnection(g, row.id, target.value); self.toast(r.error || '接驳申请已提交，工程由该公司独立出资', r.error ? 'warn' : 'good'); if (r.ok) { self.markUnsaved(); self.scheduleAutosave(); self.rerenderPage(); } });
-      const statusText = h('p', { class: 'note' }), showStatus = function () { const status = CM.Operators.connectionStatus(g, row.id, target.value); invite.disabled = !status.ok; statusText.textContent = status.ok ? '可以申请。接驳工程按对方资金与施工进度推进。' : status.error; };
-      target.addEventListener('change', showStatus); showStatus();
-      el.appendChild(h('section', { class: 'op-cooperate' }, h('b', null, '邀请对方修建接驳线'), h('p', { class: 'note' }, '对方主城内的运营站可直接申请接驳。接入其他城市从 2018 年起开放，进入你的主城仍需 2025 年并授权。建设和购车由对方出资，你的资产继续归你。' + (c.crossPermit ? ' 已给予该公司主城接入许可。' : ' 尚未给予主城接入许可。')), target, statusText, invite));
+      const selected = self.operatorTarget?.id === row.id ? self.operatorTarget.station : null;
+      const initial = ownStations.find(s => s.id === selected && O.connectionStatus(g, row.id, s.id).ok)?.id || offer?.id ||
+        ownStations.find(s => s.id === c.request)?.id || ownStations.find(s => O.connectionStatus(g, row.id, s.id).ok)?.id;
+      if (initial) target.value = initial;
+      const update = function (r, text) {
+        self.toast(r.error || text, r.error ? 'warn' : 'good');
+        if (r.ok) { self.operatorPreview = self.operatorTarget = null; self.markUnsaved(); self.scheduleAutosave(); self.rerenderPage(); }
+      };
+      const statusText = h('p', { class: 'note', role: 'status' });
+      const preview = action('在地图预览', function () {
+        self.operatorPreview = null;
+        const plan = O.previewConnection(g, row.id, target.value);
+        if (!plan.ok) { statusText.textContent = plan.error; return; }
+        showPreview(self, g, row.id, plan);
+        statusText.textContent = (plan.extension ? '干线延伸' : '接驳联络线') + ' · ' + plan.points.length + ' 站 · 开工后约 ' +
+          plan.months + ' 个月 · 对方概算 ' + U.fmtMoney(plan.estimate) + '。点线为提案预览。';
+      }, 'ghost');
+      const invite = action('申请对方修建接驳', function () {
+        update(O.requestConnection(g, row.id, target.value), '接驳申请已提交，工程由该公司独立出资');
+      }, 'primary');
+      const showStatus = function () {
+        const status = O.connectionStatus(g, row.id, target.value);
+        invite.disabled = preview.disabled = !status.ok;
+        invite.textContent = offer ? (target.value === offer.id ? '同意接驳' : '推荐这座站') : c.request ? '更新接驳申请' : '申请对方修建接驳';
+        statusText.textContent = status.ok ? '建设与购车由对方出资，车站仍归你。' : status.error;
+      };
+      target.addEventListener('change', function () {
+        self.operatorPreview = null; self.operatorTarget = { id: row.id, station: target.value }; showStatus();
+      }); showStatus();
+      const independently = offer ? action('各自建设 · 暂缓半年', function () {
+        update(O.deferConnection(g, row.id), '已暂缓合作，对方继续评估自己的走廊');
+      }, 'ghost') : null;
+      decisions.append(h('section', { class: 'op-cooperate' }, h('b', null, offer ? '对方希望接入「' + offer.name + '」' : '邀请对方修建接驳线'),
+        deferred ? h('p', { class: 'note' }, '对方优先评估自主走廊，' + when(deferred.until) + '起可再次主动提议。') : null,
+        target, statusText, h('div', { class: 'op-actions' }, preview, invite, independently)), market(g, row, all.find(r => r.id === 'player')));
       const history = h('details', null, h('summary', null, '公司独立月账 · 最近 ' + c.history.length + ' 月'));
       if (!c.history.length) history.appendChild(h('p', { class: 'note' }, '第一个完整结算月后展示。'));
       for (const x of c.history.slice().reverse()) history.appendChild(h('p', { class: 'note' }, h('b', null, when(x.ym)), h('br'), '注资 ' + U.fmtMoney(x.grant) + ' · 票款 ' + U.fmtMoney(x.fare) + ' · 运营费 ' + U.fmtMoney(x.ops) + ' · 建设与购车 ' + U.fmtMoney(x.construction + x.fleet)));
@@ -254,20 +311,32 @@
   const chrome = UI.prototype.buildChrome;
   UI.prototype.buildChrome = function () {
     chrome.apply(this, arguments); const self = this;
-    this.operatorDock = h('button', { class: 'dockbtn plain hidden', 'data-tip': '城市轨道公司：经营、工程与跨城合作', 'aria-label': '城市轨道公司', onclick: function () { self.openPage('operators', null, { root: true }); } }, CM.icon('building'), h('span', { class: 'lb' }, '公司'));
+    this.operatorOffers = h('span', { class: 'op-offer-count hidden', 'aria-hidden': 'true' });
+    this.operatorDock = h('button', { class: 'dockbtn plain hidden', 'data-tip': '城市轨道公司：竞争、合作与工程', 'aria-label': '城市轨道公司', onclick: function () { self.openPage('operators', null, { root: true }); } }, CM.icon('building'), h('span', { class: 'lb' }, '公司'), this.operatorOffers);
     this.dock.insertBefore(this.operatorDock, this.zoomCtl);
   };
   const attach = UI.prototype.attachGame;
   UI.prototype.attachGame = function (g) {
     const result = attach.apply(this, arguments), self = this; let refresh = 0;
     if (this.operatorDock) this.operatorDock.classList.toggle('hidden', !enabled(g));
+    this.operatorPreview = this.operatorTarget = null;
+    const badge = function () {
+      if (!self.operatorOffers) return;
+      const count = Object.values(g.operators?.companies || {}).filter(c => c.offer && g.net.stations[c.offer]).length;
+      self.operatorOffers.textContent = count || '';
+      self.operatorOffers.classList.toggle('hidden', !count);
+      self.operatorDock.setAttribute('aria-label', count ? '城市轨道公司 · ' + count + ' 项接驳提案' : '城市轨道公司');
+    };
+    badge();
     g.on('operators', function () {
-      const top = self.stack[self.stack.length - 1]; if (refresh || !top || top.kind !== 'operators') return;
+      if (refresh) return;
       // A monthly decision can publish several company log/fleet/project changes.
       // Draw their final state once, and ignore pending work after a game switch.
       refresh = requestAnimationFrame(function () {
         refresh = 0; const current = self.stack[self.stack.length - 1];
-        if (self.g() === g && current && current.kind === 'operators') self.rerenderPage();
+        if (self.g() !== g) return;
+        badge();
+        if (current?.kind === 'operators') self.rerenderPage();
       });
     });
     return result;

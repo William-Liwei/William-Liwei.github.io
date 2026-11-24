@@ -22,7 +22,7 @@
     const tod = tier < 4 ? (G.tod[tier] || 0) : tier === 4 ? 1.2 : 1.75;
     const support = U.clamp(s.flow / G.flowFull, 0, 1), presence = U.clamp(s.flow / 1000, 0, 1);
     return (G.base + G.xfer * Math.max(0, s.lines - 1) + G.flow * support +
-      (tod + s.hub * (s.size === 'L' ? 0.16 : 0.10)) * (0.35 + 0.65 * support)) *
+      (tod + s.hub * (CM.Metro.sizeAtLeast(s.size, 'L') ? 0.16 : 0.10)) * (0.35 + 0.65 * support)) *
       s.maturity * U.clamp(s.frequency / 8, 0, 1) * presence * s.comfort;
   };
   function* geographyGen(g, work) {
@@ -135,7 +135,7 @@
         if ((i & 255) === 255 && due(work)) { yield; work.at = performance.now(); }
         const h = out.hotspots[i];
         if (!h.service || h.service.station.ownerId && h.service.station.ownerId !== 'player' ||
-            h.service.tier !== 5 || h.service.hub !== 2 || h.service.size !== 'L' || h.service.maturity < 0.75 ||
+            h.service.tier !== 5 || h.service.hub !== 2 || !CM.Metro.sizeAtLeast(h.service.size, 'L') || h.service.maturity < 0.75 ||
             h.service.flow < 150000 || h.dJobs < 100 || h.dPop + h.dJobs <= 0) continue;
         const s = h.service.station;
         const hit = CM.Milestones.register(g, 'city-tod-anchor-' + s.id, { cat: 'city', icon: 'building', big: true,

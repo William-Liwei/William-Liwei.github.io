@@ -9,6 +9,11 @@
 .op-cooperate{padding:12px 0;margin:8px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .op-cooperate select{width:100%;max-width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:inherit;margin:4px 0 8px}
 .op-cooperate .btn{white-space:normal}
+.op-actions{display:flex;flex-wrap:wrap;gap:6px}
+.op-offer-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px}
+.op-market th[scope="row"]{font-weight:600}
+#dock .dockbtn:has(.op-offer-count){position:relative}
+.op-offer-count{position:absolute;top:1px;right:1px;background:var(--accent);color:#fff;border-radius:99px;font-size:10px;font-weight:700;line-height:15px;min-width:15px;text-align:center}
 .op-stops{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
 .operators-page details{margin:12px 0}
 .operators-page summary{cursor:pointer;font-weight:600;padding:8px 0}

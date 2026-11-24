@@ -31,7 +31,7 @@
     if (Object.keys(s.crowd).length > 10000) fail();
     for (const id of Object.keys(s.crowd)) {
       const c = s.crowd[id];
-      if (!text(id, 80) || !c || !integer(c.ym, 0, 120000) || !integer(c.n, 1, 2) || !['S', 'M', 'L'].includes(c.size) || !integer(c.hub, 0, 2)) fail();
+      if (!text(id, 80) || !c || !integer(c.ym, 0, 120000) || !integer(c.n, 1, 2) || !M.sizeAtLeast(c.size, 'S') || !integer(c.hub, 0, 2)) fail();
     }
     for (const e of s.log) if (!e || !integer(e.ym, 0, 120000) || !text(e.kind, 20) || !text(e.title, 160) || !text(e.desc, 1600) || !Number.isFinite(e.cost) || e.cost < 0 || e.cost > 100000000) fail();
   };
@@ -273,13 +273,16 @@
     const candidates = cached.rows;
     if (!candidates.length) { status(g, '本月检查完成；车站需两次不同月份的新客流观测持续超 110% 才扩容'); return true; }
     const wait = idleForBuild(g); if (wait) { status(g, wait, true); return false; }
-    let reason = '拥挤车站已达大站规模；可手动调整路网或另行允许枢纽扩建';
+    let reason = '拥挤车站暂无可用扩容方案，可调整路网分流或允许枢纽扩建';
     for (const candidate of candidates) {
       const sid = candidate.sid;
-      const original = g.net.stations[sid], next = M.clone(g.net), st = next.stations[sid], sizes = ['S', 'M', 'L'];
+      const original = g.net.stations[sid], next = M.clone(g.net), st = next.stations[sid], sizes = M.sizeList(g.clock.y, st.size);
+      const upgrade = sizes[sizes.indexOf(st.size) + 1], hall = M.hubLevel(st) + 1;
       let label;
-      if (st.size !== 'L') { st.size = sizes[sizes.indexOf(st.size) + 1]; label = original.size + ' → ' + st.size; }
-      else if (s.policy.hubs && M.hubLevel(st) < M.HUBS.length - 1 && !M.hubEligibility(next, sid, M.hubLevel(st) + 1)) { M.setHub(next, sid, M.hubLevel(st) + 1); label = M.hubSpec(st).name; }
+      if (M.sizeAtLeast(st.size, 'L') && s.policy.hubs && hall < M.HUBS.length && !M.hubEligibility(next, sid, hall)) {
+        M.setHub(next, sid, hall); label = M.hubSpec(st).name;
+      }
+      else if (upgrade) { st.size = upgrade; label = original.size + ' → ' + st.size; }
       else continue;
       const beforeLoad = candidate.load;
       // A private, one-change draft, with an ordinary undo point. It is never merged

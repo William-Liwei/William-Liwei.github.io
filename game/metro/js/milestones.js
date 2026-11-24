@@ -129,7 +129,7 @@
       const s = g.net.stations[row.id];
       if (!hall && M.hubLevel(s) >= 2 && row.lines.size >= 3) hall = s;
       if (!modes && row.systems.size >= 2 && ['tram', 'light'].some(id => row.systems.has(id)) && ['metro', 'commuter', 'regional', 'highspeed', 'maglev'].some(id => row.systems.has(id))) modes = { station: s, count: row.systems.size };
-      if (!commerce && (s.tod || 0) >= 4 && s.size === 'L' && M.hubLevel(s) >= 1 && row.lines.size >= 2) {
+      if (!commerce && (s.tod || 0) >= 4 && M.sizeAtLeast(s.size, 'L') && M.hubLevel(s) >= 1 && row.lines.size >= 2) {
         const k = g.compiled.sIndex.get(s.id), a = g.model.stDailyWk, b = g.model.stDailyWe;
         const flow = d => d && k !== undefined ? (d.inn[k] || 0) + (d.out[k] || 0) + (d.xfer[k] || 0) : 0;
         const age = s.built ? Math.max(0, now - s.built[0] - (s.built[1] - 1) / 12) : 0, x = U.clamp(age / (CFG.metroLed.years || 4), 0, 1), maturity = 1 - (1 - x) * (1 - x);

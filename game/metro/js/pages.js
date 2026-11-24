@@ -713,6 +713,28 @@
   };
 
   // ======================== 页面：线路 ========================
+  UI.prototype.removeWholeLine = function (lid) {
+    const self = this, g = this.g(), draft = g.draft, net = draft ? draft.net : g.net;
+    const removal = M.lineRemoval(net, lid);
+    if (removal.error) { this.toast(removal.error, 'warn'); return; }
+    const name = net.lines[lid].name, draftVersion = draft?.ver, netVersion = g.netVersion;
+    const removeStations = h('input', { type: 'checkbox' });
+    const description = h('div', { class: 'line-remove-detail' },
+      h('p', null, '拟拆 ' + removal.segments.length + ' 段轨道。'),
+      removal.shared ? h('p', null, removal.shared + ' 座共用车站会保留其他线路。') : null,
+      removal.stations.length ? h('label', null, removeStations, '同时拆除 ' + removal.stations.length + ' 座仅供本线使用的车站') : null,
+      h('p', null, '修改会加入草案，可一次撤销。确认建设后，已配属列车会退回车辆段。'));
+    this.confirm('全线拆除 · ' + name, description, '加入拆除草案', function () {
+      if (self.g() !== g || g.draft !== draft || g.draft?.ver !== draftVersion || g.netVersion !== netVersion) {
+        self.toast('线网已变化，请重新查看拆除范围', 'warn'); return;
+      }
+      const result = g.edit(n => M.removeLine(n, lid, removeStations.checked));
+      if (result.error) { self.toast(result.error, 'warn'); return; }
+      self.select(null, true);
+      self.openPage('build', null, { root: true });
+      self.toast('全线拆除已加入草案', 'info');
+    }, true, 'bulldozer');
+  };
   UI.prototype.page_line = function (key) {
     const g = this.g(), self = this;
     const parts = String(key).split('|'), lid = parts[0], segId = parts[1];
@@ -721,7 +743,9 @@
     if (!line) return null;
     const el = h('div');
     const geometry = M.lineGeometry(g, lid), tp = geometry.tp, segs = geometry.segs, len = geometry.lenM;
-    el.appendChild(h('div', { class: 'row', style: { marginBottom: '8px', flexWrap: 'wrap' } }, h('span', { class: 'swatch', style: { background: AX.line(line), width: '22px', height: '8px' } }), h('span', { class: 'tag' }, M.TOPO_NAME[tp.topo]), h('span', { class: 'tag', 'data-tip': '运行速度：最小转弯半径 ' + M.minRadius(line) + ' m' }, M.lineKmh(line) + ' km/h'), h('span', { class: 'tag' }, U.fmtKm(len)), h('span', { class: 'tag' }, tp.stations.length + ' 站'), !g.net.lines[lid] ? h('span', { class: 'tag info' }, '草案中') : null, h('span', { class: 'grow' }), this.favBtn('lines', lid)));
+    el.appendChild(h('div', { class: 'row line-overview' }, h('span', { class: 'swatch', style: { background: AX.line(line), width: '22px', height: '8px' } }), h('span', { class: 'tag' }, M.TOPO_NAME[tp.topo]), h('span', { class: 'tag' }, U.fmtKm(len)), h('span', { class: 'tag' }, tp.stations.length + ' 站'), !g.net.lines[lid] ? h('span', { class: 'tag info' }, '草案中') : null, h('span', { class: 'grow' }), this.favBtn('lines', lid),
+      h('button', { class: 'btn sm ghost danger', onclick: function () { self.removeWholeLine(lid); } }, '全线拆除')));
+    if (CM.RailSystems) el.appendChild(CM.RailSystems.summary(line));
     // 分页（v2.1 第二轮）：「概况」看客流、运营与车站，「编辑」集中颜色、贯通与拆开、区段与拆除；名称点标题修改，颜色也可点标题前的彩色徽标
     let tab = !g.net.lines[lid] ? 'build' : ((this._tab && this._tab.line) || 'info');
     if (tab === 'ops' && !(g.fleet && CM.Fleet)) tab = 'info';
@@ -962,8 +986,6 @@
           std, common, recentBox);
         mark();
         if (AX.enabled()) b.appendChild(h('div', { class: 'note' }, '色盲辅助模式按线路编号显示配色；这里设置的原色会保留，关闭辅助模式后恢复。'));
-        b.appendChild(h('div', { class: 'row' },
-          h('button', { class: 'btn sm danger', onclick: function () { g.edit(function (n) { for (const s of M.lineSegs(n, lid)) delete n.segments[s.id]; delete n.lines[lid]; }); self.select(null); self.toast('已在草案中拆除 ' + line.name + ' 全部轨道（车站保留，可单独拆除）', 'info'); } }, '拆除整条线路')));
         return b;
       }, true));
       // 批量修改：本线全部车站或轨道

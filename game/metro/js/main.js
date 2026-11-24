@@ -342,9 +342,6 @@
       try { CM.Tutorial.tick(dt); } catch (e) { console.error(e); }
       tools.tick(dt);
       if (CM.EdgePan && CM.EdgePan.tick(tools, ui, dt)) inputAt = t;
-    } else if (preview && R.game === preview) {
-      previewCamera(dt);
-      try { CM.agents.updatePreview(dt, preview, R); } catch (e) { console.error(e); }
     }
     // 跳月 / 跳年期间画面被推进卡片遮住、列车车辆静止：地图降频重绘，把时间留给结算
     const overlay = !!(g && CM.NetMap && CM.NetMap.isOpen());
@@ -357,7 +354,7 @@
     // it is covered, and paint immediately when the player returns to the city.
     const covered = !!(ui.opsApp && ui.opsApp.coversMap && ui.opsApp.coversMap());
     const uncovered = wasCovered && !covered; wasCovered = covered;
-    const paint = !jumpHold && (uncovered || ((!covered || t - lastCoveredPaint >= 200) && (!still || idleN % 6 === 0)));
+    const paint = !!g && !jumpHold && (uncovered || ((!covered || t - lastCoveredPaint >= 200) && (!still || idleN % 6 === 0)));
     if (paint && covered) lastCoveredPaint = t;
     if (paint) { if (g && g.jumping) lastJumpPaint = t; try { R.render(dt, ui); } catch (e) { console.error(e); } }
     // 界面与环境音是低优先级任务：镜头移动时约 20 次/秒，其余时间每帧（dt 累计，不丢时间）
@@ -382,8 +379,6 @@
   CM.Save.init().then(function () { ui.showStart(); }, function () { ui.showStart(); });
   setTimeout(function () {
     if (loading) return;   // 当前配置已属于载入中的城市，不能用它生成广州菜单背景
-    if (!preview) { try { preview = makePreview(); } catch (e) { console.error(e); } }
-    if (preview && !CM.game) { R.setGame(preview); preview.ready = false; preview.firstFrame = R.frame; }
     requestAnimationFrame(function () { canvas.classList.add('map-in'); });
     setTimeout(function () { if (!loading && !CM.game && !document.hidden && CM.prewarmThumbs) CM.prewarmThumbs(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'); }, 1500);
   }, 80);

@@ -422,7 +422,9 @@
         if (!s.v && this.tool === 'demolish') this.demolishTip(tip, { kind: 'station', id: st });
       } else if (seg && net.segments[seg]) {
         const sg = net.segments[seg], ln = net.lines[sg.line];
-        tip = { title: (ln && ln.name ? ln.name + ' · ' : '') + net.stations[sg.a].name + '—' + net.stations[sg.b].name, lines: [CFG.metro.typeName[sg.type] + '轨道'] };
+        const system = ln && CM.RailSystems?.get(ln);
+        tip = { title: (ln && ln.name ? ln.name + ' · ' : '') + net.stations[sg.a].name + '—' + net.stations[sg.b].name,
+          lines: [system ? system.name + ' · ' + CFG.metro.typeName[sg.type] + '轨道 · ' + M.lineKmh(ln) + ' km/h' : CFG.metro.typeName[sg.type] + '轨道'] };
         if (this.tool === 'demolish') this.demolishTip(tip, { kind: 'seg', id: seg });
         if (this.tool === 'edit') tip.lines.push('点击选中后可拖动控制点调整线形');
       } else if (this.tool === 'select' && R.tEase < 0.5) {

@@ -3341,7 +3341,7 @@
     this.drawDemolitions(ctx, under);
     this.drawScenicZones(ctx, under);
     this.drawHeritage(ctx, under);
-    this.drawOperatorWorks(ctx);
+    this.drawOperatorWorks(ctx, ui);
     this.drawMetro(ctx, ui);
     if (t > 0.05 && this.layer === "none") this.drawStationModels(ctx, g.draft && g.draft.compiled || g.compiled, under);
     this.drawVirtualNodes(ctx, g.draft && g.draft.compiled || g.compiled, ui, under);
@@ -3748,13 +3748,17 @@
     ctx.globalAlpha = 1;
   };
   // 平面视图的线网缓存图：比屏幕大一圈。平移在边距内直接贴图（对齐到物理像素），缩放时先缩放旧图，停下或约 120 ms 后重画
-  Renderer.prototype.drawOperatorWorks = function (ctx) {
-    const works = CM.Operators?.constructionWorks?.(this.game);
-    if (!works?.length) return;
+  Renderer.prototype.drawOperatorWorks = function (ctx, ui) {
+    const g = this.game, current = ui?.operatorPreview, top = ui?.stack?.at(-1);
+    const preview = current && current.game === g && top?.kind === 'operators' && top.id === current.id &&
+      g.netVersion === current.netVersion && g.draft === current.draft && g.draft?.ver === current.draftVersion && g.ym() === current.ym ? current.plan : null;
+    const works = CM.Operators?.constructionWorks?.(g) || [];
+    if (!works.length && !preview) return;
     const view = this.view, point = {};
-    ctx.save(); ctx.setLineDash([6, 5]); ctx.lineWidth = 2.5; ctx.globalAlpha = .82;
-    for (const work of works) {
+    ctx.save(); ctx.lineWidth = 2.5; ctx.globalAlpha = .82;
+    for (const work of preview ? works.concat(preview) : works) {
       const height = this.trackH(work.trackType);
+      ctx.setLineDash(work === preview ? [2, 6] : [6, 5]);
       ctx.strokeStyle = work.color;
       ctx.beginPath();
       for (let index = 0; index < work.tracks.length; index++) {
@@ -3766,6 +3770,14 @@
         }
       }
       ctx.stroke();
+      if (work === preview) {
+        const station = work.points.find(p => p.stationId === work.stationId);
+        if (station) {
+          this.P(station.x, station.y, height, point);
+          ctx.setLineDash([]);
+          ctx.beginPath(); ctx.arc(point.x, point.y, 10, 0, Math.PI * 2); ctx.stroke();
+        }
+      }
       ctx.beginPath();
       for (const station of work.points) {
         if (station.x < view.x0 || station.x > view.x1 || station.y < view.y0 || station.y > view.y1) continue;

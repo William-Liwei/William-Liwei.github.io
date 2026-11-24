@@ -64,7 +64,7 @@
       // All owned stops count towards the physical cap, but an isolated player
       // marker cannot increase the competitors' development target.
       if (owner(station) === 'player' && !used.has(station.id)) continue;
-      row.stations++; if (station.size === 'L') row.large++;
+      row.stations++; if (CM.Metro.sizeAtLeast(station.size, 'L')) row.large++;
       const built = station.built;
       if (built && Number.isInteger(built[0]) && Number.isInteger(built[1]) && built[1] >= 1 && built[1] <= 12) {
         const ym = built[0] * 12 + built[1] - 1;

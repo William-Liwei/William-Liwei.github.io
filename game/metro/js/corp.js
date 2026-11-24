@@ -122,7 +122,7 @@
       for (const r of C.routes) if (r.lineId === x.lid) for (const k of r.stIdx) {
         const s = C.stations[k], tbl = CFG.cost.station[s.type] || CFG.cost.station.underground;
         if (s.ownerId && s.ownerId !== 'player') continue;
-        if (s.size !== 'L' && !seen.has(k)) { seen.add(k); E += (tbl.L - tbl[s.size]) * ci; n++; }
+        if (!CM.Metro.sizeAtLeast(s.size, 'L') && !seen.has(k)) { seen.add(k); E += (tbl.L - tbl[s.size]) * ci; n++; }
       }
       if (E <= 0) continue;
       return { line: x.lid, lf: x.lf, cars: x.cars, n: n, est: Math.round(E * 1.1 / 1000) * 1000 };

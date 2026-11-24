@@ -97,7 +97,7 @@
       if (level < 4) return null;
       if (!m || m.dailyStale || !m.trafficReady() || !m.stDailyWk || !m.stDailyWe || k === undefined || !C.serviced[k]) return '等待完整的车站运营客流';
       const requirement = '需要大型站台、' + spec.lines + ' 条运营线路与 ' + spec.hall + ' 级换乘大厅';
-      if (st.size !== 'L' || CM.Metro.hubLevel(st) < spec.hall) return requirement;
+      if (!CM.Metro.sizeAtLeast(st.size, 'L') || CM.Metro.hubLevel(st) < spec.hall) return requirement;
       // Physical connections include unused tracks and passing express services.
       // Count distinct lines that actually stop here and run published service.
       const operating = new Set();

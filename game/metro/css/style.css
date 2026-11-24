@@ -3709,6 +3709,98 @@ body.ops-open #feed > :not(#toasts) { display: none; }
 #hudTop .pill .v { min-width: 58px; }
 #hudTop .erachip .v { min-width: 0; }
 #draftbar .cost { min-width: 112px; justify-content: flex-end; }
+
+/* Keep drawing controls within the map viewport, including narrow screens. */
+#buildStack { --build-card-width: min(420px, calc((var(--view-width, 100vw) - 24px) / var(--uiz, 1))); }
+#buildStack:has(#toolopts.line-card:not(.hidden)) {
+  --build-card-width: min(370px, calc((var(--view-width, 100vw) * .45 - 40px) / var(--uiz, 1)));
+  left: calc((var(--view-left, 0px) + var(--safe-left, 0px) + 70px) / var(--uiz, 1));
+  align-items: flex-start; transform: none;
+}
+#toolopts.line-card, #draftbar {
+  width: var(--build-card-width); max-width: 100%; box-sizing: border-box;
+  border-radius: 17px; background: var(--surface-solid);
+}
+#toolopts.line-card {
+  display: grid; align-items: stretch; gap: 9px; white-space: normal; padding: 10px 12px;
+  overflow-x: hidden; overflow-y: auto; scrollbar-width: thin; overscroll-behavior: contain;
+  max-height: clamp(124px, 39dvh, 360px);
+}
+.draw-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.line-card .draw-head { position: sticky; top: -1px; align-self: start; z-index: 1; background: var(--surface-solid); }
+.draw-head > div { min-width: 0; }
+.draw-head b { display: block; font-size: 15px; }
+.draw-head small { display: block; margin-top: 2px; color: var(--muted); overflow-wrap: anywhere; }
+.draw-head-actions { display: flex; align-items: center; gap: 3px; flex: none; }
+#draw-card-settings:not([hidden]) { display: grid; gap: 8px; }
+.draw-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 7px 9px; }
+.draw-grid .to-grp { flex-direction: column; align-items: stretch; gap: 3px; min-width: 0; }
+.draw-grid select { width: 100%; min-width: 0; min-height: 32px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-solid); color: var(--text); padding: 3px 6px; font: inherit; font-size: 12px; }
+.draw-grid .seg-ctl { display: flex; flex-wrap: wrap; gap: 2px; min-width: 0; }
+.draw-grid .seg-ctl button { flex: 1 1 auto; padding-inline: 6px; white-space: normal; text-align: center; }
+.draw-grid .to-grp .tag { align-self: start; }
+.draw-more { border-top: 1px solid var(--line); padding-top: 6px; }
+.draw-more > summary, .rail-compare-wrap > summary { color: var(--accent); cursor: pointer; font-size: 12px; font-weight: 650; }
+.draw-more[open] > summary { margin-bottom: 7px; }
+.draw-points { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+
+#draftbar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 6px 9px; flex-shrink: 0; }
+#draftbar .db-summary, #draftbar .db-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; min-width: 0; }
+#draftbar .db-main { flex: 1 1 auto; flex-wrap: wrap; padding-inline: 5px; }
+#draftbar .db-main .cost { display: flex; min-width: 0; margin-left: auto; }
+#draftbar .db-controls { border-top: 1px solid var(--line); padding-top: 4px; }
+#draftbar .db-controls > .primary { margin-left: auto; }
+.line-overview { margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
+.line-remove-detail label { display: flex; align-items: center; gap: 8px; padding: 8px 0; color: var(--text); cursor: pointer; }
+.line-remove-detail p { margin: 5px 0; }
+
+.rail-profile { --rail-accent: var(--accent); border: 1px solid var(--line); border-inline-start: 3px solid var(--rail-accent); background: var(--hover); border-radius: 11px; padding: 9px 11px; margin: 0 0 10px; }
+.rail-profile[data-system="light"], .rail-profile[data-system="tram"] { --rail-accent: var(--teal); }
+.rail-profile[data-system="commuter"], .rail-profile[data-system="regional"] { --rail-accent: var(--gold); }
+.rail-profile[data-system="highspeed"], .rail-profile[data-system="maglev"] { --rail-accent: var(--violet); }
+.rail-heading { display: grid; gap: 2px; margin-bottom: 7px; }
+.rail-heading b { color: var(--text); font-size: 14px; }
+.rail-heading span { color: var(--muted); font-size: 12px; }
+.rail-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 9px; font-variant-numeric: tabular-nums; }
+.rail-values > div { display: grid; gap: 1px; min-width: 0; }
+.rail-values small { color: var(--muted); font-size: 11px; }
+.rail-values b { font-size: 13px; }
+.rail-profile > .note { margin: 8px 0 0; }
+.rail-profile.compact { padding: 6px 8px; margin: 0; }
+.rail-profile.compact .rail-values { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.rail-profile.compact .rail-values small { overflow-wrap: anywhere; }
+.rail-compare-wrap { margin: 6px 0; }
+.rail-compare { min-width: 370px; }
+.rail-compare .current { background: var(--accent-soft); }
+
+/* Keep the map visible and make the current control easy to identify. */
+#hudTop .cluster { border-radius: 15px; }
+#hudTop .daypill .v { letter-spacing: -.02em; }
+#hudTop .metrics .pill + .pill { margin-inline-start: 2px; }
+#hudTop .metrics .pill .k { font-weight: 600; }
+#toolbar .tbtn.on .lb { font-weight: 750; }
+#toolbar .tbtn:focus-visible, #hudTop button:focus-visible, #buildStack button:focus-visible, #toolopts select:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: -2px;
+}
+@media (max-width: 760px) {
+  #buildStack:has(#toolopts.line-card:not(.hidden)) {
+    --build-card-width: min(270px, calc((var(--view-width, 100vw) - 20px) / var(--uiz, 1)));
+    left: calc((var(--view-left, 0px) + var(--safe-left, 0px) + 10px) / var(--uiz, 1));
+    max-height: max(0px, calc((var(--view-height, 100dvh) * .5 + var(--view-bottom, 0px) - var(--mobile-build-bottom, 78px) - 12px) / var(--uiz, 1)));
+  }
+  #toolopts.line-card { max-height: 27dvh; }
+  .rail-profile.compact .rail-heading span { display: none; }
+  .rail-profile.compact .rail-values { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #app:has(#rightPanel:not(.closed)) #draftbar .db-main .cost { display: flex; }
+}
+@media (max-width: 1024px) and (max-height: 520px) and (orientation: landscape) {
+  #buildStack:has(#toolopts.line-card:not(.hidden)) {
+    --build-card-width: min(270px, calc((var(--view-width, 100vw) * .48 - 22px) / var(--uiz, 1)));
+    left: calc((var(--view-left, 0px) + var(--safe-left, 0px) + 10px) / var(--uiz, 1));
+    max-height: none;
+  }
+  #toolopts.line-card { max-height: 33dvh; }
+}
 #feed { transition: top .28s var(--ease), opacity .2s; }
 
 /* ===== 界面打磨（v2.7）：按钮统一、游戏风格下拉菜单、地铁芯 ===== */

@@ -185,7 +185,7 @@
       self.tbtns[id] = b; return b;
     };
     this.toolInd = h('span', { class: 'tind' });
-    this.toolbar = h('nav', { id: 'toolbar', class: 'hud glass hidden' }, this.toolInd,
+    this.toolbar = h('nav', { id: 'toolbar', class: 'hud glass hidden', 'aria-label': '地图与建设工具' }, this.toolInd,
       tb('select', 'cursor', '选择', 'tool.select', function () { self.tools.setTool('select'); }),
       tb('pan', 'move', '移动', 'tool.pan', function () { self.tools.setTool('pan'); }),
       tb('station', 'station', '建站', 'tool.station', function () { self.tools.setTool('station'); }),
@@ -1245,6 +1245,7 @@
   UI.prototype.renderToolOpts = function () {
     const g = this.g(), T = this.tools, el = this.toolopts;
     if (!el) return;
+    el.classList.toggle('line-card', T?.tool === 'line');
     if (g && T && T.tool === 'pan') {
       const locked = T.panLocked(), key = 'pan|' + locked;
       if (this._toKey !== key) {
@@ -1262,7 +1263,7 @@
     const colorLine = T.chain && net.lines[T.lineChoice];
     const lineColor = colorLine ? colorLine.color : T.nextLineColor(true);
     const nMulti = this.multi ? this.multi.stations.size + this.multi.segs.size : 0;
-    const key = [T.tool, T.chain, T.lineChoice, T.buildType, T.stationSize, T.stationTod, T.newLineRailSystem, T.curveMode, T.pointMode, T.bends.length, T.newLineSpeed, g.draft ? g.draft.ver : 0, g.clock.y, gridOn, snapOn, lineColor, nMulti, T.meas.pts.length].join('|');
+    const key = [T.tool, T.chain, T.lineChoice, T.buildType, T.stationSize, T.stationTod, T.newLineRailSystem, T.curveMode, T.pointMode, T.bends.length, T.newLineSpeed, g.draft ? g.draft.ver : 0, g.clock.y, gridOn, snapOn, lineColor, nMulti, T.meas.pts.length, !!this._drawCompact].join('|');
     if (key === this._toKey && !el.classList.contains('hidden')) return;
     this._toKey = key;
     const self = this, mc = CFG.metro, y = g.clock.y;
@@ -1286,11 +1287,12 @@
     const todSelect = h('select', { 'aria-label': '新建车站默认 TOD 等级', onchange: function () { T.stationTod = Number(todSelect.value); CM.Settings.set('buildTod', T.stationTod); self.renderToolOpts(); } });
     CM.TOD.LEVELS.slice(0, 4).forEach(function (v, i) { todSelect.appendChild(h('option', { value: String(i), selected: T.stationTod === i ? true : null }, i + ' · ' + v.name)); });
     const todCtl = grp('随站 TOD', todSelect); todCtl.setAttribute('data-tip', '只影响之后新建的车站，商业费用计入建设草案；高阶开发需投入运营后满足客流条件。');
+    const previousScroll = el.scrollTop;
     this._replacingToolOpts = true;
     try { el.innerHTML = ''; } finally { this._replacingToolOpts = false; }
     if (T.tool === 'line') {
-      if (!T.chain || !net.stations[T.chain]) el.appendChild(hint('route', '点击空地开始新线路 · 点击线路端点继续延长'));
-      else {
+      let lineChoice = null;
+      if (T.chain && net.stations[T.chain]) {
         const opts = [['new', T.lineName('new').replace('（新）', ''), '从「' + net.stations[T.chain].name + '」开始一条新线路（与已有线路换乘）', T.nextLineColor()]];
         for (const lid of M.stationLines(net, T.chain)) {
           if (M.ownerId(net.lines[lid]) !== 'player') continue;
@@ -1300,7 +1302,11 @@
           opts.push([lid, (end ? '延长 ' : '') + L.name + (end ? '' : ' 支线'), end ? '继续延长 ' + L.name : '从这里分出 ' + L.name + ' 的支线', AX.line(L)]);
         }
         if (T.lineChoice !== 'new' && net.lines[T.lineChoice] && !opts.some(function (o) { return o[0] === T.lineChoice; })) opts.push([T.lineChoice, net.lines[T.lineChoice].name, '', AX.line(net.lines[T.lineChoice])]);
-        el.appendChild(grp('线路', segc(T.lineChoice, opts, function (v) { T.lineChoice = v; T.lineLock = true; })));
+        const select = h('select', { 'aria-label': '绘线线路', 'data-line-choice': '', onchange: function () {
+          T.lineChoice = select.value; T.lineLock = true; self.renderToolOpts();
+          el.querySelector('[data-line-choice]')?.focus({ preventScroll: true });
+        } }, opts.map(o => h('option', { value: o[0], selected: o[0] === T.lineChoice }, o[1])));
+        lineChoice = grp('线路', select);
       }
       const colors = this.lineColorInput(function () { return colorLine ? colorLine.color : T.nextLineColor(true); }, function (c) {
         if (colorLine) { self.setLineLook(colorLine.id, { color: c }); self.refreshObjectPage(); }
@@ -1334,10 +1340,26 @@
         : segc(T.newLineSpeed || CM.RailSystems.get(T.newLineRailSystem).speed, CM.RailSystems.grades({ railSystem: T.newLineRailSystem }).filter(function (x) { return !CM.Fleet || CM.Fleet.speedOpen(CM.Fleet.cityId(g), y, x.kmh, T.newLineRailSystem).ok; }).map(function (x) { return [x.kmh, String(x.kmh), x.kmh + ' km/h：最小转弯半径 ' + x.minR + ' m，运营成本 ×' + x.ops.toFixed(2)]; }), function (v) { T.newLineSpeed = v; }));
       const railSelect = h('select', { 'aria-label': '新线路轨道制式', onchange: function () { T.newLineRailSystem = railSelect.value; T.newLineSpeed = CM.RailSystems.pickSpeed(CM.Fleet.cityId(g), y, railSelect.value); self.renderToolOpts(); } });
       CM.RailSystems.SYSTEMS.filter(function (r) { return y >= r.from && CM.RailSystems.pickSpeed(CM.Fleet.cityId(g), y, r.id) !== null; }).forEach(function (r) { railSelect.appendChild(h('option', { value: r.id, selected: T.newLineRailSystem === r.id ? true : null }, r.name)); });
-      el.prepend(...[nodeButton, bendButton, undoBend].filter(Boolean));
-      el.append(colorGroup, h('span', { class: 'to-sep' }), colorLine ? grp('制式', h('span', { class: 'tag' }, CM.RailSystems.get(colorLine).name)) : grp('制式', railSelect), typeCtl, sizeCtl('新站'), todCtl, curveCtl, speedCtl);
-      el.append.apply(el, snapCtl());
-      if (T.chain) el.appendChild(h('button', { class: 'btn sm ghost', 'data-tip': '结束本次绘线', 'data-key-pre': self.compact() ? null : '右键', 'data-act': 'build.finish', onclick: function () { T.endChain(); } }, ic('check'), '完成'));
+      const finish = T.chain ? h('button', { class: 'btn sm ghost', 'data-tip': '结束本次绘线', 'data-key-pre': self.compact() ? null : '右键', 'data-act': 'build.finish', onclick: function () { T.endChain(); } }, ic('check'), '完成绘线') : null;
+      const controls = h('div', { class: 'draw-grid' }, lineChoice,
+        colorLine ? null : grp('轨道制式', railSelect), typeCtl, sizeCtl('站台规模'));
+      const more = h('details', { class: 'draw-more', open: !!this._drawMore, ontoggle: function () {
+        if (el.contains(more)) self._drawMore = more.open;
+      } }, h('summary', null, '线形、速度和颜色'),
+        h('div', { class: 'draw-grid' }, curveCtl, speedCtl, todCtl, colorGroup));
+      const system = colorLine || { railSystem: T.newLineRailSystem, speed: T.newLineSpeed };
+      const toggle = h('button', { class: 'iconbtn draw-toggle', type: 'button',
+        'aria-label': this._drawCompact ? '展开绘线设置' : '收起绘线设置', 'aria-expanded': String(!this._drawCompact),
+        'aria-controls': 'draw-card-settings', onclick: function () {
+          self._drawCompact = !self._drawCompact;
+          self.renderToolOpts();
+          el.querySelector('.draw-toggle')?.focus({ preventScroll: true });
+        } }, ic(this._drawCompact ? 'plus' : 'minus', 14));
+      el.append(h('div', { class: 'draw-head' }, h('div', null, h('b', null, '绘线'), h('small', null,
+        T.chain && net.stations[T.chain] ? '从「' + net.stations[T.chain].name + '」继续' : '点击空地新建，或点击站点续接')),
+        h('div', { class: 'draw-head-actions' }, finish, toggle)),
+        h('div', { id: 'draw-card-settings', hidden: this._drawCompact }, controls,
+          h('div', { class: 'draw-points' }, nodeButton, bendButton, undoBend, ...snapCtl().slice(1)), CM.RailSystems.summary(system, true), more));
     } else if (T.tool === 'station') {
       el.append(hint('station', '点击空地建站 · 点击轨道插入车站'), h('span', { class: 'to-sep' }), typeCtl, sizeCtl('规模'), todCtl);
       el.append.apply(el, snapCtl());
@@ -1357,6 +1379,7 @@
     el.classList.toggle('has-snap', gridOn && T.tool !== 'demolish' && T.tool !== 'measure');   // 窄窗口中把说明文字收成图标，给吸附开关留出位置
     el.classList.toggle('has-color', T.tool === 'line');
     el.classList.remove('hidden');
+    el.scrollTop = previousScroll;
   };
   // 绘线起点是多条线路的端点时：在车站旁弹出选择框，确认延长哪条线路（或改为新线路）。
   // 默认项已预选（当前选中的线路优先）；不选择而直接继续点击地图时按默认项绘制。数字键 1–9 选择，Esc 关闭
@@ -1446,18 +1469,18 @@
     bar.classList.remove('hidden');
     bar.innerHTML = '';
     const self = this, n = ev.changes.add.length + ev.changes.mod.length + ev.changes.del.length;
-    bar.append.apply(bar, [
+    const summary = h('div', { class: 'db-summary' },
       h('button', { class: 'db-main', 'data-tip': '查看草案详情：变更、费用与效果预测', onclick: function () { self.openPage('build', null, { root: true }); } },
         h('span', { class: 'pulse' }), h('b', null, '草案'), h('span', { class: 'muted' }, n + ' 项'), h('span', { class: 'cost' }, ic('coin'), U.fmtMoney(ev.total))),
       ev.conflicts.length ? h('button', { class: 'cfbadge', 'data-tip': '查看冲突位置与解决办法', onclick: function () { self.showConflicts(); } }, ic('error'), ev.conflicts.length + ' 处冲突') : null,
       ev.warnings.length && !ev.conflicts.length ? h('button', { class: 'cfbadge warn', 'data-tip': '查看提示', onclick: function () { self.open['dr-warn'] = true; self.openPage('build', null, { root: true }); } }, ic('warn'), ev.warnings.length) : null,
-      this.archaeoChip(g, ev),
-      h('span', { class: 'db-sep' }),
+      this.archaeoChip(g, ev));
+    const controls = h('div', { class: 'db-controls' },
       h('button', { class: 'iconbtn', 'data-tip': '撤销', 'data-act': 'build.undo', onclick: function () { self.undo(); }, disabled: !g.draft.undo.length }, ic('undo')),
       h('button', { class: 'iconbtn', 'data-tip': '重做', 'data-act': 'build.redo', onclick: function () { self.redo(); }, disabled: !g.draft.redo.length }, ic('redo')),
       h('button', { class: 'btn sm ghost danger', 'data-tip': '放弃全部修改（不产生费用）', onclick: function () { self.discardDraft(); } }, '放弃'),
-      h('button', { class: 'btn sm primary', 'data-tip': can.ok ? '确认后立即建成并投入运营' : can.reason, 'data-act': can.ok ? 'build.confirm' : null, disabled: !can.ok, onclick: function () { self.confirmDraft(); } }, ic('hammer'), '确认建设')
-    ].filter(Boolean));
+      h('button', { class: 'btn sm primary', 'data-tip': can.ok ? '确认后立即建成并投入运营' : can.reason, 'data-act': can.ok ? 'build.confirm' : null, disabled: !can.ok, onclick: function () { self.confirmDraft(); } }, ic('hammer'), '确认建设'));
+    bar.append(summary, controls);
   };
   // 撤销 / 重做：按钮与快捷键共用；之后结束当前绘线，下一次点击重新选择起点
   UI.prototype.undo = function () {

@@ -114,7 +114,7 @@
     const load = cap > 0 ? Math.max(0, sd.peak && sd.peak[k] || 0) / cap : 0;
     const comfort = 1 / (1 + Math.max(0, load - 0.9) * 0.8), tier = U.clamp(st.tod || 0, 0, 5);
     const support = U.clamp(flow / (CFG.metroLed && CFG.metroLed.flowFull || 60000), 0, 1);
-    const bonus = ([0, 0.02, 0.07, 0.14, 0.28, 0.45][tier] + hub * (size === 'L' ? 0.06 : 0.035)) * maturity * support;
+    const bonus = ([0, 0.02, 0.07, 0.14, 0.28, 0.45][tier] + hub * (CM.Metro.sizeAtLeast(size, 'L') ? 0.06 : 0.035)) * maturity * support;
     return { frequency: frequency, lines: lines.size, entrances: entrances, flow: flow, maturity: maturity,
       comfort: comfort, load: load, tier: tier, hub: hub, size: size, bonus: bonus, station: st };
   };

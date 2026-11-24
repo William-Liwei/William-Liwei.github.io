@@ -11,7 +11,7 @@
     const cards = h('div', { class: 'size-cards' });
     for (let level = 0; level < M.HUBS.length; level++) {
       const spec = M.HUBS[level], error = level > current ? M.hubEligibility(net, sid, level) : null;
-      const size = ['S', 'M', 'L'].indexOf(s.size) < ['S', 'M', 'L'].indexOf(spec.size) ? spec.size : s.size;
+      const size = M.sizeAtLeast(s.size, spec.size) ? s.size : spec.size;
       const cap = M.stationCapacity({ size: size, hub: level });
       const cost = Math.max(0, M.hubCost(level, g.clock.y) - M.hubCost(original, g.clock.y));
       cards.appendChild(h('button', { class: 'size-card' + (current === level ? ' on' : ''), 'aria-pressed': current === level ? 'true' : 'false', disabled: error ? true : null, 'data-tip': error,
