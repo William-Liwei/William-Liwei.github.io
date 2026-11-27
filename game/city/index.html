@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#141e25">
+  <meta name="description" content="在弯湾河两岸铺设道路、规划分区、完善公共服务，发展你的城市。">
+  <title>岸城 · City</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span class="brand-mark" data-icon="logo"></span><div><h1>岸城</h1><span class="brand-sub">CITY <span> / </span> 城市规划模拟</span></div></div>
+    <div class="stats" aria-label="城市概况">
+      <div class="stat"><span data-icon="cash"></span><div><span>市库余额</span><strong id="cash">¥145,000</strong></div></div>
+      <div class="stat"><span data-icon="people"></span><div><span>居民</span><strong id="population">0</strong></div></div>
+      <div class="stat"><span data-icon="case"></span><div><span>岗位</span><strong id="jobs">0</strong></div></div>
+      <div class="stat"><span data-icon="smile"></span><div><span>满意度</span><strong id="happiness">—</strong></div></div>
+    </div>
+    <div class="top-actions"><button id="save" class="square" aria-label="保存进度" title="保存进度" data-icon="save"></button><button id="menu" class="square" aria-label="菜单" title="菜单" data-icon="menu"></button></div>
+  </header>
+  <main id="workspace" class="workspace">
+    <div class="map-shell" id="map-shell"><canvas id="map" aria-label="岸城规划地图" tabindex="0"></canvas></div>
+    <div class="map-label"><span data-icon="pin"></span> 弯湾河 · 自由建城</div>
+    <aside id="overview" class="card overview" aria-label="建设目标">
+      <div class="card-heading"><div class="heading-title"><span data-icon="flag"></span><h2>建设目标</h2></div><button class="panel-switch square" id="goals-toggle" aria-label="收起建设目标" aria-expanded="true" data-icon="chevron"></button></div>
+      <div id="goal-content" class="goal-content"></div>
+    </aside>
+    <aside id="market" class="card market" aria-label="用地需求和财政">
+      <div class="card-heading"><div class="heading-title"><span data-icon="chart"></span><h2>城市概况</h2></div><button id="market-toggle" class="panel-switch square" aria-label="收起城市概况" aria-expanded="true" data-icon="chevron"></button></div>
+      <div id="market-content">
+        <div class="section-label">用地需求</div><div id="demand" class="demand"></div>
+        <div class="finance"><div><span>月度结余</span><strong id="balance">¥0</strong></div><button id="accounts" class="small-link" type="button">账本</button></div>
+      </div>
+    </aside>
+    <div class="views" aria-label="地图视图">
+      <button class="square" id="layer" aria-label="切换地图图层" aria-expanded="false" title="地图图层" data-icon="layers"></button>
+      <button class="square" id="zoom-in" aria-label="放大" title="放大" data-icon="plus"></button><button class="square" id="zoom-out" aria-label="缩小" title="缩小" data-icon="minus"></button>
+      <button class="square" id="recenter" aria-label="回到全图" title="回到全图" data-icon="fit"></button>
+      <div id="layers" class="card layers" hidden></div>
+    </div>
+    <div class="map-meta"><div id="scale" class="scale">1 km</div><span>虚构地形</span></div>
+    <div class="map-lower">
+      <div class="instruction" id="instruction" aria-live="polite"></div>
+      <div id="toasts" aria-live="polite"></div>
+    </div>
+  </main>
+  <footer class="bottom">
+    <div class="time" aria-label="时间控制"><span id="date">第 1 年 · 1 月</span><div class="time-buttons"><button type="button" id="pause" class="square" aria-label="暂停" data-icon="pause"></button><button type="button" class="speed on" data-speed="1" aria-pressed="true">1×</button><button type="button" class="speed" data-speed="3" aria-pressed="false">3×</button><button type="button" class="speed" data-speed="8" aria-pressed="false">8×</button></div></div>
+    <nav class="toolbar" id="toolbar" aria-label="城市建设工具"></nav>
+    <button id="info" class="square help" aria-label="操作指南" title="操作指南" data-icon="help"></button>
+  </footer>
+  <dialog id="dialog"><div id="dialog-body"></div></dialog>
+  <script src="terrain.js"></script>
+  <script src="simulation.js"></script>
+  <script src="map.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
