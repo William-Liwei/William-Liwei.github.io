@@ -18,6 +18,9 @@
   T.byId = function (id) { return T.list().find(function (R) { return R.id === id; }) || null; };
   T.openAt = function (R, t) { return t >= yof(R.open) - 1e-6; };
   T.stopOpen = function (s, t) { return (s.y0 == null || t >= yof(s.y0) - 1e-6) && (s.y1 == null || t < yof(s.y1) - 1e-6); };
+  // 能用作区间端点的车站（v3.3）：现在开着，或者已经接管到玩家手里（之后按史实停用的车站，如 1983 年停用的大埔，仍是玩家的车站；
+  // 否则它与新站之间的一段铁路永远接管不了，两段接管线路无法连起来）
+  T.usable = function (net, R, s, t) { return T.stopOpen(s, t) || !!(net && T.stationOf(net, R, s.id)); };
   const edgeOpen = function (e, t) { return e.y0 == null || t >= yof(e.y0) - 1e-6; };
 
   // ---------- 车站与区间图（数据，按线路缓存） ----------
@@ -227,7 +230,8 @@
     if (!T.openAt(R, t)) { res.error = ymText(R.open) + '起才能接管' + R.name; return res; }
     const A = G.st.get(a), B = G.st.get(b);
     if (!A || !B) { res.error = '请选择起点站和终点站'; return res; }
-    if (!T.stopOpen(A, t) || !T.stopOpen(B, t)) { res.error = (T.stopOpen(A, t) ? B : A).n + '站现在还没有开通'; return res; }
+    const unavailable = !T.usable(net, R, A, t) ? A : !T.usable(net, R, B, t) ? B : null;
+    if (unavailable) { res.error = unavailable.n + '站现在' + (unavailable.y1 && t >= yof(unavailable.y1) ? '已经停用' : '还没有开通'); return res; }
     const all = T.paths(R, a, b);
     if (!all.length) { res.error = a === b ? '起点和终点是同一座车站（只有环线可以整圈接管）' : '这两座车站之间没有连续的铁路'; return res; }
     // 每条候选路径：区间是否都已通车、都没接管
@@ -237,7 +241,7 @@
     if (!valid.length) { const why = ok(all[0]); res.error = why === 'taken' ? '这段铁路里有区段已经接管：请把起终点选在未接管的区段两端' : '这段铁路还有区段没有通车'; return res; }
     const path = valid[Math.min(res.dir, valid.length - 1)]; res.path = path;
     // 区段：相邻的已开通车站之间（没开站的中间站只是经过）
-    const stops = path.filter(function (id, i) { return i === 0 || i === path.length - 1 || T.stopOpen(G.st.get(id), t); });
+    const stops = path.filter(function (id, i) { return i === 0 || i === path.length - 1 || T.usable(net, R, G.st.get(id), t); });
     let j = 0;
     for (let i = 0; i + 1 < stops.length; i++) {
       const SA = G.st.get(stops[i]), SB = G.st.get(stops[i + 1]), edges = [];
@@ -275,9 +279,16 @@
     res.join = opt.join && res.joins.some(function (j) { return j.lid === opt.join; }) ? opt.join : null;
     // 费用：按当年物价（造价指数）。轨道按地面线单价的 km 倍、车站按造价的 station 倍，基础车队按随线配车
     const ci = MM.costIndex(y), kF = R.km != null ? R.km : 0.6, sF = R.station != null ? R.station : 0.5;
-    const track = res.km * CFG.cost.trackPerKm.surface * kF * ci;
+    const unitTrack = CFG.cost.trackPerKm.surface * kF * ci;
+    const track = res.km * unitTrack;
+    for (const seg of res.segs) seg.cost = seg.km * unitTrack;
     res.items.push({ label: '轨道接管与现代化改造 · ' + U.fmtNum(res.km, 1) + ' km（电气化、信号、道岔与线路加固）', amount: track });
-    let stc = 0, nNew = 0; for (const S of res.stations) { if (S.id) continue; nNew++; stc += MM.stationCost(S.type, S.size, y) * sF; }
+    let stc = 0, nNew = 0;
+    for (const S of res.stations) {
+      if (S.id) continue;
+      S.cost = MM.stationCost(S.type, S.size, y) * sF;
+      nNew++; stc += S.cost;
+    }
     if (nNew) res.items.push({ label: '车站改造 · ' + nNew + ' 座（月台、闸机与无障碍设施）', amount: stc });
     res.nNew = nNew; res.nKeep = res.stations.length - nNew;
     // 基础车队：在接管后的线网上按随线配车估算（与建设草案同一套规则）
@@ -298,12 +309,13 @@
   };
   // 接管后的线网（克隆，不改动原线网）
   T.build = function (g, R, P) {
-    const MM = M(), net = MM.clone(g.net), at = [g.clock.y, g.clock.m], sid = {};
+    const MM = M(), net = MM.clone(g.net), at = [g.clock.y, g.clock.m], sid = {}, payments = [];
     for (const S of P.stations) {
       if (S.id) { sid[S.stop] = S.id; continue; }
       const id = MM.newId(net, 's');
       net.stations[id] = { id: id, name: S.name, x: S.x, y: S.y, size: S.size, type: S.type, tk: R.id, tkStop: S.stop, built: at, site: [S.x, S.y] };
       sid[S.stop] = id;
+      if (S.cost > 0) payments.push({ ref: id, amount: S.cost });
     }
     let lid = P.join;
     if (!lid) {
@@ -315,19 +327,22 @@
     for (const sg of P.segs) {
       const r = MM.addSegment(net, lid, sid[sg.A], sid[sg.B], sg.pts, sg.type); if (r.error) return { error: r.error };
       const s = net.segments[r.id]; s.tk = R.id; s.tkE = sg.edges.slice(); s.built = at;
+      if (sg.cost > 0) payments.push({ ref: r.id, amount: sg.cost });
     }
     const ln = MM.normalizeLines(net);
     const bad = MM.validate(net); if (bad) return { error: bad };
     const lineNow = Object.keys(net.lines).find(function (k) { return k === lid; }) ? lid : null;
     const tp = lineNow ? MM.lineTopo(net, lineNow) : null;
     if (tp && tp.topo === 'invalid') return { error: tp.reason || '接管后的线路形态无效' };
-    return { net: net, lid: lineNow, notes: ln };
+    return { net: net, lid: lineNow, notes: ln, payments };
   };
   // 确认接管：一次付清，立即投入运营（与确认建设草案相同的收尾：重新编译、随线配车、重算交通、成长回放与纪事）
   T.can = function (g, P) {
     if (!P || !P.ok) return { ok: false, reason: P ? P.error : '请选择区间' };
     if (g.draft) return { ok: false, reason: '接管确认后立即生效：请先确认或放弃当前的建设草案' };
-    if (g.jumping || g.pending) return { ok: false, reason: '正在结算，请稍候' };
+    if (g.jumping || g.pending || g.jumpError || g.settlementError) return { ok: false, reason: '正在结算或恢复中，请稍候' };
+    const reservation = CM.Operators?.constructionConflict?.(g, P.preview.net, g.net);
+    if (reservation) return { ok: false, reason: reservation.msg };
     if (!g.econ.canAffordBuild(P.total)) return { ok: false, reason: '资金不足：需要 ' + money(P.total) + '，当前一般资金 ' + money(g.econ.funds) + (g.econ.capex > 0.5 ? ' + 建设专项资金 ' + money(g.econ.capex) : '') };
     return { ok: true };
   };
@@ -336,7 +351,9 @@
     const B = P.preview, MM = M(), A0 = P.stations[0], Z0 = P.stations[P.stations.length - 1];
     const span = A0.name + '—' + (P.a === P.b ? A0.name + '（整圈）' : Z0.name);
     g.econ.spendBuild({ construction: P.total }, '既有铁路接管与现代化改造：' + R.name + ' ' + span, { y: g.clock.y, m: g.clock.m, d: g.clock.d });
-    const before = g.compiled, netBefore = g.net;
+    const netBefore = g.net;
+    g.buildSeq = (g.buildSeq || 0) + 1;
+    MM.recordBuildPayments(B.net, B.payments, g.buildSeq);
     g.net = B.net; g.netVersion++; g.rev++;
     g.compiled = MM.compile(g.net, g.city);
     if (CM.Fleet && g.fleet) { CM.Fleet.applyAdd(g, P.fleetAdd); CM.Fleet.sync(g); g.fleet.ver++; }
@@ -344,7 +361,7 @@
     g.model.cancelPredict();
     g.model.setNetwork(g.compiled);
     const lines = B.lid ? [B.lid] : [];
-    g._impactPlan = { before: before, version: g.netVersion, lines: lines, cost: P.total, summary: '接管 ' + R.short + ' ' + span };
+    g._impactPlan = { before: netBefore, version: g.netVersion, lines: lines, cost: P.total, summary: '接管 ' + R.short + ' ' + span };
     g.impactReport = { status: 'waiting', version: g.netVersion, at: [g.clock.y, g.clock.m] };
     const L = B.lid && g.net.lines[B.lid];
     g.logEvent({ tag: '建设', title: '接管' + R.short + '：' + span, desc: U.fmtNum(P.km, 1) + ' km、' + P.stations.length + ' 座车站' + (P.nKeep ? '（沿用 ' + P.nKeep + ' 座已接管车站）' : '') + '，完成现代化改造后' + (P.join ? '并入' : '作为') + (L ? L.name : '新线路') + '投入运营，费用 ' + money(P.total) + '。' });
@@ -382,8 +399,8 @@
     const add = function (path, p, closed) { const q = []; for (let k = 0; k + 1 < p.length; k += 2) q.push([F.X(p[k]), F.Y(p[k + 1])]); const z = simplify(q, 0.15); if (z.length < 2) return false; path.moveTo(z[0][0], z[0][1]); for (let i = 1; i < z.length; i++) path.lineTo(z[i][0], z[i][1]); if (closed) path.closePath(); return true; };
     const polys = function (feats, out) { for (const ft of feats || []) { if (!hits(ft.bbox)) continue; const p = new Path2D(); let any = false; for (const r of ft.rings) any = add(p, r.p, true) || any; if (any) out.push(p); } };
     if (Geo && Geo.water) {
-      polys([].concat(Geo.reserves || [], Geo.woods || [], Geo.parks || []), P.green);
-      polys(Geo.water, P.water); if (city && city.reclaimWater) polys(city.reclaimWater(), P.water);
+      polys(Geo.view('reserves').concat(Geo.view('woods'), Geo.view('parks')), P.green);
+      polys(Geo.view('water'), P.water); if (city && city.reclaimWater) polys(city.reclaimWater(), P.water);
       for (const r of Geo.waterLines || []) { if (!hits(r.bbox)) continue; const p = new Path2D(); if (add(p, r.p, false)) P.rivers.push({ p: p, w: Math.max(0.05, r.w) * F.sc }); }
     }
     for (const gr of (city && city.roadGroups) || []) { if (gr.cls < 3 || (gr.year != null && gr.year > yr) || !hits(gr.bbox)) continue; for (const p of gr.ways) add(gr.cls >= 4 ? P.r4 : P.r3, p, false); }
@@ -425,7 +442,7 @@
     for (const x of L) { const pts = simplify(T.railBetween(R, G.st.get(x.e.a), G.st.get(x.e.b)).pts.map(function (p) { return [F.X(p[0]), F.Y(p[1])]; }), 0.25); lines += '<polyline class="tk-l ' + x.k + '" points="' + pts.map(function (p) { return f1(p[0]) + ',' + f1(p[1]); }).join(' ') + '"' + (x.k === 'taken' ? ' style="stroke:' + esc(R.color || '#1f9d63') + '"' : '') + '/>'; }
     // 站名：环线放在圈外，其余放在线路一侧（竖向的线放右侧、横向的放上方），和已放的站名或车站重叠时换到另一侧或上下错开（按底图比例算一次，放大后只会更松）
     const ends = plan && plan.path ? [plan.path[0], plan.path[plan.path.length - 1]] : [];
-    const P0 = R.stops.map(function (q) { const p = T.stopPos(R, q); return { s: q, x: F.X(p.x), y: F.Y(p.y), open: T.stopOpen(q, t) }; });
+    const P0 = R.stops.map(function (q) { const p = T.stopPos(R, q); return { s: q, x: F.X(p.x), y: F.Y(p.y), open: T.usable(g.net, R, q, t) }; });
     const at = new Map(); for (const q of P0) at.set(q.s.id, q);
     const dots = P0.filter(function (q) { return q.open; }), placed = [], loop = G.loops.length > 0;
     let cx = 0, cy = 0; for (const q of P0) { cx += q.x; cy += q.y; } cx /= P0.length; cy /= P0.length;
@@ -576,7 +593,7 @@
     if (open && st.a && st.b) P = T.plan(g, R, st.a, st.b, { dir: st.dir, join: st.join });
     const pick = function (id) {
       if (!open) return;
-      const s = G.st.get(id); if (!s || !T.stopOpen(s, t)) return;
+      const s = G.st.get(id); if (!s || !T.usable(g.net, R, s, t)) return;
       if (!st.a || st.b) { st.a = id; st.b = null; } else st.b = id;
       st.dir = 0; st.join = null; redraw();
     };

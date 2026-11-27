@@ -13,7 +13,9 @@ js/geo_gz.js (Guangzhou), js/geo_hz.js (Hangzhou), js/geo_hk.js (Hong Kong),
 js/geo_tk.js (Tokyo), js/geo_tp.js (Taipei), js/geo_pa.js (Paris),
 js/geo_wh.js (Wuhan), js/geo_sh.js (Shanghai), js/geo_bj.js (Beijing),
 js/geo_sz.js (Shenzhen), js/geo_ld.js (London), js/geo_ny.js (New York),
-js/geo_sg.js (Singapore) and js/geo_sy.js (Sydney) contain preprocessed
+js/geo_sg.js (Singapore), js/geo_sy.js (Sydney), js/geo_nj.js (Nanjing),
+js/geo_mi.js (Miami), js/geo_sh_city.js (Shanghai), and js/geo_sh_region.js
+(Shanghai–Suzhou) contain preprocessed
 OpenStreetMap geographic data, including waterways, roads, railways, green
 areas, boundaries and place names.
 That database remains available under ODbL 1.0. The game's non-commercial

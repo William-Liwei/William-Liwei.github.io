@@ -66,7 +66,7 @@
   A.markPending = function (g, key) {
     const m = g.model; alertState(g).pending.set(key, { version: m.version || 0, cycles: m.cycles || 0 });
   };
-  // 每月一次（当月交通结果发布后）：更新持续月数，只在间隔足够、界面空闲时弹出一张最严重的卡片
+  // 每月一次（当月交通结果发布后）：更新持续月数，在界面空闲时提示最严重的过载。
   A.monthly = function (g, ui) {
     if (g.tutorial || !A.ready(g)) { ui.updateOpsDock(); return; }
     const n = note(g), ym = g.ym();
@@ -292,26 +292,9 @@
       } }, ic('sparkle', 13), x.pending ? '等待评估' : (ready ? '自动处理' : '更新中'), plan.ok && plan.cost > 0.5 ? h('em', { class: 'ops-cost' }, U.fmtMoney(plan.cost)) : null),
       h('button', { class: 'btn sm', onclick: function () { if (after) after('locate'); A.locate(g, ui, x); } }, ic('locate', 13), '定位处理'));
   };
-  CM.UI.prototype.hideOpsPop = function () { if (this._opsPop) { this._opsPop.remove(); this._opsPop = null; } clearTimeout(this._opsPopT); };
   CM.UI.prototype.showOpsPop = function (x) {
-    const g = this.g(), self = this; if (!g) return;
-    this.hideOpsPop();
-    const close = function () { self.hideOpsPop(); };
-    const hold = function (on) { clearTimeout(self._opsPopT); if (!on) self._opsPopT = setTimeout(close, 16000); };
-    const plan = A.plan(g, x);
-    const pop = h('div', { class: 'ops-pop ' + x.level, role: 'status', 'aria-live': 'polite' },
-      h('div', { class: 'ops-pop-h' }, h('span', { class: 'ops-pop-i' }, ic('chip', 15)), h('small', { class: 'grow' }, '地铁芯'),
-        h('button', { class: 'iconbtn', 'aria-label': '暂不提醒', 'data-tip': '一年内不再提醒这一项', onclick: function () { A.snooze(g, self, x); close(); } }, ic('close', 13))),
-      h('b', { class: 'ops-pop-t' }, x.title),
-      h('div', { class: 'tiny muted' }, x.sub), h('div', { class: 'tiny ops-pop-plan' }, plan.ok ? '可以' + plan.text : plan.text),
-      actions(this, g, x, close, plan));
-    pop.addEventListener('pointerenter', function () { hold(true); });
-    pop.addEventListener('pointerleave', function () { hold(false); });
-    this._opsPop = pop;
-    document.getElementById('app').appendChild(pop);
-    this.queueLayout();
-    hold(false);
-    sfx('opsAlert');
+    const self = this; if (!this.g()) return;
+    this.toast(x.kind === 'station' ? '车站过载' : '线路过载', x.level === 'bad' ? 'bad' : 'warn', { label: '查看待办', fn: function () { self.taskTab = 'todo'; self.openPage('tasks', 'todo', { root: true }); } });
   };
   // 随界面刷新调用：换月且当月交通结果已发布时做一次月度检查，打开的 App 随之刷新
   CM.UI.prototype.tickOps = function (g) {
@@ -750,7 +733,7 @@
         { k: 'share', label: '地铁分担率', sub: '地铁占全部出行', short: '分担率', pts: hseries('share', function (v) { return Math.round(v * 1000) / 10; }), fmt: function (v) { return U.fmtNum(v, 1) + '%'; } },
         { k: 'sat', label: '满意度', sub: '满分 100', pts: hseries('sat', function (v) { return Math.round(v); }), fmt: function (v) { return String(Math.round(v)); } },
       ]);
-      setContent([kpis, CM.Reports && CM.Reports.entry ? CM.Reports.entry(self) : null, h('div', { class: 'mc-cols' }, netCard, trendCard), todo, recentFx(), h('div', { class: 'mc-cols' }, rankCard('线路满载率', '早高峰最拥挤区段', topL, function () { setRoot('lines'); }), rankCard('车站负荷', '高峰客流 / 能力', topS, function () { setRoot('stations'); }))]);
+      setContent([self.tip1('ops'), kpis, CM.Reports && CM.Reports.entry ? CM.Reports.entry(self) : null, h('div', { class: 'mc-cols' }, netCard, trendCard), todo, recentFx(), h('div', { class: 'mc-cols' }, rankCard('线路满载率', '早高峰最拥挤区段', topL, function () { setRoot('lines'); }), rankCard('车站负荷', '高峰客流 / 能力', topS, function () { setRoot('stations'); }))]);
     };
 
     // ---------------- 线路管理 ----------------
@@ -758,10 +741,10 @@
       { key: 'ord', label: '线路', value: function (r) { return r.ord; }, cell: function (r) { return h('span', { class: 'mc-obj' }, lb(r.L), h('b', null, r.L.name)); } },
       { key: 'ends', label: '走向', cls: 'mc-dim opt', cell: function (r) { return h('span', { class: 'mc-trunc' }, ends(r, g.net)); } },
       { key: 'km', label: '长度', cls: 'num', desc: true, value: function (r) { return r.km; }, cell: function (r) { return U.fmtNum(r.km, 1) + ' km'; } },
-      { key: 'st', label: '车站', cls: 'num opt', desc: true, value: function (r) { return r.st; }, cell: function (r) { return String(r.st); } },
-      { key: 'kmh', label: '速度', cls: 'num opt', desc: true, value: function (r) { return r.kmh; }, cell: function (r) { return r.kmh + ' km/h'; } },
+      { key: 'st', label: '车站', cls: 'num opt pro', desc: true, value: function (r) { return r.st; }, cell: function (r) { return String(r.st); } },
+      { key: 'kmh', label: '速度', cls: 'num opt pro', desc: true, value: function (r) { return r.kmh; }, cell: function (r) { return r.kmh + ' km/h'; } },
       { key: 'riders', label: '日客运量', cls: 'num', desc: true, value: function (r) { return r.riders; }, cell: function (r) { return r.calc ? '计算中' : (r.riders ? U.fmtPeople(r.riders) : '—'); } },
-      { key: 'spark', label: '趋势', cls: 'opt', cell: function (r) { return sparkLine(A.rows(g, 'l', r.lid), 1); } },
+      { key: 'spark', label: '趋势', cls: 'opt pro', cell: function (r) { return sparkLine(A.rows(g, 'l', r.lid), 1); } },
       { key: 'train', label: '配属 / 需要', cls: 'num', desc: true, value: function (r) { return r.need - r.avail; }, cell: function (r) { return h('span', { class: r.need > r.avail ? 'mc-warn' : '' }, r.avail + ' / ' + r.need); } },
       { key: 'lf', label: '高峰满载', desc: true, value: function (r) { return r.lf; }, cell: function (r) { return r.calc ? '—' : (r.noTrain ? '早高峰无列车' : loadBar(r.lf)); } },
       { key: 'state', label: '状态', cell: function (r) { return tag(lineState(r)); } },
@@ -856,7 +839,7 @@
       { key: 'xfer', label: '线路', desc: true, value: function (r) { return r.lines.length; }, cell: function (r) { return h('span', { class: 'mc-lbs' }, r.lines.slice(0, 6).map(function (l) { return g.net.lines[l] ? lb(g.net.lines[l]) : null; })); } },
       { key: 'flow', label: '日客流', cls: 'num', desc: true, value: function (r) { return r.flow; }, cell: function (r) { return r.flow ? U.fmtPeople(r.flow) : '—'; } },
       { key: 'load', label: '高峰负荷', desc: true, value: function (r) { return r.load; }, cell: function (r) { return loadBar(r.load); } },
-      { key: 'tod', label: '商业开发', cls: 'opt', desc: true, value: function (r) { return r.s.tod || 0; }, cell: function (r) { return r.s.tod ? '第 ' + r.s.tod + ' 级' : '—'; } },
+      { key: 'tod', label: '商业开发', cls: 'opt pro', desc: true, value: function (r) { return r.s.tod || 0; }, cell: function (r) { return r.s.tod ? '第 ' + r.s.tod + ' 级' : '—'; } },
       { key: 'state', label: '状态', cell: function (r) { return tag(stationState(r)); } },
       { key: 'go', label: '', cls: 'mc-act', cell: function (r) { return locateBtn('station', r.sid, '在地图上定位这座车站'); } },
     ];
@@ -1063,7 +1046,7 @@
       setBar([['票价管理']]);
       fareEditor = self.fareEditor();
       const body = h('section', { class: 'mc-card mc-fare' }, fareEditor);
-      setContent([body, h('button', { class: 'linkbtn mc-fin-link', onclick: then(function () { self.finTab = 'ov'; self.openPage('finance', 'ov', { root: true }); }) }, ic('coin', 14), '收支、财政和融资在顶栏「资金」', ic('chev', 14))]);
+      setContent([self.tip1('fare'), body, h('button', { class: 'linkbtn mc-fin-link', onclick: then(function () { self.finTab = 'ov'; self.openPage('finance', 'ov', { root: true }); }) }, ic('coin', 14), '收支、财政和融资在顶栏「资金」', ic('chev', 14))]);
     };
 
     // ---------------- 口岸管理（v2.7，城市连接）：接驳口状态、跨境附加费、切换到对岸、对岸线网 ----------------
@@ -1212,7 +1195,6 @@
     this.opsApp = api;
     sfx('appOpen');
     document.body.classList.add('ops-open');
-    this.hideOpsPop();
     app.append(rail, h('div', { class: 'mc-body' }, bar, content, draftBar));
     document.getElementById('app').append(back, app);
     if (this.opsDock) this.opsDock.classList.add('vx-on');
