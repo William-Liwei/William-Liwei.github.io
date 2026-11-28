@@ -70,3 +70,6 @@
 #industry-panel{margin:.65rem 0;padding:.7rem;border:1px solid #695f49;border-radius:.65rem}
 #industry-panel h2{margin-top:0}#industry-panel details{margin-top:.55rem}
 #industry-panel summary{cursor:pointer}
+#social-panel{margin:.65rem 0;padding:.7rem;border:1px solid #626d85;border-radius:.65rem}
+#social-panel h2{margin-top:0}#social-panel details{margin-top:.55rem}
+#social-panel summary{cursor:pointer}
