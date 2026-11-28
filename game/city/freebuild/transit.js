@@ -342,7 +342,7 @@ function stationDemand(byStation,stationIds,civic,freight){
  return assigned;
 }
 function allocate(lines,setup,civic,freight){
- const graph=Object.create(null),stationIds=new Set(),eligible=lines.filter(l=>l.valid&&(freight?l.freightCapacity>0:!MODES[l.mode].freightOnly));
+ const graph=Object.create(null),stationIds=new Set(),eligible=lines.filter(l=>l.valid&&(freight?l.freightCapacity>0:l.passengerEnabled&&!MODES[l.mode].freightOnly));
  for(const l of eligible){
   for(const p of l.points)stationIds.add(p.id);
   for(let i=1;i<l.points.length;i++){
@@ -357,7 +357,7 @@ function allocate(lines,setup,civic,freight){
   const w=d/(freight?30:24)+(freight?1.0:.54);
   (graph[a.id]??=[]).push({to:b.id,w,transfer:true});(graph[b.id]??=[]).push({to:a.id,w,transfer:true});
  }
- const d=stationDemand(setup.byStation,stationIds,civic,freight),out=Object.create(null),
+ const d=stationDemand(setup.byStation,stationIds,civic,freight),out=Object.create(null),regional=new Map(),
   remaining=new Map(eligible.map(l=>[l.id,freight?l.freightCapacity:l.capacity]));
  const origins=[...d].filter(([,o])=>o.supply>=.6).sort((a,b)=>b[1].supply-a[1].supply).slice(0,35);
  const destinations=[...d].filter(([,o])=>o.demand>=.6).sort((a,b)=>b[1].demand-a[1].demand).slice(0,42);
@@ -373,7 +373,7 @@ function allocate(lines,setup,civic,freight){
    if(!freight&&cost>35)continue;
    const services=[...new Set(p.map(e=>e.line).filter(Boolean))];
    if(services.some(k=>!remaining.get(k)))continue;
-   choices.push({needs,cost,services,dest});
+   choices.push({needs,cost,services,dest,path:p});
   }
   choices.sort((a,b)=>a.cost-b.cost);
   for(const c of choices.slice(0,9)){
@@ -382,10 +382,21 @@ function allocate(lines,setup,civic,freight){
    stock.supply-=n;c.needs.demand-=n;
    for(const k of c.services){remaining.set(k,remaining.get(k)-n);out[k]=(out[k]||0)+n;}
    if(old.external)inbound+=n;else if(c.dest.external)outbound+=n;else intra+=n;
+   if(!freight&&(old.external||c.dest.external)){
+    let from=a;
+    for(let i=0;i<c.path.length;){
+     const start=from, id=c.path[i].line;
+     from=c.path[i++].to;
+     while(id&&c.path[i]?.line===id)from=c.path[i++].to;
+     if(!id||setup.byStation.get(start).external===setup.byStation.get(from).external)continue;
+     const key=JSON.stringify([id,start,from]),row=regional.get(key)||{line:id,from:start,to:from,count:0};
+     row.count+=n;regional.set(key,row);
+    }
+   }
    if(c.services.length>1)transfers+=n;
   }
  }
- return {byLine:out,intra,inbound,outbound,transfers};
+ return {byLine:out,intra,inbound,outbound,transfers,regional:[...regional.values()]};
 }
 function evaluate(state,civic,options={}){
  const o=opt(options),setup=makeSetup(state,o),models=[];
@@ -396,8 +407,8 @@ function evaluate(state,civic,options={}){
   const expansion=p.valid&&m.air?Math.max(0,...p.points.filter(s=>!s.external).map(s=>clamp(+o.airportBoost?.[s.id]||0,0,.35))):0;
   const boost=1+.20*Math.min(m.track?2:3,Math.max(0,p.depots-(m.track?1:0)))+expansion;
   const facilityCost=p.valid?Math.ceil(m.upkeep+length*(m.air ? .82 : m.water ? .36 : .22)):Math.round(m.upkeep*.18);
-  models.push({...line,...p,points:p.points||line.stops.map(id=>setup.byStation.get(id)).filter(Boolean),length,capacity:p.valid?Math.round(m.capacity*boost):0,
-    freightCapacity:p.valid?Math.round((m.freightOnly?m.capacity:m.freight||0)*boost*(support?1.25:1)):0,
+  models.push({...line,...p,points:p.points||line.stops.map(id=>setup.byStation.get(id)).filter(Boolean),length,freightEnabled:line.mode!=='rail'||o.railCargo!==false,passengerEnabled:line.mode!=='rail'||o.railPassenger!==false,capacity:p.valid?Math.round(m.capacity*boost):0,
+    freightCapacity:p.valid&&(line.mode!=='rail'||o.railCargo!==false)?Math.round((m.freightOnly?m.capacity:m.freight||0)*boost*(support?1.25:1)):0,
     passengers:0,cargo:0,income:0,expense:facilityCost,net:0,color:m.color});
  }
  const passenger=allocate(models,setup,civic,false),goods=allocate(models,setup,civic,true),
@@ -414,7 +425,7 @@ function evaluate(state,civic,options={}){
   if(l.valid){let s=0;l.distances=l.path.map((p,i)=>{if(i)s+=dist(p,l.path[i-1]);return s});}
  }
  total.net=total.income-total.expense;
- return {lines:Object.fromEntries(models.map(l=>[l.id,l])),total,totals:total,gates:setup.gates};
+ return {lines:Object.fromEntries(models.map(l=>[l.id,l])),total,totals:total,regionalJourneys:passenger.regional,gates:setup.gates};
 }
 function interpolatePath(path,cumulative,x){
  let a=1,b=path.length-1;

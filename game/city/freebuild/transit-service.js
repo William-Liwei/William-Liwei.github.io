@@ -90,7 +90,7 @@ function create(raw={},options={}){
  }
  const railModels=[];
  for(const m of Object.values(transitMetrics?.lines||{}).slice(0,LIMIT.lines)){
-  if(!str(m?.id)||!Object.hasOwn(MODES,m.mode)||m.mode==='bus'||physical.has(m.id))continue;
+  if(m?.passengerEnabled===false||!str(m?.id)||!Object.hasOwn(MODES,m.mode)||m.mode==='bus'||physical.has(m.id))continue;
   const supports=MODES[m.mode],points=m.points||[],segments=m.segments||[];
   const valid=!!m.valid&&points.length>=2&&new Set(points.map(p=>p.id)).size===points.length&&points.every(p=>str(p.id)&&xy(p))&&segments.length===points.length-1&&segments.every(s=>Array.isArray(s)&&s.length>=2&&s.every(xy)&&pathLength(s)>1);
   const deps=m.mode==='ferry'?(valid?yardDepots.filter(y=>wetYard(m,y)).map(y=>y.id):[]):[];

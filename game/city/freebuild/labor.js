@@ -11,7 +11,7 @@ const ROLES={
  professional:{name:'大学专业岗位',wage:263,color:'#bc9ee6'}
 };
 const GRADES={none:'无学历要求',primary:'小学',secondary:'中学',vocational:'职业技术',university:'大学'};
-const REASONS={noJobs:'本市尚无岗位',qualification:'现有岗位需要不同学历',unreachable:'合适岗位没有可往返通勤的路线',experience:'可达职位需要更多实际工作经验',capacity:'高峰往返座位、班次或停车未满足',competition:'能到达的合适岗位已经招满'};
+const REASONS={noJobs:'本市尚无岗位',qualification:'现有岗位需要不同学历',unreachable:'合适岗位没有可往返通勤的路线',experience:'可达职位需要更多实际工作经验',capacity:'高峰往返座位、班次或停车未满足',competition:'能到达的合适岗位已经招满',searchLimit:'近邻岗位搜索达到本月上限，未核完更远岗位'};
 const roleKeys=Object.keys(ROLES),gradeKeys=Object.keys(GRADES),reasonKeys=Object.keys(REASONS);
 const qualified={
  none:['entry'],primary:['entry'],secondary:['entry','general'],
@@ -58,7 +58,14 @@ function routeFields(v){
  if(['pr','transit'].includes(v.mode)){
   route.outbound=itinerary(v.outbound);route.returnTrip=itinerary(v.returnTrip);
   const p=v.parking;
-  if(v.mode==='pr'&&p&&id(p.site))route.parking={site:id(p.site),node:id(p.node),driveOut:{seconds:int(p.driveOut?.seconds,0,0,700),path:arr(p.driveOut?.path).slice(0,150).map(tripEdge).filter(Boolean)},driveBack:{seconds:int(p.driveBack?.seconds,0,0,700),path:arr(p.driveBack?.path).slice(0,150).map(tripEdge).filter(Boolean)}};
+  if(v.mode==='pr'&&p&&id(p.site)){
+   const road=v=>{const fields={seconds:int(v?.seconds,0,0,700),path:arr(v?.roadPath??v?.path).slice(0,150).map(tripEdge).filter(Boolean)};
+    for(const k of ['accessEdge','arrivalEdge','accessNode','arrivalNode'])if(id(v?.[k],72))fields[k]=id(v[k],72);
+    if(v?.direct===true)fields.direct=true;
+    return fields;
+   };
+   route.parking={site:id(p.site),node:id(p.node),driveOut:road(p.driveOut),driveBack:road(p.driveBack)};
+  }
  }
  return route;
 }
@@ -69,6 +76,7 @@ function source(v){
  return {home,work,grade,role,...routeFields(v),count,wage:int(v.wage,0,0,5000),
   payroll,newGraduates:int(v.newGraduates,0,0,count-retained),retained};
 }
+function searchRow(v){return v?.strategy==='exact'||v?.strategy==='spatial'?{strategy:v.strategy,routeProbes:int(v.routeProbes,0,0,10000000),cacheHits:int(v.cacheHits,0,0,10000000),limitedHomes:int(v.limitedHomes,0,0,LIMIT.lots)}:null;}
 function fiscalRow(v){
  return {payroll:int(v?.payroll),payrollTax:int(v?.payrollTax),businessTax:int(v?.businessTax),existingBusinessTax:int(v?.existingBusinessTax,0,-1e9),
   businessAdjustment:int(v?.businessAdjustment,0,-1e9),adjustment:int(v?.adjustment,0,-1e9),payrollRate:clamp(number(v?.payrollRate),0,5),ready:!!v?.ready};
@@ -106,7 +114,7 @@ function normalize(raw,seed='city-labor'){
   }));
   const sectors=Object.fromEntries(Object.entries(raw.last.bySector||{}).filter(([k])=>own(E.SECTORS,k)).map(([k,v])=>[k,{...hydrate(v,sectorFields),tax:int(v?.tax)}]));
   out.last={month:out.lastMonth,totals:hydrate(raw.last.totals,totalFields),byHome:points(raw.last.byHome,'home'),byWork:points(raw.last.byWork,'work'),
-   bySector:sectors,fiscal:fiscalRow(raw.last.fiscal)};
+   bySector:sectors,fiscal:fiscalRow(raw.last.fiscal),search:searchRow(raw.last.search)};
  }
  return out;
 }
@@ -413,21 +421,77 @@ function report(state){
  if(!state?.last)return {...emptyReport(),month:state?.lastMonth||0};
  return {...state.last,assignments:state.assignments,log:state.log};
 }
+// The town-size matcher below intentionally stays exhaustive. Above this
+// product, a spatial vacancy index grows each search in batches. This avoids
+// retaining an H×F matrix while keeping role-specific/global rare jobs visible.
+const EXACT_PAIRS=24000, BATCHES=[10,18,44], GRID_SIDE=96, PATH_CACHE=24;
+function vacancyIndex(jobs){
+ const roles=Object.fromEntries(roleKeys.map(key=>[key,{cells:new Map(),live:0}]));
+ for(const f of jobs)for(const key of roleKeys){
+  if(!f.r.slots[key])continue;
+  const x=Math.floor(f.l.x/GRID_SIDE),y=Math.floor(f.l.y/GRID_SIDE),id=x+':'+y,role=roles[key];
+  let cell=role.cells.get(id);
+  if(!cell){cell={x:x*GRID_SIDE,y:y*GRID_SIDE,all:[],live:new Set()};role.cells.set(id,cell);}
+  cell.all.push(f);if(f.available[key]>0){cell.live.add(f);role.live++;}
+ }
+ const consume=(f,key)=>{
+  if(f.available[key]>0)return;
+  const role=roles[key],cell=role.cells.get(Math.floor(f.l.x/GRID_SIDE)+':'+Math.floor(f.l.y/GRID_SIDE));
+  if(cell?.live.delete(f))role.live--;
+ };
+ function nearby(h,key,n,{available=true,skip=null,maxDistance=Infinity}={}){
+  const role=roles[key];
+  if(!role||available&&role.live===0)return [];
+  const p=h.l,limit=n,maxSq=maxDistance*maxDistance,cells=[];
+  for(const cell of role.cells.values()){
+   if(available&&!cell.live.size)continue;
+   const dx=Math.max(cell.x-p.x,0,p.x-cell.x-GRID_SIDE),dy=Math.max(cell.y-p.y,0,p.y-cell.y-GRID_SIDE),bound=dx*dx+dy*dy;
+   if(bound<=maxSq)cells.push({cell,bound});
+  }
+  cells.sort((a,b)=>a.bound-b.bound);
+  const found=[];
+  for(const {cell,bound} of cells){
+   if(found.length===limit&&bound>found.at(-1).d)break;
+   for(const f of available?cell.live:cell.all){
+    if(skip?.has(f.r.id))continue;
+    const dx=f.l.x-p.x,dy=f.l.y-p.y,d=dx*dx+dy*dy,last=found.at(-1);
+    if(d>maxSq||found.length===limit&&(d>last.d||d===last.d&&f.r.id>=last.f.r.id))continue;
+    let lo=0,hi=found.length;
+    while(lo<hi){const m=(lo+hi)>>1,z=found[m];if(d>z.d||d===z.d&&f.r.id>=z.f.r.id)lo=m+1;else hi=m;}
+    found.splice(lo,0,{f,d});if(found.length>limit)found.pop();
+   }
+  }
+  return found;
+ }
+ return {consume,nearby,open:key=>roles[key]?.live||0};
+}
 function advance(state,city,opts={}){
  const month=int(city?.month,1,1);
  if(month<=state.lastMonth)return {...report(state),noOp:true};
  const econ=economyOf(city,opts),{homes,firms}=collect(city,opts,econ,state,month),routes=routing(city,opts);
  const jobs=[...firms.values()].sort((a,b)=>a.r.id.localeCompare(b.r.id));
  const people=[...homes.values()].sort((a,b)=>a.r.id.localeCompare(b.r.id));
- const mobility=opts.mobility;
+ const mobility=opts.mobility,exact=people.length*jobs.length<=EXACT_PAIRS;
+ const spatial=exact?null:vacancyIndex(jobs),maxDistance=mobility?Infinity:LIMIT.driving;
+ const search={strategy:exact?'exact':'spatial',routeProbes:0,cacheHits:0,limitedHomes:0};
  const pools=new Map(),found=new Map(),stored=[],byHome={},byWork={},bySector={},t=blank(totalFields);
  function path(h,f){
   if(!pools.has(h.r.id))pools.set(h.r.id,new Map());
-  const v=pools.get(h.r.id);if(v.has(f.r.id))return v.get(f.r.id);
+  const v=pools.get(h.r.id);
+  if(v.has(f.r.id)){search.cacheHits++;return v.get(f.r.id);}
+  search.routeProbes++;
   const direct=routes.route(h.l,f.l);
   const params={home:h.l,work:f.l,walk:direct?.mode==='walk'?direct:null,drive:direct?.mode==='drive'?direct:null};
   const result=mobility?(mobility.routes({...params,wage:Math.max(...Object.values(f.r.wage))})[0]||null):direct;
-  v.set(f.r.id,{result,params});return {result,params};
+  if(!exact&&v.size>=PATH_CACHE)v.delete(v.keys().next().value);
+  const entry={result,params};v.set(f.r.id,entry);
+  if(!exact&&result){
+   h.reachable??=new Set();h.sampled??=new Map();
+   for(const k of roleKeys)if(f.r.slots[k])h.reachable.add(k);
+   // A bounded sample for unemployment diagnostics, not a second route cache.
+   if(h.sampled.size<PATH_CACHE||h.sampled.has(f.r.id))h.sampled.set(f.r.id,f);
+  }
+  return entry;
  }
  function allFor(h){
   if(!h.candidates){
@@ -461,6 +525,7 @@ function advance(state,city,opts={}){
   const graduates=retained?0:int(accepted?.newGraduates,Math.min(n,h.fresh[g]),0,Math.min(n,h.fresh[g])),money=int(accepted?.payroll,n*f.r.wage[k],0,n*5000);
   a.count+=n;a.payroll+=money;a.wage=Math.round(a.payroll/a.count);a.retained+=retained?n:0;a.newGraduates+=graduates;
   h.free[g]-=n;h.fresh[g]-=graduates;f.available[k]-=n;
+  spatial?.consume(f,k);
   h.r.employed+=n;h.r.payroll+=money;h.r.graduatesHired+=graduates;
   f.r.employees+=n;f.r.payroll+=money;f.r.filled[k]+=n;f.r.graduatesHired+=graduates;
   if(retained){h.r.retained+=n;f.r.retained+=n;}
@@ -495,6 +560,7 @@ function advance(state,city,opts={}){
  }
  // Scarcer advanced positions match first. Within a qualification band,
  // recent graduates and closer commutes get priority; no worker can be reused.
+ if(exact){
  for(const k of [...roleKeys].reverse()){
   const opening=jobs.some(f=>f.available[k]>0);if(!opening)continue;
   for(const g of gradeKeys){
@@ -517,6 +583,32 @@ function advance(state,city,opts={}){
    }
   }
  }
+ }else for(const k of [...roleKeys].reverse()){
+  if(!spatial.open(k))continue;
+  for(const g of gradeKeys){
+   if(!qualified[g].includes(k)||!spatial.open(k))continue;
+   const qualifiedHomes=people.filter(h=>h.free[g]>0).map(h=>({h,d:spatial.nearby(h,k,1,{maxDistance})[0]?.d??Infinity}));
+   qualifiedHomes.sort((a,b)=>Number(b.h.fresh[g]>0)-Number(a.h.fresh[g]>0)||a.d-b.d||a.h.r.id.localeCompare(b.h.r.id));
+   for(const {h} of qualifiedHomes){
+    if(!spatial.open(k))break;
+    const tried=new Set();
+    for(const size of BATCHES){
+     const available=spatial.nearby(h,k,size+1,{skip:tried,maxDistance}),choices=[];
+     for(const {f} of available.slice(0,size)){
+      tried.add(f.r.id);const {result:route,params}=path(h,f);if(route)choices.push({f,route,params});
+     }
+     const score=x=>x.route.distance+(x.route.mode==='drive'?60:0)-x.f.r.wage[k]*.7;
+     choices.sort((a,b)=>score(a)-score(b)||a.f.r.id.localeCompare(b.f.r.id));
+     for(const {f,route,params} of choices){
+      const n=Math.min(h.free[g],f.available[k]);if(n)place(h,f,g,k,{result:route,params},n,false);
+      if(!h.free[g])break;
+     }
+     if(!h.free[g]||available.length<=size)break;
+     if(size===BATCHES.at(-1))h.searchLimited=true;
+    }
+   }
+  }
+ }
  const compatible=Object.fromEntries(gradeKeys.map(g=>[g,new Set(qualified[g])]));
  const activeRoles=new Set(),vacantRoles=new Set();
  for(const f of jobs)for(const k of roleKeys){
@@ -528,15 +620,27 @@ function advance(state,city,opts={}){
   r.unemployed=r.workers-r.employed;
   for(const g of gradeKeys)if(h.free[g]>0){
    const can=compatible[g],anySlots=[...can].some(k=>activeRoles.has(k)),anyVacancy=[...can].some(k=>vacantRoles.has(k));
-   const local=anySlots&&allFor(h).some(x=>[...can].some(k=>x.f.r.slots[k]>0));
-   const nearbyVacancies=career&&local?allFor(h).flatMap(({f})=>[...can].filter(k=>f.available[k]>0).map(k=>[f,k])):[];
+   let local=anySlots&&(exact?allFor(h).some(x=>[...can].some(k=>x.f.r.slots[k]>0)):[...can].some(k=>h.reachable?.has(k)));
+   if(!exact&&anySlots&&!local){
+    // Closed-but-reachable jobs can explain ordinary competition. This
+    // diagnostic lookup is deliberately shallower than placement.
+    for(const k of can){
+     if(!activeRoles.has(k))continue;
+     const rows=spatial.nearby(h,k,9,{available:false,maxDistance});
+     for(const {f} of rows.slice(0,8)){if(path(h,f).result){local=true;break;}}
+     if(local)break;
+     if(rows.length>8)h.searchLimited=true;
+    }
+   }
+   const nearbyVacancies=career&&local?(exact?allFor(h).map(x=>x.f):[...h.sampled?.values()||[]]).flatMap(f=>[...can].filter(k=>f.available[k]>0).map(k=>[f,k])):[];
    const noCommuteSeat=mobility&&local&&nearbyVacancies.length>0&&nearbyVacancies.every(([f,k])=>{
     const q=path(h,f);return !mobility.routes({...q.params,wage:f.r.wage[k]}).some(x=>mobility.capacity(x)>0);
    });
    const noExperience=nearbyVacancies.length>0&&nearbyVacancies.every(([f,k])=>career.capacity(jobArgs(h,f,g,k))===0);
-   const reason=!jobs.length?'noJobs':!anySlots?'qualification':!anyVacancy&&[...vacantRoles].some(k=>!can.has(k))?'qualification':!local?'unreachable':noExperience?'experience':noCommuteSeat?'capacity':'competition';
+   const reason=!jobs.length?'noJobs':!anySlots?'qualification':!anyVacancy&&[...vacantRoles].some(k=>!can.has(k))?'qualification':h.searchLimited&&(!local||anyVacancy)?'searchLimit':!local?'unreachable':noExperience?'experience':noCommuteSeat?'capacity':'competition';
    r.waitingReasons[reason]+=h.free[g];
   }
+  if(h.searchLimited)search.limitedHomes++;
   for(const k of homeFields)if(Object.hasOwn(t,k))t[k]+=r[k];
   for(const [action,count] of [['hired',r.hired],['graduatedHired',r.graduatesHired]]){
    if(count)state.log.push({month,action,home:r.id,count});
@@ -559,7 +663,7 @@ function advance(state,city,opts={}){
   for(const k of Object.keys(group))group[k]+=r[k];
  }
  state.assignments=stored;state.log=state.log.slice(-LIMIT.log);state.lastMonth=month;
- state.last={month,totals:t,byHome,byWork,bySector,fiscal:ledger};
+ state.last={month,totals:t,byHome,byWork,bySector,fiscal:ledger,search};
  return report(state);
 }
 function preview(state,city,opts={}){

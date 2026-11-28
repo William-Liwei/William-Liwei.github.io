@@ -464,11 +464,31 @@ function buildTraffic(){
  const railShare=transitMetrics?.total?.localPassengers||0;
  function route(cache,graph,a,b){const k=a+'>'+b;if(!cache.has(k))cache.set(k,N.path(graph,a,b));return cache.get(k)}
  function stopWithin(lot,bus){return bus.stops.find(id=>N.dist(nodes.get(id),lot)<104);}
+ let operatedLines=null;
+ function currentLines(){
+  if(operatedLines)return operatedLines;
+  const base=CommuteNetwork.create({network:n,transitMetrics,isLand:onLand,frequency:city.finance.frequency,depotLines});
+  return operatedLines=new Map(makeService(city,base.lines,n,base.transfers).lines().map(l=>[l.id,l]));
+ }
+ function liveRoadPath(leg){
+  if(!leg||!Array.isArray(leg.path))return false;
+  for(const id of [leg.accessEdge,leg.arrivalEdge])if(id&&!byId.has(id))return false;
+  let exit=leg.accessNode||null,last=leg.accessEdge||null;
+  for(const seg of leg.path){
+   const edge=byId.get(seg.edge);if(!edge||edge.oneway&&seg.reverse)return false;
+   const from=seg.reverse?edge.b:edge.a;
+   if(exit!==null&&(exit!==from||n.turns?.some(t=>t.node===from&&t.enter===last&&t.exit===edge.id)))return false;
+   exit=seg.reverse?edge.a:edge.b;last=edge.id;
+  }
+  if(exit&&leg.arrivalNode&&exit!==leg.arrivalNode)return false;
+  if(exit&&last&&leg.arrivalEdge&&n.turns?.some(t=>t.node===exit&&t.enter===last&&t.exit===leg.arrivalEdge))return false;
+  return true;
+ }
  const employment=L.report(city.labor),workUnits=[],bookedModes=city.workMobility?.month===employment.month&&employment.month>0;
  if(employment.month){
   const homeBy=new Map(home.map(r=>[String(r.l.id),r])),workBy=new Map(sites.map(r=>[String(r.l.id),r])),groups=new Map();
   for(const q of employment.assignments){
-   const key=JSON.stringify([q.home,q.work,q.mode,q.parking?.site,q.outbound?.legs?.[0]?.line]);let entry=groups.get(key);
+   const key=JSON.stringify([q.home,q.work,q.mode,q.parking?.site,q.outbound?.legs,q.returnTrip?.legs,q.parking?.driveOut?.path,q.parking?.driveBack?.path]);let entry=groups.get(key);
    if(!entry){const h=homeBy.get(q.home),dst=workBy.get(q.work);if(!h||!dst)continue;entry={...h,dst,mode:q.mode,assignment:q,total:0};groups.set(key,entry);}
    entry.total+=q.count;
   }
@@ -477,13 +497,26 @@ function buildTraffic(){
  }else for(const h of home)workUnits.push({...h,total:Math.max(1,Math.round((h.l.occupants||1)*.56))});
  for(let {l:from,node:a,total,dst:assigned,mode:assignedMode,assignment} of workUnits){
   if(assigned&&['transit','pr'].includes(assignedMode)){
-   const first=assignment.outbound?.legs?.[0]?.line||'',rail=assignment.outbound?.legs?.some(v=>/^(rail|metro|tram|ferry):/.test(v.line));
+   const lines=currentLines(),valid=[assignment.outbound,assignment.returnTrip].every(trip=>validBookedTrip(trip,lines));
+   const access=assignedMode!=='pr'||(city.parking.lots.some(p=>String(p.id)===String(assignment.parking?.site))&&liveRoadPath(assignment.parking?.driveOut)&&liveRoadPath(assignment.parking?.driveBack));
+   if(!valid||!access){
+    trafficStats.disrupted=(trafficStats.disrupted||0)+total;
+    const b=assigned.node,near=N.dist(from,assigned.l)<=165;
+    if(near&&((route(walkPairs,walk,a,b)!==null&&route(walkPairs,walk,b,a)!==null)||(linked(a,b,'walk')&&linked(b,a,'walk'))))assignedMode='walk';
+    else if(a&&b&&route(pairs,g,a,b)!==null&&route(pairs,g,b,a)!==null)assignedMode='drive';
+    else {trafficStats.unserved+=total;continue;}
+   }
+  }
+  if(assigned&&['transit','pr'].includes(assignedMode)){
+   const rail=assignment.outbound?.legs?.some(v=>/^(rail|metro|tram|ferry):/.test(v.line));
    if(rail)trafficStats.railRiders=(trafficStats.railRiders||0)+total;else trafficStats.busRiders+=total;
    if((from.x<N.river(from.y))!==(assigned.l.x<N.river(assigned.l.y)))trafficStats.cross+=total;
    if(assignedMode==='pr'){
     trafficStats.parkRiders=(trafficStats.parkRiders||0)+total;
     for(const side of ['driveOut','driveBack']){
-     const path=assignment.parking?.[side]?.path?.filter(e=>byId.has(e.edge));if(!path?.length)continue;
+     const leg=assignment.parking?.[side],path=leg?.path;
+     for(const id of new Set([leg?.accessEdge,leg?.arrivalEdge]))if(id)load[id]=(load[id]||0)+total;
+     if(!path?.length)continue;
      const key='pr:'+side+':'+path.map(x=>x.edge+(x.reverse?'r':'')).join('/'),profile=side==='driveOut'?'commute':'home';
      if(!urbanDemand.has(key))urbanDemand.set(key,{p:path,count:0,profile});
      urbanDemand.get(key).count+=total;
@@ -670,7 +703,7 @@ function advanceCommuteObservation(sec){
 $('commute-fast').onclick=()=>advanceCommuteObservation(30);
 function resetFlow(n=effective||city.network,depotLines){
  const descriptors=trips.filter(t=>t.kind!=='walker');
- const key=JSON.stringify([flowMode,city.activeTravel,city.finance.frequency,n.buses.map(b=>[b.id,b.broken,b.stops,b.path]),city.signals,city.transit.lines,city.transit.stations,city.transit.tracks,n.edges.map(e=>[e.id,e.a,e.b,e.len,e.speed,e.lanes,e.oneway,e.bus,e.kind]),n.turns,city.parking,city.transitService?.settings,city.transitService?.taxiDepots]);
+ const key=JSON.stringify([flowMode,city.activeTravel,city.finance.frequency,n.buses.map(b=>[b.id,b.broken,b.stops,b.path]),city.signals,city.transit.lines,city.transit.stations,city.transit.tracks,n.edges.map(e=>[e.id,e.a,e.b,e.len,e.speed,e.lanes,e.oneway,e.bus,e.kind]),n.turns,city.parking,city.transitService?.settings,city.transitService?.taxiDepots,city.progression.unlocked]);
  const same=micro&&flowKey===key;
  if(!same){flowKey=key;resetCommute(n,depotLines);}
  const options=serviceOps?.report().lines||{},byBus=new Set(),activeDescriptors=[];
@@ -931,7 +964,7 @@ function refresh(settleLabor=false,campusSession=null){
   const academy=campusSession?CL.advance(city.campus,city,{...campusOptions(),education:Q.report(city.education),labor:L.report(city.labor),industry:industryReport,social:R.report(city.social,city,socialOptions())},campusSession):CL.report(city.campus);
   const industrial=X.merge(districtBase,industryReport),recreation=PL.merge(industrial,parksView);
   districtMetrics=CL.merge(recreation,academy);districtEvidence=districtEvidenceOf(districtBase,[industrial,recreation,districtMetrics]);
-  G.advance(city.progression,city);
+  G.advance(city.progression,city,{network:effective,civicMetrics:metrics});
   updateDistrictTransit();
   const available=H.begin(city.cargo,city,{gateways:cargoGateways});
   const baseSupply=supplyOptions(available.imports),fiscal={...fin,economy:city.economy};
@@ -980,11 +1013,33 @@ function refresh(settleLabor=false,campusSession=null){
  forecast.baseNet=forecast.net;forecast.inputs=balanceInputs();
  forecast.balance=B.forecast(city.balance,city,forecast.inputs);forecast.operatingNet=forecast.balance.net;
  forecast.finance=V.forecast(city.credit,city,{cash:city.network.cash,operatingNet:forecast.operatingNet,month:city.month+1});
- forecast.net=forecast.finance.net;forecast.interest=forecast.finance.interest;forecast.principal=forecast.finance.principal;buildTraffic();sceneWorld=showWorld();paintCoverage();stats();renderDetails();}
+ forecast.net=forecast.finance.net;forecast.interest=forecast.finance.interest;forecast.principal=forecast.finance.principal;buildTraffic();sceneWorld=showWorld();paintCoverage();stats();renderOperationsCheck();renderDetails();}
+function operationsChecklist(){
+ const developed=city.civic.lots.filter(l=>l.level>0),homes=developed.filter(l=>l.type==='residential');
+ const residents=homes.reduce((n,l)=>n+Math.max(0,l.occupants||0),0);
+ const dry=homes.reduce((n,l)=>{const m=metrics.lots?.[l.id];return n+(!m?.roadId||m.water<.25||m.power<.25?Math.max(0,l.occupants||0):0)},0);
+ const severed=developed.filter(l=>!metrics.lots?.[l.id]?.roadId).length,blocked=trafficStats.disrupted||0;
+ const financial=forecast.net<0;
+ const open=(cargoGateways||[]).filter(g=>g.connected).length;
+ return [
+  {id:'access',action:'mobility-open',title:'道路与通勤',state:severed||blocked?'watch':'okay',detail:severed||blocked?severed+' 宗已开发地块失去道路 · '+blocked+' 人原通勤受影响':'已开发地块道路畅通；'+(trafficStats.unserved||0)+' 人尚未匹配通勤'},
+  {id:'utility',action:'grid-open',title:'供水与供电',state:dry?'watch':'okay',detail:residents?Math.round(residents-dry)+' / '+Math.round(residents)+' 位住户获基本水电':'先规划住宅与临街水电，入住后开始统计'},
+  {id:'budget',action:'budget',title:'下一月财政',state:financial?'watch':'okay',detail:(financial?'预计赤字 ':'预计结余 ')+'¥'+format.format(Math.abs(Math.round(forecast.net||0)))+' · 这是预测，不计入本月现金'},
+  {id:'cargo',action:'cargo-open',title:'对外货运',state:open?'okay':'watch',detail:open?open+' 个实际连通的口岸可接受货运':'暂无实际连通口岸；检查出口接点、货站与线路'}
+ ];
+}
+function renderOperationsCheck(){
+ $('operations-month').textContent='第 '+city.month+' 月';
+ $('operations-rows').replaceChildren(...operationsChecklist().map(q=>{
+  const b=document.createElement('button'),t=document.createElement('strong'),d=document.createElement('small');
+  b.type='button';b.className='operations-note';b.dataset.state=q.state;b.dataset.check=q.id;
+  t.textContent=q.title;d.textContent=q.detail;b.append(t,d);b.onclick=()=>$(q.action)?.click();return b;
+ }));
+}
 function updateDistrictTransit(){
  const other=Object.fromEntries(Object.entries(districtMetrics.districts).filter(([,d])=>!X.TYPES[d.type]));
  const lots=[...city.civic.lots,...D.freightLots({districts:other}),...X.freightLots(industryReport)];
- transitMetrics=T.evaluate(city.transit,{...city.civic,lots},{...transitOpts(),airportBoost:districtMetrics.airportBoost});
+ transitMetrics=T.evaluate(city.transit,{...city.civic,lots},{...transitOpts(),airportBoost:districtMetrics.airportBoost,railPassenger:G.checkFeature(city.progression,'rail').ok,railCargo:G.checkFeature(city.progression,'cargoRail').ok});
  cargoGateways=HG.collect(effective||city.network,M.gates(mapId),lots,transitMetrics,N,map.freight);
 }
 function supplyOptions(imports={},exports={}){
@@ -1530,18 +1585,23 @@ $('service-taxi-probe').onclick=()=>{
 };
 function taxiAt(p){return (city.transitService?.taxiDepots||[]).find(s=>Math.abs(p.x-s.x)<=S.TAXI_DEPOT.w+4&&Math.abs(p.y-s.y)<=S.TAXI_DEPOT.h+4);}
 function taxiShape(p){const w=S.TAXI_DEPOT.w,d=S.TAXI_DEPOT.h;return {kind:'service',closed:true,points:[{x:p.x-w,y:p.y-d},{x:p.x+w,y:p.y-d},{x:p.x+w,y:p.y+d},{x:p.x-w,y:p.y+d}]};}
+function validBookedTrip(trip,lines){
+ return !!trip?.legs?.length&&trip.legs.every(x=>{
+  const l=lines.get(x.line),first=l?.stops.indexOf(x.from)??-1;
+  return first>=0&&l.stops.indexOf(x.to)>first;
+ });
+}
 function seedServiceDemand(){
  if(!serviceOps||!commuteMap)return;
  const now=serviceOps.now(),emp=L.report(city.labor);
  const homes=new Map(city.civic.lots.map(l=>[String(l.id),l])),pending=new Map();
  const chosen=city.workMobility?.month===city.month;
  if(chosen){
-  const valid=new Set(serviceOps.lines().map(x=>x.id));
+  const valid=new Map(serviceOps.lines().map(x=>[x.id,x]));
   let n=0;
   for(const a of emp.assignments.slice(0,140)){
-   if(!['transit','pr'].includes(a.mode))continue;
+   if(!['transit','pr'].includes(a.mode)||![a.outbound,a.returnTrip].every(t=>validBookedTrip(t,valid)))continue;
    for(const trip of [a.outbound,a.returnTrip]){
-    if(!trip?.legs?.length||trip.legs.some(x=>!valid.has(x.line)))continue;
     const at=now+Math.max(0,Math.min(740,trip.start+(a.shift==='early'?100:0)));
     const party=Math.min(4,a.count);if(!party)continue;
     serviceOps.submit({id:'mode-work-'+city.month+'-'+(++n),legs:trip.legs,party,at,walk:trip.walk,lastWalk:trip.lastWalk,maxFare:Math.max(5,a.fare||0),patience:265});
@@ -1560,13 +1620,17 @@ function seedServiceDemand(){
    serviceOps.submit({id:'work-'+city.month+'-'+i,legs:plan.legs,party,at,walk:plan.walk||0,lastWalk:plan.lastWalk||0,maxFare:Math.max(7,Math.min(18,10+Math.round(count/4))),patience:240});
   }
  }
- // External/seasonal passengers originate from modeled valid station demand.
- for(const l of serviceOps.lines().filter(x=>!x.busId&&/:out$/.test(x.id))){
-  const model=transitMetrics.lines[l.physicalId];if(!model?.passengers)continue;
-  const samples=Math.min(34,Math.round(model.passengers*.35));
+ // Only genuine outside origin/destination samples enter booked regional fares.
+ const regional=transitMetrics?.regionalJourneys||[],operated=serviceOps.lines(),remaining=new Map();
+ for(const j of regional){
+  const model=transitMetrics.lines[j.line];if(!model)continue;
+  const from=model.mode+':'+j.from,to=model.mode+':'+j.to;
+  const line=operated.find(l=>l.physicalId===j.line&&l.stops.indexOf(from)>=0&&l.stops.indexOf(to)>l.stops.indexOf(from));
+  if(!line)continue;
+  const left=remaining.get(line.id)??34,samples=Math.min(left,Math.round(j.count*.35));remaining.set(line.id,left-samples);
   for(let n=samples;n>0;n-=4){
    const party=Math.min(n,4),at=now+(i++%16)*4;
-   serviceOps.submit({id:'region-'+city.month+'-'+i,legs:[{line:l.id,from:l.stops[0],to:l.stops.at(-1)}],party,at,patience:275});
+   serviceOps.submit({id:'region-'+city.month+'-'+i,legs:[{line:line.id,from,to}],party,at,patience:275});
   }
  }
 }
@@ -1833,11 +1897,11 @@ function featureFor(kind,geometry={}){
  if(kind==='careBuild'&&opts.careType==='hospital')return ['hospital'];
  if(kind==='industry'&&opts.industryKind!=='extractor')return [opts.industryKind==='storage'?'industryStorage':'industryProcessor'];
  if(kind==='district')return opts.districtType==='university'?['universityArea']:opts.districtType==='airportZone'?['airport']:['mine','oil'].includes(opts.districtType)?[opts.districtType]:[];
- if(kind==='track')return [opts.trackMode];
- if(kind==='line')return [{plane:'airport',cargoPlane:'cargoAirport',ship:'cargoPort',railCargo:'cargoRail'}[opts.transitMode]||opts.transitMode];
+ if(kind==='track')return [opts.trackMode==='rail'?'sharedRail':opts.trackMode];
+ if(kind==='line')return [{plane:'airport',cargoPlane:'cargoAirport',ship:'cargoPort',railCargo:'cargoRail',rail:'sharedRail'}[opts.transitMode]||opts.transitMode];
  if(kind==='station'){
   const mode=T.FACILITIES[opts.stationType].mode;
-  return [({cargoPort:'cargoPort',cargoYard:'cargoYard',airport:'airport',cargoAirport:'cargoAirport',cargoRailTerminal:'cargoRail'})[opts.stationType]||mode];
+  return [({cargoPort:'cargoPort',cargoYard:'cargoYard',airport:'airport',cargoAirport:'cargoAirport',cargoRailTerminal:'cargoRail',trainStation:'sharedRail',railDepot:'sharedRail'})[opts.stationType]||(mode==='rail'?'sharedRail':mode)];
  }
  return [];
 }
@@ -3245,7 +3309,7 @@ for(const dlg of document.querySelectorAll('dialog')){
 }
 showTools();refresh();if(!scenarioRunner&&(scenePrefs.enabled||parameters.get('view')==='3d'))switchScene(true,{persist:false});updateRawExport();if(recoveryRaw!==null)reportSaveProblem(recoveryHint);if(!scenarioRunner)window.requestAnimationFrame(scene);
  if(new URLSearchParams(location.search).get('menu')==='saves')$('file-dialog').showModal();
-window.Blueprint={editHistory:()=>CH.report(constructionHistory),drawing:()=>({tool,draft:draft.length,draftPoints:draft.map(p=>({x:p.x,y:p.y,z:p.z})),batch:batch?.items.length||0}),grid:()=>GR.report(city.grid),gridPlan:()=>gridPlan,publicNetwork:()=>({edges:(effective||city.network).edges.map(e=>({id:e.id,speed:e.speed,capacity:N.capacity(e)}))}),publicWorks:()=>PW.report(city.publicWorks),mobility:()=>structuredClone(city.workMobility),systems:()=>SL.report(city.systemLedger),lastStudy:()=>structuredClone(lastStudy),campus:()=>CL.report(city.campus),parks:()=>PL.report(city.parks),parkForecast:()=>parksView,careers:()=>CR.report(city.careers),careerProduction:()=>structuredClone(city.careerProduction),wellbeing:()=>WB.report(city.wellbeing),wellbeingApplied:()=>structuredClone(city.wellbeingApplied),cargo:()=>H.report(city.cargo),cargoGateways:()=>structuredClone(cargoGateways),credit:()=>V.report(city.credit),market:()=>W.report(city.market),balance:()=>B.report(city.balance),sceneStats:()=>renderer3d?.stats(),sceneMode:()=>mode3d?'3d':'2d',sceneCamera:()=>mode3d?{...renderer3d.camera}:{...camera},sceneProject:activeProject,sceneRaycast:p=>mode3d?renderer3d.raycast(p):view.screenToWorld(p,camera),progress:()=>G.report(city.progression,progressPoints()),social:()=>socialReport,industry:()=>industryReport,terrain:()=>({revision:city.terrain.revision,statistics:city.terrain.statistics}),ground:(x,y)=>F.height(city.terrain,landSurface,{x,y}),serviceOps:()=>serviceOps?.report(),labor:()=>L.report(city.labor),care:()=>K.report(city.care,city,careOpts()),justice:()=>J.report(city.justice,city,{network:effective||city.network,water:N.water}),education:()=>Q.report(city.education),events:()=>I.report(city.civicEvents),active:()=>activeResult,commute:()=>commuteModel?.stats(),batch:()=>batch&&({count:batch.items.length,cash:batch.world.network.cash}),preview:()=>preview,world:()=>city, metrics:()=>metrics,traffic:()=>trafficStats,view,camera:()=>({...camera}),setLayer,save,plan:()=>pending&&{title:pending.title,cost:pending.cash},forecast:()=>({...forecast}),incident:()=>incident,trafficSim:()=>micro?.stats(),map:()=>mapId,utility:()=>utilityMetrics,transit:()=>transitMetrics,districts:()=>districtMetrics,economy:()=>econ,agents:()=>getAgents(clock),coverage:()=>coverageGrid};
+window.Blueprint={operationsCheck:operationsChecklist,editHistory:()=>CH.report(constructionHistory),drawing:()=>({tool,draft:draft.length,draftPoints:draft.map(p=>({x:p.x,y:p.y,z:p.z})),batch:batch?.items.length||0}),grid:()=>GR.report(city.grid),gridPlan:()=>gridPlan,publicNetwork:()=>({edges:(effective||city.network).edges.map(e=>({id:e.id,speed:e.speed,capacity:N.capacity(e)}))}),publicWorks:()=>PW.report(city.publicWorks),mobility:()=>structuredClone(city.workMobility),systems:()=>SL.report(city.systemLedger),lastStudy:()=>structuredClone(lastStudy),campus:()=>CL.report(city.campus),parks:()=>PL.report(city.parks),parkForecast:()=>parksView,careers:()=>CR.report(city.careers),careerProduction:()=>structuredClone(city.careerProduction),wellbeing:()=>WB.report(city.wellbeing),wellbeingApplied:()=>structuredClone(city.wellbeingApplied),cargo:()=>H.report(city.cargo),cargoGateways:()=>structuredClone(cargoGateways),credit:()=>V.report(city.credit),market:()=>W.report(city.market),balance:()=>B.report(city.balance),sceneStats:()=>renderer3d?.stats(),sceneMode:()=>mode3d?'3d':'2d',sceneCamera:()=>mode3d?{...renderer3d.camera}:{...camera},sceneProject:activeProject,sceneRaycast:p=>mode3d?renderer3d.raycast(p):view.screenToWorld(p,camera),progress:()=>G.report(city.progression,progressPoints()),social:()=>socialReport,industry:()=>industryReport,terrain:()=>({revision:city.terrain.revision,statistics:city.terrain.statistics}),ground:(x,y)=>F.height(city.terrain,landSurface,{x,y}),serviceOps:()=>serviceOps?.report(),labor:()=>L.report(city.labor),care:()=>K.report(city.care,city,careOpts()),justice:()=>J.report(city.justice,city,{network:effective||city.network,water:N.water}),education:()=>Q.report(city.education),events:()=>I.report(city.civicEvents),active:()=>activeResult,commute:()=>commuteModel?.stats(),batch:()=>batch&&({count:batch.items.length,cash:batch.world.network.cash}),preview:()=>preview,world:()=>city, metrics:()=>metrics,traffic:()=>trafficStats,view,camera:()=>({...camera}),setLayer,save,plan:()=>pending&&{title:pending.title,cost:pending.cash},forecast:()=>({...forecast}),incident:()=>incident,trafficSim:()=>micro?.stats(),map:()=>mapId,utility:()=>utilityMetrics,transit:()=>transitMetrics,districts:()=>districtMetrics,economy:()=>econ,agents:()=>getAgents(clock),coverage:()=>coverageGrid};
 if(parameters.get('qa')==='commute'){
  window.Blueprint.commuteFastForward=advanceCommuteObservation;
  window.Blueprint.commuteLatest=()=>commuteLast.at(-1);

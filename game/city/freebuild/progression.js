@@ -23,7 +23,7 @@ const TECH={
 const FEATURES=Object.fromEntries(Object.entries(TECH).flatMap(([k,t])=>t.features.map(x=>[x,k])));
 const MILESTONES={
  settlement:{name:'市镇开张',points:16,description:'至少到第 2 月，已有 120 米普通道路与 18 位住户。'},
- service:{name:'基本水电',points:9,description:'至少到第 2 月，基础供水与供电设施齐备，已有 18 位住户。'},
+ service:{name:'基本水电',points:9,description:'至少到第 2 月，至少有 18 位住户实际获得稳定的供水和供电。'},
  commerce:{name:'劳动市场',points:12,description:'至少到第 2 月，至少 3 宗营业地块和 15 名实际匹配员工。'},
  education:{name:'第一批学员',points:12,description:'至少到第 2 月，同月有 10 名在读学生。'},
  transit:{name:'公交开行',points:10,description:'至少到第 2 月，有开放的公交环线和至少 2 个不同站。'}
@@ -180,6 +180,10 @@ function applyLand(s,v,opts={}){
  return true;
 }
 function checkFeature(s,feature){
+ if(feature==='sharedRail'){
+  const ok=checkFeature(s,'rail').ok||checkFeature(s,'cargoRail').ok;
+  return ok?{ok:true,feature}:fail('先研究「城市轨道」或「区域货运」才能建设共用铁路',{feature});
+ }
  const k=own(FEATURES,feature)?FEATURES[feature]:'';
  if(!k||s?.sandbox||arr(s?.unlocked).includes(k))return {ok:true,feature,tech:k||null};
  return fail('先研究「'+TECH[k].name+'」才能建设此项目',{feature,tech:k});
@@ -308,9 +312,9 @@ function applyResearch(s,v,opts={}){
  s.history.push({kind:'research',id:v.id,month:int(opts?.month,s.lastMonth),cost:v.cost});s.history=s.history.slice(-64);
  return true;
 }
-function evidence(city,month){
+function evidence(city,month,{network,civicMetrics}={}){
  if(month<2)return new Set();
- const ready=new Set(),lots=arr(city.civic?.lots),net=city.network||{};
+ const ready=new Set(),lots=arr(city.civic?.lots),net=network||city.network||{};
  const population=lots.filter(l=>l?.type==='residential'&&num(l.level)>0).reduce((n,l)=>n+Math.max(0,int(l.occupants)),0);
  const roads=arr(net.edges).filter(e=>e?.kind==='road').reduce((n,e)=>{
   const geometry=arr(e.pts);
@@ -320,7 +324,11 @@ function evidence(city,month){
  },0);
  if(population>=18&&roads>=120)ready.add('settlement');
  const publicTypes=new Set(arr(city.civic?.services).filter(v=>pvalid(v)).map(v=>v.type));
- if(population>=18&&publicTypes.has('water')&&publicTypes.has('power'))ready.add('service');
+ const supplied=civicMetrics?.lots?lots.reduce((n,l)=>{
+  const m=civicMetrics.lots[l.id];
+  return n+(l.type==='residential'&&l.level>0&&m?.roadId&&m.water>=.25&&m.power>=.25?int(l.occupants):0);
+ },0):0;
+ if(supplied>=18||(!civicMetrics&&population>=18&&publicTypes.has('water')&&publicTypes.has('power')))ready.add('service');
  const employers=lots.filter(l=>l?.type!=='residential'&&num(l.level)>0&&num(l.occupants)>0).length;
  const labor=city.labor?.last;
  if(employers>=3&&labor?.month===month&&num(labor.totals?.employed)>=15)ready.add('commerce');
@@ -329,11 +337,11 @@ function evidence(city,month){
  if(arr(net.buses).some(v=>v&&!v.broken&&new Set(arr(v.stops)).size>=2&&arr(v.path).length>=2))ready.add('transit');
  return ready;
 }
-function advance(s,city){
+function advance(s,city,observed){
  const month=int(city?.month,1,1);
  if(month<=s.lastMonth)return {...report(s,{points:city.social?.points}),awarded:[],noOp:true};
  s.lastMonth=month;
- const possible=evidence(city,month),awarded=[];
+ const possible=evidence(city,month,observed),awarded=[];
  for(const k of MILEIDS){
   if(!possible.has(k)||s.claimed.includes(k))continue;
   s.claimed.push(k);awarded.push({id:k,...MILESTONES[k]});

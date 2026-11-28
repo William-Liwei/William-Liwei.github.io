@@ -1,12 +1,25 @@
 (function(root,factory){const v=factory();if(typeof module==='object')module.exports=v;else root.Outside=v})(globalThis,()=>{
 'use strict';
+// Signed off-map connectors are opt-in geography, not a catchment area.
+function gateNode(network,gate,N){
+ if(!gate||!Number.isFinite(gate.x)||!Number.isFinite(gate.y))return null;
+ const z=Number.isFinite(gate.z)?gate.z:0,ids=new Set();
+ const match=p=>p&&Math.abs((p.z||0)-z)<=.75&&N.dist(p,gate)<=2+1e-7;
+ for(const e of network.edges){
+  if(!['road','highway','ramp'].includes(e.kind||'road')||!e.pts?.length)continue;
+  if(match(e.pts[0]))ids.add(e.a);
+  if(match(e.pts.at(-1)))ids.add(e.b);
+ }
+ return network.nodes.filter(n=>ids.has(n.id)&&match(n))
+ .sort((a,b)=>N.dist(a,gate)-N.dist(b,gate)||String(a.id).localeCompare(String(b.id)))[0]||null;
+}
 function assess(network,gates,civic,map,N){
- const g=N.graph(network,'car'), edges=new Map(network.edges.map(e=>[e.id,e])), nmap=new Map(network.nodes.map(n=>[n.id,n]));
+ const g=N.graph(network,'car'), edges=new Map(network.edges.map(e=>[e.id,e]));
  const nodeAt=(pt,r)=>network.nodes.filter(n=>Math.abs(n.z)<4&&N.dist(n,pt)<=r&&(g[n.id]||[]).length)
  .sort((a,b)=>N.dist(a,pt)-N.dist(b,pt))[0];
  const data=civic.lots.filter(x=>x.level>0), groups=[['truck',data.filter(x=>x.type==='industrial')],['car',data.filter(x=>['residential','commercial','office'].includes(x.type))]];
  const activated=new Set(), totals={gates:0,visitors:0,freight:0,net:0,loads:{},paths:[],links:[]};
- for(let gate of gates){const n=nodeAt(gate,23),result={id:gate.id,name:gate.name,connected:false,visitors:0,freight:0};
+ for(let gate of gates){const n=gateNode(network,gate,N),result={id:gate.id,name:gate.name,connected:false,visitors:0,freight:0};
  if(!n){totals.links.push(result);continue;}
  for(const [kind,lots] of groups){
   for(const lot of [...lots].sort((a,b)=>b.occupants-a.occupants||a.id.localeCompare(b.id)).slice(0,28)){
@@ -33,5 +46,5 @@ function assess(network,gates,civic,map,N){
  totals.net=totals.freight*17+totals.visitors*8-totals.gates*70;
  return totals;
 }
-return {assess};
+return {assess,gateNode};
 });
