@@ -86,3 +86,9 @@
 .scene-row{display:flex;gap:4px;justify-content:end;margin-bottom:4px}
 .scene-row [aria-pressed=true]{background:#204439}
 @media(max-width:570px){.map-area .scene-panel{top:8px;right:6px}.scene-panel button{min-width:31px;min-height:28px}}
+
+#balance-info{margin-bottom:.9rem;padding:.65rem .7rem;border:1px solid #3a5660;border-radius:.65rem}
+#balance-info h3{margin:.25rem 0;font-size:14px}
+#budget-dialog{max-height:min(88dvh,860px);overflow:auto}
+#cash-runway{margin:2px 0 0;padding:1px 4px;border-radius:4px;font-size:10px;color:#ffcc9b;background:#4b3525;white-space:nowrap}
+#cash-runway[data-severity=critical]{color:#ffc6ad;background:#55332e}
