@@ -925,8 +925,14 @@
           shape(c,[{x:x-w,y:y-h-6},{x:x+w,y:y-h-6},{x:x+w,y:y-h},{x:x-w,y:y-h}],'#7493a7');
           line(c,[{x:x-w+2,y:y-h-2.8},{x:x+w-2,y:y-h-2.8}],'#c6dce5',.8);
         }
-        for(let v=-w+2;v<=w-1;v+=4)line(c,[{x:x+v,y:y-h+1},{x:x+v,y:y-h+4}],'#e1edf2',.6);
-        label(c,'P',x,y+1,8.8,'#f4f8f8',850);
+        if(lot.type==='underground'){
+          shape(c,[{x:x-w+1,y:y-h+1},{x:x+w-1,y:y-h+1},{x:x+w-3,y:y+h-1},{x:x-w+3,y:y+h-1}],'#283449','#abc4dc',.65);
+          for(let i=0;i<3;i++)line(c,[{x:x-w+3+i*.6,y:y+h-2-i*1.3},{x:x+w-3-i*.6,y:y+h-2-i*1.3}],'#789bb9',.55);
+          label(c,'P↓',x,y-1,8.5,'#f4f8ff',850);
+        }else{
+          for(let v=-w+2;v<=w-1;v+=4)line(c,[{x:x+v,y:y-h+1},{x:x+v,y:y-h+4}],'#e1edf2',.6);
+          label(c,'P',x,y+1,8.8,'#f4f8f8',850);
+        }
         if(drawParking||sel)label(c,r?r.occupied+'/'+r.capacity:'未接通',x,y+h+6,7.9,'#253d4e',800);
       }
       if(overlay==='parking'&&camera.zoom>=.65){

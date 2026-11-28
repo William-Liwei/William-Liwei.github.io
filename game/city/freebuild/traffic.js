@@ -150,9 +150,18 @@
       const interval=number(desc.interval,kind==='bus'?Math.max(17,total/cruise*.9):clamp(15+total/cruise*.45,17,45),.12,2000)/arrivalScale;
       const offset=Math.min(kind==='bus'?5:11,interval*1.1)*phase;
       const profile=Object.hasOwn(PROFILES,desc.profile)?desc.profile:'steady';
-      return {kind,path,total,cruise,phase,stops,continuous,interval,oneShot,
+      return {kind,path,total,cruise,phase,stops,continuous,interval,oneShot,busId:line?.id??desc.busId??null,
+        journeyId:oneShot&&typeof desc.journeyId==='string'?desc.journeyId:null,
+        parkingSite:oneShot&&typeof desc.parkingSite==='string'?desc.parkingSite:null,
         needsParking:Boolean(park&&kind==='car'&&desc.parking===true),parkDwell:number(desc.parkDwell,0,0,1500),profile,credit:0,tag:typeof desc.tag==='string'?desc.tag.slice(0,72):null,
         at:number(desc.departAt,offset,0,1e7),pending:0,active:0,rnd,i};
+    }
+    const offeredJourneys=[];
+    function offer(desc){
+      if(typeof desc?.journeyId!=='string'||offeredJourneys.length>=32||offeredJourneys.some(q=>q.journeyId===desc.journeyId))return false;
+      const q=compile({...desc,kind:'car',repeat:false,departAt:seconds},400+offeredJourneys.length);
+      if(!q)return false;
+      q.offeredAt=seconds;offeredJourneys.push(q);return true;
     }
     function routeIdentity(q){
       return q.kind+'|'+q.profile+'|'+(q.tag||'')+'|'+q.oneShot+'|'+q.needsParking+'|'+signature(q.path.map(s=>({edge:s.e.rawId,reverse:s.reverse})))+
@@ -204,9 +213,10 @@
     function departures(){
       const period=profileIndex();
       // Rotate the first admission so high load cannot permanently starve later sources.
-      const first=demands.length?Math.floor(seconds/dt)%demands.length:0;
-      for(let i=0;i<demands.length;i++){
-        const q=demands[(i+first)%demands.length];
+      const all=offeredJourneys.length?[...demands,...offeredJourneys]:demands;
+      const first=all.length?Math.floor(seconds/dt)%all.length:0;
+      for(let i=0;i<all.length;i++){
+        const q=all[(i+first)%all.length];
         if(q.oneShot&&seconds+EPS>=q.at){q.at=Infinity;q.pending++;offered++;bucket().offered++;}
         else if(!q.oneShot&&seconds+EPS>=q.at&&!(q.continuous&&q.active)){
           q.credit+=dt/q.interval*PROFILES[q.profile][period];
@@ -282,6 +292,7 @@
         if(atEnd&&a.kind==='bus'&&a.route.stops.has(a.route.path[a.index].to)&&a.busDwellUntil===null){
           a.busDwellUntil=seconds+dwellTime;
           if(dwellTime>0)a.dwellCount++;
+          if(a.route.busId)options.onBusStop?.({busId:a.route.busId,vehicleId:a.id,node:a.route.path[a.index].to,at:seconds});
         }
         const dwelling=a.busDwellUntil!==null&&seconds+EPS<a.busDwellUntil;
         a.ready=atEnd&&!dwelling;
@@ -311,8 +322,11 @@
       // Opposing straight traffic can pass concurrently; turns reserve the box.
       return a.straight&&b.straight&&angleDiff(a.heading,b.heading)>PI*.80;
     }
-    function retire(a){
-      cars.delete(a.id);a.route.active--;completed++;bucket().completed++;if(a.route.tag)byExit[a.route.tag]=(byExit[a.route.tag]||0)+1;kinds[a.kind]--;finishedByKind[a.kind]++;
+    function retire(a,abort=false){
+      if(a.route.journeyId){
+        const i=offeredJourneys.indexOf(a.route);if(i>=0)offeredJourneys.splice(i,1);
+      }
+      cars.delete(a.id);a.route.active--;if(abort){kinds[a.kind]--;lostDemand++;return;}completed++;bucket().completed++;if(a.route.tag)byExit[a.route.tag]=(byExit[a.route.tag]||0)+1;kinds[a.kind]--;finishedByKind[a.kind]++;
       waitFinished+=a.wait;tripFinished+=seconds-a.started;
     }
     function crossing(){
@@ -326,11 +340,16 @@
           if(route.needsParking){
             const space=park.park(from.to,seconds,a);
             if(!space){
+              if(route.journeyId&&seconds-(route.offeredAt??a.started)>290){own.vehicles.pop();retire(a,true);continue;}
               a.parkingWaitStart??=seconds;
               a.blockCause='parking';parkingWait+=dt;
               continue;
             }
-          }
+            if(route.journeyId){
+              const wait=a.parkingWaitStart===undefined?0:seconds-a.parkingWaitStart;
+              options.onPark?.({journeyId:route.journeyId,site:space.id,node:from.to,at:seconds,drive:Math.max(0,seconds-(route.offeredAt??a.started)-wait)});
+            }
+          }else if(route.journeyId)options.onArrive?.({journeyId:route.journeyId,node:from.to,at:seconds,drive:seconds-(route.offeredAt??a.started)});
           own.vehicles.pop();retire(a);continue;
         }
         const node=nodes.get(from.to);
@@ -385,6 +404,10 @@
       seconds+=dt;candidates.length=0;
       const b=bucket();
       park?.advance(seconds);
+      for(let i=offeredJourneys.length-1;i>=0;i--){
+        const q=offeredJourneys[i];
+        if(!q.active&&seconds-q.offeredAt>290){offeredJourneys.splice(i,1);lostDemand++;}
+      }
       switchLanes();
       for(const lane of lanes){lane.spaceBlocked=false;lane.blockedBy=null;updateLane(lane);}
       finishTransfers();
@@ -455,7 +478,7 @@
     }
     function stats(){
       const edgeQueues=dict(),edgeOccupancy=dict(),edgeSpeed=dict(),edgeCapacity=dict(),junctionQueues=dict(),edgeTraffic=dict();
-      const directions=dict(), causes={signal:0,space:0,conflict:0,queue:0,parking:0},parkingCauses={unconnected:0,price:0,full:0};
+      const directions=dict(), causes={signal:0,space:0,conflict:0,queue:0,parking:0},parkingCauses={unconnected:0,price:0,full:0,entry:0};
       let queued=0,dwell=0,waitActive=0,backlog=0,moving=transfers.size,spillback=0,blockedApproaches=0;
       for(const a of transfers)waitActive+=a.wait;
       for(const q of demands)backlog+=q.pending;
@@ -508,7 +531,7 @@
       });
     }
     for(let left=number(options.warmupSeconds,0,0,20);left>EPS;left-=2)step(Math.min(left,2));
-    return {step,advance,agents,stats,setSignal,signals,updateDemand};
+    return {step,advance,agents,stats,setSignal,signals,updateDemand,offer,now:()=>seconds};
   }
   return {create,causeNames};
 });

@@ -4,7 +4,8 @@
 const LOTS={
  small:{label:'社区停车场',slots:14,w:20,h:14,cost:4200,monthly:58,dwell:42},
  large:{label:'街区公共停车场',slots:32,w:33,h:24,cost:10700,monthly:142,dwell:42},
- garage:{label:'公共立体车库',slots:58,w:25,h:22,cost:21900,monthly:260,dwell:42}
+ garage:{label:'公共立体车库',slots:58,w:25,h:22,cost:21900,monthly:260,dwell:42,entry:1.6},
+ underground:{label:'地下停车库',slots:72,w:18,h:16,cost:33800,monthly:370,dwell:42,entry:3.6}
 };
 const clamp=Net.clamp, ground=e=>e.kind==='road'&&(e.pts||[]).length>1&&e.pts.every(p=>Math.abs(p.z||0)<=2.5);
 function lotType(type){return Object.hasOwn(LOTS,type)?LOTS[type]:null;}
@@ -62,7 +63,7 @@ function build(net,state){
  }
  for(const lot of state?.lots||[]){
   const a=access(net,lot),spec=lotType(lot.type);
-  if(a&&spec)push(a.node,{...lot,node:a.node,road:a.edge,spots:spec.slots,dwell:spec.dwell});
+  if(a&&spec)push(a.node,{...lot,node:a.node,road:a.edge,spots:spec.slots,dwell:spec.dwell,entry:spec.entry||0});
  }
  // The street simulator stops cars at this node. Never grant a space on
  // another node merely because it is within walking distance.
@@ -76,7 +77,7 @@ function build(net,state){
 function service(specs,candidates){
  const data=new Map(), running=new Set(), stats={served:0,released:0,attempts:0,fee:0,peak:0};
  let occupied=0;
- for(const row of specs||[])if(row?.id&&row?.spots>0)data.set(row.id,{...row,visits:0,busy:[]});
+ for(const row of specs||[])if(row?.id&&row?.spots>0)data.set(row.id,{...row,visits:0,busy:[],entryAt:0});
  function advance(now){
   for(const s of running){
    let count=0;
@@ -86,23 +87,24 @@ function service(specs,candidates){
   }
  }
  function park(node,now,vehicle){
-  const available=candidates(node)||[];
-  let pick=null,best=Infinity,affordable=4+(vehicle.chosenVar||0)%7,open=0;
+  const available=(candidates(node)||[]).filter(s=>!vehicle.route?.parkingSite||s.id===vehicle.route.parkingSite);
+  let pick=null,best=Infinity,affordable=4+(vehicle.chosenVar||0)%7,open=0,gated=0;
   if(vehicle.parkingWaitStart!=null)affordable=Math.min(12,affordable+Math.floor((now-vehicle.parkingWaitStart)/4));
   for(const item of available){
    const s=data.get(item.id);
    if(!s||s.busy.length>=s.spots)continue;
    open++;if(s.fee>affordable)continue;
-   const score=item.walk+s.fee*7+(s.type==='curb'?0:2);
+   if(s.entryAt>now+1e-6){gated++;continue;}
+   const score=item.walk+s.fee*7+(s.entry||0)*2+(s.type==='curb'?0:2);
    if(score<best){best=score;pick=s;}
   }
   if(!pick){
-   vehicle.parkingReason=!available.length?'unconnected':open?'price':'full';
+   vehicle.parkingReason=!available.length?'unconnected':gated?'entry':open?'price':'full';
    if(vehicle.parkingWaitStart==null)stats.attempts++;return null;
   }
   vehicle.parkingReason=null;
   const dwell=(vehicle.route?.parkDwell||pick.dwell)*(0.83+((vehicle.chosenVar||0)%7)*.055);
-  pick.busy.push(now+dwell);running.add(pick);occupied++;pick.visits++;stats.served++;stats.fee+=pick.fee;
+  pick.entryAt=now+(pick.entry||0);pick.busy.push(now+dwell);running.add(pick);occupied++;pick.visits++;stats.served++;stats.fee+=pick.fee;
   stats.peak=Math.max(stats.peak,occupied);return pick;
  }
  function report(){

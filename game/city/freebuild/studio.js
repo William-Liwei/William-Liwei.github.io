@@ -142,7 +142,8 @@ const grouped=new Set();
 function layerOptions(keys){return keys.filter(k=>Object.hasOwn(layers,k)&&!grouped.has(k)).map(k=>{grouped.add(k);return '<option value="'+k+'">'+layers[k][0]+'</option>';}).join('');}
 $('layer').innerHTML=Object.entries(layerGroups).map(([name,keys])=>{const x=layerOptions(keys);return x?'<optgroup label="'+name+'">'+x+'</optgroup>':'';}).join('')+
  (Object.keys(layers).some(k=>!grouped.has(k))?'<optgroup label="其他服务">'+layerOptions(Object.keys(layers))+'</optgroup>':'');
-function setLayer(k){layer=k;$('layer').value=k;$('legend').textContent=layers[k][1];$('flow-panel').hidden=!['traffic','parking'].includes(k);if(metrics.graph)paintCoverage();}
+let commuteModel=null,commuteMap=null,commuteLast=[],commuteId=0,commuteSchedule=new Map(),commuteDirect=new Map(),commutePairs=new Map(),commuteHistory=new Map();
+function setLayer(k){layer=k;$('layer').value=k;$('legend').textContent=layers[k][1];$('flow-panel').hidden=!['traffic','parking'].includes(k);if(metrics.graph)paintCoverage();$('commute-panel').hidden=k!=='transit';if(k==='transit'){commuteFill();renderCommute();}}
 $('layer').onchange=e=>setLayer(e.target.value);setLayer(Object.hasOwn(layers,prefs.overlay)?prefs.overlay:'none');
 function lines(entries){return entries.map(([k,v])=>'<div class="line"><span>'+k+'</span><span>'+v+'</span></div>').join('');}
 function stats(){
@@ -186,7 +187,7 @@ function showToolsWork(){
   s=htmlSel('parkingMode','停车设施操作',{build:'新建停车场／车库',price:'调整已建设施收费'});
   if(opts.parkingMode==='build')s+=htmlSel('parkingType','设施规格',variants);
   s+=value('parkingFee','停车每次收费 ¥',0,12);
-  if(opts.parkingMode==='build'){const v=P.LOTS[opts.parkingType];s+='<p class="help">造价 ¥'+format.format(v.cost)+' · 养护 ¥'+v.monthly+'／月。收费影响车位选择和出价意愿；抽样收费不直接计入月度财政。</p>';}
+  if(opts.parkingMode==='build'){const v=P.LOTS[opts.parkingType];s+='<p class="help">造价 ¥'+format.format(v.cost)+' · 养护 ¥'+v.monthly+'／月'+(v.entry?' · 入口间隔 '+v.entry+' 模拟秒':'')+'。收费影响车位选择和出价意愿；抽样收费不直接计入月度财政。</p>';}
  }
  if(tool==='signal'){
   s=htmlSel('signalAction','信号操作',{switch:'切换信号开关',timing:'自定配时'});
@@ -349,19 +350,118 @@ function buildTraffic(){
   const total=p.reduce((n,h)=>n+(byId.get(h.edge)?.len||0),0);
   trips.push({p,total,kind:'car',profile,parking:true,parkDwell:profile==='home'?37:48,phase:((trips.length*.618+.04)%1),speed:52,interval:N.clamp(88/(1+Math.sqrt(count)),4,50)});
  }
- for(let b of buses){for(let e of b.path)load[e.edge]=(load[e.edge]||0)+2;const p=b.path.map(e=>({...e,l:byId.get(e.edge)?.len||0})).filter(e=>e.l>0);const total=p.reduce((s,a)=>s+a.l,0);if(total)for(let i=0;i<(total>760?2:1)+(depotLines.has(b.id)?1:0);i++)trips.push({p,total,kind:'bus',phase:i*.5,speed:47,stops:b.stops,riders:bt.get(b.id)||0});}
+ for(let b of buses){for(let e of b.path)load[e.edge]=(load[e.edge]||0)+2;const p=b.path.map(e=>({...e,l:byId.get(e.edge)?.len||0})).filter(e=>e.l>0);const total=p.reduce((s,a)=>s+a.l,0);if(total)for(let i=0;i<(total>760?2:1)+(depotLines.has(b.id)?1:0)+(city.finance.frequency==='frequent'?1:0);i++)trips.push({p,total,kind:'bus',phase:i*.5,speed:47,stops:b.stops,riders:bt.get(b.id)||0});}
  if(regional){for(const [id,count] of Object.entries(regional.loads))load[id]=(load[id]||0)+count;trips.push(...regional.paths.map(p=>({...p,profile:p.kind==='truck'?'freight':'steady'})));}
- resetFlow(n);
+ resetFlow(n,depotLines);
  pedestrians=Pedestrians.create(n,trips);
  buildTraffic.edges=byId;edgeTraffic=Object.fromEntries(n.edges.map(e=>[e.id,Math.min(1,(load[e.id]||0)/N.capacity(e))]));
 }
-function resetFlow(n=effective||city.network){
+function resetCommute(n,depotLines){
+ const parking=P.build(n,city.parking);
+ commuteMap=CommuteNetwork.create({network:n,transitMetrics,parking:city.parking,parkingConfig:parking,isLand:onLand,loads:load,frequency:city.finance.frequency,depotLines});
+ commuteLast=[];commuteSchedule=new Map();commuteDirect=new Map();commutePairs=new Map();commuteHistory=new Map();
+ commuteModel=CommuteOperations.create({lines:commuteMap.lines,transfers:commuteMap.transfers,onFinish:r=>{
+  commuteDirect.delete(r.id);
+  const key=commutePairs.get(r.id);commutePairs.delete(r.id);
+  if(key){
+   const observations=commuteHistory.get(key)||{},prev=observations[r.mode];
+   const cost=r.ok?r.total+(100-r.quality)*.75:305;
+   observations[r.mode]={cost:prev?.cost*.35+cost*.65||cost,ok:r.ok};commuteHistory.set(key,observations);
+   if(commuteHistory.size>60)commuteHistory.delete(commuteHistory.keys().next().value);
+  }
+  commuteLast.push(r);if(commuteLast.length>18)commuteLast.shift();
+ }});
+ for(const l of commuteMap.lines)if(l.mode==='metro')commuteSchedule.set(l.id,l.offset||0);
+}
+function commuteParked(e){
+ if(commuteDirect.has(e.journeyId)){commuteModel?.arrived(e.journeyId,{...e,lastWalk:commuteDirect.get(e.journeyId)});return;}
+ commuteModel?.parked(e.journeyId,e);
+}
+function commuteBus(e){
+ const value=commuteMap?.liveBusStops?.[e.busId]?.[e.node];if(!value)return;
+ for(const l of commuteMap.lines)if(l.busId===e.busId&&l.stops.includes(value))commuteModel.visit(l.id,e.vehicleId,value,e.at);
+}
+function commuteLots(type){
+ return city.civic.lots.filter(l=>l.level>0&&(type==='home'?l.type==='residential':l.type!=='residential')).slice(0,120);
+}
+function commuteFill(){
+ for(const [id,type] of [['commute-from','home'],['commute-to','work']]){
+  const el=$(id),sel=el.value;
+  const data=commuteLots(type);
+  el.replaceChildren(...data.map((l,i)=>new Option((type==='home'?'住宅 ':'工作地 ')+(i+1)+' · '+Math.round(l.x)+', '+Math.round(l.y),l.id)));
+  if(data.some(l=>l.id===sel))el.value=sel;
+ }
+}
+function commutePoint(l,n){
+ if(!l)return null;
+ const pt=N.snap(n,{x:l.x,y:l.y,z:0},48,true);
+ if(!pt)return null;
+ const e=pt.edge?n.edges.find(e=>e.id===pt.edge):null;
+ const near=e?[e.a,e.b].map(id=>n.nodes.find(k=>k.id===id)).filter(Boolean).sort((a,b)=>N.dist(a,l)-N.dist(b,l))[0]:null;
+ return {...l,node:pt.node??near?.id};
+}
+function addCommute(){
+ if(!micro||!commuteModel||!commuteMap)return false;
+ const observation=commuteModel.stats();if(observation.total-observation.finished-observation.failed>=32){ $('commute-note').textContent='当前观测已满，请等一些样本到达。';return false;}
+ const n=effective||city.network,from=commutePoint(city.civic.lots.find(l=>l.id===$('commute-from').value),n),to=commutePoint(city.civic.lots.find(l=>l.id===$('commute-to').value),n),method=$('commute-method').value;
+ if(!from||!to){$('commute-note').textContent='请先建成有道路接驳的住宅和工作地。';return false;}
+ const key=from.id+'>'+to.id,observed=commuteHistory.get(key)||{};
+ const carPath=N.path(N.graph(n,'car',load),from.node,to.node);
+ const lengths=new Map(n.edges.map(e=>[e.id,e]));
+ const target=n.nodes.find(x=>x.id===to.node),carWalk=target?N.dist(to,target)/1.5:0;
+ const direct=carPath?.length?{ok:true,mode:'car',lastWalk:carWalk,seconds:carWalk+5+carPath.reduce((sum,p)=>{
+   const e=lengths.get(p.edge);return sum+(e?.len||0)/Math.max(3,(e?.speed||30)/3.6)*(1+Math.min(2,(load[p.edge]||0)/Math.max(1,N.capacity(e)))*.55);
+ },0)}:null;
+ const plain=method==='car'||method==='pr'?null:commuteMap.plan({from,to,allowParking:false,prefer:'transit'});
+ const pr=method==='car'||method==='transit'?null:commuteMap.plan({from,to,allowParking:true,prefer:'pr'});
+ const options=(method==='car'?[direct]:method==='transit'?[plain]:method==='pr'?[pr?.mode==='pr'?pr:null]:[direct,plain,pr?.mode==='pr'?pr:null]).filter(x=>x?.ok);
+ const mode=options.sort((a,b)=>(observed[a.mode]?.cost??a.seconds)-(observed[b.mode]?.cost??b.seconds))[0];
+ if(!mode){$('commute-note').textContent=method==='car'?'没有可用的驾车路线。':'没有找到可用的公交／地铁接驳。先接通停车入口与车站，并开通线路。';return false;}
+ const real=mode.mode,id='journey-'+(++commuteId),at=micro.now(),lastWalk=mode.lastWalk||0;
+ const path=real==='car'?carPath:mode.pr?.roadPath;
+ if((real==='car'||real==='pr')&&(!path?.length||!micro.offer({p:path,parking:true,parkingSite:mode.pr?.site??null,journeyId:id,parkDwell:real==='pr'?300:60}))){
+  $('commute-note').textContent='该出行没有可走的驾车路，或样本出行已达上限。';return false;
+ }
+ if(!commuteModel.submit({id,at,direct:real==='car',pr:real==='pr',walk:mode.walk||mode.pr?.walk||0,lastWalk,legs:mode.legs,patience:290}))return false;
+ commutePairs.set(id,key);if(real==='car')commuteDirect.set(id,lastWalk);
+ $('commute-note').textContent=(real==='car'?'直驾':real==='pr'?'停车换乘':'公交／地铁')+'样本已出发；完成后显示实际用时。';
+ return true;
+}
+function commuteTick(){
+ if(!micro||!commuteModel)return;
+ const now=micro.now();
+ for(const l of commuteMap.lines)if(l.mode==='metro'){
+  let at=commuteSchedule.get(l.id)??0;
+  const step=Math.max(9,l.headway||35);
+  while(at<=now){if(at>=commuteModel.now())commuteModel.departure(l.id,at);at+=step;}
+  commuteSchedule.set(l.id,at);
+ }
+ commuteModel.step(now);
+}
+function renderCommute(){
+ if(!commuteModel||layer!=='transit')return;
+ const x=commuteModel.stats(),done=commuteLast.at(-1);
+ $('commute-totals').textContent='已完成 '+x.finished+' 趟 · 途中 '+Math.max(0,x.total-x.finished-x.failed)+' 趟 · 候车 '+(x.state.waiting||0)+' 人 · 满载未上 '+x.missed+' 次 · 未成行 '+x.failed+' 趟';
+ if(done){
+  const label=done.mode==='pr'?'停车换乘':done.mode==='car'?'直驾':'公交／地铁';
+  const name={drive:'驾驶',park:'等车位',walk:'步行',wait:'候车',ride:'乘车',transfer:'换乘步行'};
+  $('commute-detail').textContent=done.ok?label+' · '+Math.round(done.total)+' 秒 · 体验 '+done.quality+'/100 · '+Object.entries(done.parts).filter(([,v])=>v>.1).map(([k,v])=>name[k]+' '+Math.round(v)).join('／'):label+' · 等候太久，未成行';
+ }else $('commute-detail').textContent='暂无完成样本。';
+}
+$('commute-start').onclick=()=>{if(pending||batch)return notify('请先完成当前蓝图',true);addCommute();renderCommute();};
+function advanceCommuteObservation(sec){
+ if(pending||batch||modalOpen())return;
+ for(let i=0;i<Math.min(Math.max(sec,0),300)*4;i++){micro?.step(.25);commuteTick();}
+ liveQueues=null;renderCommute();lastSignature='';
+}
+$('commute-fast').onclick=()=>advanceCommuteObservation(30);
+function resetFlow(n=effective||city.network,depotLines){
  const descriptors=trips.filter(t=>t.kind!=='walker');
- const key=JSON.stringify([flowMode,city.signals,n.edges.map(e=>[e.id,e.a,e.b,e.len,e.speed,e.lanes,e.oneway,e.bus,e.kind]),n.turns,city.parking]);
+ const key=JSON.stringify([flowMode,city.finance.frequency,n.buses.map(b=>[b.id,b.broken,b.stops,b.path]),city.signals,city.transit.lines,city.transit.stations,city.transit.tracks,n.edges.map(e=>[e.id,e.a,e.b,e.len,e.speed,e.lanes,e.oneway,e.bus,e.kind]),n.turns,city.parking]);
  if(micro&&flowKey===key){micro.updateDemand(descriptors);return;}
- flowKey=key;
+ flowKey=key;resetCommute(n,depotLines);
  micro=Traffic.create(n,descriptors,{seed:17,maxVehicles:180,warmupSeconds:5,signal:true,
-   signals:city.signals,parking:P.build(n,city.parking),profileMode:flowMode,profileOffset:Math.max(0,flowClock/1000-5)});
+   signals:city.signals,parking:P.build(n,city.parking),onPark:commuteParked,onBusStop:commuteBus,profileMode:flowMode,profileOffset:Math.max(0,flowClock/1000-5)});
  liveQueues=null;
 }
 function getAgents(t){
@@ -378,7 +478,7 @@ function renderFlow(s){
  ['本轮未入场',s.lostDemand+' 辆'],
  ...(s.parking?[['停车已占／总数',s.parking.occupied+' / '+s.parking.capacity+' 位'],['满位点／停车队首',s.parking.full+' 处 / '+s.parking.waiting+' 辆'],
   ['已停车／离位',s.parking.served+' / '+s.parking.released+' 辆'],
-  ['停车等候原因','满位 '+s.parking.causes.full+' · 价高 '+s.parking.causes.price+' · 无接点 '+s.parking.causes.unconnected]]:[])
+  ['停车等候原因','满位 '+s.parking.causes.full+' · 价高 '+s.parking.causes.price+' · 入口排队 '+s.parking.causes.entry+' · 无接点 '+s.parking.causes.unconnected]]:[])
  ]);
 }
 $('flow-mode').onchange=e=>{flowMode=e.target.value;resetFlow();renderFlow(micro.stats());lastSignature='';};
@@ -668,7 +768,7 @@ function parkingPlan(p,tr){
  const {spec,access}=valid,id='P'+tr.parking.next++;
  tr.parking.lots.push({id,type:opts.parkingType,x:p.x,y:p.y,fee});
  return {r:{ok:true,cost:spec.cost},g:{points:parkingOutline(p,spec),closed:true,parkNode:access.node},
-   title:'建造'+spec.label,more:spec.slots+' 位 · 每月养护 ¥'+spec.monthly+' · 收费 ¥'+fee+'／次'};
+   title:'建造'+spec.label,more:spec.slots+' 位'+(spec.entry?' · 入口间隔 '+spec.entry+' 模拟秒':'')+' · 每月养护 ¥'+spec.monthly+' · 收费 ¥'+fee+'／次'};
 }
 function addInfraPlan(p){
  if(tool==='line')return joinStop(nearestAt(T.stopOptions(city.transit,opts.transitMode,transitOpts()),p,25));
@@ -989,19 +1089,23 @@ let nextStats=0,liveQueues=null;let lastFrame=0,lastSignature='',lastWorld=null,
 FlowUI.attach();
 function scene(now){
  if(!previous)previous=now;const modal=modalOpen(),elapsed=Math.min(75,now-previous);
- if(!modal&&!pending&&!batch){flowClock+=elapsed;micro?.step(elapsed/1000);if(animate)clock+=elapsed;}
+ if(!modal&&!pending&&!batch){flowClock+=elapsed;micro?.step(elapsed/1000);commuteTick();if(animate)clock+=elapsed;}
  previous=now;
  if(!modal&&!pending&&!batch&&playing&&now-lastAuto>3100&&checkCanSave()){lastAuto=now;const paid=tick();if(paid.length)notify('市政委托完成 · 拨款 ¥'+format.format(paid.reduce((s,p)=>s+p.reward,0)));}else if(!playing||pending||batch||modal)lastAuto=now;
  view.resize();const sig=[camera.x,camera.y,camera.zoom,layer,tool,view.width,view.height].join('|');
  const visualWorld=batch?.scene||sceneWorld;
  const changed=sig!==lastSignature||lastWorld!==visualWorld||lastPreview!==preview||lastSelection!==selected;
- const diagnostics=!modal&&(['traffic','parking'].includes(layer)||Boolean(selected.edge||selected.parking)||!liveQueues)&&now>=nextStats;
- if(diagnostics){liveQueues=micro?.stats();nextStats=now+350;renderFlow(liveQueues);if(selected.edge||selected.parking)renderDetails();}
+ const diagnostics=!modal&&(['traffic','parking','transit'].includes(layer)||Boolean(selected.edge||selected.parking)||!liveQueues)&&now>=nextStats;
+ if(diagnostics){liveQueues=micro?.stats();nextStats=now+350;renderFlow(liveQueues);renderCommute();if(selected.edge||selected.parking)renderDetails();}
  if(!changed&&!diagnostics&&(modal||!animate||now-lastFrame<1000/30)){window.requestAnimationFrame(scene);return;}
  lastFrame=now;lastSignature=sig;lastWorld=visualWorld;lastPreview=preview;lastSelection=selected;
  const actors=getAgents(clock);
  view.render(visualWorld,{camera,overlay:layer,preview,selected,batchGhosts:batch?.ghosts,agents:actors,metrics:{...metrics,edgeTraffic,coverageGrid,closed:incident.closed||[],utilityMetrics,transitMetrics,districtMetrics,queue:liveQueues,signals:micro?.signals()},tool},clock);window.requestAnimationFrame(scene);}
 showTools();refresh();updateRawExport();if(recoveryRaw!==null)reportSaveProblem(recoveryHint);window.requestAnimationFrame(scene);
  if(new URLSearchParams(location.search).get('menu')==='saves')$('file-dialog').showModal();
-window.Blueprint={batch:()=>batch&&({count:batch.items.length,cash:batch.world.network.cash}),preview:()=>preview,world:()=>city, metrics:()=>metrics,traffic:()=>trafficStats,view,camera:()=>({...camera}),setLayer,save,plan:()=>pending&&{title:pending.title,cost:pending.cash},forecast:()=>({...forecast}),incident:()=>incident,trafficSim:()=>micro?.stats(),map:()=>mapId,utility:()=>utilityMetrics,transit:()=>transitMetrics,districts:()=>districtMetrics,economy:()=>econ,agents:()=>getAgents(clock),coverage:()=>coverageGrid};
+window.Blueprint={commute:()=>commuteModel?.stats(),batch:()=>batch&&({count:batch.items.length,cash:batch.world.network.cash}),preview:()=>preview,world:()=>city, metrics:()=>metrics,traffic:()=>trafficStats,view,camera:()=>({...camera}),setLayer,save,plan:()=>pending&&{title:pending.title,cost:pending.cash},forecast:()=>({...forecast}),incident:()=>incident,trafficSim:()=>micro?.stats(),map:()=>mapId,utility:()=>utilityMetrics,transit:()=>transitMetrics,districts:()=>districtMetrics,economy:()=>econ,agents:()=>getAgents(clock),coverage:()=>coverageGrid};
+if(parameters.get('qa')==='commute'){
+ window.Blueprint.commuteFastForward=advanceCommuteObservation;
+ window.Blueprint.commuteLatest=()=>commuteLast.at(-1);
+}
 })();
