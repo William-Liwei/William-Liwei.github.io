@@ -12,7 +12,8 @@ function assess(network,gates,civic,map,N){
   for(const lot of [...lots].sort((a,b)=>b.occupants-a.occupants||a.id.localeCompare(b.id)).slice(0,28)){
    if(activated.has(lot.id))continue;
    const d=nodeAt(lot,82);if(!d||n.id===d.id)continue;
-   const out=N.path(g,n.id,d.id),back=N.path(g,d.id,n.id);if(!out?.length||!back?.length)continue;
+   const out=N.path(g,n.id,d.id);if(!out?.length)continue;
+   const back=N.path(g,d.id,n.id,out.at(-1).edge);if(!back?.length)continue;
    const bottleneck=Math.min(...out.map(n=>N.capacity(edges.get(n.edge))));
    const count=Math.min(Math.round(Math.max(0,lot.occupants||0)*(kind==='truck'?.24:.13)*(map.freight||1)), Math.max(0,Math.floor(bottleneck/7)));
    if(count===0)continue;

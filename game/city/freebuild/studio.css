@@ -11,3 +11,9 @@
 #menu-leave-confirm{margin-top:12px;padding:9px 12px;border:1px solid #b78558;border-radius:7px;color:#f5ccab}#menu-status:not(:empty){margin-top:9px}
 
 #save-warning{position:absolute;left:12px;right:12px;top:52px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:8px;background:#423328;color:#ffe2bd;border:1px solid #b99774;border-radius:7px;padding:6px 9px;font-size:12px}#save-warning button{min-width:max-content}
+
+/* Draft feedback lives with the map without intercepting any input. */
+#build-guide{position:absolute;z-index:1;top:54px;left:12px;max-width:calc(100% - 60px);pointer-events:none;background:#10262ce8;color:#dcfaec;border:1px solid #557e76;border-radius:6px;padding:5px 9px;font-size:12px;box-shadow:0 2px 10px #0d21275e}
+#build-guide.bad{background:#392d2ae8;color:#ffe5d8;border-color:#a66b60}.map-area:has(#save-warning:not([hidden])) #build-guide{top:96px}
+
+.turn-exits{display:grid;gap:2px;padding:7px 9px;border:1px solid #395363;border-radius:7px;background:#142531}.turn-exits small{color:#b6d2dd}.turn-exits .check{margin:3px 0}.turn-exits input{accent-color:#f1987d}

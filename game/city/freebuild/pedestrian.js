@@ -6,6 +6,7 @@
   else root.Pedestrians=value;
 })(typeof globalThis==='object'?globalThis:this,function(){
   'use strict';
+  const Road=typeof module==='object'?require('./network.js'):globalThis.Network;
   const EPS=1e-6, valid=Number.isFinite, TAU=2*Math.PI;
   const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
   const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -24,11 +25,7 @@
     let n=2166136261;for(const c of String(text))n=Math.imul(n^c.charCodeAt(0),16777619);return n>>>0;
   }
   function sidewalk(edge={},gap=1.7) {
-    const lanes=clamp(Math.round(Number(edge.lanes)||2),1,8);
-    const halfPaint=(lanes*(edge.kind==='highway'?3.8:3.35)+(edge.kind==='highway'?5.8:edge.kind==='ramp'?2.5:4.5))/2;
-    const laneCount=edge.oneway?lanes:Math.ceil(lanes/2);
-    const laneEnvelope=(laneCount-.48)*2.85+1.6;
-    return Math.max(halfPaint,laneEnvelope)+gap;
+    return Road.crossSection(edge).width/2+gap;
   }
   function atSide(p,t,offset,side,edge,crosswalk=false){
     return {x:p.x-side*offset*t.y,y:p.y+side*offset*t.x,z:p.z,edge,crosswalk};

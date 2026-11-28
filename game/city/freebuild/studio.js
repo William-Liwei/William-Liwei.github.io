@@ -7,7 +7,7 @@ let prefs={};try{prefs=JSON.parse(localStorage.getItem(prefKey))||{};localStorag
 $('map-name').textContent=map.name;document.querySelector('.brand p').textContent=(sandbox?'规划沙盒':'自由经营')+' · '+map.name;
 const serviceNames={fire:'消防',police:'警务',water:'供水',power:'电力',health:'医疗',clinic:'医疗',education:'教育',school:'教育',waste:'环卫站',park:'绿地',library:'图书馆',plaza:'市民广场',logistics:'物流中心'};
 const labels={residential:'住宅',commercial:'商业',office:'办公',industrial:'工业'};
-const defaults={profile:'r2',oneway:false,bus:false,startZ:0,endZ:0,shape:'line',snap:true,zone:'residential',density:2,depth:38,side:'both',service:'fire',utilityType:'water',stationType:'tramStop',trackMode:'tram',trackStart:0,trackEnd:0,transitMode:'tram',districtType:'farm'};
+const defaults={profile:'r2',oneway:false,bus:false,startZ:0,endZ:0,shape:'line',snap:true,flip:false,zone:'residential',density:2,depth:38,side:'both',service:'fire',utilityType:'water',stationType:'tramStop',trackMode:'tram',trackStart:0,trackEnd:0,transitMode:'tram',districtType:'farm'};
 const stateStore={make:()=>({version:1,network:N.create(),civic:C.create(17),mapId,sandbox,utilities:U.create(),transit:T.create(),districts:D.create(),economy:E.create(),signals:{},month:1,contracts:{},history:[],finance:{tax:9,debt:0,frequency:"normal"}}),restore(raw){
  if(raw?.version!==1||!Array.isArray(raw.network?.edges)||!Array.isArray(raw.network?.nodes)||!Array.isArray(raw.network?.buses)||!Array.isArray(raw.civic?.lots)||!Array.isArray(raw.civic?.zones)||!Array.isArray(raw.civic?.services)||!Number.isInteger(raw.month)||raw.month<1||!Number.isFinite(raw.network.cash)||!Number.isInteger(raw.network.next))throw Error('不兼容的城市存档');
  if((raw.mapId||'river')!==mapId||!!raw.sandbox!==sandbox)throw Error('此存档属于其他地图或模式，请先从大厅切换。');
@@ -21,6 +21,7 @@ const stateStore={make:()=>({version:1,network:N.create(),civic:C.create(17),map
  const eids=new Set();for(let e of edges){if(typeof e.id!=='string'||eids.has(e.id)||!ids.has(e.a)||!ids.has(e.b)||!Array.isArray(e.pts)||e.pts.length<2||e.pts.length>500||!e.pts.every(p=>[p.x,p.y,p.z].every(Number.isFinite))||![2,3,4,6,8].includes(e.lanes)||!['road','highway','ramp'].includes(e.kind)||!Number.isFinite(e.speed)||e.speed<1)throw Error('无效道路');e.len=N.length(e.pts);eids.add(e.id);}
  if(buses.some(b=>!/^B[0-9]+$/.test(b.id)||!Array.isArray(b.stops)||b.stops.length<2||!b.stops.every(s=>ids.has(s)))||raw.civic.lots.some(l=>!Number.isFinite(l.x)||!Number.isFinite(l.y)||!Object.hasOwn(labels,l.type))||raw.civic.services.some(s=>!Number.isFinite(s.x)||!Number.isFinite(s.y)))throw Error('无效设施或地块');
  raw.finance={tax:N.clamp(Math.round(+raw.finance?.tax||9),5,16),debt:N.clamp(Math.round(+raw.finance?.debt||0),0,40000),frequency:raw.finance?.frequency==="frequent"?"frequent":"normal"};
+ raw.network.turns=N.normalizedTurns(raw.network);
  U.bootstrap(raw.utilities,raw.civic,N.mapRoads(raw.network));
  N.rebuildBuses(raw.network);
  raw.contracts=Object.fromEntries(Object.entries(raw.contracts||{}).filter(([k,v])=>Contracts.ids.includes(k)&&Number.isInteger(v)&&v>0&&v<=raw.month));
@@ -70,7 +71,8 @@ function regionalStarter(){
  for(let k=0;k<13;k++)C.tick(s.civic,roads,roadOpts);
  U.bootstrap(s.utilities,s.civic,roads);n.cash=sandbox?2600000:map.cash;return s;
 }
-let lastStored=null,saveError='',saveConflict=false;
+let lastStored=null,saveError='',saveConflict=false,recoveryRaw=null;
+const recoveryHint='原存档无法读取，已保留原始数据。本页暂不写入；请先导出原始存档，再明确选择导入或重建。';
 function reportSaveProblem(msg,conflict=false){
  saveError=msg;saveConflict=conflict;
  $('save-warning-text').textContent=msg;
@@ -79,32 +81,37 @@ function reportSaveProblem(msg,conflict=false){
   playing=false;$('auto').setAttribute('aria-pressed','false');$('auto').textContent='▶';
  }
 }
-function checkCanSave(){
+function checkCanSave(replacing=false){
  if(!saveConflict){
   try{
    const actual=localStorage.getItem(storeKey);
-   if(actual===lastStored)return true;
+   if(actual===lastStored){if(recoveryRaw!==null&&!replacing){reportSaveProblem(recoveryHint);return false;}return true;}
    reportSaveProblem('另一个标签页更新了此城市。本页不会覆盖它；可以导出本页的进度，再重开游戏。',true);
   }catch{reportSaveProblem('保存失败：浏览器无法读取本机存档，请先导出 JSON。');}
  }
  return false;
 }
-function save(){
- if(!checkCanSave())return false;
+function save(next=city,replacing=false){
+ if(!checkCanSave(replacing))return false;
  try{
-  const saved=JSON.stringify(city);
-  localStorage.setItem(storeKey,saved);lastStored=saved;reportSaveProblem('');return true;
+  const saved=JSON.stringify(next);
+  localStorage.setItem(storeKey,saved);lastStored=saved;recoveryRaw=null;updateRawExport();reportSaveProblem('');return true;
  }catch{reportSaveProblem('保存失败：浏览器无法写入本机存档，请先导出 JSON。');return false;}
 }
 window.addEventListener('storage',e=>{
  if((e.key===storeKey||e.key===null)&&e.newValue!==lastStored)checkCanSave();
 });
 function notify(msg,bad=false){$('notice').textContent=msg;$('notice').classList.toggle('bad',bad);clearTimeout(notify.timer);if(msg)notify.timer=setTimeout(()=>{$('notice').textContent=''},5300)}
-function loadCity(){try{let raw=localStorage.getItem(storeKey);lastStored=raw;if(raw)return stateStore.restore(JSON.parse(raw))}catch{}return starter()}
+function loadCity(){
+ try{lastStored=localStorage.getItem(storeKey);}catch{return starter();}
+ if(lastStored===null)return starter();
+ try{return stateStore.restore(JSON.parse(lastStored));}
+ catch{recoveryRaw=lastStored;return starter();}
+}
 city=loadCity();
-function changeCity(s){city=s;comparison=null;draft=[];selected={};playing=false;showTools();$('auto').setAttribute('aria-pressed','false');$('auto').textContent='▶';refresh();save()}
-const help={utility:'选水管或电线，沿地面点起点和终点；同类线相交即接通。可建独立支线，水电不会互串。首次编辑每一类网络会启用真实供给。',station:'先建有道路接驳的车站、港口、机场或车辆段。码头和船坞需要岸边，机场需要完整的陆地跑道。',track:'选地面铁路、地铁或电车轨道，在地图点起点和终点；端点贴近已有轨道、对应站点或车辆段才能接通。地面铁路可接东西边界口。',line:'选择运输方式和站点，依次加入。铁路、地铁、电车需要接通对应车辆段；轮渡和货轮必须有连续水域；飞机可选图外航点。',district:'选择独立特别分区，先打开资源图层找合适位置，然后点至少三个角。资源与运输条件共同决定产出。',signal:'在路口设置或切换交通信号。查看道路交通图层可见排队；没有信号的路口按到达与通行空隙放行。',road:'直线点起终点；曲线依次点起点、控制点、终点。可分别调起终点高程。红色预览不可建设，选择「不吸附」可自由落点。',upgrade:'先选新断面，再点击现有同类型道路。单行方向按原路绘制方向。',bus:'按发车顺序在普通道路上点至少两个站，可选路口或路段中间。系统沿可行车方向闭环，遇单行须有回程。',frontage:'沿普通道路点击起点和终点；要跟随弯道可加入中间点。可选单侧或两侧、纵深与密度。',polygon:'在地图点至少三个角，完成后按按钮或 Enter。区域不限栅格，地块仍需接近地面道路才能成长。',service:'选择设施，再点地图放置；设施须靠近可服务道路。可在此调服务预算，右侧图层检查实际覆盖。',inspect:'点道路、设施或分区看属性。高架与地面叠在一起时，可用图层辅助识别。',erase:'点击一段道路，确认后才拆除。相交分段有独立路段，断开的公交会暂停。'};
-const toolNames={utility:'水电线路',station:'枢纽设施',track:'轨道',line:'运输线路',district:'特别分区',signal:'交通信号',road:'道路',upgrade:'道路改造',bus:'公交线路',frontage:'沿街分区',polygon:'多边形分区',service:'公共服务',inspect:'查阅',erase:'拆除'};
+function changeCity(s){if(!save(s,true))return false;city=s;comparison=null;draft=[];selected={};playing=false;showTools();$('auto').setAttribute('aria-pressed','false');$('auto').textContent='▶';refresh();return true;}
+const help={junction:'点地图上的路口，再选择驶入方向。勾选要禁止的出口；应用后先审核蓝图，不会直接改路。转向规则影响汽车、货车和道路公交，不影响步行。',utility:'选水管或电线，沿地面点起点和终点；同类线相交即接通。可建独立支线，水电不会互串。首次编辑每一类网络会启用真实供给。',station:'先建有道路接驳的车站、港口、机场或车辆段。码头和船坞需要岸边，机场需要完整的陆地跑道。',track:'选地面铁路、地铁或电车轨道，在地图点起点和终点；端点贴近已有轨道、对应站点或车辆段才能接通。地面铁路可接东西边界口。',line:'选择运输方式和站点，依次加入。铁路、地铁、电车需要接通对应车辆段；轮渡和货轮必须有连续水域；飞机可选图外航点。',district:'选择独立特别分区，先打开资源图层找合适位置，然后点至少三个角。资源与运输条件共同决定产出。',signal:'在路口设置或切换交通信号。查看道路交通图层可见排队；没有信号的路口按到达与通行空隙放行。',road:'直线点起终点；曲线依次点起点、控制点、终点。可分别调起终点高程。红色预览不可建设，选择「不吸附」可自由落点。',upgrade:'先选新断面，再点击现有同类型道路。单行方向按原路绘制方向。',bus:'按发车顺序在普通道路上点至少两个站，可选路口或路段中间。系统沿可行车方向闭环，遇单行须有回程。',frontage:'沿普通道路点击起点和终点；要跟随弯道可加入中间点。可选单侧或两侧、纵深与密度。',polygon:'在地图点至少三个角，完成后按按钮或 Enter。区域不限栅格，地块仍需接近地面道路才能成长。',service:'选择设施，再点地图放置；设施须靠近可服务道路。可在此调服务预算，右侧图层检查实际覆盖。',inspect:'点道路、设施或分区看属性。高架与地面叠在一起时，可用图层辅助识别。',erase:'点击一段道路，确认后才拆除。相交分段有独立路段，断开的公交会暂停。'};
+const toolNames={junction:'路口规则',utility:'水电线路',station:'枢纽设施',track:'轨道',line:'运输线路',district:'特别分区',signal:'交通信号',road:'道路',upgrade:'道路改造',bus:'公交线路',frontage:'沿街分区',polygon:'多边形分区',service:'公共服务',inspect:'查阅',erase:'拆除'};
 const layers={connections:['对外连接','公路、铁路、港口和航空的城市外接点；铁路必须铺轨连到边界。'],resources:['自然资源','选特别分区类型后查看相应资源。'],districts:['特别分区','显示特别区边界及其用途。'],routes:['铁路、水运和航线','可查看有效线路和已建轨道、车辆段。'],none:['实景','鸟瞰地形、建筑、人车与道路。'],traffic:['道路交通','通勤分配越高、容量比越大，颜色越暖。并不是逐车排队模型。'],transit:['公共交通','青色标出有效公交线路；断线不发车。'],elevation:['高程／隧道','高架、桥梁与地下通道按高程显色。'],zones:['土地用途','住区、商业、办公与工业分色。'],land:['建设潜力','有道路、基础设施和服务的地块更容易升高密度。'],fire:['消防覆盖','由消防站经路网抵达；互不连通的道路不会跨河覆盖。'],police:['警务覆盖','由警务设施经道路提供。'],water:['供水覆盖','供水设施经道路计算覆盖；本版没有独立管线。'],power:['电力覆盖','电力设施经道路计算覆盖；本版没有独立电网。']};
 function civicTypes(){return C.SERVICE_TYPES||C.SERVICES||{}}
 function serviceKeys(){let v=civicTypes();return Array.isArray(v)?v.map(x=>typeof x==='string'?x:x.id||x.type):Object.keys(v).length?Object.keys(v):['fire','police','water','power'];}
@@ -139,10 +146,15 @@ function clean(value){return String(value).replace(/[&<>"']/g,x=>({'&':'&amp;','
 function hasRoad(p,r=85,n=effective||city.network){return !!N.snap({nodes:[],edges:n.edges.filter(e=>e.kind==='road')},{x:p.x,y:p.y,z:0},r,true);}
 function transitOpts(net=effective||city.network){return {water:N.water,isBuildable:onLand,width:1200,height:800,mapId,centerline:N.river,river:N.river,roadAccess:(p,r)=>hasRoad(p,Math.min(112,Math.max(58,(Number(r)||16)*2.7)),net)};}
 function districtOpts(net=effective||city.network){const stations=city.transit.stations;return {...transitOpts(net),transit:city.transit,waterAt:p=>U.isManaged(city.utilities,'water')?U.at(utilityMetrics,'water',p):1,powerAt:p=>U.isManaged(city.utilities,'power')?U.at(utilityMetrics,'power',p):1,roadAccess:(p,r)=>hasRoad(p,Math.min(76,Number(r)||58),net),seaports:stations.filter(s=>s.type==='cargoPort'||s.type==='ferryTerminal'),airports:stations.filter(s=>s.type==='airport'||s.type==='cargoAirport')};}
+let turnNode=null,turnEnter=null;
 function showTools(){
  $('tools').querySelectorAll('button').forEach(b=>{b.classList.toggle('active',b.dataset.tool===tool);b.setAttribute('aria-pressed',b.dataset.tool===tool);});
  let s='';
- if(['road','upgrade'].includes(tool))s=htmlSel('profile','道路断面',Object.fromEntries(Object.entries(N.profiles).map(([k,v])=>[k,v.name])))+checkbox('oneway','单向通行：起点 → 终点')+checkbox('bus','公交专用车道（普通道路）');
+ if(['road','upgrade'].includes(tool)){
+  const profile=N.profiles[opts.profile],dedicated=N.crossSection({...profile,oneway:opts.oneway||profile.oneway,bus:true}).busOffsets.length;
+  if(!dedicated)opts.bus=false;
+  s=htmlSel('profile','道路断面',Object.fromEntries(Object.entries(N.profiles).map(([k,v])=>[k,v.name])))+checkbox('oneway','单向通行：起点 → 终点')+(tool==='upgrade'&&opts.oneway?checkbox('flip','单行方向反转'):'' )+(dedicated?checkbox('bus','预留 '+dedicated+' 条公交专用车道'):'<p class="help">公交专用道需在同一方向保留普通车道；可改用单向或更宽的普通道路。</p>');
+ }
  if(tool==='road')s+=htmlSel('shape','铺设方式',{line:'任意角度直线',curve:'自由曲线（控制点）'})+'<div class="row">'+value('startZ','起点高程 m',-70,70)+value('endZ','终点高程 m',-70,70)+'</div>'+checkbox('snap','吸附到同层路口／路段')+'<div class="row"><button id="ground">地面</button><button id="bridge">桥 +18 m</button><button id="tunnel">隧道 −16 m</button><button id="grade">上坡 0→18</button></div>';
  if(['frontage','polygon'].includes(tool))s=htmlSel('zone','用地',labels)+htmlSel('density','容许密度',{1:'低密 · 低层',2:'中密 · 多层',3:'高密 · 塔楼'})+(tool==='frontage'?value('depth','纵深 m',18,72)+htmlSel('side','沿街方向',{both:'双侧',left:'左侧',right:'右侧'}):'');
  if(tool==='utility')s=htmlSel('utilityType','线路类型',{water:'供水管网',power:'输配电网'})+'<p class="help">首段实际建设会启用该类型独立供给；先检查旧有主线。</p>';
@@ -153,6 +165,8 @@ function showTools(){
  if(tool==='service')s=htmlSel('service','服务种类',Object.fromEntries(serviceKeys().map(k=>[k,serviceNames[k]||k])))+'<label class="field">运营预算 %<input type="number" id="service-budget" min="25" max="160" step="5" value="'+(city.civic.budgets?.[opts.service]??100)+'"></label>';
  $('options').innerHTML=s;$('tool-help').textContent=help[tool];
  $('options').querySelectorAll('select,input').forEach(el=>el.addEventListener('change',()=>{if(el.id==='service-budget'){C.setBudget(city.civic,opts.service,+el.value);refresh();save();return}opts[el.id]=el.type==='checkbox'?el.checked:el.type==='number'?N.clamp(+el.value,+el.min,+el.max):el.value;if(el.id==='service'){showTools();setLayer(opts.service)}
+ if(el.id==='profile'||el.id==='oneway'){showTools();hintDraft();$(el.id)?.focus({preventScroll:true});}
+ if(el.id==='shape'||el.id==='startZ'){draft=[];hintDraft();}
  if(['stationType','trackMode','transitMode','utilityType','districtType'].includes(el.id)){draft=[];showTools();if(el.id==='utilityType')setLayer(opts.utilityType);if(el.id==='districtType')setLayer('resources');}
  updatePreview();}));
  for(let [id,a,b] of [['ground',0,0],['bridge',18,18],['tunnel',-16,-16],['grade',0,18]])if($(id))$(id).onclick=()=>{opts.startZ=a;opts.endZ=b;draft=[];showTools();updatePreview()};
@@ -167,10 +181,66 @@ function showTools(){
   }
  }
  if(tool==='bus'){$('actions').innerHTML+=city.network.buses.map(b=>'<div class="line"><span>'+b.id+' · '+(b.broken?'断线':b.stops.length+' 站')+'</span><button data-remove="'+b.id+'">撤线</button></div>').join('');
- $('actions').querySelectorAll('[data-remove]').forEach(btn=>btn.onclick=()=>{city.network.buses=city.network.buses.filter(b=>b.id!==btn.dataset.remove);refresh();showTools();save();notify('已撤线')});}
+ $('actions').querySelectorAll('[data-remove]').forEach(btn=>btn.onclick=()=>{
+  const tr=structuredClone(city),line=tr.network.buses.find(b=>b.id===btn.dataset.remove);if(!line)return;
+  const points=line.path.flatMap(h=>{const e=tr.network.edges.find(e=>e.id===h.edge);return e?(h.reverse?[...e.pts].reverse():e.pts):[]});
+  tr.network.buses=tr.network.buses.filter(b=>b.id!==line.id);
+  beginPlan(tr,{ok:true},{points,kind:'erase'},'撤除公交 '+line.id,'bus','取消线路后不再收取运营费');
+ });}
+ if(tool==='junction')renderTurnEditor();
  if($('finish')){$('finish').onclick=finish;$('undo').onclick=()=>{draft.pop();updatePreview();hintDraft()}}
 }
-$('tools').onclick=e=>{let b=e.target.closest('[data-tool]');if(!b)return;if(b.dataset.tool!==tool){tool=b.dataset.tool;draft=[];selected={};if(tool==='bus')setLayer('transit');if(tool==='line'||tool==='track'||tool==='station')setLayer('routes');if(tool==='utility')setLayer(opts.utilityType);if(tool==='district')setLayer('resources');if(tool==='signal')setLayer('traffic');if(tool==='service')setLayer(opts.service);if(tool==='polygon'||tool==='frontage')setLayer('zones');showTools();updatePreview()}};
+$('tools').onclick=e=>{let b=e.target.closest('[data-tool]');if(!b)return;if(b.dataset.tool!==tool){tool=b.dataset.tool;draft=[];selected={};turnNode=null;turnEnter=null;turnPreview=null;if(tool==='bus')setLayer('transit');if(tool==='line'||tool==='track'||tool==='station')setLayer('routes');if(tool==='utility')setLayer(opts.utilityType);if(tool==='district')setLayer('resources');if(tool==='signal'||tool==='junction')setLayer('traffic');if(tool==='service')setLayer(opts.service);if(tool==='polygon'||tool==='frontage')setLayer('zones');showTools();updatePreview()}};
+const turnPoint=(e,n)=>{
+ const f=Math.min(.45,(16+N.crossSection(e).width*.24)/Math.max(e.len,1));
+ return N.sample(e.pts,e.a===n.id?f:1-f);
+};
+function bearing(n,p){return ['东','东南','南','西南','西','西北','北','东北'][((Math.round(Math.atan2(p.y-n.y,p.x-n.x)/(.25*Math.PI))%8)+8)%8];}
+function turnLabel(n,entry,exit){
+ if(entry.id===exit.id)return '掉头';
+ const a=turnPoint(entry,n),b=turnPoint(exit,n),angle=Math.atan2(b.y-n.y,b.x-n.x)-Math.atan2(n.y-a.y,n.x-a.x);
+ const d=(angle+3*Math.PI)%(2*Math.PI)-Math.PI;
+ return Math.abs(d)<Math.PI*.21?'直行':Math.abs(d)>Math.PI*.79?'大角度转向':d>0?'右转':'左转';
+}
+function renderTurnEditor(){
+ const target=$('actions'),n=city.network.nodes.find(n=>n.id===turnNode);
+ if(!n){target.innerHTML='<p class="help">请选择有至少两段道路的路口。</p>';return;}
+ const roads=N.approaches(city.network,n.id),entries=roads.filter(e=>N.enters(e,n.id));
+ const exits=roads.filter(e=>N.exits(e,n.id));if(!entries.length||!exits.length){target.innerHTML='<p class="help">无有效驶入或驶出方向。请先改造单行方向。</p>';return;}
+ const entry=entries.find(e=>e.id===turnEnter)||entries[0];turnEnter=entry.id;
+ const has=new Set((city.network.turns||[]).filter(r=>r.node===n.id&&r.enter===entry.id).map(r=>r.exit));
+ const name=e=>bearing(n,turnPoint(e,n))+'侧 · '+(N.profiles[e.profile]?.name||'道路')+' · '+e.id;
+ target.innerHTML='<div class="field">路口 '+clean(n.id)+' · '+Math.round(n.z)+' m</div><label class="field">驶入方向<select id="turn-entry">'+entries.map(e=>'<option value="'+clean(e.id)+'" '+(e.id===turnEnter?'selected':'')+'>'+clean(name(e))+'</option>').join('')+'</select></label><div class="turn-exits"><small>勾选要禁止的出口</small>'+exits.map(e=>'<label class="check"><input type="checkbox" data-turn-exit value="'+clean(e.id)+'" '+(has.has(e.id)?'checked':'')+'>'+clean(turnLabel(n,entry,e)+' · '+name(e))+'</label>').join('')+'</div><button id="turn-review" disabled>预览规则变更</button>';
+ const checked=()=>[...target.querySelectorAll('[data-turn-exit]:checked')].map(e=>e.value);
+ function update(){
+  const blocked=new Set(checked());
+  $('turn-review').disabled=has.size===blocked.size&&[...has].every(id=>blocked.has(id));
+  turnGuide(n,entry,exits,blocked);
+ }
+ $('turn-entry').onchange=e=>{turnEnter=e.target.value;renderTurnEditor();};
+ target.querySelectorAll('[data-turn-exit]').forEach(el=>el.onchange=update);
+ $('turn-review').onclick=()=>{
+  const blocked=checked(),trial=structuredClone(city),r=N.setTurns(trial.network,n.id,entry.id,blocked);
+  const changed=exits.find(e=>e.id!==entry.id&&has.has(e.id)!==blocked.includes(e.id));
+  const from=entry.a===n.id?entry.b:entry.a,to=changed?(changed.a===n.id?changed.b:changed.a):null;
+  const trialRoute=net=>{
+   const res=to&&N.path(N.graph(net,'car'),from,to);
+   if(!res)return null;
+   const path=res.map(h=>({h,e:net.edges.find(v=>v.id===h.edge)}));
+   return {len:Math.round(path.reduce((x,{e})=>x+e.len,0)),points:path.flatMap(({h,e},i)=>(h.reverse?[...e.pts].reverse():e.pts).slice(i?1:0))};
+  };
+  const before=changed?trialRoute(city.network):null,after=changed?trialRoute(trial.network):null;
+  const journey=changed&&from!==to?' · 相邻街段试走 '+(before?before.len+' m':'不通')+' → '+(after?after.len+' m':'不通'):'';
+  const info=blocked.length+' 个禁止转向'+(r.newBreaks?' · '+r.newBreaks+' 条既有公交将暂停':'')+journey;
+  beginPlan(trial,r,{...turnPreview,points:[n],kind:'junction',detour:journey&&after?.points},'调整 '+n.id+' 路口规则','junction',info);
+ };
+ update();
+}
+let turnPreview=null;
+function turnGuide(n,entry,exits,blocked){
+ turnPreview={points:[n],kind:'junction',movement:{entry:turnPoint(entry,n),at:n,exits:exits.map(e=>({point:turnPoint(e,n),blocked:blocked.has(e.id),uturn:e.id===entry.id}))}};
+ updatePreview();
+}
 function joinStop(s){if(!s)return notify('请选择站点',true);if(draft.some(p=>p.id===s.id))return notify('该站点已在线路内',true);draft.push(s);showTools();hintDraft();updatePreview();}
 function hintDraft(){const n=draft.length,$h=$('tool-help');$h.textContent=help[tool]+(n?' 已选 '+n+' 点。':'');}
 const getRoads=()=>N.mapRoads(city.network);
@@ -283,7 +353,12 @@ $('step').onclick=()=>{if(!checkCanSave())return;const paid=tick();notify(paid.l
 function roadPoint(p,z){const u={...p,y:p.y+.76*z,z};const gate=opts.snap&&z===0&&M.gates(mapId).find(q=>N.dist(u,q)<13/camera.zoom);if(gate)return {x:gate.x,y:gate.y,z:0};return opts.snap?(N.snap(city.network,u,Math.max(5,13/camera.zoom),true)||u):u;}
 function atPoint(event){const r=canvas.getBoundingClientRect();return view.screenToWorld({x:event.clientX-r.left,y:event.clientY-r.top},camera);}
 function groundRoad(p){const candidates=city.network.edges.filter(e=>e.kind==='road'&&e.pts.some(q=>Math.abs(q.z)<4)); let best=null;for(let e of candidates){const nn=N.snap({nodes:[],edges:[e]},{...p,z:0},20/camera.zoom,true);if(nn&&(!best||N.dist(p,nn)<N.dist(p,best)))best=nn;}return best;}
-function junction(p){let best=null,delta=23/camera.zoom;for(let n of city.network.nodes){let w=N.dist({x:n.x,y:n.y-.76*n.z},p);if(w<=delta){best=n;delta=w}}return best;}
+function junction(p,min=1){
+ const degree=new Map();for(const e of city.network.edges){degree.set(e.a,(degree.get(e.a)||0)+1);degree.set(e.b,(degree.get(e.b)||0)+1);}
+ let best=null,delta=20/camera.zoom;
+ for(const n of city.network.nodes){if((degree.get(n.id)||0)<min)continue;const d=N.dist({x:n.x,y:n.y-.76*n.z},p);if(d<=delta){best=n;delta=d;}}
+ return best;
+}
 function edgeAt(p){
  let best=null,d=17/camera.zoom;
  for(let e of city.network.edges)for(let i=1;i<e.pts.length;i++){
@@ -310,17 +385,17 @@ function beginPlan(trial,r,geometry,title,kind,info=''){
  pending={trial,geometry:{...geometry,valid:true},title,kind,cash,before:trafficBefore()};
  $('plan-title').textContent='待确认 · '+title;
  $('plan-cost').textContent='施工费用 ¥'+format.format(Math.max(0,cash))+' · 预计余额 ¥'+format.format(trial.network.cash)+(info?' · '+info:'');
- $('plan-review').hidden=false;
+ $('plan-review').hidden=false; $('build-guide').hidden=true;
  for(const id of ['step','auto','budget','economy','files'])$(id).disabled=true;
  for(const el of document.querySelectorAll('#tools button,#options input,#options select,#options button,#actions button'))el.disabled=true;
  notify('');updatePreview();$('plan-apply').focus({preventScroll:true});
 }
 function endPlan(apply){
- if(!pending)return;if(apply&&saveConflict){notify('另一个标签页已有更新，本页只可取消或导出。',true);return;}const p=pending;pending=null;
+ if(!pending)return;if(apply&&!checkCanSave()){notify(saveError,true);return;}const p=pending;pending=null;
  $('plan-review').hidden=true;
  for(const id of ['step','auto','budget','economy','files'])$(id).disabled=false;
  for(const el of document.querySelectorAll('#tools button'))el.disabled=false;
- if(apply){city=p.trial;draft=[];hover=null;selected={};refresh();if(['road','bus','upgrade','erase'].includes(p.kind))comparePlan(p.before);save();notify('已确认 · '+p.title);}
+ if(apply){city=p.trial;draft=[];hover=null;selected={};refresh();if(['road','bus','upgrade','erase','junction'].includes(p.kind))comparePlan(p.before);if(save())notify('已确认 · '+p.title);else notify(saveError,true);}
  else {draft=[];hover=null;notify('蓝图已取消，未扣款');}
  showTools();updatePreview();hintDraft();canvas.focus({preventScroll:true});
 }
@@ -355,12 +430,23 @@ function finish(){
  trial.network.cash-=r.cost||0;
  beginPlan(trial,r,geometry,tool==='district'?D.TYPES[opts.districtType].name:toolNames[tool],tool,tool==='bus'||tool==='line'?'开通后计运营费':tool==='district'?'产出受地段和交通影响':(r.lots?.length||0)+' 个规划地块');
 }
-function trafficBefore(){return {cross:trafficStats.cross,unserved:trafficStats.unserved,drivers:trafficStats.drivers,bus:trafficStats.busRiders};}
-function comparePlan(before){const after=trafficBefore();comparison='路网改动前 → 后：未通达 '+before.unserved+' → '+after.unserved+'，开车 '+before.drivers+' → '+after.drivers+'，乘公交 '+before.bus+' → '+after.bus+'。';stats();}
+function trafficBefore(){return {cross:trafficStats.cross,unserved:trafficStats.unserved,drivers:trafficStats.drivers,bus:trafficStats.busRiders,broken:(effective||city.network).buses.filter(b=>b.broken).length};}
+function comparePlan(before){const after=trafficBefore();comparison='路网改动前 → 后：未通达 '+before.unserved+' → '+after.unserved+'，开车 '+before.drivers+' → '+after.drivers+'，乘公交 '+before.bus+' → '+after.bus+(before.broken!==after.broken?'，暂停线路 '+before.broken+' → '+after.broken:'')+'。';stats();}
+function roadDraft(end){
+ const [first,control]=draft;
+ const guide=opts.shape==='curve'&&control?control:null,points=N.plan(first,end,guide),r=N.check(city.network,points,opts,[first,end]);
+ const hits=new Map((r.hits||[]).filter(h=>N.dist(h.p,first)>2&&N.dist(h.p,end)>2).map(h=>[Math.round(h.p.x)+':'+Math.round(h.p.y),h.p]));
+ const split=new Map((r.overpasses||[]).map(h=>[Math.round(h.p.x)+':'+Math.round(h.p.y),h]));
+ return {r,geometry:{points,overpasses:[...split.values()],kind:'road',control:guide,snapped:!!(end.node||end.edge),junctions:[...hits.values()],width:N.crossSection(N.profiles[opts.profile]).width,valid:r.ok}};
+}
 function completeRoad(end){
- const [first,control]=draft,pts=N.plan(first,end,opts.shape==='curve'?control:null),trial=structuredClone(city);
- const r=N.add(trial.network,pts,opts,[first,end]);
- beginPlan(trial,r,{points:pts,kind:'road'},'铺设 '+N.profiles[opts.profile].name,'road',Math.round(N.length(pts))+' m');
+ const {r,geometry}=roadDraft(end);
+ if(!r.ok){updatePreview();return notify(r.reason,true);}
+ const trial=structuredClone(city);
+ const result=N.add(trial.network,geometry.points,opts,[draft[0],end]);
+ const grade=geometry.points.at(-1).z-geometry.points[0].z;
+ const info=Math.round(N.length(geometry.points))+' m'+(Math.abs(grade)>.5?' · 高差 '+(grade>0?'+':'')+Math.round(grade)+' m':'')+(geometry.junctions.length?' · 接入 '+geometry.junctions.length+' 处路口':'')+(geometry.overpasses.length?' · '+geometry.overpasses.length+' 处立体交叉（不接通）':'');
+ beginPlan(trial,result,geometry,'铺设 '+N.profiles[opts.profile].name,'road',info);
 }
 function nearestAt(list,p,r=18){return list.filter(s=>Number.isFinite(s.x)&&N.dist(s,p)<r/camera.zoom).sort((a,b)=>N.dist(a,p)-N.dist(b,p))[0];}
 function nearestPolyline(list,p,r=16){
@@ -390,6 +476,7 @@ function addInfraPlan(p){
 }
 function pointerAction(p){
  if(pending)return;
+ if(tool==='junction'){const j=junction(p,2);if(!j)return notify('请选择有两段或以上道路的路口',true);turnNode=j.id;turnEnter=null;selected={junction:j.id};renderTurnEditor();return;}
  if(['utility','track','station','line','district','signal'].includes(tool)){addInfraPlan(p);updatePreview();hintDraft();return;}
  if(tool==='road'){if(!draft.length){draft=[roadPoint(p,opts.startZ)];notify('已定起点');}else if(opts.shape==='curve'&&draft.length===1){draft.push(p);notify('已定控制点，点击终点');}else completeRoad(roadPoint(p,opts.endZ));}
  else if(tool==='polygon'){if(!onLand(p))return notify('只能在陆地分区',true);if(draft.length>=48)return notify('分区达到 48 点上限，请完成当前区域',true);draft.push(p);}
@@ -424,7 +511,9 @@ function pointerAction(p){
    const trial=structuredClone(city);let r;
    if(tool==='erase'){N.remove(trial.network,e.id);r={ok:true};}
    else r=N.upgrade(trial.network,e.id,opts);
-   beginPlan(trial,r,{points:e.pts,kind:tool},tool==='erase'?'拆除道路':'道路改造',tool,tool==='erase'?'可能切断公交与服务覆盖':'仅在确认后更新道路');
+   const modified=trial.network.edges.find(q=>q.id===e.id),flipped=modified?.a!==e.a&&tool==='upgrade';
+   const info=tool==='erase'?'可能切断公交与服务覆盖':flipped?'反转单行方向；失效的转向规则将移除':'仅在确认后更新道路';
+   beginPlan(trial,r,{points:modified?.pts||e.pts,kind:tool,arrow:tool==='upgrade'&&modified?.oneway},tool==='erase'?'拆除道路':flipped?'反转单行方向':'道路改造',tool,info);
  }
  updatePreview();hintDraft();
 }
@@ -442,10 +531,25 @@ function renderDetails(){
 }
 let preview=null;
 function updatePreview(){
- if(pending){preview=pending.geometry;return;}
- if(tool==='road'&&hover&&draft.length){let u=roadPoint(hover,opts.endZ),shape=opts.shape==='curve'&&draft.length===2?draft[1]:null,pts=N.plan(draft[0],u,shape),r=N.check(city.network,pts,opts,[draft[0],u]);preview={points:pts,valid:r.ok,kind:'road',lanes:N.profiles[opts.profile].lanes,label:r.ok?'¥'+format.format(r.cost):r.reason};return}
- if(draft.length){let pts=[...draft];if(hover&&['polygon','frontage','utility','track','district'].includes(tool))pts.push(tool==='track'?trackPoint(hover):hover);preview={points:pts,valid:true,kind:[ 'track'].includes(tool)?'road':tool,closed:['polygon','district'].includes(tool)&&pts.length>2};return}
- preview=hover&&tool==='service'?{points:[hover],valid:onLand(hover),kind:'service'}:null;
+ const guide=$('build-guide');
+ const label=(message='',bad=false)=>{if(guide.textContent!==message)guide.textContent=message;guide.classList.toggle('bad',bad);guide.hidden=!message;};
+ if(pending){label();preview=pending.geometry;return;}
+ if(tool==='junction'){label();preview=turnPreview;return;}
+ if(tool==='road'&&hover){
+  const end=roadPoint(hover,draft.length?opts.endZ:opts.startZ);
+  let anchor=end.node?'吸附路口':end.edge?'吸附已有道路':'';
+  if(!draft.length){preview={points:[end],kind:'road',snapped:!!anchor};label('选起点'+(anchor?' · '+anchor:'')+' · '+Math.round(end.z)+' m');return;}
+  if(opts.shape==='curve'&&draft.length===1){
+   preview={points:[draft[0],hover],kind:'line'};label('点击放置控制点，再选终点');return;
+  }
+  const {r,geometry}=roadDraft(end);preview=geometry;
+  label(r.ok?[Math.round(N.length(geometry.points))+' m','¥'+format.format(r.cost),anchor,geometry.junctions.length?geometry.junctions.length+' 处路口':'',geometry.overpasses.length?geometry.overpasses.length+' 处立体交叉（不接通）':''].filter(Boolean).join(' · '):r.reason,!r.ok);return;
+ }
+ if(draft.length){
+  let pts=[...draft];if(hover&&['polygon','frontage','utility','track','district'].includes(tool))pts.push(tool==='track'?trackPoint(hover):tool==='frontage'?groundRoad(hover)||hover:hover);
+  preview={points:pts,valid:true,kind:tool==='track'?'road':tool,closed:['polygon','district'].includes(tool)&&pts.length>2};label();return;
+ }
+ preview=hover&&tool==='service'?{points:[hover],valid:onLand(hover),kind:'service'}:null;label();
 }
 function showWorld(){
  const n=city.network,by=new Map();
@@ -453,9 +557,49 @@ function showWorld(){
  return {...n,buses:(effective||n).buses,utilities:city.utilities.lines,transit:city.transit,transitGates:T.gates(transitOpts()),roadGates:M.gates(mapId),districts:city.districts.districts,zones:city.civic.zones.map(z=>({...z,poly:z.polygon||z.poly||[],buildings:by.get(z.id)||[]})),services:city.civic.services.map(s=>({...s,radius:130}))};
 }
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
-canvas.addEventListener('pointerdown',e=>{if(e.button===1||e.button===2||e.shiftKey||panMode){drag={x:e.clientX,y:e.clientY,orig:{...camera},world:atPoint(e)};canvas.setPointerCapture(e.pointerId);return;}if(e.button===0){canvas.focus({preventScroll:true});pointerAction(atPoint(e));}});
-canvas.addEventListener('pointermove',e=>{if(drag){const p=atPoint(e);camera.x+=drag.world.x-p.x;camera.y+=drag.world.y-p.y;}else{hover=atPoint(e);updatePreview();}});
-canvas.addEventListener('pointerleave',()=>{hover=null;updatePreview();});canvas.addEventListener('pointerup',()=>{drag=null;});canvas.addEventListener('pointercancel',()=>{drag=null;});
+const fingers=new Map();let touchGesture=null;
+function screenPoint(x,y){const r=canvas.getBoundingClientRect();return {x:x-r.left,y:y-r.top};}
+function touchCenter(){
+ const a=[...fingers.values()],first=a[0],second=a[1]||first;
+ return {x:(first.x+second.x)/2,y:(first.y+second.y)/2,d:Math.hypot(first.x-second.x,first.y-second.y)};
+}
+function beginTouch(moved=false){
+ const c=touchCenter();
+ touchGesture={...c,zoom:camera.zoom,world:view.screenToWorld(screenPoint(c.x,c.y),camera),moved:moved||fingers.size>1||panMode};
+}
+canvas.addEventListener('pointerdown',e=>{
+ if(e.pointerType==='touch'){
+  fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});canvas.setPointerCapture(e.pointerId);
+  beginTouch();if(touchGesture.moved){hover=null;updatePreview();}return;
+ }
+ if(e.button===1||e.button===2||e.shiftKey||panMode){drag={world:atPoint(e)};canvas.setPointerCapture(e.pointerId);return;}
+ if(e.button===0){canvas.focus({preventScroll:true});pointerAction(atPoint(e));}
+});
+canvas.addEventListener('pointermove',e=>{
+ if(fingers.has(e.pointerId)){
+  fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  const c=touchCenter(),g=touchGesture;
+  if(g.moved||Math.hypot(c.x-g.x,c.y-g.y)>7){
+   g.moved=true;hover=null;updatePreview();
+   if(c.d>0&&g.d>0)camera.zoom=N.clamp(g.zoom*c.d/g.d,.53,3.2);
+   const here=view.screenToWorld(screenPoint(c.x,c.y),camera);
+   camera.x+=g.world.x-here.x;camera.y+=g.world.y-here.y;
+  }return;
+ }
+ if(e.pointerType==='touch')return;
+ if(drag){const p=atPoint(e);camera.x+=drag.world.x-p.x;camera.y+=drag.world.y-p.y;}else{hover=atPoint(e);updatePreview();}
+});
+canvas.addEventListener('pointerleave',()=>{hover=null;updatePreview();});
+function releasePointer(e,cancelled=false){
+ if(fingers.has(e.pointerId)){
+  const tap=!cancelled&&fingers.size===1&&!touchGesture.moved;
+  fingers.delete(e.pointerId);
+  if(fingers.size)beginTouch(true);else touchGesture=null;
+  if(tap){canvas.focus({preventScroll:true});pointerAction(atPoint(e));}
+ }else drag=null;
+}
+canvas.addEventListener('pointerup',e=>releasePointer(e));canvas.addEventListener('pointercancel',e=>releasePointer(e,true));
+canvas.addEventListener('lostpointercapture',e=>{if(fingers.has(e.pointerId))releasePointer(e,true);});
 function zoom(z){camera.zoom=N.clamp(camera.zoom*z,.53,3.2);}
 canvas.addEventListener('wheel',e=>{e.preventDefault();let a=atPoint(e);zoom(Math.exp(-e.deltaY*.0015));let b=atPoint(e);camera.x+=a.x-b.x;camera.y+=a.y-b.y;},{passive:false});
 $('pan').onclick=()=>{panMode=!panMode;$('pan').setAttribute('aria-pressed',String(panMode));canvas.style.cursor=panMode?'grab':'';};
@@ -507,6 +651,7 @@ document.addEventListener('keydown',e=>{
   if(modalOpen())return; // Browser closes the foreground dialog only.
   e.preventDefault();
   if(pending){endPlan(false);return;}
+  if(turnNode&&tool==='junction'){turnNode=null;turnEnter=null;turnPreview=null;selected={};renderTurnEditor();updatePreview();return;}
   if(draft.length){draft=[];selected={};hintDraft();updatePreview();renderDetails();return;}
   openMenu();return;
  }
@@ -532,10 +677,24 @@ function policyView(){
 $('sector-policy').innerHTML=Object.entries(E.SECTORS).map(([id,k])=>'<option value="'+id+'">'+clean(k.name)+'</option>').join('');
 $('sector-policy').onchange=policyView;$('sector-apply').onclick=()=>{const v=$('sector-tax').value;E.setPolicy(city.economy,$('sector-policy').value,{stance:$('stance').value,tax:v===''?null:+v});refresh();save();policyView();};$('economy').onclick=()=>{policyView();$('economy-dialog').showModal()};$('economy-close').onclick=()=>$('economy-dialog').close();
 $('files').onclick=()=>$('file-dialog').showModal();$('close').onclick=()=>$('file-dialog').close();$('save-warning-open').onclick=()=>{if(!modalOpen())$('file-dialog').showModal();};
-function confirmAction(label,fn){if($('file-status').textContent!==label){$('file-status').textContent=label;return}if(!checkCanSave()){$('file-status').textContent=saveError;return;}fn();$('file-status').textContent='操作已完成。';$('file-dialog').close();}
-$('blank').onclick=()=>confirmAction('再点「清空重建」确认。请先导出要保留的城市。',()=>{const s=stateStore.make();s.network.cash=sandbox?2600000:Math.max(105000,map.cash-15000);s.utilities=U.create({legacy:false});changeCity(s)});$('starter').onclick=()=>confirmAction('再点「载入示例城」确认。请先导出当前进度。',()=>changeCity(starter()));
-$('export').onclick=()=>{let url=URL.createObjectURL(new Blob([JSON.stringify(city)],{type:'application/json'}));let a=document.createElement('a');a.href=url;a.download='city-blueprint-'+mapId+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);};
-$('import').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;if(file.size>4000000)throw Error('文件过大');const s=stateStore.restore(JSON.parse(await file.text()));if(!window.confirm('用这个存档替换当前预览城市？'))return;if(!checkCanSave())throw Error(saveError);changeCity(s);$('file-status').textContent='已载入。';}catch(x){$('file-status').textContent='导入失败：'+x.message;}finally{e.target.value='';}};
+function confirmAction(label,fn){
+ if(recoveryRaw!==null)label='原存档将被替换。请先导出原始存档。'+label;
+ if($('file-status').textContent!==label){$('file-status').textContent=label;return}
+ if(!checkCanSave(true)||!fn()){$('file-status').textContent=saveError;return;}
+ $('file-status').textContent='操作已完成。';$('file-dialog').close();
+}
+$('blank').onclick=()=>confirmAction('再点「清空重建」确认。请先导出要保留的城市。',()=>{const s=stateStore.make();s.network.cash=sandbox?2600000:Math.max(105000,map.cash-15000);s.utilities=U.create({legacy:false});return changeCity(s)});$('starter').onclick=()=>confirmAction('再点「载入示例城」确认。请先导出当前进度。',()=>changeCity(starter()));
+function downloadSave(raw,name,type='application/json'){
+ let url=URL.createObjectURL(new Blob([raw],{type}));let a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+function updateRawExport(){
+ $('export-raw').hidden=recoveryRaw===null;
+ $('raw-explain').hidden=recoveryRaw===null;
+}
+$('export').onclick=()=>downloadSave(JSON.stringify(city),'city-blueprint-'+mapId+'.json');
+$('export-raw').onclick=()=>{if(recoveryRaw!==null)downloadSave(recoveryRaw,'city-blueprint-'+mapId+'-recovery.txt','application/octet-stream');};
+
+$('import').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;if(file.size>4000000)throw Error('文件过大');const s=stateStore.restore(JSON.parse(await file.text()));if(!window.confirm(recoveryRaw!==null?'用这个存档替换当前无法读取的原存档？请确认已导出原始备份。':'用这个存档替换当前城市？'))return;if(!changeCity(s))throw Error(saveError);$('file-status').textContent='已载入并保存。';}catch(x){$('file-status').textContent='导入失败：'+x.message;}finally{e.target.value='';}};
 let nextStats=0,liveQueues=null;let lastFrame=0,lastSignature='',lastWorld=null,lastPreview=null,lastSelection=null,animate=prefs.motion!==false;
 function scene(now){if(!previous)previous=now;const modal=modalOpen();if(animate&&!modal)clock+=Math.min(50,now-previous);previous=now;
  if(!modal&&!pending&&playing&&now-lastAuto>3100&&checkCanSave()){lastAuto=now;const paid=tick();if(paid.length)notify('市政委托完成 · 拨款 ¥'+format.format(paid.reduce((s,p)=>s+p.reward,0)));}else if(!playing||pending||modal)lastAuto=now;
@@ -546,7 +705,7 @@ function scene(now){if(!previous)previous=now;const modal=modalOpen();if(animate
  const actors=getAgents(clock);
  if(now>=nextStats){liveQueues=micro?.stats();nextStats=now+460;if(selected.edge)renderDetails();}
  view.render(sceneWorld,{camera,overlay:layer,preview,selected,agents:actors,metrics:{...metrics,edgeTraffic,coverageGrid,closed:incident.closed||[],utilityMetrics,transitMetrics,districtMetrics,queue:liveQueues,signals:micro?.signals()},tool},clock);window.requestAnimationFrame(scene);}
-showTools();refresh();window.requestAnimationFrame(scene);
+showTools();refresh();updateRawExport();if(recoveryRaw!==null)reportSaveProblem(recoveryHint);window.requestAnimationFrame(scene);
  if(new URLSearchParams(location.search).get('menu')==='saves')$('file-dialog').showModal();
-window.Blueprint={world:()=>city, metrics:()=>metrics,traffic:()=>trafficStats,view,camera:()=>({...camera}),setLayer,save,plan:()=>pending&&{title:pending.title,cost:pending.cash},forecast:()=>({...forecast}),incident:()=>incident,trafficSim:()=>micro?.stats(),map:()=>mapId,utility:()=>utilityMetrics,transit:()=>transitMetrics,districts:()=>districtMetrics,economy:()=>econ,agents:()=>getAgents(clock),coverage:()=>coverageGrid};
+window.Blueprint={preview:()=>preview,world:()=>city, metrics:()=>metrics,traffic:()=>trafficStats,view,camera:()=>({...camera}),setLayer,save,plan:()=>pending&&{title:pending.title,cost:pending.cash},forecast:()=>({...forecast}),incident:()=>incident,trafficSim:()=>micro?.stats(),map:()=>mapId,utility:()=>utilityMetrics,transit:()=>transitMetrics,districts:()=>districtMetrics,economy:()=>econ,agents:()=>getAgents(clock),coverage:()=>coverageGrid};
 })();

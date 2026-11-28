@@ -5,6 +5,7 @@
   else root.Traffic=api;
 })(typeof globalThis==='object'?globalThis:this,function(){
   'use strict';
+  const Road=typeof module==='object'?require('./network.js'):globalThis.Network;
   const EPS=1e-7, PI=Math.PI, TAU=2*PI;
   const finite=Number.isFinite, clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const number=(v,f,a=-Infinity,b=Infinity)=>finite(+v)?clamp(+v,a,b):f;
@@ -36,7 +37,7 @@
     let lo=0,hi=geo.length-1;
     while(lo<hi){let m=(lo+hi)>>1;if(geo[m].end<p)lo=m+1;else hi=m;}
     const s=geo[lo], ratio=clamp((p-s.start)/s.d,0,1);
-    return {x:s.x+s.dx*ratio,y:s.y+s.dy*ratio,z:s.z+s.dz*ratio,angle:s.angle+(reverse?PI:0)};
+    return {x:s.x+s.dx*ratio,y:s.y+s.dy*ratio,z:s.z+s.dz*ratio,angle:s.angle+(reverse?PI:0),heading:s.heading+(reverse?PI:0)};
   }
   function graph(network,signalOption){
     const nodes=new Map(),edges=new Map(),lanes=[];
@@ -52,6 +53,7 @@
       if(g.total<.50||edges.has(id(raw.id)))continue;
       const k=id(raw.id), a=ensure(raw.a),b=ensure(raw.b);
       const kind=raw.kind??'road', count=Math.round(number(raw.lanes,2,1,8));
+      const cross=Road.crossSection(raw);
       const roadSpeed=number(raw.speed,kind==='highway'?82:kind==='ramp'?44:39,5,140)/3.6;
       const e={id:k,rawId:raw.id,a:a.id,b:b.id,geo:g.pieces,total:g.total,roadSpeed,kind,fwd:[],rev:[]};
       a.degree++;b.degree++;
@@ -60,7 +62,7 @@
         const dest=reverse?e.rev:e.fwd;
         for(let i=0;i<count;i++){
           const busOnly=raw.bus===true&&count>1&&i===count-1;
-          const lane={id:lanes.length,e,reverse,index:i,offset:(i+.52)*2.85,busOnly:listType(busOnly,kind),vehicles:[],entryAt:0};
+          const lane={id:lanes.length,e,reverse,index:i,offset:cross?.offset(i,reverse)??(raw.oneway?(i+.5-count/2)*3.35:(i+.5)*2.85),busOnly:listType(busOnly,kind),vehicles:[],entryAt:0};
           lanes.push(lane);dest.push(lane);
         }
       };
@@ -83,7 +85,8 @@
     const dwellTime=number(options.busDwell,2.4,0,12);
     const seed=hash(options.seed??'blueprint-traffic');
     const {nodes,edges,lanes}=graph(network,options.signal!==false);
-    const cars=new Map(), walkers=[], demands=[];
+    const routing=network.turns?.length?Road.graph(network,'car'):null;
+    const cars=new Map(), walkers=[], demands=[], transfers=new Set();
     const candidates=[], cooldown=new Map();
     let seconds=0, accumulator=0, wallClock=null, serial=0, completed=0, issued=0,
       rejected=0, waitFinished=0, tripFinished=0, lostDemand=0;
@@ -105,7 +108,7 @@
         const e=edges.get(id(s?.edge??s?.id??s)), reverse=Boolean(s?.reverse);
         if(!e||kind!=='walker'&&reverse&&!e.rev.length)return;
         const from=reverse?e.b:e.a,to=reverse?e.a:e.b;
-        if(prev!==null&&prev!==from)return;
+        if(prev!==null&&(prev!==from||routing&&kind!=='walker'&&!Road.turnAllowed(routing,from,path.at(-1).e.rawId,e.rawId)))return;
         const f=e.geo[0],l=e.geo[e.geo.length-1];
         path.push({e,reverse,from,to,start:total,end:total+e.total,lanes:reverse?e.rev:e.fwd,
           departure:reverse?l.heading+PI:f.heading,arrival:reverse?f.heading+PI:l.heading});
@@ -121,6 +124,7 @@
       const stops=new Set(array(desc.stops??line?.stops).map(s=>id(s?.node??s?.id??s)));
       const oneShot=desc.repeat===false;
       const continuous=kind==='bus'&&path[0].from===path.at(-1).to&&!oneShot;
+      if(continuous&&routing&&!Road.turnAllowed(routing,path[0].from,path.at(-1).e.rawId,path[0].e.rawId))return;
       const interval=number(desc.interval,kind==='bus'?Math.max(17,total/cruise*.9):clamp(15+total/cruise*.45,17,45),.12,2000)/arrivalScale;
       const offset=Math.min(kind==='bus'?5:11,interval*1.1)*phase;
       return {kind,path,total,cruise,phase,stops,continuous,interval,oneShot,
@@ -137,7 +141,7 @@
     const beginAt=(lane,length)=>Math.min(length*.54,lane.e.total*.26);
     const lengthOf=a=>LENGTH[a.kind];
     const canEnter=(lane,length)=>{
-      if(seconds+EPS<lane.entryAt)return false;
+      if(lane.reserved||seconds+EPS<lane.entryAt)return false;
       const back=lane.vehicles[0], start=beginAt(lane,length);
       return stopAt(lane,length)>=start-EPS&&(!back||Math.min(back.s,back.prevS)-start+EPS>=(length+lengthOf(back))*.5+GAP);
     };
@@ -233,24 +237,39 @@
           if(node.degree>=3&&node.active.some(o=>o.until>seconds&&!compatible(movement,o)))continue;
           const key=own.id+'>'+lane.id;
           if((cooldown.get(key)||0)>seconds+EPS)continue;
-          own.vehicles.pop();
+          const start=paintPoint(from,a.s,own.offset),end=paintPoint(to,beginAt(lane,lengthOf(a)),lane.offset);
+          const gap=Math.hypot(start.x-end.x,start.y-end.y), arm=clamp(gap*.43,.9,9);
+          const entry={x:start.x+Math.cos(start.heading)*arm,y:start.y+Math.sin(start.heading)*arm};
+          const exit={x:end.x-Math.cos(end.heading)*arm,y:end.y-Math.sin(end.heading)*arm};
+          const duration=Math.max(dt*2,Math.min(2.5,gap/(straight?7.2:5.1)));
+          own.vehicles.pop();lane.reserved=a;
           if(node.degree>=3){
             node.active=node.active.filter(o=>o.until>seconds);
-            node.active.push({...movement,until:seconds+junctionTime*(straight?1:1.35)});
+            node.active.push({...movement,until:seconds+duration+dt});
           }
-          cooldown.set(key,seconds+junctionTime*(straight?.73:1));
-          if(wrap){completed++;finishedByKind.bus++;waitFinished+=a.wait;tripFinished+=seconds-a.started;a.wait=0;a.started=seconds;}
-          a.index=wrap?0:a.index+1;
-          // No teleporting to the next junction: a car enters at the start of the outgoing lane.
-          join(a,lane,Math.max(a.speed,straight?3.25:1.9));
+          cooldown.set(key,seconds+Math.max(duration,junctionTime*(straight?.73:1)));
+          a.cross={start,end,entry,exit,begin:seconds,duration,lane,wrap};
+          a.queued=false;a.ready=false;a.speed=gap/duration;transfers.add(a);
           break;
         }
       }
     }
+    function finishTransfers(){
+      for(const a of transfers){
+        const t=a.cross;
+        if(seconds+EPS<t.begin+t.duration)continue;
+        transfers.delete(a);t.lane.reserved=null;a.cross=null;
+        if(t.wrap){completed++;finishedByKind.bus++;waitFinished+=a.wait;tripFinished+=seconds-a.started;a.wait=0;a.started=seconds;}
+        a.index=t.wrap?0:a.index+1;
+        join(a,t.lane,Math.max(1.9,a.speed));
+        a.joinBlend=t;
+      }
+    }
     function tick(){
       seconds+=dt;candidates.length=0;
-      departures();
       for(const lane of lanes)updateLane(lane);
+      finishTransfers();
+      departures();
       crossing();
     }
     function step(span=dt){
@@ -264,8 +283,12 @@
       return agents();
     }
     function paintPoint(seg,d,side){
-      const p=sample(seg.e,d,seg.reverse), angle=p.angle;
-      p.x-=Math.sin(angle)*side;p.y+=Math.cos(angle)*side;
+      const p=sample(seg.e,d,seg.reverse),a=sample(seg.e,d-.78,seg.reverse),b=sample(seg.e,d+.78,seg.reverse);
+      if(Math.hypot(b.x-a.x,b.y-a.y)>EPS){
+        p.heading=Math.atan2(b.y-a.y,b.x-a.x);
+        p.angle=Math.atan2(b.y-a.y-(b.z-a.z)*.76,b.x-a.x);
+      }
+      p.x-=Math.sin(p.heading)*side;p.y+=Math.cos(p.heading)*side;
       return p;
     }
     function agents(){
@@ -273,7 +296,19 @@
       const alpha=clamp(accumulator/dt,0,1);
       for(const a of cars.values()){
         const seg=a.route.path[a.index];
-        const p=paintPoint(seg,a.prevS+(a.s-a.prevS)*alpha,a.lane.offset);
+        const now=seconds-dt+alpha*dt,t=a.cross||a.joinBlend;
+        let p;
+        if(t&&(a.cross||now<t.begin+t.duration)){
+          const u=clamp((now-t.begin)/t.duration,0,1),v=1-u,{start,end,entry,exit}=t;
+          const x=v*v*v*start.x+3*v*v*u*entry.x+3*v*u*u*exit.x+u*u*u*end.x;
+          const y=v*v*v*start.y+3*v*v*u*entry.y+3*v*u*u*exit.y+u*u*u*end.y;
+          const z=start.z+(end.z-start.z)*u;
+          const dx=v*v*(entry.x-start.x)+2*v*u*(exit.x-entry.x)+u*u*(end.x-exit.x);
+          const dy=v*v*(entry.y-start.y)+2*v*u*(exit.y-entry.y)+u*u*(end.y-exit.y)-(end.z-start.z)*.76/3;
+          p={x,y,z,angle:Math.atan2(dy,dx)};
+        }else{
+          a.joinBlend=null;p=paintPoint(seg,a.prevS+(a.s-a.prevS)*alpha,a.lane.offset);
+        }
         frame.push({...p,id:a.id,kind:a.kind==='truck'?'truck':a.kind,edge:seg.e.rawId,lane:a.lane.index,
           reverse:seg.reverse,speed:a.speed,queued:a.queued,dwell:a.busDwellUntil!==null&&a.busDwellUntil>seconds,
           color:a.kind==='bus'?'#f7d274':PALETTE[a.chosenVar]});
@@ -288,7 +323,8 @@
     }
     function stats(){
       const edgeQueues=dict(),edgeOccupancy=dict(),edgeSpeed=dict(),edgeCapacity=dict(),junctionQueues=dict(),edgeTraffic=dict();
-      let queued=0,dwell=0,waitActive=0,backlog=0,moving=0;
+      let queued=0,dwell=0,waitActive=0,backlog=0,moving=transfers.size;
+      for(const a of transfers)waitActive+=a.wait;
       for(const q of demands)backlog+=q.pending;
       for(const [k,e] of edges){
         let n=0,slow=0,speed=0,size=0;
