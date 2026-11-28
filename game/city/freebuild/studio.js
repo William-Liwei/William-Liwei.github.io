@@ -1751,7 +1751,7 @@ function tick(){
  const paid=Contracts.settle(city,contractInputs());citySystemMonth(opening,settled,credit,paid);city.history=(city.history||[]).concat({month:city.month,pop:metrics.totals?.population||0,net,bus:(trafficStats.busRiders||0)+(transitMetrics?.total?.passengers||0)}).slice(-18);
  refresh();save();renderEditActions();return paid;
 }
-$('step').onclick=()=>{if(!checkCanSave())return;const paid=tick();notify(paid.length?paid.map(x=>x.title+' · 拨款 ¥'+format.format(x.reward)).join('；'):'月报已更新')};$('auto').onclick=()=>{if(!checkCanSave())return;playing=!playing;$('auto').setAttribute('aria-pressed',String(playing));$('auto').textContent=playing?'Ⅱ':'▶';};
+$('step').onclick=()=>{if(!checkCanSave())return;const paid=tick();notify(paid.length?paid.map(x=>x.title+' · 拨款 ¥'+format.format(x.reward)).join('；'):'月报已更新')};$('auto').onclick=()=>{if(!checkCanSave())return;playing=!playing;$('auto').setAttribute('aria-pressed',String(playing));$('auto').textContent=playing?'Ⅱ':'▶';$('auto').setAttribute('aria-label',playing?'暂停自动推进':'自动推进月份');};
 function roadPoint(p,z){const snapping=opts.snap&&!snapHeld;const u={...p,y:p.y+(mode3d?0:.76*z),z};const gate=snapping&&z===0&&M.gates(mapId).find(q=>N.dist(u,q)<13/camera.zoom);if(gate)return {x:gate.x,y:gate.y,z:0};return snapping?(N.snap(city.network,u,Math.max(5,13/camera.zoom),true)||u):u;}
 function activeProject(p){return mode3d?renderer3d.project(p):view.worldToScreen(p,camera);}
 function atPoint(event){const p=screenPoint(event.clientX,event.clientY);return mode3d?renderer3d.raycast(p):view.screenToWorld(p,camera);}
@@ -3180,7 +3180,7 @@ $('export').onclick=()=>downloadSave(JSON.stringify(city),'city-blueprint-'+mapI
 $('export-raw').onclick=()=>{if(recoveryRaw!==null)downloadSave(recoveryRaw,'city-blueprint-'+mapId+'-recovery.txt','application/octet-stream');};
 
 $('import').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;if(file.size>4000000)throw Error('文件过大');const s=stateStore.restore(JSON.parse(await file.text()));if(!window.confirm(recoveryRaw!==null?'用这个存档替换当前无法读取的原存档？请确认已导出原始备份。':'用这个存档替换当前城市？'))return;if(!changeCity(s))throw Error(saveError);$('file-status').textContent='已载入并保存。';}catch(x){$('file-status').textContent='导入失败：'+x.message;}finally{e.target.value='';}};
-let nextStats=0,liveQueues=null;let lastFrame=0,lastSignature='',lastWorld=null,lastPreview=null,lastSelection=null,animate=prefs.motion!==false;
+let nextStats=0,liveQueues=null;let lastFrame=0,lastSignature='',lastWorld=null,lastPreview=null,lastSelection=null,animate=typeof prefs.motion==='boolean'?prefs.motion:!matchMedia('(prefers-reduced-motion: reduce)').matches;
 FlowUI.attach();
 function scene(now){
  if(!previous)previous=now;const modal=modalOpen(),elapsed=Math.min(75,now-previous);
@@ -3200,6 +3200,48 @@ function scene(now){
   try{renderer3d.render(visualWorld,draw,clock);}catch(e){console.warn('3D frame failed',e);switchScene(false,{persist:false,why:'三维图形遇到问题，已回到平面。'});}
  }else view.render(visualWorld,draw,clock);
  window.requestAnimationFrame(scene);
+}
+const TOOL_ALIASES={
+ road:'建路 高速 高架 隧道 桥梁 车道 road',upgrade:'车道 扩宽 升级 高速 upgrade',junction:'转向 立交 单行',signal:'红绿灯 配时',
+ parking:'泊位 车库 地下 换乘 P+R',active:'天桥 人行道 自行车 步行',bus:'巴士 公交线路',station:'车站 车库 港口 机场 轮渡',track:'铁路 轨道 电车 地铁',
+ line:'公交铁路航线 客运 货运 轮渡 铁路 地铁',frontage:'沿路 分区 住宅 商业 办公 工业',earth:'地形 土方 坡度',landTitle:'买地 地皮 领地',
+ district:'特殊产业区 大学区 公园区 机场区 农业 矿区',industry:'仓库 加工 榨油 采集 林业',parkLife:'游乐场 花园 运动场 步道',
+ service:'水电 公园 图书馆 环卫',schoolBuild:'小学 中学 职业 学位 大学',campusLife:'大学 宿舍 实验室 院系',justiceBuild:'警察 法院 监狱',
+ careBuild:'消防 医院 诊所 社区',social:'养老 科研 墓地 婴幼儿',utility:'线路 水管 电线',gridLife:'发电 储备 电池 水库 太阳能 风电 泵站 净水',
+ inspect:'查看 选择',erase:'移除 删除'
+};
+const finder=$('tool-search');
+function updateToolFinder(){
+ const tokens=finder.value.trim().toLowerCase().split(/\s+/).filter(Boolean);let found=0;
+ for(const g of document.querySelectorAll('.tool-group')){
+  let matches=0;
+  for(const b of g.querySelectorAll('[data-tool]')){
+   const k=b.dataset.tool,name=(b.textContent+' '+(TOOL_ALIASES[k]||k)).toLowerCase();
+   b.hidden=!tokens.every(x=>name.includes(x));if(!b.hidden)matches++;
+  }
+  g.hidden=matches===0;found+=matches;
+ }
+ $('tool-search-count').hidden=!tokens.length;
+ $('tool-search-count').textContent=found?'找到 '+found+' 项，可选择建造工具':'没有找到工具，试试「道路」「分区」或「电网」。';
+}
+finder.addEventListener('input',updateToolFinder);
+finder.addEventListener('keydown',e=>{
+ if(e.key==='Escape'){e.stopPropagation();finder.value='';updateToolFinder();canvas.focus({preventScroll:true});}
+ if(e.key==='Enter'){const hits=[...$('tools').querySelectorAll('[data-tool]:not([hidden])')];if(hits.length===1){e.preventDefault();hits[0].click();hits[0].focus({preventScroll:true});}}
+});
+document.addEventListener('keydown',e=>{
+ if(e.key==='/'&&!e.ctrlKey&&!e.metaKey&&!modalOpen()&&!e.target.matches('input,textarea,select,[contenteditable=true]')){
+  e.preventDefault();finder.focus();finder.select();
+ }
+});
+for(const link of $('mobile-dock').querySelectorAll('a')){
+ link.onclick=e=>{e.preventDefault();const target=$(link.hash.slice(1));if(!target)return;
+ target.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+ target.focus({preventScroll:true});};
+}
+for(const dlg of document.querySelectorAll('dialog')){
+ const heading=dlg.querySelector('h2');
+ if(heading&&!dlg.hasAttribute('aria-labelledby')&&!dlg.hasAttribute('aria-label')){heading.id ||=dlg.id+'-title';dlg.setAttribute('aria-labelledby',heading.id);}
 }
 showTools();refresh();if(!scenarioRunner&&(scenePrefs.enabled||parameters.get('view')==='3d'))switchScene(true,{persist:false});updateRawExport();if(recoveryRaw!==null)reportSaveProblem(recoveryHint);if(!scenarioRunner)window.requestAnimationFrame(scene);
  if(new URLSearchParams(location.search).get('menu')==='saves')$('file-dialog').showModal();

@@ -14,7 +14,7 @@ function update(){const m=M.defs[id],s=current();$('mode-career').setAttribute('
  $('map-cards').replaceChildren(...Object.values(M.defs).map((z,i)=>{const art=document.createElement('article'),btn=document.createElement('button');btn.textContent=z.name;btn.setAttribute('aria-pressed',String(z.id===id));btn.onclick=()=>{id=z.id;try{localStorage.setItem('city.blueprint.map.1',id)}catch{}update();};const para=document.createElement('p');para.textContent=z.tag+' · '+(get(M.storage(z.id,sandbox))?'有存档':'新城');art.append(btn,para);return art;}));
 }
 function savePrefs(){try{localStorage.setItem(pref,JSON.stringify({motion:$('motion').checked,overlay:$('overlay').value}));$('settings-status').textContent='设置已保存，下次进入游戏时生效。';}catch{$('settings-status').textContent='浏览器未开放本地存储。';}}
-const settings=get(pref)||{};$('motion').checked=settings.motion!==false;
+const settings=get(pref)||{};$('motion').checked=(typeof settings.motion==='boolean'?settings.motion:!matchMedia('(prefers-reduced-motion: reduce)').matches);
 if([...$('overlay').options].some(o=>o.value===settings.overlay))$('overlay').value=settings.overlay;
 $('motion').onchange=savePrefs;$('overlay').onchange=savePrefs;
 $('download').onclick=()=>{const s=current();if(!s)return;const url=URL.createObjectURL(new Blob([JSON.stringify(s)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='city-blueprint-'+id+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);};

@@ -3,3 +3,34 @@
 #map-cards button[aria-pressed=true]{border-color:#87edbf;color:#a5f3d0}#map-cards{margin-bottom:16px}
 
 button[aria-pressed=true]{background:#285244;color:#a5f3d0}
+
+/* Dusk atlas theme. Lightweight CSS architecture and survey grid. */
+:root{--bg:#131b23;--panel:#1b2933;--line:#48535a;--text:#f0eee7;--muted:#b7c6cb;--mint:#9fddc4}
+body{background:radial-gradient(ellipse at 75% 6%,#26404b 0,transparent 48%),#131b23}
+.lobby-head{padding-block:19px;border-bottom:1px solid #4d5b62}
+.brand span,.version{background:#293b42;border:1px solid #626865;color:#efc685}
+.hero{min-height:355px;border-radius:12px;border-color:#7b7970;background:linear-gradient(100deg,#192e39 0%,#243c45 53%,#3b4c4a 100%);box-shadow:0 16px 50px #0b151d66;display:flex;align-items:flex-start;justify-content:center;flex-direction:column}
+.hero::before{content:"";position:absolute;inset:0;z-index:-2;pointer-events:none;opacity:.50;background:repeating-linear-gradient(0deg,transparent 0 35px,#d0d5ca4f 35px 36px),repeating-linear-gradient(90deg,transparent 0 35px,#d0d5ca37 35px 36px);mask-image:linear-gradient(112deg,transparent 15%,black 80%)}
+.hero::after{content:"";pointer-events:none;position:absolute;right:55px;bottom:32px;z-index:-1;width:110px;height:110px;border:1px solid #d7c29972;border-radius:50%;background:linear-gradient(0deg,transparent 49.5%,#dac79d6e 50% 50.5%,transparent 51%),linear-gradient(90deg,transparent 49.5%,#dac79d6c 50% 50.5%,transparent 51%);box-shadow:0 0 0 14px #e1cba21c}
+.hero small{color:#f0ca8e}
+.hero h1{font-size:clamp(40px,8.5vw,90px);color:#f4efdc;text-shadow:0 7px 18px #0b1c2692}
+.hero p{color:#d8e2e0}
+.hero .primary,.primary{background:#efc685;border-color:#efc685;color:#25313b;border-radius:5px}
+.hero .primary:hover,.primary:hover{background:#ffdda2;color:#18252e}
+.hero-index{position:absolute;z-index:-1;top:24px;right:24px;display:grid;text-align:right;color:#cbd5cf;font-size:.71rem;letter-spacing:.16em}
+.hero-index b{font-size:1rem;color:#efc685}
+.hero-index i{font-style:normal;color:#a5b8bd}
+.skyline{opacity:.6;inset:22% 12% 0 50%;transform:skewY(-11deg)}
+.skyline i{background:repeating-linear-gradient(0deg,#526666 0 10px,#f2d59a98 10px 11px);border-color:#d9d2a58c;box-shadow:8px 0 #263840}
+.skyline i:nth-child(4n+1){height:72%}.skyline i:nth-child(5){height:95%}
+nav{padding:4px;border-radius:8px;background:#19252e;border:1px solid #49575f}
+nav a{border-radius:4px}
+.panel{border-radius:9px;background:linear-gradient(150deg,#23323e,#1a2832)}
+.section-caption{display:flex;align-items:center;gap:8px;margin:4px 0 8px}
+.section-caption span{font:700 .72rem ui-monospace,monospace;color:#eac58a;padding:3px 5px;border:1px solid #716b5c;border-radius:3px}
+.section-caption h2{margin:0}
+.cards article{background:#263843;border-radius:7px;border-color:#4c606a}
+.release.latest{border-left:3px solid #efc685;background:#24323b;padding-left:13px}
+:where(a,button,input,select,summary):focus-visible{outline:2px solid #f3d299;outline-offset:3px}
+@media(max-width:570px){.hero{min-height:310px;padding:23px 18px}.hero-index{top:12px;right:12px}.hero::after{right:32px;bottom:20px;width:72px;height:72px}.skyline{inset:22% -9% 0 48%}.hero h1{margin-top:13px}.lobby-head{padding-block:12px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}

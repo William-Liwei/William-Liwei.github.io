@@ -150,3 +150,83 @@
 #edit-label{flex:1 1 105px;min-width:0;line-height:1.25}
 #view-fit{font-size:.68rem;font-weight:800}
 #map.temporary-pan{cursor:grab!important}
+
+/* City Blueprint 2.0.30: atlas workspace. No network fonts or images. */
+:root{--bg:#131b23;--panel:#1a2530;--stroke:#3b4a57;--text:#ebeff0;--muted:#b4c3c8;--accent:#9bdcc1;--gold:#efc685}
+body{background:var(--bg)}
+header{padding:10px 16px;background:#18232c;border-bottom:1px solid #475054;box-shadow:0 2px 12px #08131b37}
+.brand{gap:11px}
+.brand .logo{background:#263c43;color:#efc685;border:1px solid #596364;border-radius:7px;box-shadow:inset 0 0 0 2px #1b2b347b}
+.brand h1{font-weight:780;letter-spacing:.10em}
+.brand p{color:#b6c7cb;letter-spacing:.05em}
+.kpis{gap:6px}
+.kpis div{padding:3px 10px 1px 10px;border-left:1px solid #42525c;min-width:77px}
+.kpis small{font-size:.72rem;color:#afc2ca}
+.kpis strong{color:#f0eadf}
+.kpis div:nth-child(1) strong{color:var(--gold)}
+.head-actions button{font-weight:680}
+#step{background:#efc685;border-color:#efc685;color:#202932;font-weight:800}
+#step:hover{background:#ffe1a5}
+main{grid-template-columns:224px minmax(0,1fr) 228px}
+.tools,.data{background:linear-gradient(160deg,#1c2832,#18232d 570px);padding:11px 11px 16px;scrollbar-width:thin;scrollbar-color:#526575 transparent}
+.rail-kicker{display:flex;align-items:center;gap:7px;letter-spacing:.115em;font-size:.69rem;font-weight:730;color:#aabfc6}
+.rail-kicker span{color:var(--gold);font:700 .69rem/1.2 ui-monospace,monospace;letter-spacing:.05em;border:1px solid #6b665b;border-radius:3px;padding:2px 4px}
+.tool-title h2,.rail-title{font-size:1.04rem;color:#f2efdf;font-weight:760;margin:7px 0;letter-spacing:.07em}
+.tool-finder{display:flex;align-items:center;gap:6px;border:1px solid #506273;border-radius:7px;padding:4px 7px;background:#131e28;margin:7px 0 10px;color:#aec4ce}
+.tool-finder input{min-width:0;width:100%;background:transparent;color:var(--text);padding:3px 2px;border:0;outline:none;font:inherit;font-size:.84rem}
+.tool-finder input::placeholder{color:#94aab5}
+.tool-finder:focus-within{border-color:#caa770;box-shadow:0 0 0 2px #caa77050}
+.search-key{font:700 .75rem ui-monospace,monospace;border:1px solid #526273;border-radius:3px;padding:0 4px}
+.tools .tool-group{background:#23313a52;border:1px solid #394953;border-radius:8px;margin-bottom:7px;padding:5px 6px 6px}
+.tools .tool-group h3,.report-group h3{color:#b7cbd0;letter-spacing:.09em;font-size:.72rem;font-weight:700;margin:2px 0 5px}
+.tools .tool-group .tabs{gap:3px;margin-bottom:0}
+.tools .tool-group .tabs button{border-color:#425864;background:#23343f;border-radius:4px;padding:4px 3px;min-height:33px}
+.tools .tool-group .tabs button.active{background:#304d47;color:#c7fce5;border-color:#83b9a9;box-shadow:inset 3px 0 0 #95d6b8}
+.tools #options{margin-top:7px}
+.data-shortcuts{display:flex;gap:9px;margin:3px 0 9px;font-size:.74rem}
+.data-shortcuts a{color:var(--gold);text-decoration:none;border-bottom:1px dotted #856f51}
+.data h2:not(.rail-title){margin-top:14px}
+#legend{padding:7px 8px;border-left:2px solid #78958e;background:#14212c77;border-radius:2px 5px 5px 2px;font-size:.83rem}
+.line{border-color:#4253626b;gap:6px}
+.line>span:last-child{font-variant-numeric:tabular-nums}
+#report-index{scroll-margin-top:12px}
+.report-group{margin:7px 0 10px;padding:6px;border:1px solid #485966;border-radius:7px;background:#17232d}
+.report-group>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+.report-group button{font-size:.73rem;padding:5px 4px;min-height:34px;line-height:1.25;white-space:normal;overflow-wrap:anywhere}
+.map-area{isolation:isolate;background:#263941}
+.map-area #build-guide{border-radius:5px;border-color:#849896;background:#192a32ed}
+.map-meta{border-radius:5px;background:#1b2d37e8;padding:5px 9px;box-shadow:0 2px 8px #08192372}
+.map-meta span:last-child{color:var(--gold)}
+#plan-review,#batch-review{border-color:#c9ae7a;background:#222c35f5}
+#plan-review strong,#batch-review strong{color:#efd6aa}
+#plan-apply,#batch-commit{background:#efc685;border-color:#efc685;color:#202932;font-weight:800}
+button,input,select,summary,a{outline-offset:3px}
+:where(button,input,select,summary,a):focus-visible{outline:2px solid #f9d99e}
+dialog{color:var(--text);border-color:#657780;background:#1b2834;box-shadow:0 18px 75px #091014b5;border-radius:12px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 26px)}
+dialog h2{color:#f1e4c2}
+dialog::backdrop{background:#090f14b3}
+#mobile-dock{display:none}
+#map-region,#construction-region,#reports-region{scroll-margin-top:10px}
+@media(max-width:950px) and (min-width:571px){main{grid-template-columns:176px minmax(0,1fr) 174px}.tools,.data{padding:6px 7px 12px}.kpis div{min-width:52px;padding:1px 5px}}
+@media(max-width:570px){
+ body{display:block;height:auto;min-height:100dvh;padding-bottom:calc(62px + env(safe-area-inset-bottom))}
+ header{grid-template-columns:minmax(0,1fr) auto;gap:5px;padding:8px 9px 6px}
+ .brand h1{font-size:17px;line-height:1.3;letter-spacing:.06em}
+ .brand p{font-size:.64rem}
+ .kpis{width:100%;padding-top:3px;gap:0;justify-content:space-between}
+ .kpis div{min-width:0;padding:2px 4px;flex:1}
+ .kpis strong{font-size:clamp(.78rem,3.5vw,1rem)}
+ .head-actions button{padding-inline:5px}
+ main{display:flex;flex-direction:column;gap:0}
+ .map-area{order:-1;width:100%;height:clamp(310px,58dvh,540px);min-height:310px}
+ .tools,.data{padding:12px 11px 14px;border:0;border-top:1px solid #4a5a62;overflow:visible}
+ .tools .tool-group .tabs{gap:5px}.tools .tool-group .tabs button{min-height:36px}
+ .report-group>div{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .report-group button{min-height:39px}
+ .search-key{display:none}
+ #mobile-dock{position:fixed;bottom:0;left:0;right:0;z-index:8;display:grid;grid-template-columns:repeat(3,1fr);padding:5px 12px calc(5px + env(safe-area-inset-bottom));background:#1b2833f4;border-top:1px solid #7b7762;box-shadow:0 -6px 20px #08172355}
+ #mobile-dock a{display:flex;align-items:center;justify-content:center;gap:6px;min-height:39px;color:#e7ebe8;text-decoration:none;font-weight:700;font-size:.82rem}
+ #mobile-dock a span{color:var(--gold);font-size:1.16rem}
+ footer{gap:5px;padding:8px 10px}footer span:last-child{display:none}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
