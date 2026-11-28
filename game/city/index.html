@@ -1,61 +1,9 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#141e25">
-  <meta name="description" content="规划分区和公共服务，治理交通与财政。在第一张地图「一河两岸」建设你的城市。">
-  <title>城市蓝图 · City Blueprint</title>
-  <link rel="stylesheet" href="style.css?v=city-blueprint-1">
-</head>
-<body>
-  <header class="top">
-    <div class="brand"><span class="brand-mark" data-icon="logo"></span><div><h1>城市蓝图</h1><span class="brand-sub">CITY <span> / </span> 城市规划模拟</span></div></div>
-    <div class="stats" aria-label="城市概况">
-      <div class="stat"><span data-icon="cash"></span><div><span>市库余额</span><strong id="cash">¥145,000</strong></div></div>
-      <div class="stat"><span data-icon="people"></span><div><span>居民</span><strong id="population">0</strong></div></div>
-      <div class="stat"><span data-icon="case"></span><div><span>岗位</span><strong id="jobs">0</strong></div></div>
-      <div class="stat"><span data-icon="smile"></span><div><span>满意度</span><strong id="happiness">—</strong></div></div>
-    </div>
-    <div class="top-actions"><button id="save" class="square" aria-label="保存进度" title="保存进度" data-icon="save"></button><button id="menu" class="square" aria-label="菜单" title="菜单" data-icon="menu"></button></div>
-  </header>
-  <main id="workspace" class="workspace">
-    <div class="map-shell" id="map-shell"><canvas id="map" aria-label="一河两岸规划地图" tabindex="0"></canvas></div>
-    <div class="map-label"><span data-icon="pin"></span> <span id="mode-label">一河两岸 · 自由建城</span></div>
-    <aside id="overview" class="card overview" aria-label="建设目标">
-      <div class="card-heading"><div class="heading-title"><span data-icon="flag"></span><h2>建设目标</h2></div><button class="panel-switch square" id="goals-toggle" aria-label="收起建设目标" aria-expanded="true" data-icon="chevron"></button></div>
-      <div id="goal-content" class="goal-content"></div><div id="scenario-progress" class="scenario-progress" hidden></div>
-    </aside>
-    <aside id="market" class="card market" aria-label="用地需求和财政">
-      <div class="card-heading"><div class="heading-title"><span data-icon="chart"></span><h2>城市概况</h2></div><button id="market-toggle" class="panel-switch square" aria-label="收起城市概况" aria-expanded="true" data-icon="chevron"></button></div>
-      <div id="market-content">
-        <div class="section-label">用地需求</div><div id="demand" class="demand"></div>
-        <p id="city-pulse" class="city-pulse"></p>
-        <div class="finance"><div><span>月度结余</span><strong id="balance">¥0</strong></div><button id="accounts" class="small-link" type="button">经营</button></div>
-      </div>
-    </aside>
-    <div class="views" aria-label="地图视图">
-      <button class="square" id="layer" aria-label="切换地图图层" aria-expanded="false" title="地图图层" data-icon="layers"></button>
-      <button class="square" id="zoom-in" aria-label="放大" title="放大" data-icon="plus"></button><button class="square" id="zoom-out" aria-label="缩小" title="缩小" data-icon="minus"></button>
-      <button class="square" id="recenter" aria-label="回到全图" title="回到全图" data-icon="fit"></button>
-      <div id="layers" class="card layers" hidden></div>
-    </div>
-    <div class="map-meta"><div id="scale" class="scale">1 km</div><span>虚构地形</span></div>
-    <div class="map-lower"><p id="legend" class="legend" hidden></p>
-      <div class="instruction" id="instruction" aria-live="polite"></div>
-      <div id="toasts" aria-live="polite"></div>
-    </div>
-  </main>
-  <footer class="bottom">
-    <div class="time" aria-label="时间控制"><span id="date">第 1 年 · 1 月</span><div class="time-buttons"><button type="button" id="pause" class="square" aria-label="暂停" data-icon="pause"></button><button type="button" class="speed on" data-speed="1" aria-pressed="true">1×</button><button type="button" class="speed" data-speed="3" aria-pressed="false">3×</button><button type="button" class="speed" data-speed="8" aria-pressed="false">8×</button></div></div>
-    <nav class="toolbar" id="toolbar" aria-label="城市建设工具"></nav>
-    <button id="info" class="square help" aria-label="操作指南" title="操作指南" data-icon="help"></button>
-  </footer>
-  <dialog id="dialog"><div id="dialog-body"></div></dialog>
-  <script src="terrain.js?v=city-blueprint-1"></script>
-  <script src="simulation.js?v=city-blueprint-1"></script>
-  <script src="two-banks.js?v=city-blueprint-1"></script>
-  <script src="map.js?v=city-blueprint-1"></script>
-  <script src="app.js?v=city-blueprint-1"></script>
-</body>
-</html>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="城市蓝图自由建设游戏大厅：开始或继续建城、管理存档、设置和查看更新。"><meta name="game-version" content="2.0.0-preview.1"><title>城市蓝图 · 游戏大厅</title><link rel="stylesheet" href="hall.css?v=2.0.0-preview.1"><script defer src="hall.js?v=2.0.0-preview.1"></script></head>
+<body><header><a class="brand" href="#play"><span>▤</span><b>城市蓝图</b></a><span class="version">v2.0.0-preview.1</span></header>
+<main><section class="hero"><div class="skyline" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div><small>自由建设 · 地图 01</small><h1>一河两岸</h1><p>用道路、公交和公共服务，把河的两岸建成一座城市。你决定它从哪里开始、往哪里长。</p><a class="primary" id="play-button" href="freebuild/index.html">开始建城</a></section>
+<nav aria-label="游戏大厅" id="nav"><a href="#play">游戏</a><a href="#saves">存档</a><a href="#settings">设置</a><a href="#updates">更新记录</a></nav>
+<section class="panel" data-page="play"><h2>城市经营</h2><div class="cards"><article><h3>自由规划</h3><p>弯路、桥梁、隧道与高速匝道。沿街或自由绘制用地，不受格子限制。</p></article><article><h3>市政委托</h3><p>在城市里完成通勤、公交和公共安全目标，领取一次性建设拨款。</p></article><article><h3>看懂城市</h3><p>切换覆盖图层，点道路看通勤去向，按月复盘人口、财政和出行方式。</p></article></div><p class="hint">先玩已开工的示例城，或者进入「存档管理」清空重建。新建前会要求确认。</p></section>
+<section class="panel" data-page="saves" hidden><h2>存档管理</h2><p id="save-summary" class="hint"></p><div class="buttons"><a class="primary" href="freebuild/index.html?menu=saves">进入游戏管理存档</a><button id="download" disabled>导出本机进度</button></div><p class="hint">想把离线试玩搬到网页：先在离线版导出 JSON，再在网页游戏的存档菜单导入。旧格子存档未被删除，但自由版不能读取。</p></section>
+<section class="panel" data-page="settings" hidden><h2>游戏设置</h2><label class="field"><span><b>车辆与行人动画</b><small>关闭动画不会停止市政模拟。</small></span><input type="checkbox" id="motion" checked></label><label class="field"><span><b>开局图层</b><small>打开游戏时自动选择。</small></span><select id="overlay"><option value="none">实景</option><option value="traffic">道路交通</option><option value="transit">公共交通</option><option value="elevation">高程／隧道</option><option value="zones">土地用途</option><option value="fire">消防覆盖</option><option value="water">供水覆盖</option></select></label><p id="settings-status" class="hint" aria-live="polite">设置保存在当前浏览器。</p></section>
+<section class="panel" data-page="updates" hidden><h2>版本更新记录</h2><article class="release"><small>2026-11-28 · 当前版本</small><h3>v2.0.0-preview.1 · 自由建设</h3><p>自由曲线与立体路网，沿街和多边形分区，市政热图、公交与行人。新增游戏大厅、市政委托、月度走势；官网只提供自由版。</p></article><article class="release"><small>2026-11-28 · 历史版本</small><h3>v1.0.0 · 城市蓝图</h3><p>一河两岸、公交与渡轮、城市经营与雨季大考。保留版本记录，不再提供经典版入口。</p></article><article class="release"><small>2026-11-27 · 早期原型</small><h3>岸城沙盒</h3><p>第一版静态格子城市原型，包含基本建设与服务。</p></article></section></main>
+<footer><span>城市蓝图 · 仅在本机保存进度</span><a href="../../">返回个人主页</a></footer></body></html>

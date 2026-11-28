@@ -1,0 +1,30 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>城市蓝图 · 自由路网</title><meta name="game-version" content="2.0.0-preview.1"><link rel="stylesheet" href="studio.css"></head>
+<body>
+<header><div class="brand"><span class="logo">▤</span><div><h1>城市蓝图</h1><p>自由路网 · 一河两岸</p></div></div><div class="kpis"><div><small>市库</small><strong id="cash">—</strong></div><div><small>人口</small><strong id="pop">—</strong></div><div><small>就业岗位</small><strong id="jobs">—</strong></div><div><small>月度结余</small><strong id="net">—</strong></div></div><div class="head-actions"><a id="hall" href="../index.html">大厅</a><button id="step">推进一月</button><button id="auto" aria-pressed="false">▶</button><button id="files">存档</button></div></header>
+<main>
+  <aside class="tools">
+   <h2>建设工具</h2>
+   <div class="tabs" id="tools">
+    <button data-tool="road" class="active">道路</button><button data-tool="upgrade">改造</button><button data-tool="bus">公交</button><button data-tool="frontage">沿街分区</button><button data-tool="polygon">多边形分区</button><button data-tool="service">公共服务</button><button data-tool="inspect">查阅</button><button data-tool="erase">拆除</button>
+   </div>
+   <div id="options"></div>
+   <div id="tool-help" class="help"></div>
+   <div id="actions"></div>
+  </aside>
+  <section class="map-area" aria-label="一河两岸地图">
+   <canvas id="map" tabindex="0" aria-label="城市地图，使用建设工具并点击绘制"></canvas>
+   <div class="map-meta"><span>一河两岸</span><span id="month">第 1 月</span></div>
+   <div class="zoom"><button id="zoom-in" title="放大">+</button><button id="zoom-out" title="缩小">−</button><button id="pan" title="拖动地图" aria-pressed="false">✥</button><button id="home" title="还原视角">⌖</button></div>
+   <div id="notice" role="status" aria-live="polite"></div>
+  </section>
+  <aside class="data">
+   <h2>图层</h2>
+   <label for="layer" class="sr-only">地图图层</label><select id="layer"></select>
+   <p id="legend" class="help"></p>
+   <h2>城市经营</h2><div id="summary"></div>
+   <h2>市政委托</h2><div id="contracts"></div><h2>月度复盘</h2><div id="history"></div><h2>规划检查</h2><div id="details" class="help">选择查阅并点击道路、建筑或设施。</div>
+  </aside>
+</main>
+<footer><span>v2.0.0-preview.1 · 独立存档</span><span>滚轮缩放 · 右键拖动地图 · Esc 取消工具操作</span></footer>
+<dialog id="file-dialog"><h2>城市存档</h2><p>本版本独立保存，不读取或替换官网存档。导入只支持本版的文件。</p><button id="export">导出 JSON</button><label class="file-label">选择 JSON 导入<input type="file" accept="application/json,.json" id="import"></label><p id="file-status"></p><div class="dialog-actions"><button id="starter">载入示例城</button><button id="blank">清空重建</button><button id="close">关闭</button></div></dialog>
+<script src="network.js"></script><script src="civic.js"></script><script src="view.js"></script><script src="contracts.js"></script><script src="studio.js"></script></body></html>
