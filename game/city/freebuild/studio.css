@@ -126,3 +126,9 @@
 #campus-dialog{width:min(650px,calc(100vw - 28px));max-height:calc(100dvh - 26px);overflow:auto;overscroll-behavior:contain}
 #campus-dialog section{border-top:1px solid #bccfcb77;margin-block:14px;padding-top:8px}
 #campus-dialog h3{margin-block:2px 7px}#campus-buildings li+li{margin-block-start:6px}
+
+#systems-dialog{width:min(670px,calc(100vw - 28px));max-height:calc(100dvh - 26px);overflow:auto;overscroll-behavior:contain}
+#systems-dialog section{border-top:1px solid #bccfcb77;margin-block-start:14px;padding-block:8px}
+#systems-dialog section h3{margin:3px 0 8px}
+#systems-dialog li+li{margin-block-start:.23rem}
+#system-checks li[data-status=failed]{color:#983630;font-weight:650}
