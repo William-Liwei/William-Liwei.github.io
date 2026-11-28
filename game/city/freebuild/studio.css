@@ -78,3 +78,11 @@
 #progress-panel summary{cursor:pointer}
 .tech-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:.55rem;margin:.65rem 0;padding-top:.5rem;border-top:1px solid #495a50}
 .tech-row p{margin:.2rem 0 0}
+#map3d{position:absolute;inset:0;pointer-events:none}
+#map3d[hidden]{display:none}
+.three-dimensional #map{position:relative;opacity:0}
+.map-area .scene-panel{position:absolute;top:10px;right:10px;z-index:3;display:grid;gap:4px;justify-items:end;max-width:140px;pointer-events:none}
+.scene-panel button{background:#112330ee;pointer-events:auto;padding:4px 7px;min-width:29px;font-size:12px}
+.scene-row{display:flex;gap:4px;justify-content:end;margin-bottom:4px}
+.scene-row [aria-pressed=true]{background:#204439}
+@media(max-width:570px){.map-area .scene-panel{top:8px;right:6px}.scene-panel button{min-width:31px;min-height:28px}}
