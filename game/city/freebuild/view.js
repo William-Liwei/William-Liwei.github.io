@@ -938,6 +938,14 @@
         }
       }
       this.paintVehicles(c,edges,busLines,ids,opts.agents??city.agents,t,load);
+      for(const [i, g] of array(opts.batchGhosts).entries()){
+        const p=array(g.points).map(point).map(p3);
+        if(!p.length)continue;
+        if(g.closed&&p.length>2)shape(c,p,'#71baf52c','#aadbff',1.25);
+        else if(p.length>1)line(c,p,'#aadcffc9',Math.max(1.2,(g.width||8)*.19),[4,3]);
+        const q=p[Math.floor((p.length-1)/2)];
+        circle(c,q.x,q.y,3.6,'#265179','#d3eeff',.8);label(c,String(i+1),q.x,q.y,4.9,'#fff',850);
+      }
       const preview=opts.preview;
       const proposed=array(preview?.points??preview?.pts??preview?.poly??(Array.isArray(preview)?preview:null)).map(point).map(p3);
       if(preview?.detour?.length>1){

@@ -32,3 +32,14 @@
 .flow-playback{display:flex;flex-wrap:wrap;gap:5px}
 @media (max-width:620px){.flow-grid{grid-template-columns:1fr;gap:8px}#flow-lab{padding:10px}.flow-header{top:-10px}}
 #plan-flow-result{padding:6px 8px;margin:5px 0;background:#243a49;border-left:2px solid #6fd4de;line-height:1.4}
+
+.tool-title{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:8px}
+.tool-title h2{margin:0}.tool-title button{padding:4px 7px;white-space:nowrap;color:#c5f5fb;border-color:#426d7e}
+.tool-group h3{font-size:11px;color:#a4beca;font-weight:650;letter-spacing:.05em;margin:5px 0 4px}
+.tool-group .tabs{margin:0 0 7px}.tool-group .tabs button{padding:4px 5px;font-size:12px}
+.tool-group{border-top:1px solid #314656;margin-top:4px;padding-top:3px}
+#batch-review{position:absolute;z-index:3;bottom:12px;left:12px;max-height:45%;overflow:auto;width:min(440px,calc(100% - 66px));background:#102e42f5;border:1px solid #78bfeb;border-radius:9px;padding:8px 10px;color:#ddf0f9;box-shadow:0 4px 15px #07111773}
+#batch-total{display:block;font-size:12px;margin:3px 0}#batch-review details{font-size:11px}#batch-review summary{cursor:pointer}#batch-items{padding-left:13px;margin:4px 0;list-style:none}
+#batch-review>div{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}#batch-review button{padding:4px 7px;font-size:12px}#batch-commit{background:#215271;border-color:#6dabcf}
+.map-area:has(#batch-review:not([hidden])) #notice{bottom:auto;top:91px}
+@media(max-width:570px){.tool-group .tabs{grid-template-columns:repeat(3,minmax(0,1fr))}.tool-group .tabs button{font-size:11px;padding:4px 2px}#batch-review{bottom:8px;left:7px}}
