@@ -557,6 +557,15 @@ class City3D{
    if(points.length>=2)outline(points,c,clamp(sane(g.width,2.25),1,30),!!g.closed);
    if(points.length===1){const p=points[0],z=lift(p,.6);cylinder(m,p.x,p.y,2.0,z,z+4.8,color(c),undefined,9,.12);}
   }
+  if(opt.overlay==='wellbeing'){
+   const homes=new Map(list(world.zones).flatMap(z=>list(z.buildings)).map(b=>[b.id,b]));
+   for(const q of list(opt.wellbeing).slice(0,3000)){
+    if(!xy(q))continue;
+    const home=homes.get(q.id),level=clamp(sane(home?.level,1),1,3),ground=this.surface(q);
+    const top=ground+(Number.isFinite(home?.height)?home.height+5:[13,26,45][level-1]);
+    cylinder(m,q.x,q.y,q.arrow?5.2:4.5,top,top+1.7,color(q.color),color('#fff3cd'),8,.4);
+   }
+  }
   if(opt.overlay==='elevation'){
    for(const e of list(world.edges)){
     const pts=list(e.pts);
@@ -618,8 +627,8 @@ class City3D{
   const key=opt.terrainKey??world.terrain?.state??world.terrain??this.opt.heightAt??null,S=this.gl,H=this.sh;
   if(this.baseKey!==key||!this.meshes.ground){this.terrain();this.baseKey=key;this.cityKey=null;}
   if(this.cityKey!==world||!this.meshes.city){this.staticWorld(world);this.cityKey=world;this.previewKey=null;}
-  if(!this.previewKey||this.previewKey.some((v,i)=>v!==[opt.preview,opt.selected,opt.batchGhosts,opt.overlay][i])){
-   this.overlays(world,opt);this.previewKey=[opt.preview,opt.selected,opt.batchGhosts,opt.overlay];
+  if(!this.previewKey||this.previewKey.some((v,i)=>v!==[opt.preview,opt.selected,opt.batchGhosts,opt.overlay,opt.wellbeing][i])){
+   this.overlays(world,opt);this.previewKey=[opt.preview,opt.selected,opt.batchGhosts,opt.overlay,opt.wellbeing];
   }
   this.actors(list(opt.agents||world.agents));
   const b=this.basis(opt.camera||this.camera),m=matrix(b.eye,b.f,b.s,b.u,b.aspect,b.tan);

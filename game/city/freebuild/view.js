@@ -1101,6 +1101,12 @@
           circle(c,q.x,q.y,5.6,fill,'#20373d',.9);label(c,String(q.count),q.x,q.y,5.2,'#20343c',800);
         }
       }
+      if(overlay==='wellbeing')for(const q of array(opts.wellbeing)){
+        if(q.x<left||q.x>right||q.y<top||q.y>bottom)continue;
+        circle(c,q.x,q.y,q.arrow?7:5.7,q.color,'#283c39',1);
+        if(this.camera.zoom>=1.15)label(c,String(Math.round(q.value)),q.x,q.y,5.3,'#21313b',800);
+        if(q.arrow)circle(c,q.x+5.4,q.y-4.7,2.2,'#493735','#fff5dc',.65);
+      }
       if(overlay==='labor'&&opts.labor){
         for(const q of Object.values(opts.labor.byHome||{})){
           if(!q.workers||q.x<left||q.x>right||q.y<top||q.y>bottom)continue;

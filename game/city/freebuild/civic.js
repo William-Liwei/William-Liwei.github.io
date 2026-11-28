@@ -419,7 +419,10 @@
     const prev=evaluate(state,roads,extra);
     for(const lot of state.lots){
       const s=prev.lots[lot.id],target=lot.level<1&&extra.canDevelop?.(lot)===false?0:s.target,delta=target-lot.occupants;
-      lot.occupants=clamp(lot.occupants+(delta>0?Math.min(delta,Math.max(.42,delta*.34)):Math.max(delta,-Math.max(.58,Math.abs(delta)*.3))),0,lotCap(lot,3));
+      const prior=lot.occupants,cap=lotCap(lot,3),base=clamp(prior+(delta>0?Math.min(delta,Math.max(.42,delta*.34)):Math.max(delta,-Math.max(.58,Math.abs(delta)*.3))),0,cap);
+      const adjustment=lot.type==='residential'&&typeof extra.residentialAdjustment==='function'?extra.residentialAdjustment(lot,prior,base,{target,capacity:Math.min(s.capacity,cap)}):0;
+      lot.occupants=clamp(base+(finite(adjustment)?adjustment:0),0,cap);
+      if(lot.type==='residential'&&lot.occupants!==base)extra.onResidentialAdjustment?.(lot.id,lot.occupants-base,prior,base,lot.occupants);
       if(lot.occupants>.45){
         lot.vacantMonths=0;
         if(!lot.level)lot.level=1;

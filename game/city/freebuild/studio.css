@@ -109,3 +109,8 @@
 .cargo-gate{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;padding:7px 0;gap:4px 10px;border-bottom:1px solid #bccfcb77}
 .cargo-gate small{grid-column:1 / -1}
 #cargo-dialog li+li{margin-block-start:6px}
+
+#wellbeing-summary{border-bottom:1px solid #bccfcb77;padding-bottom:8px}
+#wellbeing-inspect{margin-block:12px 6px;padding:8px;border:1px solid #8eaab676;border-radius:7px}
+#wellbeing-inspect:empty{display:none}
+#wellbeing-history{font-size:.8rem;padding-inline-start:20px}
