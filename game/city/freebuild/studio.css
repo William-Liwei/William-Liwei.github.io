@@ -48,3 +48,7 @@
 .civic-event{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin:5px 0;padding:4px;border-radius:5px;background:#243743}
 .civic-event span{grid-column:1/-1}.civic-event button{font-size:11px;padding:2px 4px}
 #civic-event-log{padding-left:12px;font-size:11px;color:#b9ccd8}#civic-events summary{font-size:11px;cursor:pointer}
+#education-panel{margin:.65rem 0;padding:.7rem;border:1px solid #486355;border-radius:.65rem}
+#education-panel h2{margin-top:0}#education-panel summary{cursor:pointer}
+.school-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.25rem;margin:.45rem 0;align-items:center}
+.school-entry input{width:100%;min-width:0}
