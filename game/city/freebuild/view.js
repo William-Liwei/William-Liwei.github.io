@@ -310,10 +310,10 @@
       const tint=s=>{
         const {i,e,highway,bridge}=s;
         if(overlay==='elevation')return bridge?'#257e9b':'#69786d';
-        if(overlay!=='traffic')return highway?'#454e54':'#585f60';
+        if(overlay!=='traffic'&&overlay!=='parking')return highway?'#454e54':'#585f60';
         const value=(load instanceof Map?load.get(e.id):typeof load==='number'?load:load[e.id]??load[i])??e.traffic??e.load??0;
         const measured=queue?.[e.id];
-        const ratio=Math.max(+((value?.ratio??value?.congestion??value))||0,typeof measured==='number'?measured:0);
+        const ratio=typeof measured==='number'?measured:(+((value?.ratio??value?.congestion??value))||0);
         return catRGB(mix([72,149,112],[209,91,68],cl(ratio>1?ratio/100:ratio,0,1)));
       };
       for(const t of mesh.tunnels)if(visible(t.bb)){
@@ -827,6 +827,32 @@
       const top=camera.y-this.height/2/camera.zoom-44,bottom=camera.y+this.height/2/camera.zoom+44;
       const visible=bb=>bb.maxX>=left&&bb.minX<=right&&bb.maxY>=top&&bb.minY<=bottom;
       this.paintRoadMesh(c,roadMesh,overlay,load,metrics.queue?.edgeTraffic,selected,visible);
+      if(['traffic','parking'].includes(overlay)&&metrics.queue?.directions){
+        for(const [,e,pts,bb] of roads){
+          const pair=metrics.queue.directions[e.id];
+          if(!pair||!visible(bb)||pts.length<2||bb.top<0)continue;
+          const length=Number(e.len)||sample(pts,1)?.length||1;
+          for(let i=0;i<pair.length;i++){
+            const d=pair[i];
+            if(!d.queued||d.tail<=0)continue;
+            const f=Math.min(1,d.tail/length);
+            const geo=[],steps=Math.min(14,Math.max(2,Math.ceil(d.tail/9)));
+            const spread=Math.max(2.3,Math.min(6,(e.lanes||2)*1.15));
+            for(let k=0;k<=steps;k++){
+              const sampleAt=sample(pts,i?f*(1-k/steps):1-f+f*k/steps);
+              if(sampleAt.z<-.5)continue;
+              const q=p3(sampleAt),theta=sampleAt.angle+(i?Math.PI:0);
+              geo.push({x:q.x-Math.sin(theta)*spread,y:q.y+Math.cos(theta)*spread,theta});
+            }
+            if(geo.length<2)continue;
+            const color=d.spill?'#e6a4fd':d.causes?.parking?'#8fd2ff':'#ffc27a';
+            line(c,geo,'#25223bc0',4.8);
+            line(c,geo,color,2.4,d.blockedBy&&!d.spill?[3,2]:[]);
+            const arrowPoint=geo.at(-1);arrow(c,arrowPoint,arrowPoint.theta,color,3.5);
+            if(d.spill){const origin=geo[0];circle(c,origin.x,origin.y,3.3,'#9457b5','#fff6ff',.85);}
+          }
+        }
+      }
       if(metrics.closed?.length){
         const closed=new Set(metrics.closed);
         for(const [,e,pts,bb] of roads)if(pts.length>1&&closed.has(e.id)&&visible(bb)){
@@ -886,6 +912,30 @@
         shape(c,[{x:x-r,y:sy+r*.24},{x:x+r,y:sy+r*.24},{x:x+r,y:sy-r*.68},{x:x-r,y:sy-r*.68}],f.color,sel?'#ffffcf':'#e9efdc',sel?2:1);
         line(c,[{x:x-r*.77,y:sy-r*.08},{x:x+r*.77,y:sy-r*.08}],'#f0efe2',.8,[2,2]);
         if(routeLayer||sel)label(c,f.name,x,sy-r-7,8,'#304d5b',800);
+      }
+      const parking=metrics.queue?.parking?.sites||{};
+      const drawParking=overlay==='parking'||overlay==='traffic';
+      for(const lot of array(city.parking)){
+        if(lot.x<left||lot.x>right||lot.y<top||lot.y>bottom)continue;
+        const spec=globalThis.Parking?.LOTS?.[lot.type];if(!spec)continue;
+        const {x,y}=lot,r=parking[lot.id],full=r&&r.occupied>=r.capacity,col=!r?'#617081':full?'#b66a71':'#4782a7';
+        const w=spec.w/2,h=spec.h/2,sel=selected.parking===lot.id;
+        shape(c,[{x:x-w,y:y-h},{x:x+w,y:y-h},{x:x+w,y:y+h},{x:x-w,y:y+h}],col,sel?'#fff2b8':'#c3e1ec',sel?1.8:.8);
+        if(lot.type==='garage'){
+          shape(c,[{x:x-w,y:y-h-6},{x:x+w,y:y-h-6},{x:x+w,y:y-h},{x:x-w,y:y-h}],'#7493a7');
+          line(c,[{x:x-w+2,y:y-h-2.8},{x:x+w-2,y:y-h-2.8}],'#c6dce5',.8);
+        }
+        for(let v=-w+2;v<=w-1;v+=4)line(c,[{x:x+v,y:y-h+1},{x:x+v,y:y-h+4}],'#e1edf2',.6);
+        label(c,'P',x,y+1,8.8,'#f4f8f8',850);
+        if(drawParking||sel)label(c,r?r.occupied+'/'+r.capacity:'未接通',x,y+h+6,7.9,'#253d4e',800);
+      }
+      if(overlay==='parking'&&camera.zoom>=.65){
+        for(const p of Object.values(parking)){
+          if(p.type!=='curb'||p.x<left||p.x>right||p.y<top||p.y>bottom)continue;
+          const x=p.x+5,y=p.y-5,full=p.occupied>=p.capacity;
+          circle(c,x,y,3.8,full?'#ce757c':'#60aed5','#eaffff',.75);
+          if(camera.zoom>.95)label(c,p.occupied+'/'+p.capacity,x+5,y-5,6.5,'#183952',800,'left');
+        }
       }
       this.paintVehicles(c,edges,busLines,ids,opts.agents??city.agents,t,load);
       const preview=opts.preview;

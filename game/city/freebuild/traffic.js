@@ -6,6 +6,7 @@
 })(typeof globalThis==='object'?globalThis:this,function(){
   'use strict';
   const Road=typeof module==='object'?require('./network.js'):globalThis.Network;
+  const Park=typeof module==='object'?require('./parking.js'):globalThis.Parking;
   const EPS=1e-7, PI=Math.PI, TAU=2*PI;
   const finite=Number.isFinite, clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const number=(v,f,a=-Infinity,b=Infinity)=>finite(+v)?clamp(+v,a,b):f;
@@ -16,6 +17,14 @@
   const PALETTE=['#eaf4fc','#eedbb0','#b8d9dc','#f0b49d','#b4c6a3','#d9c5e6'];
   const LENGTH={car:4.5,bus:10.1,truck:6.8,walker:0.6};
   const GAP=2.05, STOP_SPEED=.65;
+  const PROFILES={
+    commute:[.38,2.10,.78,.54,.53], home:[.38,.48,.78,2.10,.53],
+    freight:[.50,1.05,1.47,.91,.70], steady:[1,1,1,1,1]
+  };
+  const PERIODS=['dawn','morning','day','evening','night'];
+  const WINDOW_NAMES=['清晨','早高峰','日间','晚高峰','夜间'];
+  const causeNames={signal:'红灯等待',space:'下游回堵',conflict:'交叉口让行',queue:'跟车排队',parking:'停车位已满或未接通'};
+  function dayPeriod(time){const t=(Math.floor(Math.max(0,time))%300);return t<35?0:t<105?1:t<185?2:t<250?3:4;}
   function hash(s){let h=2166136261;for(const c of String(s)){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}
 
   function geometry(pts) {
@@ -43,7 +52,7 @@
     const nodes=new Map(),edges=new Map(),lanes=[];
     const ensure=(raw,n={})=>{
       const k=id(raw);
-      if(!nodes.has(k))nodes.set(k,{id:k,degree:0,roadDegree:0,forced:n.signal??null,active:[],offset:(hash(k)%26)*.65});
+      if(!nodes.has(k))nodes.set(k,{id:k,degree:0,roadDegree:0,forced:n.signal??null,active:[],offset:(hash(k)%26)*.65,ew:.5,cycle:null});
       return nodes.get(k);
     };
     for(const n of array(network?.nodes))if(n?.id!=null)ensure(n.id,n);
@@ -62,7 +71,7 @@
         const dest=reverse?e.rev:e.fwd;
         for(let i=0;i<count;i++){
           const busOnly=raw.bus===true&&count>1&&i===count-1;
-          const lane={id:lanes.length,e,reverse,index:i,offset:cross?.offset(i,reverse)??(raw.oneway?(i+.5-count/2)*3.35:(i+.5)*2.85),busOnly:listType(busOnly,kind),vehicles:[],entryAt:0};
+          const lane={id:lanes.length,e,reverse,index:i,offset:cross?.offset(i,reverse)??(raw.oneway?(i+.5-count/2)*3.35:(i+.5)*2.85),busOnly:listType(busOnly,kind),vehicles:[],entryAt:0,spaceBlocked:false,blockedBy:null};
           lanes.push(lane);dest.push(lane);
         }
       };
@@ -80,19 +89,32 @@
     const maxVehicles=Math.floor(number(options.maxVehicles,240,1,600));
     const maxWalkers=Math.floor(number(options.maxWalkers,70,0,160));
     const arrivalScale=number(options.arrivalScale,1,.05,6);
+    const profileMode=Object.hasOwn({auto:1,low:1,high:1},options.profileMode)?options.profileMode:'auto';
+    const profileOffset=number(options.profileOffset,0,0,1e8);
+    function profileIndex(){return profileMode==='low'?0:profileMode==='high'?1:dayPeriod(seconds+profileOffset);}
     const speedFactor=number(options.speedFactor,1,.3,3);
     const junctionTime=number(options.junctionTime,.72,.16,4);
     const dwellTime=number(options.busDwell,2.4,0,12);
     const seed=hash(options.seed??'blueprint-traffic');
     const {nodes,edges,lanes}=graph(network,options.signal!==false);
     const routing=network.turns?.length?Road.graph(network,'car'):null;
+    const park=options.parking&&Park?Park.service(options.parking.configs,options.parking.candidates):null;
+    let parkingWait=0,peakParkingQueue=0;
     const cars=new Map(), walkers=[], demands=[], transfers=new Set();
     const candidates=[], cooldown=new Map();
     let seconds=0, accumulator=0, wallClock=null, serial=0, completed=0, issued=0,
-      rejected=0, waitFinished=0, tripFinished=0, lostDemand=0;
+      rejected=0, waitFinished=0, tripFinished=0, lostDemand=0, offered=0, transferred=0, laneChanges=0,
+      waitSeconds=0, pendingSeconds=0, maxQueue=0, maxSpill=0;
+    const windows=Array.from({length:31},()=>({second:-1,offered:0,issued:0,completed:0,wait:0,laneChanges:0,spill:0}));
+    const counters=Object.create(null), byExit=Object.create(null), bySource=Object.create(null);
+    const bucket=()=>{
+      const second=Math.floor(seconds), b=windows[second%windows.length];
+      if(b.second!==second)Object.assign(b,{second,offered:0,issued:0,completed:0,wait:0,laneChanges:0,spill:0});
+      return b;
+    };
     const kinds={car:0,truck:0,bus:0}, finishedByKind={car:0,truck:0,bus:0};
     const signalCycle=number(options.signalCycle,14,6,100);
-    const allRed=number(options.allRed,.75,0,signalCycle*.20), half=signalCycle/2;
+    const allRed=number(options.allRed,.75,0,signalCycle*.20);
 
     function signature(parts){return parts.map(s=>id(s?.edge??s?.id??s)+(s?.reverse?'~':'')).join('>');}
     const busByPath=new Map(array(network?.buses).filter(b=>!b?.broken).map(b=>[signature(array(b.path)),b]));
@@ -127,15 +149,35 @@
       if(continuous&&routing&&!Road.turnAllowed(routing,path[0].from,path.at(-1).e.rawId,path[0].e.rawId))return;
       const interval=number(desc.interval,kind==='bus'?Math.max(17,total/cruise*.9):clamp(15+total/cruise*.45,17,45),.12,2000)/arrivalScale;
       const offset=Math.min(kind==='bus'?5:11,interval*1.1)*phase;
+      const profile=Object.hasOwn(PROFILES,desc.profile)?desc.profile:'steady';
       return {kind,path,total,cruise,phase,stops,continuous,interval,oneShot,
+        needsParking:Boolean(park&&kind==='car'&&desc.parking===true),parkDwell:number(desc.parkDwell,0,0,1500),profile,credit:0,tag:typeof desc.tag==='string'?desc.tag.slice(0,72):null,
         at:number(desc.departAt,offset,0,1e7),pending:0,active:0,rnd,i};
     }
-    for(const [i,d] of array(descriptors).slice(0,620).entries()){
-      const route=compile(d,i);
-      if(!route){rejected++;continue;}
-      if(route.kind==='walker'){if(walkers.length<maxWalkers)walkers.push(route);}
-      else demands.push(route);
+    function routeIdentity(q){
+      return q.kind+'|'+q.profile+'|'+(q.tag||'')+'|'+q.oneShot+'|'+q.needsParking+'|'+signature(q.path.map(s=>({edge:s.e.rawId,reverse:s.reverse})))+
+       '|'+[...q.stops].join('>');
     }
+    function updateDemand(input){
+      walkers.length=0;
+      const lookup=new Map();
+      for(const q of demands){const k=routeIdentity(q);if(!lookup.has(k))lookup.set(k,[]);lookup.get(k).push(q);}
+      const next=[];
+      for(const [i,d] of array(input).slice(0,620).entries()){
+        const route=compile(d,i);
+        if(!route){rejected++;continue;}
+        if(route.kind==='walker'){if(walkers.length<maxWalkers)walkers.push(route);continue;}
+        const q=lookup.get(routeIdentity(route))?.shift();
+        if(q){
+          q.interval=route.interval;q.cruise=route.cruise;q.parkDwell=route.parkDwell;next.push(q);
+        }else{
+          route.at+=seconds;next.push(route);
+        }
+      }
+      for(const leftover of lookup.values())for(const q of leftover){lostDemand+=q.pending;q.pending=0;q.continuous=false;}
+      demands.splice(0,demands.length,...next);
+    }
+    updateDemand(descriptors);
 
     const stopAt=(lane,length)=>lane.e.total-Math.min(lane.e.total*.24,length*.53);
     const beginAt=(lane,length)=>Math.min(length*.54,lane.e.total*.26);
@@ -145,11 +187,11 @@
       const back=lane.vehicles[0], start=beginAt(lane,length);
       return stopAt(lane,length)>=start-EPS&&(!back||Math.min(back.s,back.prevS)-start+EPS>=(length+lengthOf(back))*.5+GAP);
     };
-    function laneChoices(seg,kind){
+    function laneChoices(seg,kind,own=null){
       const canUse=seg.lanes.filter(l=>kind==='bus'||!l.busOnly);
       const good=canUse.filter(l=>canEnter(l,LENGTH[kind]));
       good.sort((a,b)=> (kind==='bus'?Number(b.busOnly)-Number(a.busOnly):0)||
-        a.vehicles.length-b.vehicles.length||a.index-b.index);
+        a.vehicles.length-b.vehicles.length||(own?Math.abs(a.offset-own.offset)-Math.abs(b.offset-own.offset):0)||a.index-b.index);
       return good;
     }
     function join(a,lane,carry=0){
@@ -160,21 +202,64 @@
       lane.entryAt=seconds+Math.max(dt,.37);
     }
     function departures(){
-      for(const q of demands){
-        if(seconds+EPS>=q.at){
-          if(q.continuous&&q.active){q.at=seconds+q.interval;continue;}
-          const due=q.oneShot?1:Math.min(32,Math.floor((seconds-q.at+EPS)/q.interval)+1);
-          q.at=q.oneShot?Infinity:q.at+due*q.interval;
-          const cap=q.kind==='bus'?1:5;
-          lostDemand+=Math.max(0,q.pending+due-cap);
-          q.pending=Math.min(cap,q.pending+due);
+      const period=profileIndex();
+      // Rotate the first admission so high load cannot permanently starve later sources.
+      const first=demands.length?Math.floor(seconds/dt)%demands.length:0;
+      for(let i=0;i<demands.length;i++){
+        const q=demands[(i+first)%demands.length];
+        if(q.oneShot&&seconds+EPS>=q.at){q.at=Infinity;q.pending++;offered++;bucket().offered++;}
+        else if(!q.oneShot&&seconds+EPS>=q.at&&!(q.continuous&&q.active)){
+          q.credit+=dt/q.interval*PROFILES[q.profile][period];
+          if(!q.started){q.started=true;q.credit+=1;}
+          const due=Math.floor(q.credit+EPS);
+          if(due){
+            q.credit-=due;offered+=due;bucket().offered+=due;
+            const cap=q.kind==='bus'?1:16;
+            lostDemand+=Math.max(0,q.pending+due-cap);
+            q.pending=Math.min(cap,q.pending+due);
+          }
         }
         if(!q.pending||cars.size>=maxVehicles||q.continuous&&q.active)continue;
         const seg=q.path[0], chosen=laneChoices(seg,q.kind)[0];
         if(!chosen)continue;
         const a={id:'v'+(++serial),kind:q.kind,route:q,index:0,s:0,speed:0,wait:0,started:seconds,
-          chosenVar:(serial+seed)%PALETTE.length,dwellCount:0};
-        join(a,chosen,Math.min(2.6,q.cruise*.22));cars.set(a.id,a);q.pending--;q.active++;issued++;kinds[q.kind]++;
+          chosenVar:(serial+seed)%PALETTE.length,dwellCount:0,nextChange:seconds+1.4};
+        if(q.continuous){q.credit=0;q.started=false;q.at=seconds+q.interval;}
+        join(a,chosen,Math.min(2.6,q.cruise*.22));cars.set(a.id,a);q.pending--;q.active++;issued++;bucket().issued++;kinds[q.kind]++;
+        if(q.tag)bySource[q.tag]=(bySource[q.tag]||0)+1;
+      }
+    }
+    function gapAhead(lane,s,len){
+      let i=0;while(i<lane.vehicles.length&&lane.vehicles[i].s<s)i++;
+      const lead=lane.vehicles[i], back=lane.vehicles[i-1];
+      const frontGap=lead?lead.s-s-(len+lengthOf(lead))*.5-GAP:lane.e.total-s;
+      const rearGap=back?s-back.s-(len+lengthOf(back))*.5-GAP:Infinity;
+      return {i,frontGap,rearGap,back};
+    }
+    function switchLanes(){
+      if(options.laneChanges===false)return;
+      for(const lane of lanes){
+        if(lane.vehicles.length<2)continue;
+        const family=lane.reverse?lane.e.rev:lane.e.fwd;
+        if(family.length<2)continue;
+        for(let i=lane.vehicles.length-2;i>=0;i--){
+          const a=lane.vehicles[i],len=lengthOf(a);
+          if(a.kind==='bus'||seconds<a.nextChange||a.s<14||lane.e.total-a.s<Math.max(20,a.speed*1.35))continue;
+          const rear=lane.vehicles[i-1];
+          if(rear&&a.s-rear.s-(len+lengthOf(rear))*.5-GAP<rear.speed*1.15+2.3)continue;
+          const leader=lane.vehicles[i+1],present=leader.s-a.s-(len+lengthOf(leader))*.5-GAP;
+          if(present>Math.min(15,a.speed*1.2+3)||leader.speed>lane.e.roadSpeed*.84)continue;
+          let choice=null;
+          for(const adj of [family[lane.index-1],family[lane.index+1]]){
+            if(!adj||adj.busOnly||adj.reserved&&a.s<20)continue;
+            const g=gapAhead(adj,a.s,len);
+            if(g.frontGap<Math.max(5.5,present+7,a.speed*.90)||g.rearGap<Math.max(5.5,(g.back?.speed||0)*1.05))continue;
+            if(!choice||g.frontGap>choice.g.frontGap)choice={adj,g};
+          }
+          if(!choice)continue;
+          lane.vehicles.splice(i,1);choice.adj.vehicles.splice(choice.g.i,0,a);
+          a.lateral={from:lane.offset,begin:seconds,duration:1.15};a.lane=choice.adj;a.nextChange=seconds+4.1;laneChanges++;bucket().laneChanges++;
+        }
       }
     }
     function updateLane(lane) {
@@ -182,7 +267,7 @@
       if(!stack.length)return;
       for(let i=stack.length-1;i>=0;i--){
         const a=stack[i], len=lengthOf(a), end=stopAt(lane,len);
-        a.prevS=a.s;
+        a.prevS=a.s;a.blockCause=null;a.blockedBy=null;
         const ahead=stack[i+1], lim=ahead?Math.min(end,ahead.s-(lengthOf(ahead)+len)*.5-GAP):end;
         const gap=Math.max(0,lim-a.s), target=Math.min(a.route.cruise,lane.e.roadSpeed*speedFactor);
         const braking=a.kind==='truck'?3.25:a.kind==='bus'?3.6:4.1, accel=a.kind==='truck'?1.25:a.kind==='bus'?1.5:2.85;
@@ -202,14 +287,24 @@
         a.ready=atEnd&&!dwelling;
         if(a.ready&&a.arrival===0)a.arrival=seconds;
         a.queued=!dwelling&&a.speed<STOP_SPEED&&((Boolean(ahead)&&gap<2.3)||atEnd);
-        if(a.queued)a.wait+=dt;
+        if(a.queued){a.wait+=dt;waitSeconds+=dt;bucket().wait+=dt;a.blockCause=ahead?'queue':null;}
         if(a.ready)candidates.push(a);
       }
     }
-    function light(node,heading){
-      const time=(seconds+node.offset)%signalCycle;
-      return (time<half?0:1)===axis(heading)&&(time%half)<half-allRed;
+    function signalState(node){
+      const cycle=node.cycle||signalCycle, t=((seconds+node.offset)%cycle+cycle)%cycle;
+      const ew=cycle*node.ew, half=t<ew?0:1, end=half?cycle:ew;
+      return end-t<=allRed?{axis:-1,remaining:end-t}:{axis:half,remaining:end-t-allRed};
     }
+    function configureSignal(node,state){
+      if(state&&typeof state==='object'){
+        node.signal=state.enabled!==false;
+        node.ew=number(state.ew,.5,.2,.8);
+        node.cycle=number(state.cycle,signalCycle,6,100);
+        node.offset=number(state.offset,node.offset,-100,100);
+      }else node.signal=Boolean(state);
+    }
+    for(const [node,config] of Object.entries(options.signals||{}))if(nodes.has(node))configureSignal(nodes.get(node),config);
     function compatible(a,b){
       if(a.inLane===b.inLane||a.outLane===b.outLane)return false;
       if(a.from===b.from&&a.to===b.to)return true;
@@ -217,7 +312,7 @@
       return a.straight&&b.straight&&angleDiff(a.heading,b.heading)>PI*.80;
     }
     function retire(a){
-      cars.delete(a.id);a.route.active--;completed++;kinds[a.kind]--;finishedByKind[a.kind]++;
+      cars.delete(a.id);a.route.active--;completed++;bucket().completed++;if(a.route.tag)byExit[a.route.tag]=(byExit[a.route.tag]||0)+1;kinds[a.kind]--;finishedByKind[a.kind]++;
       waitFinished+=a.wait;tripFinished+=seconds-a.started;
     }
     function crossing(){
@@ -227,10 +322,30 @@
         if(own.vehicles.at(-1)!==a)continue;
         const wrap=a.index+1===route.path.length&&route.continuous;
         const to=route.path[wrap?0:a.index+1];
-        if(!to){own.vehicles.pop();retire(a);continue;}
+        if(!to){
+          if(route.needsParking){
+            const space=park.park(from.to,seconds,a);
+            if(!space){
+              a.parkingWaitStart??=seconds;
+              a.blockCause='parking';parkingWait+=dt;
+              continue;
+            }
+          }
+          own.vehicles.pop();retire(a);continue;
+        }
         const node=nodes.get(from.to);
-        if(node.signal&&!light(node,from.arrival))continue;
-        const outs=laneChoices(to,a.kind);
+        const eligible=to.lanes.filter(l=>a.kind==='bus'||!l.busOnly);
+        const outs=laneChoices(to,a.kind,own);
+        // A temporary reserving vehicle is not itself a spillback. It counts only
+        // if an actual downstream tail is already within the physical entry gap.
+        const start=beginAt(eligible[0]||own,lengthOf(a));
+        const full=eligible.length>0&&eligible.every(l=>{
+          const tail=l.vehicles[0];return tail&&Math.min(tail.s,tail.prevS)-start<(lengthOf(a)+lengthOf(tail))*.5+GAP;
+        });
+        if(full){a.blockCause='space';a.blockedBy=to.e.rawId;own.spaceBlocked=true;own.blockedBy=to.e.rawId;}
+        else if(node.signal&&signalState(node).axis!==axis(from.arrival))a.blockCause='signal';
+        else a.blockCause='conflict';
+        if(full||node.signal&&signalState(node).axis!==axis(from.arrival))continue;
         const straight=angleDiff(from.arrival,to.departure)<PI*.26;
         for(const lane of outs){
           const movement={inLane:own.id,outLane:lane.id,from:from.e.id,to:to.e.id,heading:from.arrival,straight};
@@ -249,7 +364,8 @@
           }
           cooldown.set(key,seconds+Math.max(duration,junctionTime*(straight?.73:1)));
           a.cross={start,end,entry,exit,begin:seconds,duration,lane,wrap};
-          a.queued=false;a.ready=false;a.speed=gap/duration;transfers.add(a);
+          a.queued=false;a.ready=false;a.blockCause=null;a.blockedBy=null;a.lateral=null;a.speed=gap/duration;transfers.add(a);
+          transferred++;counters[from.e.rawId]=(counters[from.e.rawId]||0)+1;
           break;
         }
       }
@@ -259,7 +375,7 @@
         const t=a.cross;
         if(seconds+EPS<t.begin+t.duration)continue;
         transfers.delete(a);t.lane.reserved=null;a.cross=null;
-        if(t.wrap){completed++;finishedByKind.bus++;waitFinished+=a.wait;tripFinished+=seconds-a.started;a.wait=0;a.started=seconds;}
+        if(t.wrap){completed++;bucket().completed++;finishedByKind.bus++;waitFinished+=a.wait;tripFinished+=seconds-a.started;a.wait=0;a.started=seconds;}
         a.index=t.wrap?0:a.index+1;
         join(a,t.lane,Math.max(1.9,a.speed));
         a.joinBlend=t;
@@ -267,10 +383,22 @@
     }
     function tick(){
       seconds+=dt;candidates.length=0;
-      for(const lane of lanes)updateLane(lane);
+      const b=bucket();
+      park?.advance(seconds);
+      switchLanes();
+      for(const lane of lanes){lane.spaceBlocked=false;lane.blockedBy=null;updateLane(lane);}
       finishTransfers();
-      departures();
       crossing();
+      departures();
+      let queue=0,spill=0,parkQueue=0;
+      for(const a of cars.values())if(a.queued){queue++;if(a.blockCause==='parking')parkQueue++;}
+      peakParkingQueue=Math.max(peakParkingQueue,parkQueue);
+      for(const lane of lanes){
+        const tail=lane.vehicles[0];
+        if(lane.spaceBlocked&&tail&&tail.queued&&tail.s<=Math.max(8,beginAt(lane,lengthOf(tail))+lengthOf(tail)))spill++;
+      }
+      b.spill=Math.max(b.spill,spill);maxQueue=Math.max(maxQueue,queue);maxSpill=Math.max(maxSpill,spill);
+      for(const q of demands)pendingSeconds+=q.pending*dt;
     }
     function step(span=dt){
       accumulator+=number(span,0,0,2);
@@ -307,7 +435,11 @@
           const dy=v*v*(entry.y-start.y)+2*v*u*(exit.y-entry.y)+u*u*(end.y-exit.y)-(end.z-start.z)*.76/3;
           p={x,y,z,angle:Math.atan2(dy,dx)};
         }else{
-          a.joinBlend=null;p=paintPoint(seg,a.prevS+(a.s-a.prevS)*alpha,a.lane.offset);
+          a.joinBlend=null;
+          const blend=a.lateral,t=blend?clamp((now-blend.begin)/blend.duration,0,1):1;
+          const side=blend?blend.from+(a.lane.offset-blend.from)*t*t*(3-2*t):a.lane.offset;
+          if(t===1)a.lateral=null;
+          p=paintPoint(seg,a.prevS+(a.s-a.prevS)*alpha,side);
         }
         frame.push({...p,id:a.id,kind:a.kind==='truck'?'truck':a.kind,edge:seg.e.rawId,lane:a.lane.index,
           reverse:seg.reverse,speed:a.speed,queued:a.queued,dwell:a.busDwellUntil!==null&&a.busDwellUntil>seconds,
@@ -323,43 +455,60 @@
     }
     function stats(){
       const edgeQueues=dict(),edgeOccupancy=dict(),edgeSpeed=dict(),edgeCapacity=dict(),junctionQueues=dict(),edgeTraffic=dict();
-      let queued=0,dwell=0,waitActive=0,backlog=0,moving=transfers.size;
+      const directions=dict(), causes={signal:0,space:0,conflict:0,queue:0,parking:0},parkingCauses={unconnected:0,price:0,full:0};
+      let queued=0,dwell=0,waitActive=0,backlog=0,moving=transfers.size,spillback=0,blockedApproaches=0;
       for(const a of transfers)waitActive+=a.wait;
       for(const q of demands)backlog+=q.pending;
       for(const [k,e] of edges){
         let n=0,slow=0,speed=0,size=0;
+        const dir=[0,1].map(()=>({occupancy:0,queued:0,tail:0,spill:0,blockedBy:null,causes:{signal:0,space:0,conflict:0,queue:0,parking:0}}));
         for(const lane of [...e.fwd,...e.rev]){
+          const d=dir[+lane.reverse];d.occupancy+=lane.vehicles.length;
+          const first=lane.vehicles[0],head=lane.vehicles.at(-1);
+          if(lane.spaceBlocked){blockedApproaches++;d.blockedBy=lane.blockedBy;}
+          if(lane.spaceBlocked&&first&&first.queued&&first.s<=Math.max(8,beginAt(lane,lengthOf(first))+lengthOf(first))){spillback++;d.spill++;}
+          let queueTail=null;
+          for(let i=lane.vehicles.length-1;i>=0;i--){const q=lane.vehicles[i];if(!q.queued)break;queueTail=q;}
+          if(queueTail&&head?.queued)d.tail=Math.max(d.tail,e.total-queueTail.s);
           size+=Math.max(1,Math.floor(e.total/(LENGTH.car+GAP)));
           for(const a of lane.vehicles){
             n++;speed+=a.speed;waitActive+=a.wait;
-            if(a.queued){slow++;if(a.ready){const j=a.route.path[a.index].to;junctionQueues[j]=(junctionQueues[j]||0)+1;}}
+            if(a.queued){slow++;d.queued++;const reason=a.blockCause;if(reason==='parking'&&a.parkingReason)parkingCauses[a.parkingReason]++;if(reason){causes[reason]++;d.causes[reason]++;}if(a.ready){const j=a.route.path[a.index].to;junctionQueues[j]=(junctionQueues[j]||0)+1;}}
             else if(a.busDwellUntil!==null&&a.busDwellUntil>seconds)dwell++;
             if(a.speed>=STOP_SPEED)moving++;
           }
         }
-        edgeQueues[k]=slow;edgeOccupancy[k]=n;
+        directions[k]=dir;edgeQueues[k]=slow;edgeOccupancy[k]=n;
         edgeSpeed[k]=n?speed/n:0;edgeCapacity[k]=size;
         edgeTraffic[k]=n?clamp(.59*slow/Math.max(1,n)+.41*n/Math.max(1,size),0,1):0;
         queued+=slow;
       }
-      return {time:seconds,vehicles:cars.size,queued,moving,dwell,completed,issued,backlog,lostDemand,rejected,
-        meanWait:completed+cars.size?(waitFinished+waitActive)/(completed+cars.size):0,
+      const rolling={offered:0,issued:0,completed:0,wait:0,laneChanges:0,spill:0,seconds:Math.min(30,seconds)};
+      const oldest=Math.floor(seconds)-29;
+      for(const b of windows)if(b.second>=oldest&&b.second>=0){
+        for(const k of ['offered','issued','completed','wait','laneChanges'])rolling[k]+=b[k];
+        rolling.spill=Math.max(rolling.spill,b.spill);
+      }
+      return {time:seconds,vehicles:cars.size,queued,moving,dwell,completed,issued,offered,transferred,backlog,lostDemand,rejected,
+        meanWait:completed?waitFinished/completed:0,meanActiveWait:cars.size?waitActive/cars.size:0,
         meanTrip:completed?tripFinished/completed:0,byKind:{...kinds},completedByKind:{...finishedByKind},
-        edgeQueues,edgeOccupancy,edgeSpeed,edgeCapacity,edgeTraffic,junctionQueues};
+        edgeQueues,edgeOccupancy,edgeSpeed,edgeCapacity,edgeTraffic,junctionQueues,directions,causes,spillback,blockedApproaches,rolling,
+        waitSeconds,pendingSeconds,maxQueue,maxSpill,laneChanges,byExit:{...byExit},bySource:{...bySource},edgePassed:{...counters},
+        parking:park?{...park.report(),wait:parkingWait,waiting:causes.parking,causes:parkingCauses,peakWaiting:peakParkingQueue}:null,
+        period:PERIODS[profileIndex()],periodName:WINDOW_NAMES[profileIndex()],profileMode};
     }
     function setSignal(nodeId,state=true){
       const node=nodes.get(id(nodeId));if(!node)return false;
-      node.signal=Boolean(state);return true;
+      configureSignal(node,state);return true;
     }
     function signals(){
       return [...nodes.values()].filter(n=>n.signal).map(n=>{
-        const t=(seconds+n.offset)%signalCycle;
-        return {node:n.id,phase:t%half>=half-allRed?'all-red':t<half?'east-west':'north-south',
-          remaining:(t%half>=half-allRed?half:half-allRed)-t%half};
+        const t=signalState(n);
+        return {node:n.id,phase:t.axis<0?'all-red':t.axis===0?'east-west':'north-south',remaining:t.remaining,ew:n.ew,cycle:n.cycle||signalCycle};
       });
     }
     for(let left=number(options.warmupSeconds,0,0,20);left>EPS;left-=2)step(Math.min(left,2));
-    return {step,advance,agents,stats,setSignal,signals};
+    return {step,advance,agents,stats,setSignal,signals,updateDemand};
   }
-  return {create};
+  return {create,causeNames};
 });
