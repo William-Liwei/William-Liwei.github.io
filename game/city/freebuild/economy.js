@@ -129,7 +129,7 @@
     const level=levelOf(l),p=policy(fiscal,def.id),developed=level>0, group=sectors[def.id];
     const capacity=Math.round(def.capacity*MULT[level]),actual=clamp(num(l.occupants),0,Math.max(capacity*1.35,capacity));
     const people=def.zone==='residential'?actual:0;
-    const staff=def.zone==='residential'?0:Math.min(capacity,actual);
+    const staff=def.zone==='residential'?0:OWN(supply.staff||{},l.id)?clamp(num(supply.staff[l.id]),0,Math.round(def.jobSlots*MULT[level])):Math.min(capacity,actual);
     const housing=people>0?Math.min(Math.round(def.households*MULT[level]),Math.max(1,Math.ceil(people/def.family))):0;
     const row={id:l.id,sector:def.id,name:def.name,zone:def.zone,population:people,households:housing,
       workers:people*def.participation,jobs:def.zone==='residential'?0:Math.round(def.jobSlots*MULT[level]),employees:staff,

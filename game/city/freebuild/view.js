@@ -1020,6 +1020,18 @@
         const q=p[Math.floor((p.length-1)/2)];
         circle(c,q.x,q.y,3.6,'#265179','#d3eeff',.8);label(c,String(i+1),q.x,q.y,4.9,'#fff',850);
       }
+      if(overlay==='labor'&&opts.labor){
+        for(const q of Object.values(opts.labor.byHome||{})){
+          if(!q.workers||q.x<left||q.x>right||q.y<top||q.y>bottom)continue;
+          const color=q.employed===q.workers?'#93e9ac':q.employed?'#ffd781':'#ff9884';
+          circle(c,q.x,q.y,4.5,color,'#263d35',.8);
+        }
+        for(const q of Object.values(opts.labor.byWork||{})){
+          if(!q.jobs||q.x<left||q.x>right||q.y<top||q.y>bottom)continue;
+          const color=q.vacancies?'#ffc2a1':'#9adbfc';
+          shape(c,[{x:q.x-3,y:q.y-3},{x:q.x+3,y:q.y-3},{x:q.x+3,y:q.y+3},{x:q.x-3,y:q.y+3}],color,'#2a4259',.8);
+        }
+      }
       if(overlay==='care'&&opts.care){
         for(const q of array(opts.care.referrals)){
           if(q.x<left||q.x>right||q.y<top||q.y>bottom)continue;
