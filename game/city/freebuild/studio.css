@@ -122,3 +122,7 @@
 #park-dialog{width:min(620px,calc(100vw - 28px));max-height:calc(100dvh - 26px);overflow:auto;overscroll-behavior:contain}
 #park-dialog section{border-top:1px solid #bccfcb77;margin-block:14px;padding-top:8px}
 #park-dialog h3{margin-block:2px 7px}#park-assets li+li{margin-block-start:6px}
+
+#campus-dialog{width:min(650px,calc(100vw - 28px));max-height:calc(100dvh - 26px);overflow:auto;overscroll-behavior:contain}
+#campus-dialog section{border-top:1px solid #bccfcb77;margin-block:14px;padding-top:8px}
+#campus-dialog h3{margin-block:2px 7px}#campus-buildings li+li{margin-block-start:6px}

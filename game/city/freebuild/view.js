@@ -939,6 +939,15 @@
       const top=camera.y-this.height/2/camera.zoom-44,bottom=camera.y+this.height/2/camera.zoom+44;
       const visible=bb=>bb.maxX>=left&&bb.minX<=right&&bb.maxY>=top&&bb.minY<=bottom;
       this.paintRoadMesh(c,roadMesh,overlay,load,metrics.queue?.edgeTraffic,selected,visible);
+      for(const v of array(city.campus)){
+        const d=globalThis.CampusLife?.ASSETS[v.type];if(!d)continue;
+        if(v.x<left-25||v.x>right+25||v.y<top-25||v.y>bottom+25)continue;
+        const l=v.x-d.width/2,t=v.y-d.depth/2,w=d.width,h=d.depth,sel=selected.campus===v.id;
+        shape(c,[{x:l,y:t},{x:l+w,y:t},{x:l+w,y:t+h},{x:l,y:t+h}],d.color,sel?'#ffe2a3':'#46536e',1);
+        c.fillStyle='#475c7377';c.fillRect(l+2,t+2,w-4,h*.23);
+        for(let i=0;i<4;i++){c.fillStyle=i%2?'#f3dab6':'#c7e4e0';c.fillRect(l+3+i*(w-7)/4,t+h*.48,2.1,2.1);}
+        if(overlay==='campuses')label(c,d.icon,v.x,v.y+h*.26,6,'#203645',850);
+      }
       for(const park of array(city.parks)){
         for(const v of array(park.paths)){
           const ar=globalThis.ParkLife?.PATHS[v.type];if(!ar)continue;

@@ -510,6 +510,20 @@ class City3D{
    for(const b of list(z.buildings)){if(xy(b))mark(b,8);this.building(mesh,b,z.type);}
   }
   if(!zones.length)for(const b of list(world.buildings)){if(xy(b))mark(b,8);this.building(mesh,b,b.type);}
+  for(const a of list(world.campus)){
+   const d=rootSpec('CampusLife','ASSETS',a.type);if(!d||!xy(a))continue;
+   const x=a.x,y=a.y,w=d.width,h=d.depth,base=this.baseFor(x,y,w,h,0),z=base.hi,col=color(d.color),glass=color('#7796a5'),cream=color('#e3d5ac');
+   const floor=d.kind==='housing'?13:d.kind==='faculty'?9:d.kind==='research'?11:6.8;
+   mark(a,Math.max(w,h)*.60);
+   box(mesh,x,y,w,h,base.lo,z+.25,dark(col,.66),0,col);
+   box(mesh,x,y,w*.89,h*.90,z,z+floor,dark(col,.82),0,col);
+   box(mesh,x,y,w*.78,h*.63,z+floor-.4,z+floor+1.1,d.kind==='research'?glass:dark(col,1.14),0,col);
+   for(const xx of [-.31,-.15,0,.15,.31]){
+    for(const hh of d.kind==='housing'?[.22,.46,.69]:[.34,.62])box(mesh,x+w*xx,y-h*.455,1.9,.2,z+floor*hh,z+floor*hh+1.1,glass,0,cream);
+   }
+   if(d.kind==='faculty')for(const side of [-1,1])box(mesh,x+side*w*.16,y-h*.49,.78,.85,z,z+floor*.43,cream,0,col);
+   if(d.kind==='research')cylinder(mesh,x+w*.22,y+h*.11,1.45,z+floor,z+floor+2.9,glass,undefined,8,.3);
+  }
   for(const park of list(world.parks)){
    for(const p of list(park.paths)){const z=rootSpec('ParkLife','PATHS',p.type);if(z)this.road(mesh,{pts:p.points},{width:z.width,color:z.color,lift:.14});}
    for(const a of list(park.assets)){

@@ -251,11 +251,13 @@ function campuses(state,city,network,active,options){
   if(unique.has(s.id))return [];unique.add(s.id);
   const join=A.snap(active,network,s,{mode:'walk',radius:52,ground:true});
   const connected=Boolean(join&&dryConnector({...s,z:0},join,water));
-  const capacity=connected?Math.floor(TYPES[s.type].capacity*s.funding/100):0;
+  const prof=s.type==='university'?options.campus?.profile(s.id):null;
+  const expansion=Math.max(0,Math.min(400,Number(prof?.bonus)||0)),range=TYPES[s.type].range+Math.max(0,Math.min(320,Number(prof?.rangeBonus)||0));
+  const capacity=connected?Math.floor((TYPES[s.type].capacity+expansion)*s.funding/100):0;
   const row={...s,capacity,enrolled:0,connected};
   if(connected&&capacity){
    const anchors=walkAnchors(graph,s,water);
-   campusPaths.set(s.id,{anchors,tree:distanceTree(graph,anchors,TYPES[s.type].range)});
+   campusPaths.set(s.id,{anchors,range,tree:distanceTree(graph,anchors,range)});
   }
   byType[s.type].push(row);return [row];
  });
@@ -264,15 +266,15 @@ function campuses(state,city,network,active,options){
   const index=lot.id+'|'+type;if(cache.has(index))return cache.get(index);
   const sites=byType[type],open=sites.filter(s=>s.funding>0),spec=TYPES[type],options=[];
   for(const s of open){
-   if(!s.connected||!s.capacity||N.dist(lot,s)>spec.range)continue;
-   const target=campusPaths.get(s.id);if(!target)continue;
+   if(!s.connected||!s.capacity)continue;
+   const target=campusPaths.get(s.id);if(!target||N.dist(lot,s)>target.range)continue;
    if(!homePaths.has(lot.id))homePaths.set(lot.id,walkAnchors(graph,lot,water));
    let best=Infinity;
    for(const {l,q,m} of homePaths.get(lot.id)){
     best=Math.min(best,m+metres(l.a,q)+(target.tree.get(l.ka)??Infinity),m+metres(l.b,q)+(target.tree.get(l.kb)??Infinity));
     for(const c of target.anchors)if(c.l.key===l.key)best=Math.min(best,m+c.m+metres(q,c.q));
    }
-   if(best<=spec.range)options.push({s,d:best});
+   if(best<=target.range)options.push({s,d:best});
   }
   options.sort((a,b)=>a.d-b.d||a.s.id.localeCompare(b.s.id));
   const reason=!sites.length?'noSchool':!open.length?'closed':!options.length?'unreachable':'capacity';
@@ -330,10 +332,11 @@ function advance(state,city,opts={}){
   const d=distinctByType.get(stage)||new Map();distinctByType.set(stage,d);
   q.demand+=g.n;monthStats.demand+=g.n;row.students.demand+=g.n;
   const candidates=target?[target,...info.options.filter(s=>s!==target)]:info.options;
-  for(const {s} of candidates){
+  for(const {s,d:distance} of candidates){
    if(!left)break;
    const n=Math.min(left,s.capacity-s.enrolled);if(n<=0)continue;
    left-=n;s.enrolled+=n;q.enrolled+=n;monthStats.enrolled+=n;row.enrolled+=n;row.students.enrolled+=n;
+   if(stage==='university')opts.campus?.observe({siteId:s.id,lotId:l.id,count:n,graduated:g.credit+1>=TYPES[stage].duration?n:0,distance});
    if(g.school!==s.id&&g.wait>0)append(state,month,'joined',stage,n,l.id,s.id);
    if(g.credit+1>=TYPES[stage].duration){
     graduates[stage]+=n;q.graduates+=n;state.graduatesTotal[stage]+=n;
