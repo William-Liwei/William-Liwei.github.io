@@ -181,10 +181,11 @@
         const colors=COLORS[kind(z.type)]||COLORS.residential;
         const focus=sel?.zone===z.id||sel?.type==='zone'&&sel.id===z.id;
         const fill=overlay==='land'&&Number.isFinite(land)&&land>0?catRGB(mix([183,125,100],[89,179,119],cl(land>1?land/100:land,0,1)),.63):colors[0]+(overlay==='zones'?'c4':'7d');
-        if(z.frontage){
-          line(c,pts,colors[0]+'75',12);
-          line(c,pts,focus?'#f7ffe5':colors[1]+'a0',1.35,[4,5]);
-        }else if(pts.length>2)shape(c,pts,fill,focus?'#f7ffe5':colors[1]+(overlay==='zones'?'d9':'8c'),focus?2.4:1.1);
+        if(z.frontage&&overlay==='zones')line(c,pts,focus?'#f7ffe5':colors[1]+'8a',1.35,[4,5]);
+        if(overlay==='zones'||overlay==='land'||focus){
+          for(const q of array(z.parcels))if(q.footprint?.length>=3)
+           shape(c,q.footprint,q.level>=1?colors[0]+'72':fill,focus?'#f7ffe5':colors[1]+'a6',focus?1.15:.57);
+        }
         if(overlay==='zones'){
           const x=pts.reduce((n,p)=>n+p.x,0)/pts.length,y=pts.reduce((n,p)=>n+p.y,0)/pts.length;
           label(c,{residential:'住',commercial:'商',industrial:'工',office:'办',park:'绿',mixed:'混'}[kind(z.type)]||'·',x,y,11,colors[2],800);
@@ -868,6 +869,20 @@
       c.save();c.translate(this.width/2,this.height/2);c.scale(camera.zoom,camera.zoom);c.translate(-camera.x,-camera.y);
       if(this.terrain)c.drawImage(this.terrain,0,0);else this.paintGround(c,w,h);
       c.save();c.beginPath();c.rect(0,0,w,h);c.clip();
+      if(city.terrain){
+        if(this.surfaceKey!==city.terrain){
+         this.surfaceKey=city.terrain;this.surfaceShade=offscreen(this.canvas,w,h);this.surfaceLines=offscreen(this.canvas,w,h);
+         const cl=this.surfaceLines?.getContext('2d'),sh=this.surfaceShade?.getContext('2d');
+         if(sh)for(const q of city.terrain.heights){
+          const step=city.terrain.spacing,n=Math.max(0,Math.min(1,q.h/62)),m=Math.min(.15,Math.abs(q.shade)*.52);
+          sh.fillStyle=q.h<0?'rgba(88,112,104,'+Math.min(.25,-q.h*.025)+')':'rgba(68,73,56,'+(n*.35+m)+')';
+          sh.fillRect(q.x-step/2,q.y-step/2,step+1,step+1);
+         }
+         if(cl)for(const q of city.terrain.contours)line(cl,[q.a,q.b],q.level%20===0?'#4c554b9f':'#5a644f6e',q.level%20===0?1.16:.63);
+        }
+        if(this.surfaceShade)c.drawImage(this.surfaceShade,0,0);
+        if(overlay==='earth'&&this.surfaceLines)c.drawImage(this.surfaceLines,0,0);
+      }
       const districtList=array(city.districts), transit=city.transit||{};
       if(districtList.length)for(const d of districtList){
         const item=globalThis.Districts?.TYPES[d.type],active=overlay==='districts'||overlay==='resources'||selected.district===d.id;
@@ -1021,6 +1036,7 @@
         if(!p.length)continue;
         if(g.closed&&p.length>2)shape(c,p,'#71baf52c','#aadbff',1.25);
         else if(p.length>1)line(c,p,'#aadcffc9',Math.max(1.2,(g.width||8)*.19),[4,3]);
+        for(const strip of array(g.strips))line(c,strip.map(p3),'#b7ecba',3.1);
         const q=p[Math.floor((p.length-1)/2)];
         circle(c,q.x,q.y,3.6,'#265179','#d3eeff',.8);label(c,String(i+1),q.x,q.y,4.9,'#fff',850);
       }
@@ -1124,6 +1140,7 @@
           }else{line(c,proposed,col,8.2);line(c,proposed,accent,4,[6,4]);}
         }
         for(const p of [proposed[0],proposed.at(-1)])circle(c,p.x,p.y,3.9,col,accent,1.3);
+        for(const strip of array(preview.strips))line(c,strip.map(p3),'#3d9d70',3.2);
         if(preview.snapped){const p=proposed.at(-1);circle(c,p.x,p.y,7.4,null,accent,1.3);}
         for(const point of array(preview.junctions)){const p=p3(point);circle(c,p.x,p.y,4.5,'#f9ffe9',accent,1.35);}
         for(const {p:raw} of array(preview.overpasses)){const p=p3(raw);circle(c,p.x,p.y,4.5,'#dfedfc','#366a9a',1.35);

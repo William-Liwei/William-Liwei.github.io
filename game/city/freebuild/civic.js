@@ -209,14 +209,15 @@
       if(!allow(p,opt))continue;
       const entry=projectRoad(net,p);
       if(entry&&entry.distance<opt.roadSetback+3)continue;
+      if(opt.requireFrontage&&(!entry||entry.distance>opt.maxAccess))continue;
       if(state.services.some(v=>dist(v,p)<lotPitch*.7)||state.lots.some(v=>dist(v,p)<lotPitch*.78)||inserted.some(v=>dist(v,p)<lotPitch*.78))continue;
       const n=hash([state.seed,type,Math.round(p.x*10),Math.round(p.y*10)].join('/'));
       const angle=entry?.angle??p.angle??0;
       const width=lotPitch*(.46+n*.12),depth=lotPitch*(.42+(1-n)*.11),u=Math.cos(angle),v=Math.sin(angle);
       const footprint=[[-width/2,-depth/2],[width/2,-depth/2],[width/2,depth/2],[-width/2,depth/2]]
         .map(([x,y])=>({x:p.x+x*u-y*v,y:p.y+x*v+y*u}));
-      if(footprint.some(c=>!allow(c,opt)||(!opt.frontageZone&&!inPolygon(c,points))))continue;
-      inserted.push({id:null,zoneId:null,type,density:d,x:p.x,y:p.y,angle,width,depth,level:0,occupants:0,vacantMonths:0});
+      if(footprint.some(c=>!allow(c,opt)||(!opt.frontageZone&&!inPolygon(c,points)))||opt.checkParcel?.(footprint)===false)continue;
+      inserted.push({id:null,zoneId:null,type,density:d,x:p.x,y:p.y,angle,width,depth,level:0,occupants:0,vacantMonths:0,...(opt.requireFrontage&&p.frontageAnchor?{frontageAnchor:p.frontageAnchor}:{})});
     }
     if(!inserted.length)return bad('没有可用地块；请拉大分区、远离路面或换一块空地。');
     const id=next(state,'z');const zone={id,type,density:d,polygon:points,...(opt.frontageZone?{frontage:true}:{})};
@@ -256,7 +257,7 @@
       for(;cursor<length;cursor+=pitch)for(const sign of sides){
         const center=mix(a,b,cursor/length),v=vector(a,b,sign);
         for(let offset=Math.max(opt.roadSetback+pitch*.33,pitch*.63);offset<extent;offset+=pitch)
-          if(place.length<MAX_NEW_LOTS*4)place.push(add(center,v,offset));
+          if(place.length<MAX_NEW_LOTS*4)place.push({...add(center,v,offset),frontageAnchor:{x:center.x,y:center.y,z:center.z||0}});
       }
       cursor-=length;
     }
@@ -417,7 +418,7 @@
     state.month++;
     const prev=evaluate(state,roads,extra);
     for(const lot of state.lots){
-      const s=prev.lots[lot.id],delta=s.target-lot.occupants;
+      const s=prev.lots[lot.id],target=lot.level<1&&extra.canDevelop?.(lot)===false?0:s.target,delta=target-lot.occupants;
       lot.occupants=clamp(lot.occupants+(delta>0?Math.min(delta,Math.max(.42,delta*.34)):Math.max(delta,-Math.max(.58,Math.abs(delta)*.3))),0,lotCap(lot,3));
       if(lot.occupants>.45){
         lot.vacantMonths=0;

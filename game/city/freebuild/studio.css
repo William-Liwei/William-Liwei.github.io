@@ -65,3 +65,5 @@
 #service-ops h2{margin-top:0}#service-ops details{margin-top:.65rem}
 #service-ops summary{cursor:pointer}
 #service-ops-line-readout,#service-ops-finance,#service-ops-taxi{font-variant-numeric:tabular-nums}
+#earth-panel{margin:.7rem 0;padding:.65rem;border:1px solid #596e58;border-radius:.65rem}
+#earth-panel h2{margin:0}
