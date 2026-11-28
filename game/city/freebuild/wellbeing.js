@@ -100,7 +100,7 @@ function commuteByHome(assignments,city){
  for(const a of arr(assignments).slice(0,17000)){
   const k=id(a?.home);if(!k||!Number.isFinite(a.distance))continue;
   const n=int(a.count,0,0,LIMIT.people),km=clamp(a.distance,0,2200);
-  const minutes=a.mode==='walk'?4.5+km/39:a.mode==='drive'?7+km/92+Math.min(6,km/145):7+km/82;
+  const minutes=a.mode==='walk'?4.5+km/39:a.mode==='drive'?7+km/92+Math.min(6,km/145):Number.isFinite(a.seconds)?8+Math.min(53,a.seconds/4.6):7+km/82;
   const row=out.get(k)||{count:0,total:0};
   const accepted=Math.max(0,Math.min(n,LIMIT.people-row.count));
   row.count+=accepted;row.total+=accepted*minutes;out.set(k,row);

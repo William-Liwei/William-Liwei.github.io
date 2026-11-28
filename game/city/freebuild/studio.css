@@ -132,3 +132,7 @@
 #systems-dialog section h3{margin:3px 0 8px}
 #systems-dialog li+li{margin-block-start:.23rem}
 #system-checks li[data-status=failed]{color:#983630;font-weight:650}
+
+#mobility-dialog{width:min(650px,calc(100vw - 28px));max-height:calc(100dvh - 26px);overflow:auto;overscroll-behavior:contain}
+#mobility-dialog section{border-top:1px solid #bccfcb77;margin-block:14px;padding-block-start:8px}
+#mobility-dialog h3{margin:2px 0 8px}#mobility-capacity li+li,#mobility-lots li+li{margin-block-start:5px}

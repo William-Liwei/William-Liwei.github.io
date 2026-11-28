@@ -11,7 +11,7 @@ const ROLES={
  professional:{name:'大学专业岗位',wage:263,color:'#bc9ee6'}
 };
 const GRADES={none:'无学历要求',primary:'小学',secondary:'中学',vocational:'职业技术',university:'大学'};
-const REASONS={noJobs:'本市尚无岗位',qualification:'现有岗位需要不同学历',unreachable:'合适岗位没有可往返通勤的路线',experience:'可达职位需要更多实际工作经验',competition:'能到达的合适岗位已经招满'};
+const REASONS={noJobs:'本市尚无岗位',qualification:'现有岗位需要不同学历',unreachable:'合适岗位没有可往返通勤的路线',experience:'可达职位需要更多实际工作经验',capacity:'高峰往返座位、班次或停车未满足',competition:'能到达的合适岗位已经招满'};
 const roleKeys=Object.keys(ROLES),gradeKeys=Object.keys(GRADES),reasonKeys=Object.keys(REASONS);
 const qualified={
  none:['entry'],primary:['entry'],secondary:['entry','general'],
@@ -34,7 +34,7 @@ const own=(o,k)=>Object.hasOwn(o,k);
 const valid=v=>v&&Number.isFinite(v.x)&&Number.isFinite(v.y)&&v.x>=0&&v.x<=2000&&v.y>=0&&v.y<=1400;
 const blank=(keys)=>Object.fromEntries(keys.map(k=>[k,0]));
 const hydrate=(raw,keys,max=1e9)=>Object.fromEntries(keys.map(k=>[k,int(raw?.[k],0,0,max)]));
-const totalFields=['population','students','adults','workers','jobs','employed','unemployed','vacancies','hired','separated','retained','graduatesHired','payroll','walking','driving'];
+const totalFields=['population','students','adults','workers','jobs','employed','unemployed','vacancies','hired','separated','retained','graduatesHired','payroll','walking','driving','publicTransit','parkRide'];
 const homeFields=['population','students','adults','workers','employed','unemployed','payroll','hired','retained','graduatesHired'];
 const workFields=['jobs','employees','vacancies','payroll','hired','retained','graduatesHired'];
 const sectorFields=['jobs','employees','vacancies','payroll','hired','graduatesHired'];
@@ -42,11 +42,31 @@ const fiscalFields=['payroll','payrollTax','businessTax','existingBusinessTax','
 function create(seed='city-labor'){
  return {version:1,seed:String(seed).slice(0,96),lastMonth:0,assignments:[],log:[],last:null};
 }
+const MOBILITY_MODES=['walk','drive','transit','pr'];
+const transitLeg=x=>x&&id(x.line,140)&&id(x.from,100)&&id(x.to,100)?{line:id(x.line,140),from:id(x.from,100),to:id(x.to,100)}:null;
+function itinerary(x){
+ if(!x||!Array.isArray(x.legs))return null;
+ const legs=x.legs.slice(0,5).map(transitLeg).filter(Boolean);if(!legs.length)return null;
+ return {legs,walk:int(x.walk,0,0,1000),lastWalk:int(x.lastWalk,0,0,1000),start:int(x.start,0,-300,1500)};
+}
+const tripEdge=x=>x&&id(x.edge,72)?{edge:id(x.edge,72),reverse:!!x.reverse}:null;
+function routeFields(v){
+ const route={mode:v.mode,distance:int(v.distance,0,0,3000)};
+ if(Number.isFinite(v.seconds))route.seconds=int(v.seconds,0,0,3000);
+ if(Number.isFinite(v.fare))route.fare=Math.round(clamp(v.fare,0,500)*100)/100;
+ if(['day','early','late'].includes(v.shift))route.shift=v.shift;
+ if(['pr','transit'].includes(v.mode)){
+  route.outbound=itinerary(v.outbound);route.returnTrip=itinerary(v.returnTrip);
+  const p=v.parking;
+  if(v.mode==='pr'&&p&&id(p.site))route.parking={site:id(p.site),node:id(p.node),driveOut:{seconds:int(p.driveOut?.seconds,0,0,700),path:arr(p.driveOut?.path).slice(0,150).map(tripEdge).filter(Boolean)},driveBack:{seconds:int(p.driveBack?.seconds,0,0,700),path:arr(p.driveBack?.path).slice(0,150).map(tripEdge).filter(Boolean)}};
+ }
+ return route;
+}
 function source(v){
  const home=id(v?.home),work=id(v?.work),grade=v?.grade,role=v?.role,mode=v?.mode,count=int(v?.count,0,0,LIMIT.people);
- if(!home||!work||!count||!own(GRADES,grade)||!own(ROLES,role)||!qualified[grade].includes(role)||!['walk','drive'].includes(mode))return null;
+ if(!home||!work||!count||!own(GRADES,grade)||!own(ROLES,role)||!qualified[grade].includes(role)||!MOBILITY_MODES.includes(mode))return null;
  const retained=int(v.retained,0,0,count),wage=int(v.wage,0,0,5000),payroll=int(v.payroll,count*wage,0,count*5000);
- return {home,work,grade,role,mode,count,distance:int(v.distance,0,0,LIMIT.driving),wage:int(v.wage,0,0,5000),
+ return {home,work,grade,role,...routeFields(v),count,wage:int(v.wage,0,0,5000),
   payroll,newGraduates:int(v.newGraduates,0,0,count-retained),retained};
 }
 function fiscalRow(v){
@@ -72,7 +92,7 @@ function normalize(raw,seed='city-labor'){
  const seen=new Set(),residents=new Map(),employees=new Map();
  for(const v of arr(raw.assignments).slice(0,LIMIT.assignments)){
   const a=source(v);if(!a)continue;
-  const k=JSON.stringify([a.home,a.work,a.grade,a.role]);if(seen.has(k))continue;
+  const k=JSON.stringify([a.home,a.work,a.grade,a.role,a.mode,a.shift||'']);if(seen.has(k))continue;
   const homeLimit=own(raw.last?.byHome||{},a.home)?int(raw.last.byHome[a.home]?.workers,0,0,LIMIT.people):LIMIT.people;
   const workLimit=own(raw.last?.byWork||{},a.work)?int(raw.last.byWork[a.work]?.jobs,0,0,LIMIT.people):LIMIT.people;
   if((residents.get(a.home)||0)+a.count>homeLimit||(employees.get(a.work)||0)+a.count>workLimit)continue;
@@ -190,9 +210,10 @@ function hash(s){
  h^=h>>>16;h=Math.imul(h,0x7feb352d);h^=h>>>15;h=Math.imul(h,0x846ca68b);h^=h>>>16;
  return (h>>>0)/4294967296;
 }
-function carRouter(net,road){
+function carRouter(net,road,loads=null){
  const vehicle={...net,edges:road.vehicular},adj=N.graph(vehicle,'car'),byEdge=new Map(vehicle.edges.map(e=>[e.id,e]));
- const trees=new Map(),max=LIMIT.driving,turns=N.normalizedTurns(vehicle).length>0;
+ const trees=new Map(),max=loads?LIMIT.driving*5:LIMIT.driving,turns=N.normalizedTurns(vehicle).length>0;
+ const cost=(edge,length)=>length*(loads?clamp(31.32/Math.max(15,number(edge.speed,36)),.37,2.2)*(1+.85*clamp(number(loads[edge.id])/Math.max(1,N.capacity(edge)),0,2.3)):1);
  function tree(start,arrival){
   const key=JSON.stringify([start,turns?arrival:null]);
   if(trees.has(key))return trees.get(key);
@@ -216,7 +237,7 @@ function carRouter(net,road){
    if(!nodes.has(x.node))nodes.set(x.node,[]);
    nodes.get(x.node).push(x);
    for(const e of adj[x.node]||[])if(N.turnAllowed(adj,x.node,x.edge,e.edge)){
-    push(e.to,e.edge,x.d+number(byEdge.get(e.edge)?.len));
+    push(e.to,e.edge,x.d+cost(byEdge.get(e.edge),number(byEdge.get(e.edge)?.len)));
    }
   }
   trees.set(key,nodes);return nodes;
@@ -224,15 +245,15 @@ function carRouter(net,road){
  function distance(a,b){
   if(!a||!b)return Infinity;
   const off=a.d+b.d;
-  let best=a.e.id===b.e.id&&(!a.e.oneway||a.q<=b.q+1e-6)?Math.abs(a.q-b.q):Infinity;
+  let best=a.e.id===b.e.id&&(!a.e.oneway||a.q<=b.q+1e-6)?cost(a.e,Math.abs(a.q-b.q)):Infinity;
   if(best===0)return off;
   for(const s of road.ends(a,true))for(const t of road.ends(b,false)){
-   if(s.d+t.d+off>max||s.d+t.d>=best)continue;
+   const end=cost(a.e,s.d)+cost(b.e,t.d);if(end+off>max||end>=best)continue;
    // Same node can require an actual loop to enter a turn-restricted departure.
    for(const x of tree(s.node,s.edge).get(t.node)||[]){
-    if(x.d+s.d+t.d>=best)break;
+    if(x.d+end>=best)break;
     if(!N.turnAllowed(adj,t.node,x.edge,t.edge))continue;
-    best=x.d+s.d+t.d;break;
+    best=x.d+end;break;
    }
   }
   return best+off;
@@ -240,7 +261,7 @@ function carRouter(net,road){
  return {distance};
 }
 function routing(city,opts){
- const net=netOf(city,opts),water=wetOf(opts),road=roadAccess(net,water),car=carRouter(net,road);
+ const net=netOf(city,opts),water=wetOf(opts),road=roadAccess(net,water),car=carRouter(net,road),timeCar=opts.mobility&&opts.roadLoads?carRouter(net,road,opts.roadLoads):null;
  const graph=A.build(opts.activeTravel||city.activeTravel||A.create(),net,{shareBike:false}),foot=new Map(),trees=new Map();
  const walkAt=(v)=>{
   if(!foot.has(v.id))foot.set(v.id,walkAnchors(graph,v,water));
@@ -264,7 +285,9 @@ function routing(city,opts){
   }
   if(!treeAllowed)return null;
   const x=road.access(a),y=road.access(b),out=car.distance(x,y),back=car.distance(y,x);
-  return out<=LIMIT.driving&&back<=LIMIT.driving?{mode:'drive',distance:Math.round((out+back)/2)}:null;
+  if(out>LIMIT.driving||back>LIMIT.driving)return null;
+  const routedTime=timeCar?(timeCar.distance(x,y)+timeCar.distance(y,x))/17.4:null;
+  return {mode:'drive',distance:Math.round((out+back)/2),...(Number.isFinite(routedTime)?{seconds:Math.round(routedTime)}:{})};
  }
  return {route};
 }
@@ -396,18 +419,22 @@ function advance(state,city,opts={}){
  const econ=economyOf(city,opts),{homes,firms}=collect(city,opts,econ,state,month),routes=routing(city,opts);
  const jobs=[...firms.values()].sort((a,b)=>a.r.id.localeCompare(b.r.id));
  const people=[...homes.values()].sort((a,b)=>a.r.id.localeCompare(b.r.id));
+ const mobility=opts.mobility;
  const pools=new Map(),found=new Map(),stored=[],byHome={},byWork={},bySector={},t=blank(totalFields);
  function path(h,f){
   if(!pools.has(h.r.id))pools.set(h.r.id,new Map());
   const v=pools.get(h.r.id);if(v.has(f.r.id))return v.get(f.r.id);
-  const r=routes.route(h.l,f.l);v.set(f.r.id,r);return r;
+  const direct=routes.route(h.l,f.l);
+  const params={home:h.l,work:f.l,walk:direct?.mode==='walk'?direct:null,drive:direct?.mode==='drive'?direct:null};
+  const result=mobility?(mobility.routes({...params,wage:Math.max(...Object.values(f.r.wage))})[0]||null):direct;
+  v.set(f.r.id,{result,params});return {result,params};
  }
  function allFor(h){
   if(!h.candidates){
    h.candidates=[];
    for(const f of jobs){
-    const route=path(h,f);
-    if(route)h.candidates.push({f,route});
+    const {result:route,params}=path(h,f);
+    if(route)h.candidates.push({f,route,params});
    }
    h.candidates.sort((a,b)=>a.route.distance-b.route.distance||a.f.r.id.localeCompare(b.f.r.id));
   }
@@ -415,17 +442,20 @@ function advance(state,city,opts={}){
  }
  const career=opts.career;
  if(career)for(const h of people)for(const g of gradeKeys)career.register(h.r.id,g,h.free[g],h.fresh[g]);
- const assignmentKey=(h,f,g,k)=>JSON.stringify([h.r.id,f.r.id,g,k]);
+ const assignmentKey=(h,f,g,k,route)=>JSON.stringify([h.r.id,f.r.id,g,k,route.mode,route.shift||'']);
  const jobArgs=(h,f,g,k,retained=false)=>({home:h.r.id,work:f.r.id,grade:g,role:k,sector:f.r.sector,baseWage:f.r.wage[k],retained});
  function pair(h,f,g,k,route,n,retained){
-  if(n<=0)return;
-  const key=assignmentKey(h,f,g,k);let a=found.get(key);
-  if(!a&&stored.length>=LIMIT.assignments)return;
+  if(n<=0)return 0;
+  const asked=n;
+  const key=assignmentKey(h,f,g,k,route);let a=found.get(key);
+  if(!a&&stored.length>=LIMIT.assignments)return 0;
+  if(mobility){n=Math.min(n,mobility.capacity(route));if(!n){mobility.take(route,asked);return 0;}}
   const accepted=career?.take({...jobArgs(h,f,g,k,retained),count:n});
   if(career)n=int(accepted?.count,0,0,n);
-  if(!n)return;
+  if(!n)return 0;
+  if(mobility)mobility.take(route,n);
   if(!a){
-   a={home:h.r.id,work:f.r.id,grade:g,role:k,count:0,...route,wage:f.r.wage[k],payroll:0,retained:0,newGraduates:0};
+   a={home:h.r.id,work:f.r.id,grade:g,role:k,count:0,...routeFields(route),wage:f.r.wage[k],payroll:0,retained:0,newGraduates:0};
    stored.push(a);found.set(key,a);
   }
   const graduates=retained?0:int(accepted?.newGraduates,Math.min(n,h.fresh[g]),0,Math.min(n,h.fresh[g])),money=int(accepted?.payroll,n*f.r.wage[k],0,n*5000);
@@ -435,7 +465,16 @@ function advance(state,city,opts={}){
   f.r.employees+=n;f.r.payroll+=money;f.r.filled[k]+=n;f.r.graduatesHired+=graduates;
   if(retained){h.r.retained+=n;f.r.retained+=n;}
   else{h.r.hired+=n;f.r.hired+=n;}
-  t[route.mode==='walk'?'walking':'driving']+=n;
+  t[({walk:'walking',drive:'driving',transit:'publicTransit',pr:'parkRide'})[route.mode]]+=n;
+  return n;
+ }
+ function place(h,f,g,k,base,n,retained){
+  if(!mobility)return pair(h,f,g,k,base.result,n,retained);
+  let left=n;
+  for(const r of mobility.routes({...base.params,wage:f.r.wage[k]})){
+   const take=pair(h,f,g,k,r,left,retained);left-=take||0;if(!left)break;
+  }
+  return n-left;
  }
  // Preserve qualified existing jobs if both housing & business still exist and
  // the road or walking network still works. Recent graduates are accounted
@@ -447,12 +486,12 @@ function advance(state,city,opts={}){
   if(!h||!f||!qualified[a.grade]?.includes(a.role))continue;
   let n=Math.min(a.count,h.free[a.grade]-h.fresh[a.grade],f.available[a.role]);
   if(n<=0)continue;
-  const route=path(h,f);if(!route)continue;
+  const commute=path(h,f);if(!commute.result)continue;
   if(career){
    const higher=roleKeys.slice(roleKeys.indexOf(a.role)+1).filter(k=>qualified[a.grade].includes(k)&&f.available[k]>0).map(k=>({role:k,open:f.available[k]}));
    if(higher.length)n-=int(career.promotionQuota({...jobArgs(h,f,a.grade,a.role,true),count:n,higher}),0,0,n);
   }
-  const before=h.r.retained;pair(h,f,a.grade,a.role,route,n,true);retained+=h.r.retained-before;
+  const before=h.r.retained;place(h,f,a.grade,a.role,commute,n,true);retained+=h.r.retained-before;
  }
  // Scarcer advanced positions match first. Within a qualification band,
  // recent graduates and closer commutes get priority; no worker can be reused.
@@ -470,9 +509,9 @@ function advance(state,city,opts={}){
      const score=x=>x.route.distance+(x.route.mode==='drive'?60:0)-x.f.r.wage[k]*.7;
      return score(a)-score(b)||a.f.r.id.localeCompare(b.f.r.id);
     });
-    for(const {f,route} of choices){
+    for(const {f,route,params} of choices){
      const n=Math.min(h.free[g],f.available[k]);
-     pair(h,f,g,k,route,n,false);
+     place(h,f,g,k,{result:route,params},n,false);
      if(!h.free[g])break;
     }
    }
@@ -491,8 +530,11 @@ function advance(state,city,opts={}){
    const can=compatible[g],anySlots=[...can].some(k=>activeRoles.has(k)),anyVacancy=[...can].some(k=>vacantRoles.has(k));
    const local=anySlots&&allFor(h).some(x=>[...can].some(k=>x.f.r.slots[k]>0));
    const nearbyVacancies=career&&local?allFor(h).flatMap(({f})=>[...can].filter(k=>f.available[k]>0).map(k=>[f,k])):[];
+   const noCommuteSeat=mobility&&local&&nearbyVacancies.length>0&&nearbyVacancies.every(([f,k])=>{
+    const q=path(h,f);return !mobility.routes({...q.params,wage:f.r.wage[k]}).some(x=>mobility.capacity(x)>0);
+   });
    const noExperience=nearbyVacancies.length>0&&nearbyVacancies.every(([f,k])=>career.capacity(jobArgs(h,f,g,k))===0);
-   const reason=!jobs.length?'noJobs':!anySlots?'qualification':!anyVacancy&&[...vacantRoles].some(k=>!can.has(k))?'qualification':!local?'unreachable':noExperience?'experience':'competition';
+   const reason=!jobs.length?'noJobs':!anySlots?'qualification':!anyVacancy&&[...vacantRoles].some(k=>!can.has(k))?'qualification':!local?'unreachable':noExperience?'experience':noCommuteSeat?'capacity':'competition';
    r.waitingReasons[reason]+=h.free[g];
   }
   for(const k of homeFields)if(Object.hasOwn(t,k))t[k]+=r[k];
