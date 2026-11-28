@@ -187,7 +187,7 @@
       }else if(!all&&v.sq<min){min=v.sq;best={edge:e,t:v.t,offset:Math.sqrt(v.sq)};}
     }
     if(graph.attached.size>20000)graph.attached.clear();
-    const result=all?[...byComponent.values()]:best;
+    const result=all?[...byComponent.values()].sort((a,b)=>a.sq-b.sq||String(a.edge.id).localeCompare(String(b.edge.id))):best;
     graph.attached.set(key,result);return result;
   }
   function distances(graph,entry,limit){
@@ -236,7 +236,7 @@
       const distance=segmentDistance(model,entry),strength=signal(distance,model.range);
       if(strength)options.push({model,distance,strength});
     }
-    options.sort((a,b)=>a.distance-b.distance||(String(a.model.id)<String(b.model.id)?-1:1));
+    options.sort((a,b)=>a.model.priority-b.model.priority||a.distance-b.distance||(String(a.model.id)<String(b.model.id)?-1:1));
     return options;
   }
   function lotLoad(lot,type){
@@ -249,8 +249,10 @@
     const util=state&&Array.isArray(state.lines)?state:create(),settings={...defaults,...raw};
     const lotDistance=numeric(raw.lotDistance??raw.serviceDistance,48,400),sourceDistance=numeric(settings.sourceDistance,48,400);
     const disabled=setFrom(settings.disabledLines),offline=setFrom(settings.offlineSources);
-    const city=civic?.civic||civic||{},lotsInput=Array.isArray(city.lots)?city.lots:[],sourcesInput=Array.isArray(city.services)?city.services:[];
-    const lots=Object.create(null),sources=Object.create(null),lines=Object.create(null),details=Object.create(null),types={},network={},modelsByType={};
+    const city=civic?.civic||civic||{},lotsInput=Array.isArray(city.lots)?city.lots:[];
+    const synthetic=Array.isArray(settings.syntheticSources)?settings.syntheticSources.slice(0,400).map(x=>({...x,synthetic:true})):[];
+    const sourcesInput=[...(Array.isArray(city.services)?city.services:[]),...synthetic];
+    const lots=Object.create(null),sources=Object.create(null),lines=Object.create(null),details=Object.create(null),types={},network={},modelsByType={},componentDemand={water:Object.create(null),power:Object.create(null)};
     for(const lot of lotsInput){if(lot&&lot.id!=null){lots[lot.id]={water:0,power:0};details[lot.id]={};}}
     for(const line of util.lines)if(line&&line.id!=null&&hasType(line.type))lines[line.id]={type:line.type,connected:false,strength:0,disabled:disabled.has(line.id),length:0};
     let maintenance=0;
@@ -260,13 +262,17 @@
       const models=[];
       for(const station of sourcesInput){
         if(!station||station.type!==type||station.id==null)continue;
-        const p=point(station), entry=p?attach(graph,p,sourceDistance):null, pct=clamp(validNumber(city.budgets?.[type])?city.budgets[type]/100:1,0,1.5);
-        const ready=entry&&pct>0&&!offline.has(station.id),cap=numeric(settings.capacity?.[type],def.capacity)*pct;
-        const source={id:station.id,type,active:!!ready,connected:!!entry,capacity:ready?cap:0,requested:0,used:0,reason:ready?'运营中':pct===0?'运营预算为零':offline.has(station.id)?'设施停运':'未接入同类型线路'};
+        const p=point(station),entry=p?attach(graph,p,sourceDistance):null,override=station.synthetic?station:settings.sourceOverrides?.[station.id];
+        const pct=clamp(validNumber(city.budgets?.[type])?city.budgets[type]/100:1,0,1.5);
+        const priority=validNumber(override?.priority)?clamp(override.priority,-100,100):8;
+        const cap=validNumber(override?.capacity)?clamp(override.capacity,0,20000):numeric(settings.capacity?.[type],def.capacity)*pct;
+        const ready=entry&&cap>0&&!offline.has(station.id),component=entry?String(graph.components[entry.edge.u]):null;
+        const source={id:station.id,type,active:!!ready,connected:!!entry,component,capacity:ready?cap:0,requested:0,used:0,reason:ready?'运营中':offline.has(station.id)?'设施停运':entry?'容量为零或待机':'未接入同类型线路'};
         sources[station.id]=source;summary.count++;
         if(!ready)continue;
-        const range=numeric(settings.range?.[type],def.range)*Math.min(1.14,.74+pct*.26);
-        models.push({id:station.id,entry,route:distances(graph,entry,range),range,cap,stats:source});
+        const range=validNumber(override?.range)?clamp(override.range,1,1800):numeric(settings.range?.[type],def.range)*Math.min(1.14,.74+pct*.26);
+        source.range=range;
+        models.push({id:station.id,entry,route:distances(graph,entry,range),priority,range,cap,stats:source});
         summary.capacity+=cap;
         summary.active++;
       }
@@ -274,10 +280,12 @@
       for(const lot of lotsInput){
         if(!lot||lot.id==null)continue;
         const p=point(lot),entries=p?attach(graph,p,lotDistance,true):[];
-        const demand=lotLoad(lot,type),options=findOptions(graph,entries,models);
-        const primary=options[0],entry=entries.length>0;
+        const eligible=settings.strictComponents&&entries.length?entries.filter(x=>graph.components[x.edge.u]===graph.components[entries[0].edge.u]):entries;
+        const demand=lotLoad(lot,type),options=findOptions(graph,eligible,models);
+        const primary=options[0],entry=entries.length>0,part=entry?String(graph.components[entries[0].edge.u]):null;
+        if(part!==null)componentDemand[type][part]=(componentDemand[type][part]||0)+demand;
         if(primary)primary.model.stats.requested+=demand;
-        prepared.push({id:lot.id,entry,demand,options,assigned:0,score:0,sourceId:primary?.model.id??null,distance:primary?.distance??null});
+        prepared.push({id:lot.id,entry,part,demand,options,assigned:0,score:0,sourceId:primary?.model.id??null,distance:primary?.distance??null});
         summary.demand+=demand;
         if(entry)summary.connectedLots++;
       }
@@ -296,9 +304,11 @@
           const n=Math.min(need,spare);
           item.assigned+=n;item.score+=n*alt.strength;alt.model.stats.used+=n;
         }
-        const strength=clamp(item.score/item.demand);
+        const rawQuality=type==='water'&&item.part!==null?settings.quality?.water?.[item.part]:null;
+        const quality=validNumber(rawQuality)?clamp(rawQuality):1;
+        const strength=clamp(item.score/item.demand)*quality;
         lots[item.id][type]=strength;
-        details[item.id][type]={strength,connected:!!item.entry,sourceId:item.sourceId,distance:item.distance,reliability:clamp(item.assigned/item.demand),
+        details[item.id][type]={strength,quality,component:item.part,connected:!!item.entry,sourceId:item.sourceId,distance:item.distance,reliability:clamp(item.assigned/item.demand),
           reason:!item.entry?'未接入线路':!item.options.length?'线路未接到有效设施或超出输配范围':item.assigned/item.demand<.98?'设施容量不足':'正常供给'};
         summary.supplied+=item.assigned;
         if(strength>=.25)summary.reliableLots++;
@@ -323,7 +333,7 @@
       maintenance+=summary.maintenance;
       types[type]=summary;modelsByType[type]=models;network[type]=graph;
     }
-    return {lots,details,sources,lines,types,network,models:modelsByType,lotDistance,maintenance};
+    return {lots,details,sources,lines,types,network,componentDemand,models:modelsByType,lotDistance,maintenance};
   }
   function at(metrics,type,p){
     if(!hasType(type)||!metrics?.network?.[type])return 0;
@@ -331,5 +341,27 @@
     const graph=metrics.network[type],entries=attach(graph,q,metrics.lotDistance,true);
     return findOptions(graph,entries,metrics.models[type]).reduce((max,o)=>Math.max(max,o.strength*o.model.pressure),0);
   }
-  return {create,restore,quote,add,remove,bootstrap,isManaged,setManaged,evaluate,at,TYPES};
+  function connections(result,p,type,radius=48){
+    if(!hasType(type)||!result?.network?.[type]||!point(p))return [];
+    const net=result.network[type],hits=attach(net,point(p),clamp(radius,1,100),true),seen=new Set(),out=[];
+    for(const x of hits){const component=String(net.components[x.edge.u]);if(!seen.has(component)){seen.add(component);out.push({component,distance:x.offset,lineId:x.edge.id});}}
+    return out;
+  }
+  const routeTrees=new WeakMap();
+  function routeDistance(result,a,b,type,component=null){
+    const graph=result?.network?.[type];if(!graph||!point(a)||!point(b))return Infinity;
+    const filter=z=>component==null||String(graph.components[z.edge.u])===String(component);
+    const from=attach(graph,point(a),48,true).filter(filter),to=attach(graph,point(b),48,true).filter(filter);
+    if(!from.length||!to.length)return Infinity;
+    if(!routeTrees.has(graph))routeTrees.set(graph,new Map());
+    const cache=routeTrees.get(graph);
+    return Math.min(...from.map(entry=>{
+      const targets=to.filter(x=>graph.components[x.edge.u]===graph.components[entry.edge.u]);if(!targets.length)return Infinity;
+      const key=entry.edge.u+'|'+entry.edge.v+'|'+entry.t;
+      if(!cache.has(key)){if(cache.size>=600)cache.clear();cache.set(key,distances(graph,entry,1800));}
+      const model={entry,route:cache.get(key)};
+      return Math.min(...targets.map(x=>segmentDistance(model,x)));
+    }));
+  }
+  return {create,restore,quote,add,remove,bootstrap,isManaged,setManaged,evaluate,connections,routeDistance,at,TYPES};
 });

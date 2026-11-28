@@ -952,6 +952,25 @@
        }
       }
 
+      for(const v of array(city.gridSites)){
+        const d=globalThis.GridResilience?.TYPES[v.kind];if(!d)continue;
+        const w=d.width,h=d.depth,l=v.x-w/2,t=v.y-h/2,sel=selected.grid===v.id;
+        if(v.x<left-30||v.x>right+30||v.y<top-30||v.y>bottom+30)continue;
+        shape(c,[{x:l,y:t},{x:l+w,y:t},{x:l+w,y:t+h},{x:l,y:t+h}],d.color,sel?'#ffe8a3':'#475c62',1);
+        if(v.kind==='solar'){
+         for(const x of [l+3,l+w/2+1])for(const y of [t+3,t+h/2+1]){c.fillStyle='#425980';c.fillRect(x,y,w*.38,h*.32);c.strokeStyle='#99bad0';c.lineWidth=.5;c.strokeRect(x,y,w*.38,h*.32);}
+        }else if(v.kind==='wind'){
+         for(let i=0;i<3;i++){const a=i*2*Math.PI/3;line(c,[{x:v.x,y:v.y},{x:v.x+8*Math.cos(a),y:v.y+8*Math.sin(a)}],'#eaf1ed',1.2);}
+         circle(c,v.x,v.y,1.5,'#f2e9cf','#718889',.4);
+        }else if(['reservoir','treatment'].includes(v.kind)){
+         circle(c,v.x-w*.18,v.y,Math.min(w,h)*.22,'#73c0d7','#496f7e',.8);
+         circle(c,v.x+w*.18,v.y,Math.min(w,h)*.22,'#86d8ca','#496f7e',.8);
+        }else{
+         c.fillStyle='#4d65795f';c.fillRect(l+3,t+3,w-6,h-6);
+         line(c,[{x:l+4,y:v.y},{x:l+w-4,y:v.y}],'#ebedcf',1.15);
+        }
+        if(overlay==='gridLife')label(c,d.type==='power'?'电':'水',v.x,v.y+2,6,'#173444',850);
+      }
       for(const v of array(city.campus)){
         const d=globalThis.CampusLife?.ASSETS[v.type];if(!d)continue;
         if(v.x<left-25||v.x>right+25||v.y<top-25||v.y>bottom+25)continue;

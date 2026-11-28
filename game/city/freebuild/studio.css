@@ -140,3 +140,7 @@
 #works-dialog{width:min(660px,calc(100vw - 28px));max-height:calc(100dvh - 26px);overflow:auto;overscroll-behavior:contain}
 #works-dialog section{border-top:1px solid #bccfcb77;margin-block:14px;padding-top:8px}
 #works-dialog h3{margin-block:3px 8px}#works-waste-sites li+li{margin-block-start:.35rem}
+
+#grid-dialog{width:min(650px,calc(100vw - 28px));max-height:calc(100dvh - 26px);overflow:auto;overscroll-behavior:contain}
+#grid-dialog section{border-top:1px solid #bccfcb77;margin-block:14px;padding-block-start:8px}
+#grid-dialog h3{margin-block:3px 8px}

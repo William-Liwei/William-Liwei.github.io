@@ -510,6 +510,30 @@ class City3D{
    for(const b of list(z.buildings)){if(xy(b))mark(b,8);this.building(mesh,b,z.type);}
   }
   if(!zones.length)for(const b of list(world.buildings)){if(xy(b))mark(b,8);this.building(mesh,b,b.type);}
+  for(const a of list(world.gridSites)){
+   const d=rootSpec('GridResilience','TYPES',a.kind);if(!d||!xy(a))continue;
+   const x=a.x,y=a.y,w=d.width,h=d.depth,z=this.surface(a),c=color(d.color),steel=color('#b7c0bd'),glass=color('#567893');
+   mark(a,Math.max(w,h)*.62);plate(mesh,corners(x,y,w,h,0),p=>this.surface(p)+.19,dark(c,.72));
+   if(a.kind==='solar'){
+    for(const i of [-1,1])for(const j of [-1,1]){
+     const xx=x+i*w*.22,yy=y+j*h*.24;box(mesh,xx,yy,.7,.65,z+.2,z+1.8,steel,0,c);
+     box(mesh,xx,yy,w*.4,h*.34,z+1.8,z+2.25,glass,0,color('#536c91'));
+    }
+   }else if(a.kind==='wind'){
+    cylinder(mesh,x,y,1.0,z,z+18,steel,undefined,9,.38);
+    box(mesh,x,y,2.6,1.3,z+16.8,z+18.2,dark(steel,.85),0,c);
+    for(let i=0;i<3;i++){const a=i*Math.PI*2/3+.2;
+     const xx=x+3*Math.cos(a),zz=z+17+3*Math.sin(a);
+     box(mesh,xx,y-.75,Math.abs(Math.cos(a))*7+.45,.45,zz-Math.abs(Math.sin(a))*3-.3,zz+Math.abs(Math.sin(a))*3+.3,steel,0,color('#e8e9db'));
+    }
+   }else if(a.kind==='reservoir'||a.kind==='treatment'){
+    for(const i of [-1,1])cylinder(mesh,x+i*w*.20,y,Math.min(w,h)*.23,z+.20,z+(a.kind==='reservoir'?3.8:2.4),glass,color('#a6decf'),14,.72);
+   }else{
+    box(mesh,x,y,w*.79,h*.79,z+.19,z+4.1,dark(c,.74),0,c);
+    for(const i of [-1,0,1])box(mesh,x+i*w*.185,y-2,2.15,2.2,z+4,z+4.55,steel,0,glass);
+    if(a.kind==='backup')cylinder(mesh,x+w*.21,y+h*.19,1,z+4,z+8.7,glass,undefined,8,.45);
+   }
+  }
   for(const a of list(world.campus)){
    const d=rootSpec('CampusLife','ASSETS',a.type);if(!d||!xy(a))continue;
    const x=a.x,y=a.y,w=d.width,h=d.depth,base=this.baseFor(x,y,w,h,0),z=base.hi,col=color(d.color),glass=color('#7796a5'),cream=color('#e3d5ac');
