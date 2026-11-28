@@ -117,6 +117,7 @@
  }
  function evaluate(civic,fiscal={},supply={}){
   const city=civic?.civic||civic||{}, raw=Array.isArray(city.lots)?city.lots:[];
+  const reserve=id=>Math.max(0,num(supply.reserve?.[id]));
   const market={},firms=[],lots={},sectors={},gross=Object.fromEntries(Object.entries(supply.local||{}).filter(([id,n])=>OWN(PRODUCTS,id)&&Number.isFinite(n)&&n>=0));
   for(const def of Object.values(PRODUCTS))market[def.id]={...def,output:0,demand:0,firmDemand:0,householdDemand:0,local:0,imports:0,exports:0,shortage:0,surplus:0,fill:1};
   const totals={population:0,households:0,workers:0,jobs:0,occupiedJobs:0,output:0,demand:0,shortage:0,outputValue:0,importsValue:0,exportsValue:0,tax:0,nominalTax:0,taxAdjustment:0,tradeAdjustment:0,netAdjustment:0};
@@ -140,7 +141,7 @@
     totals.occupiedJobs+=staff;totals.nominalTax+=nominal;
     if(people>0){
       const taste=def.id==='affordable_homes'?.9:def.id==='highrise_living'?1.12:1;
-      sumEntries(householdDemand,row.demand,people*taste);
+      for(const [id,units] of Object.entries(householdDemand))row.demand[id]=people*taste*units*clamp(num(supply.householdScale?.(l,id),1),.35,2.4);
       for(const [id,n] of Object.entries(row.demand))market[id].householdDemand+=n;
     }
     if(staff>0){
@@ -157,7 +158,7 @@
   for(const f of firms){
     let reliability=1;
     for(const id of Object.keys(f.row.inputs)){
-      const need=market[id].demand,available=(gross[id]||0)+externalLimit(supply,id,Math.max(0,need-(gross[id]||0)));
+      const need=market[id].demand,availableLocal=(gross[id]||0)+reserve(id),available=availableLocal+externalLimit(supply,id,Math.max(0,need-availableLocal));
       if(need>0)reliability=Math.min(reliability,clamp(available/need));
     }
     f.row.inputReliability=reliability;
@@ -167,8 +168,10 @@
   }
   for(const [id,m] of Object.entries(market)){
     m.output=gross[id]||0;
-    m.local=Math.min(m.demand,m.output);
-    m.imports=Math.min(Math.max(0,m.demand-m.output),externalLimit(supply,id,Math.max(0,m.demand-m.output)));
+    m.reserveUsed=Math.min(reserve(id),Math.max(0,m.demand-m.output));
+    m.local=Math.min(m.demand,m.output)+m.reserveUsed;
+    const deficit=Math.max(0,m.demand-m.local);
+    m.imports=Math.min(deficit,externalLimit(supply,id,deficit));
     m.shortage=Math.max(0,m.demand-m.local-m.imports);
     const left=Math.max(0,m.output-m.demand);
     m.exports=Math.min(left,exportLimit(supply,id,left));
@@ -219,7 +222,7 @@
      let marketSignal=0;
      for(const id of Object.keys(d.products)){
        const m=snapshot.products?.[id];
-       if(m)marketSignal+=clamp((num(m.shortage)-num(m.surplus)*.45)/Math.max(22,num(m.demand)),-.28,.82);
+       if(m)marketSignal+=clamp((num(m.shortage)-num(m.surplus)*.45)/Math.max(22,num(m.demand))+.21*(num(supply.priceIndex?.[id],1)-1),-.28,.82);
      }
      marketSignal/=Math.max(1,Object.keys(d.products).length);
      // Construction still starts under scarce inputs, but shortages reward

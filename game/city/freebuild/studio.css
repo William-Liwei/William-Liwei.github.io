@@ -92,3 +92,7 @@
 #budget-dialog{max-height:min(88dvh,860px);overflow:auto}
 #cash-runway{margin:2px 0 0;padding:1px 4px;border-radius:4px;font-size:10px;color:#ffcc9b;background:#4b3525;white-space:nowrap}
 #cash-runway[data-severity=critical]{color:#ffc6ad;background:#55332e}
+#market-dialog{width:min(96vw,475px);max-height:88dvh;overflow:auto}
+.market-block{padding:.65rem;border:1px solid #3c5860;border-radius:.6rem;margin:.65rem 0}
+.market-block h3{font-size:14px;margin:.1rem 0 .45rem}
+.market-block .line span:last-child{font-variant-numeric:tabular-nums}
