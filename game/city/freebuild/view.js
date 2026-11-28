@@ -26,7 +26,8 @@
   const cl = (v,lo,hi) => Math.max(lo,Math.min(hi,v));
   const array = v => Array.isArray(v) ? v : v instanceof Map ? [...v.values()] : v && typeof v === 'object' ? Object.values(v) : [];
   const tierRise = (tier,type) => tier===1?0:tier*(type==='office'?2:1);
-  const riverX = y => 600 + 45*Math.sin(y/115);
+  const riverX = y => globalThis.CityMaps?.center(y)??(600 + 45*Math.sin(y/115));
+  const riverW = y => globalThis.CityMaps?.width(y)??35;
   const point = p => Array.isArray(p) ? {x:+p[0]||0,y:+p[1]||0,z:+p[2]||0} : {x:+p.x||0,y:+p.y||0,z:+p.z||0};
   const p3 = p => ({x:p.x,y:p.y-(p.z||0)*0.76});
   const kind = z => ({r:'residential',c:'commercial',i:'industrial',o:'office',R:'residential',C:'commercial',I:'industrial',O:'office',housing:'residential',industry:'industrial'}[z]||z||'residential');
@@ -105,13 +106,13 @@
     paintGround(ctx,w,h) {
       if(!ctx) return;
       const ground=ctx.createLinearGradient(0,0,w,h);
-      ground.addColorStop(0,'#a8bb97');ground.addColorStop(.45,'#bfd0a8');ground.addColorStop(1,'#adbf9b');
+      const colors=globalThis.CityMaps?.current().color||['#a8bb97','#bfd0a8','#adbf9b'];ground.addColorStop(0,colors[0]);ground.addColorStop(.45,colors[1]);ground.addColorStop(1,colors[2]);
       ctx.fillStyle=ground;ctx.fillRect(0,0,w,h);
       // Fields, contours and individual crowns are fixed by world coordinates.
       for(let i=0;i<34;i++){
         const x=hash(i,1)*w,y=hash(i,2)*h;
         const clear=86+hash(i,3)*130;
-        if (Math.abs(x-riverX(y))<72) continue;
+        if (Math.abs(x-riverX(y))<riverW(y)+37) continue;
         ctx.save();ctx.translate(x,y);ctx.rotate((hash(i,4)-.5)*1.2);
         const g=ctx.createRadialGradient(0,0,0,0,0,clear);
         g.addColorStop(0,i%3?'#647e5724':'#e8e2ae40');g.addColorStop(1,'#ffffff00');
@@ -124,7 +125,7 @@
       }
       for(let y=0;y<h;y+=11)for(let x=0;x<w;x+=11){
         const tx=x+5*hash(x,y,1),ty=y+8*hash(x,y,2),dx=Math.abs(tx-riverX(ty));
-        if(dx<48)continue;
+        if(dx<riverW(ty)+13)continue;
         const wood=(Math.sin(x/97+y/63)+Math.cos(x/60-y/98))*.35+.52;
         const p=hash(x,y,3);
         if(p<wood*.22&&(x<205||x>930||y<110||y>690||p<.027)){
@@ -138,7 +139,7 @@
       }
       const shore=(left, right) => {
         const a=[],b=[];
-        for(let y=-12;y<=h+12;y+=5){const x=riverX(y);a.push({x:x-left,y});b.push({x:x+right,y});}
+        for(let y=-12;y<=h+12;y+=5){const x=riverX(y);a.push({x:x-left-riverW(y)+35,y});b.push({x:x+right+riverW(y)-35,y});}
         return a.concat(b.reverse());
       };
       shape(ctx,shore(46,46),'#cbd2ab');
@@ -148,19 +149,21 @@
       shape(ctx,shore(35,35),water);
       for (const side of [-1,1]){
         for(let off=0;off<3;off++){
-          const pts=[];for(let y=0;y<=h;y+=5)pts.push({x:riverX(y)+(33-off*3)*side,y});
+          const pts=[];for(let y=0;y<=h;y+=5)pts.push({x:riverX(y)+(riverW(y)-2-off*3)*side,y});
           line(ctx,pts,off===0?'#b1d3c4a6':'#b3d5c345',off===0?1.8:1);
         }
       }
       for(let i=0;i<420;i++){
-        const y=hash(i,25)*h,x=riverX(y)+(hash(i,26)-.5)*56, len=2+hash(i,27)*6;
+        const y=hash(i,25)*h,x=riverX(y)+(hash(i,26)-.5)*(riverW(y)*1.6), len=2+hash(i,27)*6;
         line(ctx,[{x,y},{x:x+len*.3,y:y+len}],'#d0e5db42',.7);
       }
+      const ridge=globalThis.CityMaps?.current().ridge;
+      if(ridge){for(let y=0;y<h;y+=8)for(let x=0;x<w;x+=8){const z=ridge({x,y});if(z>.24){ctx.fillStyle=z>.64?'#535e48a0':z>.43?'#72835b65':'#8b956841';ctx.fillRect(x,y,8,8);}}label(ctx,'青岭保护山脊',150,176,12,'#edf5d7');label(ctx,'南岭保护山脊',1050,610,12,'#edf5d7');}
       // Fine coordinate grid, useful while tracing parcels and curves.
       for(let x=0;x<w;x+=80) line(ctx,[{x,y:0},{x,y:h}],'#30483b11',.65,[2,4]);
       for(let y=0;y<h;y+=80) line(ctx,[{x:0,y},{x:w,y}],'#30483b11',.65,[2,4]);
       ctx.save();ctx.translate(riverX(657)-1,655);ctx.rotate(1.43);
-      label(ctx,'Y U N  R I V E R',0,0,9,'#f1faf0b9',700);ctx.restore();
+      label(ctx,globalThis.CityMaps?.current().nameWater||'弯湾河',0,0,9,'#f1faf0b9',700);ctx.restore();
       label(ctx,'西岸  /  WEST BANK',153,125,9,'#526c56b8',700);
       label(ctx,'东岸  /  EAST BANK',1010,677,9,'#526c56b8',700);
       line(ctx,[{x:0,y:h-1},{x:w,y:h-1},{x:w,y:1},{x:0,y:1},{x:0,y:h-1}],'#f6f5d357',1.4);
@@ -195,7 +198,7 @@
           if(buried){
             line(c,run,selected?'#ffffdacc':overlay==='elevation'?'#aa73d8':'#c6d2cc65',selected?7:5.5,[5,4]);
             line(c,run,'#364d578c',selected?2.8:1.9,[4,4]);
-            for(const p of [run[0],run.at(-1)])if(!pts.every(p=>(p.z||0)<-3)&&Math.abs(p.x-riverX(p.y))>36)circle(c,p.x,p.y,3.2,'#4d5f5b','#dae3cd',.85);
+            for(const p of [run[0],run.at(-1)])if(!pts.every(p=>(p.z||0)<-3)&&Math.abs(p.x-riverX(p.y))>riverW(p.y)+1)circle(c,p.x,p.y,3.2,'#4d5f5b','#dae3cd',.85);
           }else this.paintRoad(c,e,run,overlay,value,selected);
         }
         return;
@@ -203,12 +206,12 @@
       const draw=pts.map(p3);
       const highway=e.kind==='highway', ramp=e.kind==='ramp';
       const width=cl(+e.lanes||2,1,8)*(highway?3.8:3.35)+(highway?5.8:ramp?2.5:4.5);
-      const bridge=pts.some(p=>(p.z||0)>4)||pts.some(p=>Math.abs(p.x-riverX(p.y))<34);
+      const bridge=pts.some(p=>(p.z||0)>4)||pts.some(p=>Math.abs(p.x-riverX(p.y))<riverW(p.y)-1);
       if (bridge) {
         line(c,draw.map((v,i)=>({x:v.x+2,y:pts[i].y+2})),'#25404366',width+5);
         // Piers are anchored to the ground while the deck uses its real height.
         for(let k=.14;k<.95;k+=.18){
-          const p=sample(pts,k);if((p.z||0)<3&&Math.abs(p.x-riverX(p.y))>31)continue;
+          const p=sample(pts,k);if((p.z||0)<3&&Math.abs(p.x-riverX(p.y))>riverW(p.y)-4)continue;
           const deck=p3(p);
           line(c,[{x:p.x,y:p.y+2},{x:deck.x,y:deck.y}],'#617f76',Math.max(2.5,width*.23));
           circle(c,p.x,p.y+2,Math.max(1.7,width*.11),'#576d62');
@@ -510,7 +513,28 @@
       label(c,sign,badgeX,badgeY,model?5.7:9.3,'#fff9e6',800);
     }
     paintAgent(c, a) {
-      if(!valid(a.x)||!valid(a.y)||(a.z||0)<-3)return;
+      if(!valid(a.x)||!valid(a.y)||((a.z||0)<-3&&!a.underground))return;
+      const specialized=['train','metro','tram','ferry','ship','plane','cargoPlane','truck'].includes(a.kind);
+      if(specialized){
+        if(a.underground&&this.activeOverlay!=='routes'&&this.activeOverlay!=='elevation')return;
+        const p=p3({...a,z:a.underground?0:a.z});c.save();c.translate(p.x,p.y);c.rotate(a.angle||0);
+        const col=a.color||({train:'#8952b3',metro:'#7765d4',tram:'#ecab49',ferry:'#e8e8dc',ship:'#4f6a9d',plane:'#e5efe8',cargoPlane:'#e2af72',truck:'#b96849'})[a.kind];
+        c.fillStyle=col;c.strokeStyle='#2a3f46';c.lineWidth=.55;
+        if(a.kind==='plane'||a.kind==='cargoPlane'){
+          shape(c,[{x:-12,y:-1},{x:-4,y:-1.6},{x:-6,y:-8},{x:-3,y:-8},{x:3,y:-1.5},{x:10,y:-1.2},{x:13,y:0},{x:10,y:1.2},{x:3,y:1.5},{x:-3,y:8},{x:-6,y:8},{x:-4,y:1.6},{x:-12,y:1}],col,'#455965',.8);
+        }else if(a.kind==='ferry'||a.kind==='ship'){
+          const n=a.kind==='ship'?13:8;line(c,[{x:-n-11,y:-4},{x:-n,y:-2}],'#eeeecb78',.7);line(c,[{x:-n-11,y:4},{x:-n,y:2}],'#eeeecb78',.7);
+          shape(c,[{x:-n,y:-3.6},{x:n-3,y:-3.2},{x:n,y:0},{x:n-3,y:3.2},{x:-n,y:3.6}],col,'#354958',.7);
+          for(let x=-n+2;x<n-3;x+=4){c.fillStyle=a.kind==='ship'?(x%3?'#d29376':'#aecaAD'):'#40838a';c.fillRect(x,-2,3,4);}
+        }else {
+          const n=a.kind==='train'?13:a.kind==='truck'?6.5:8;
+          c.fillStyle='#162b2f55';c.fillRect(-n,-1.5,n*2+1,4);
+          c.fillStyle=col;c.fillRect(-n,-2.25,n*2,4.5);
+          c.fillStyle='#355562';c.fillRect(n-3,-1.7,2.1,3.4);
+          for(let x=-n+3;x<n-4;x+=4){c.fillStyle='#bbcacf';c.fillRect(x,-1.2,2,2.4);}
+        }
+        c.restore();return;
+      }
       const p=p3(a), style=a.kind??a.type, bus=style==='bus', walking=['walk','pedestrian','walker'].includes(style);
       if(walking) {
         const f=Number.isFinite(a.phase)?Math.sin(a.phase):0;
@@ -579,7 +603,7 @@
       const d=this.dpr,w=this.worldWidth,h=this.worldHeight;
       const camera=this.camera={x:opts.camera?.x??w/2,y:opts.camera?.y??h/2,zoom:cl(opts.camera?.zoom??1,.15,8)};
       const t=valid(timeMs)?Math.max(0,timeMs):typeof performance==='object'?performance.now():Date.now();
-      const overlay=opts.overlay??'none', metrics=opts.metrics??city.metrics??{}, selected=opts.selected||{};
+      const overlay=this.activeOverlay=opts.overlay??'none', metrics=opts.metrics??city.metrics??{}, selected=opts.selected||{};
       if(this.latestCity!==city){
       const civic=city.civic??city;
       const nodes=Object.fromEntries(array(city.nodes).map(p=>[String(p.id),point(p)]));
@@ -609,10 +633,15 @@
       c.save();c.translate(this.width/2,this.height/2);c.scale(camera.zoom,camera.zoom);c.translate(-camera.x,-camera.y);
       if(this.terrain)c.drawImage(this.terrain,0,0);else this.paintGround(c,w,h);
       c.save();c.beginPath();c.rect(0,0,w,h);c.clip();
+      const districtList=array(city.districts), transit=city.transit||{};
+      if(districtList.length)for(const d of districtList){
+        const item=globalThis.Districts?.TYPES[d.type],active=overlay==='districts'||overlay==='resources'||selected.district===d.id;
+        if(item)shape(c,d.points,item.color+(active?'7a':'38'),item.color+(active?'ff':'a6'),active?1.8:.8);
+      }
       this.paintZones(c,zones,overlay,selected);
       const field=metrics.coverageGrid;
       if(field?.key===overlay){
-        const shade=SERVICE[overlay]?.[0]||'#2d97b1';
+        const shade=overlay==='resources'?'#bc8642':SERVICE[overlay]?.[0]||'#2d97b1';
         c.save();c.fillStyle=shade;
         for(const v of field.cells){c.globalAlpha=.09+v.strength*.52;c.fillRect(v.x-6,v.y-6,12,12)}
         c.restore();
@@ -625,9 +654,30 @@
       const top=camera.y-this.height/2/camera.zoom-44,bottom=camera.y+this.height/2/camera.zoom+44;
       for(const [i,e,pts,bb] of roads){
         if(bb.maxX<left||bb.minX>right||bb.maxY<top||bb.minY>bottom)continue;
+        const measured=metrics.queue?.edgeTraffic?.[e.id];
         const v=(load instanceof Map ? load.get(e.id) : typeof load==='number'?load:load[e.id]??load[i])??e.traffic??e.load??0;
-        this.paintRoad(c,e,pts,overlay,v?.ratio??v?.congestion??v,selected.edge===e.id||selected.type==='edge'&&selected.id===e.id);
+        this.paintRoad(c,e,pts,overlay,Math.max(v?.ratio??v?.congestion??v,typeof measured==='number'?measured:0),selected.edge===e.id||selected.type==='edge'&&selected.id===e.id);
         if((metrics.closed||[]).includes(e.id)){line(c,pts.map(p3),'#ee9571',2.5,[5,4]);const q=p3(sample(pts,.5));circle(c,q.x,q.y,5,'#9b452e','#ffd7ba',1.2);label(c,'×',q.x,q.y+.1,7,'#fff0db',850);}
+      }
+      if(overlay==='water'||overlay==='power'){
+        const color=overlay==='water'?'#2682ca':'#edb33f';
+        for(const u of array(city.utilities).filter(l=>l.type===overlay)){
+          const d=metrics.utilityMetrics?.lines?.[u.id];line(c,u.points,'#2b444390',5);line(c,u.points,d?.connected?color:'#9b6968',selected.utility===u.id?4:2.4,d?.connected?[]:[4,3]);
+        }
+      }
+      const routeLayer=overlay==='routes'||overlay==='connections'||overlay==='elevation';
+      for(const q of array(transit.tracks)){const mode=globalThis.Transit?.MODES[q.mode];if(!mode||q.mode==='metro'&&!routeLayer)continue;const ps=q.mode==='metro'?q.points:q.points.map(p3);
+        line(c,ps,'#f1ebefd0',5);line(c,ps,mode.color,2,q.mode==='metro'?[4,3]:[]);
+      }
+      if(routeLayer)for(const v of Object.values(metrics.transitMetrics?.lines||{}))if(v.valid){
+        let points=v.mode==='metro'?v.path:v.path.map(p3);line(c,points,v.color||'#7659a1',2.5,v.mode==='plane'||v.mode==='cargoPlane'?[11,7]:[6,5]);
+      }
+      if(overlay==='traffic'||overlay==='routes'){
+        for(const f of metrics.signals||[]){const n=nodes[f.node];if(!n)continue;const p=p3(n);circle(c,p.x+3,p.y-3,1.9,f.phase==='all-red'?'#f3987f':f.phase==='east-west'?'#90ed80':'#9bd5ff','#355c4c',.5);}
+      }
+      if(overlay==='connections'||opts.tool==='road'||opts.tool==='track'||opts.tool==='line'){
+        const all=overlay==='connections'?[...(city.roadGates||[]),...(city.transitGates||[])]:opts.tool==='road'?city.roadGates||[]:city.transitGates||[];
+        for(const g of all){const x=cl(g.x,10,w-10),y=cl(g.y,10,h-10);circle(c,x,y,5.3,'#efeac3','#426177',1.3);label(c,'↗',x,y,7,'#2c566a',850);if(overlay==='connections'||camera.zoom>1.25)label(c,g.name||g.id,cl(x,75,w-75),y+13,9,'#294652',780);}
       }
       if(overlay==='traffic' || overlay==='routes' || overlay==='transit'){
         for(const bus of busLines)for(const step of array(bus.path)){
@@ -643,6 +693,22 @@
         }
       }
       for(const s of sr)if(!field||field.key!==overlay||s.type===overlay)this.paintService(c,s,overlay==='zones'?'zones':'none',selected.service===s.id||selected.type==='service'&&selected.id===s.id,camera.zoom);
+      for(const s of array(transit.stations)){
+        const f=globalThis.Transit?.FACILITIES[s.type];if(!f)continue;
+        if(s.x<left||s.x>right||s.y<top||s.y>bottom)continue;
+        const x=s.x,y=s.y,r=cl(f.radius*.44,4,19),sel=selected.station===s.id;
+        if(f.runway){
+         shape(c,[{x:x-34,y:y-4},{x:x+34,y:y-4},{x:x+34,y:y+3},{x:x-34,y:y+3}],'#60656d','#f3edd9',.9);
+         line(c,[{x:x-33,y},{x:x+33,y}],'#fff6e4',.85,[5,3]);
+        }else if(f.shore){
+         shape(c,[{x:x-8,y:y+2},{x:x+24,y:y+2},{x:x+24,y:y+6},{x:x-8,y:y+6}],'#aa8f72','#ead1ae',.8);
+        }
+        const sy=y-(f.runway?10:0);
+        shape(c,[{x:x-r,y:sy+r*.55},{x:x+r,y:sy+r*.55},{x:x+r,y:sy+r*.24},{x:x-r,y:sy+r*.24}],'#525f63');
+        shape(c,[{x:x-r,y:sy+r*.24},{x:x+r,y:sy+r*.24},{x:x+r,y:sy-r*.68},{x:x-r,y:sy-r*.68}],f.color,sel?'#ffffcf':'#e9efdc',sel?2:1);
+        line(c,[{x:x-r*.77,y:sy-r*.08},{x:x+r*.77,y:sy-r*.08}],'#f0efe2',.8,[2,2]);
+        if(routeLayer||sel)label(c,f.name,x,sy-r-7,8,'#304d5b',800);
+      }
       this.paintVehicles(c,edges,busLines,ids,opts.agents??city.agents,t,load);
       const preview=opts.preview;
       const proposed=array(preview?.points??preview?.pts??preview?.poly??(Array.isArray(preview)?preview:null)).map(point).map(p3);

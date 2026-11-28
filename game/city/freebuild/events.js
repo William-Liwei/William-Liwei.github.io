@@ -5,7 +5,7 @@
 })(typeof globalThis==='object'?globalThis:this,function () {
   'use strict';
   const PERIOD=15, FORECAST=3, DURATION=2, SAFE_DECK=24;
-  const river=y=>600+45*Math.sin(y/115);
+  const river=y=>globalThis.CityMaps?.center(y)??(600+45*Math.sin(y/115));
   const offset=p=>p.x-river(p.y);
   const finitePoint=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&(p.z==null||Number.isFinite(p.z));
   const mix=(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:(a.z||0)+((b.z||0)-(a.z||0))*t});

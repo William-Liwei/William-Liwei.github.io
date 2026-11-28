@@ -1,11 +1,11 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>城市蓝图 · 自由路网</title><meta name="game-version" content="2.0.1"><link rel="stylesheet" href="studio.css?v=2.0.1"></head>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>城市蓝图 · 自由路网</title><meta name="game-version" content="2.0.1alpha"><link rel="stylesheet" href="studio.css?v=2.0.1alpha"></head>
 <body>
-<header><div class="brand"><span class="logo">▤</span><div><h1>城市蓝图</h1><p>自由路网 · 一河两岸</p></div></div><div class="kpis"><div><small>市库</small><strong id="cash">—</strong></div><div><small>人口</small><strong id="pop">—</strong></div><div><small>就业岗位</small><strong id="jobs">—</strong></div><div><small>月度结余</small><strong id="net">—</strong></div></div><div class="head-actions"><a id="hall" href="../index.html">大厅</a><button id="step">推进一月</button><button id="auto" aria-pressed="false">▶</button><button id="budget">财政</button><button id="files">存档</button></div></header>
+<header><div class="brand"><span class="logo">▤</span><div><h1>城市蓝图</h1><p>自由路网 · 一河两岸</p></div></div><div class="kpis"><div><small>市库</small><strong id="cash">—</strong></div><div><small>人口</small><strong id="pop">—</strong></div><div><small>就业岗位</small><strong id="jobs">—</strong></div><div><small>月度结余</small><strong id="net">—</strong></div></div><div class="head-actions"><a id="hall" href="../index.html">大厅</a><button id="step">推进一月</button><button id="auto" aria-pressed="false">▶</button><button id="budget">财政</button><button id="economy">产业</button><button id="files">存档</button></div></header>
 <main>
   <aside class="tools">
    <h2>建设工具</h2>
    <div class="tabs" id="tools">
-    <button data-tool="road" class="active">道路</button><button data-tool="upgrade">改造</button><button data-tool="bus">公交</button><button data-tool="frontage">沿街分区</button><button data-tool="polygon">多边形分区</button><button data-tool="service">公共服务</button><button data-tool="inspect">查阅</button><button data-tool="erase">拆除</button>
+    <button data-tool="road" class="active">道路</button><button data-tool="upgrade">改造</button><button data-tool="bus">公交</button><button data-tool="frontage">沿街分区</button><button data-tool="polygon">多边形分区</button><button data-tool="service">公共服务</button><button data-tool="inspect">查阅</button><button data-tool="erase">拆除</button><button data-tool="utility">水电</button><button data-tool="station">枢纽／车库</button><button data-tool="track">铺轨</button><button data-tool="line">客货线路</button><button data-tool="district">特别分区</button><button data-tool="signal">交通信号</button>
    </div>
    <div id="options"></div>
    <div id="tool-help" class="help"></div>
@@ -13,7 +13,7 @@
   </aside>
   <section class="map-area" aria-label="一河两岸地图">
    <canvas id="map" tabindex="0" aria-label="城市地图，使用建设工具并点击绘制"></canvas>
-   <div class="map-meta"><span>一河两岸</span><span id="month">第 1 月</span></div>
+   <div class="map-meta"><span id="map-name">一河两岸</span><span id="month">第 1 月</span></div>
    <div class="zoom"><button id="zoom-in" title="放大">+</button><button id="zoom-out" title="缩小">−</button><button id="pan" title="拖动地图" aria-pressed="false">✥</button><button id="home" title="还原视角">⌖</button></div>
    <section id="plan-review" hidden aria-labelledby="plan-title"><strong id="plan-title">待确认蓝图</strong><p id="plan-cost"></p><div><button id="plan-apply">确认施工</button><button id="plan-cancel">取消</button></div></section>
    <div id="notice" role="status" aria-live="polite"></div>
@@ -23,10 +23,11 @@
    <label for="layer" class="sr-only">地图图层</label><select id="layer"></select>
    <p id="legend" class="help"></p>
    <h2>城市经营</h2><div id="summary"></div>
-   <h2>城市事件</h2><p id="event-status" class="help"></p><h2>市政委托</h2><div id="contracts"></div><h2>月度复盘</h2><div id="history"></div><h2>规划检查</h2><div id="details" class="help">选择查阅并点击道路、建筑或设施。</div>
+   <h2>基础设施</h2><div id="regional"></div><h2>城市事件</h2><p id="event-status" class="help"></p><h2>市政委托</h2><div id="contracts"></div><h2>月度复盘</h2><div id="history"></div><h2>规划检查</h2><div id="details" class="help">选择查阅并点击道路、建筑或设施。</div>
   </aside>
 </main>
-<footer><span>v2.0.1 · 独立存档</span><span>滚轮缩放 · 右键拖动地图 · Esc 取消工具操作</span></footer>
+<footer><span>v2.0.1alpha · 独立存档</span><span>滚轮缩放 · 右键拖动地图 · Esc 取消工具操作</span></footer>
+<dialog id="economy-dialog"><h2>产业与产品</h2><p class="help">市场自行选择普通分区的业态。税率和政策会影响招商、用工和产量。</p><label class="field">行业<select id="sector-policy"></select></label><label class="field">扶持政策<select id="stance"><option value="encourage">鼓励</option><option value="neutral">中立</option><option value="discourage">抑制</option></select></label><label class="field">行业税率 %（留空使用市税）<input type="number" min="0" max="20" id="sector-tax"></label><button id="sector-apply">应用产业政策</button><div id="product-table"></div><button id="economy-close">关闭</button></dialog>
 <dialog id="budget-dialog"><h2>市政财政</h2><div id="budget-info"></div><label class="field">税率 %<input type="number" id="tax" min="5" max="16" step="1"></label><label class="field">公交班次<select id="frequency"><option value="normal">标准</option><option value="frequent">加密</option></select></label><p class="help">加密班次会吸引更多有线路可用的通勤者，但每条线路多花 ¥190／月。高税提高当期收入，但会压低企业和居民的开发需求。借款按月付息并自动还本金；提前还款可省利息。</p><div class="dialog-actions"><button id="tax-apply">应用政策</button><button id="loan-take">借款 ¥40,000</button><button id="loan-repay">提前还款</button><button id="budget-close">关闭</button></div></dialog>
 <dialog id="file-dialog"><h2>城市存档</h2><p>本版本独立保存，不读取或替换官网存档。导入只支持本版的文件。</p><button id="export">导出 JSON</button><label class="file-label">选择 JSON 导入<input type="file" accept="application/json,.json" id="import"></label><p id="file-status"></p><div class="dialog-actions"><button id="starter">载入示例城</button><button id="blank">清空重建</button><button id="close">关闭</button></div></dialog>
-<script src="network.js"></script><script src="civic.js?v=2.0.1"></script><script src="view.js?v=2.0.1"></script><script src="contracts.js"></script><script src="events.js?v=2.0.1"></script><script src="studio.js?v=2.0.1"></script></body></html>
+<script src="maps.js?v=2.0.1alpha"></script><script src="network.js?v=2.0.1alpha"></script><script src="utilities.js?v=2.0.1alpha"></script><script src="traffic.js?v=2.0.1alpha"></script><script src="outside.js?v=2.0.1alpha"></script><script src="transit.js?v=2.0.1alpha"></script><script src="economy.js?v=2.0.1alpha"></script><script src="districts.js?v=2.0.1alpha"></script><script src="civic.js?v=2.0.1alpha"></script><script src="view.js?v=2.0.1alpha"></script><script src="contracts.js?v=2.0.1alpha"></script><script src="events.js?v=2.0.1alpha"></script><script src="studio.js?v=2.0.1alpha"></script></body></html>

@@ -1,6 +1,6 @@
 (function(root,factory){let x=factory();if(typeof module==='object')module.exports=x;else root.Network=x})(globalThis,()=>{
 'use strict';
-const river=y=>600+45*Math.sin(y/115), water=p=>Math.abs(p.x-river(p.y))<35, dist=(p,q)=>Math.hypot(q.x-p.x,q.y-p.y), clamp=(x,a,b)=>Math.max(a,Math.min(b,x)), mix=(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:(a.z||0)+((b.z||0)-(a.z||0))*t});
+const river=y=>globalThis.CityMaps?.center(y)??(600+45*Math.sin(y/115)), water=p=>globalThis.CityMaps?.water(p)??(Math.abs(p.x-river(p.y))<35), dist=(p,q)=>Math.hypot(q.x-p.x,q.y-p.y), clamp=(x,a,b)=>Math.max(a,Math.min(b,x)), mix=(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:(a.z||0)+((b.z||0)-(a.z||0))*t});
 const profiles={r2:{name:'2 车道',lanes:2,speed:36},r3:{name:'3 车道',lanes:3,speed:40},r4:{name:'4 车道',lanes:4,speed:45},r6:{name:'6 车道',lanes:6,speed:53},r8:{name:'8 车道',lanes:8,speed:58},h4:{name:'4 车道高速',lanes:4,speed:82,kind:'highway'},h6:{name:'6 车道高速',lanes:6,speed:92,kind:'highway'},ramp:{name:'互通匝道',lanes:2,speed:44,kind:'ramp',oneway:true}};
 const create=()=>({nodes:[],edges:[],buses:[],next:1,cash:850000});
 const length=pts=>pts.slice(1).reduce((s,p,i)=>s+dist(p,pts[i]),0);
@@ -11,7 +11,7 @@ function plan(a,b,c=null){let pts=[],m=Math.max(2,Math.min(100,Math.ceil((c?dist
 function intersect(a,b,c,d){let vx=b.x-a.x,vy=b.y-a.y,wx=d.x-c.x,wy=d.y-c.y,den=vx*wy-vy*wx;if(Math.abs(den)<1e-7)return null;let x=c.x-a.x,y=c.y-a.y,t=(x*wy-y*wx)/den,u=(x*vy-y*vx)/den;return t>=-1e-7&&t<=1.0000001&&u>=-1e-7&&u<=1.0000001?[clamp(t,0,1),clamp(u,0,1)]:null}
 const kind=p=>p.kind||'road';
 function options(o){let spec=profiles[o.profile]||profiles.r2;return {...spec,profile:o.profile in profiles?o.profile:'r2',kind:kind(spec),oneway:!!(o.oneway||spec.oneway),bus:!!(o.bus&&kind(spec)==='road')}}
-function check(city,pts,o,starts=[]){let p=options(o),l=length(pts);if(l<22)return {ok:false,reason:'路段至少要有 22 米'};for(let i=0;i<pts.length;i++){let a=pts[i];if(![a.x,a.y,a.z].every(Number.isFinite)||a.x<2||a.x>1198||a.y<2||a.y>798||Math.abs(a.z)>70)return {ok:false,reason:'超出地图或高度限制'};if(water(a)&&a.z<10&&a.z>-12)return {ok:false,reason:'河道需要至少 +10 m 桥高或 −12 m 隧道深度'};if(i&&Math.abs(pts[i-1].z-a.z)>dist(pts[i-1],a)*.23+.02)return {ok:false,reason:'纵坡过陡，拉长坡道或降低高差'};}
+function check(city,pts,o,starts=[]){let p=options(o),l=length(pts);if(l<22)return {ok:false,reason:'路段至少要有 22 米'};for(let i=0;i<pts.length;i++){let a=pts[i];if(![a.x,a.y,a.z].every(Number.isFinite)||a.x<2||a.x>1198||a.y<2||a.y>798||Math.abs(a.z)>70)return {ok:false,reason:'超出地图或高度限制'};if(globalThis.CityMaps?.current().ridge?.(a)>.67&&a.z>-12)return {ok:false,reason:'保护山脊需从地下穿越（不浅于 −12 m）'};if(water(a)&&a.z<10&&a.z>-12)return {ok:false,reason:'河道需要至少 +10 m 桥高或 −12 m 隧道深度'};if(i&&Math.abs(pts[i-1].z-a.z)>dist(pts[i-1],a)*.23+.02)return {ok:false,reason:'纵坡过陡，拉长坡道或降低高差'};}
 for(let i=1;i<pts.length;i++)for(let j=i+2;j<pts.length;j++){let q=intersect(pts[i-1],pts[i],pts[j-1],pts[j]);if(q&&dist(pts[i-1],pts[j])>.01)return {ok:false,reason:'该曲线与自己相交'};}
 let hits=[];for(let e of city.edges){
  for(let i=1;i<pts.length;i++){
@@ -44,6 +44,15 @@ const ids=pieces(pts,nlist,out.profile);city.cash-=out.cost;rebuildBuses(city);r
 function graph(city,mode,loads={}){let adj={};for(let e of city.edges){if(mode==='walk'&&(e.kind!=='road'||e.pts.some(p=>p.z<-4)))continue;let speed=mode==='walk'?5:e.speed,cap=capacity(e),pen=mode==='walk'?1:1+.9*(loads[e.id]||0)/cap; if(mode==='bus'&&e.bus)pen=1+((loads[e.id]||0)/cap)*.25;
 let w=Math.max(.02,e.len/speed*pen);(adj[e.a]??=[]).push({to:e.b,edge:e.id,reverse:false,w}); if(!e.oneway||mode==='walk')(adj[e.b]??=[]).push({to:e.a,edge:e.id,reverse:true,w});}return adj}
 function path(adj,a,b){if(!a||!b)return null;if(a===b)return [];let todo=[[0,a]],ds={[a]:0},pr={};while(todo.length){todo.sort((x,y)=>y[0]-x[0]);let [d,n]=todo.pop();if(n===b){let route=[];while(n!==a){let s=pr[n];route.unshift({edge:s.edge,reverse:s.reverse});n=s.prev}return route}if(d!==ds[n])continue;for(let e of adj[n]||[]){let z=d+e.w;if(z<(ds[e.to]??Infinity)){ds[e.to]=z;pr[e.to]={...e,prev:n};todo.push([z,e.to])}}}return null}
+function pathsFrom(adj,start){
+ const distances=Object.create(null),prev=Object.create(null),heap=[];
+ const push=(x)=>{let i=heap.length;heap.push(x);while(i>0){let p=(i-1)>>1;if(heap[p][0]<=x[0])break;heap[i]=heap[p];i=p;}heap[i]=x;};
+ const pop=()=>{let x=heap[0],h=heap.pop();if(heap.length){let i=0;while(i*2+1<heap.length){let c=i*2+1;if(c+1<heap.length&&heap[c+1][0]<heap[c][0])c++;if(heap[c][0]>=h[0])break;heap[i]=heap[c];i=c;}heap[i]=h;}return x;};
+ distances[start]=0;push([0,start]);
+ while(heap.length){const [d,n]=pop();if(d!==distances[n])continue;
+   for(const e of adj[n]||[]){const f=d+e.w;if(f>=(distances[e.to]??Infinity))continue;distances[e.to]=f;prev[e.to]={...e,from:n};push([f,e.to]);}}
+ return {distances,route(end){if(!Number.isFinite(distances[end]))return null;let a=[];for(let n=end;n!==start;){const e=prev[n];if(!e)return null;a.push({edge:e.edge,reverse:e.reverse});n=e.from;}return a.reverse();}};
+}
 function capacity(e){return Math.max(12,(e.lanes-(e.bus?1:0))*24*(e.kind==='highway'?1.8:1)*(e.oneway?1.1:1))}
 function rebuildBuses(city){let g=graph(city,'bus');for(let b of city.buses){let seq=[...b.stops,b.stops[0]],r=[];for(let i=1;i<seq.length;i++){let p=path(g,seq[i-1],seq[i]);if(!p){r=null;break}r.push(...p)}b.path=r||[];b.broken=!r;}return city.buses}
 function bus(city,stops){if(stops.length<2||new Set(stops).size!==stops.length)return {ok:false,reason:'至少两个不同的车站'};let b={id:'B'+city.next++,stops:[...stops]};city.buses.push(b);rebuildBuses(city);if(b.broken){city.buses.pop();return {ok:false,reason:'受单行限制或路网不通，线路无法闭环'}}return {ok:true,id:b.id}}
@@ -65,5 +74,5 @@ function splitAt(city,p){
  rebuildBuses(city);return id;
 }
 const mapRoads=city=>city.edges.map(e=>({...e,points:e.pts}));
-return {create,river,water,dist,clamp,mix,sample,snap,plan,check,add,graph,path,bus,rebuildBuses,remove,upgrade,splitAt,mapRoads,profiles,capacity,length}
+return {create,river,water,dist,clamp,mix,sample,snap,plan,check,add,graph,path,pathsFrom,bus,rebuildBuses,remove,upgrade,splitAt,mapRoads,profiles,capacity,length}
 });

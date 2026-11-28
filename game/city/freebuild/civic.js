@@ -347,7 +347,8 @@
     for(const {lot,access} of prepared){
       const m={access:access?.distance??null,roadId:access?.roadId??null,quality:0,target:0,capacity:0,tier:0,reason:''};
       for(const name of Object.keys(SERVICES)){
-        m[name]=fields[name].get(lot.id)?.final??0;
+        const managed=typeof opt.utilityFor==='function'?opt.utilityFor(lot,name):null;
+        m[name]=finite(managed)?clamp(managed):(fields[name].get(lot.id)?.final??0);
         capacities[name].coverage+=m[name]>=.35?1:0;
       }
       let pollution=0;
@@ -356,6 +357,7 @@
           const d=dist(neighbor,lot);if(d<100)pollution+=neighbor.occupants/110*(1-d/100);
         }
       }
+      const big=typeof opt.districtFor==='function'?opt.districtFor(lot)||{}:{};pollution+=(big.pollution||0)*.75;
       const rawPollution=pollution;
       pollution*=1-.62*m.waste;
       const truckNoise=lot.type==='residential'?clamp(depots.reduce((sum,d)=>sum+clamp(1-dist(d,lot)/72)*Math.min(1,d.budget),0)):0;
@@ -366,29 +368,30 @@
       const utility=Math.min(m.power,m.water);
       const full=access&&(!opt.requireUtilities||utility>=.25);
       const mobility=access?1-clamp(access.distance/Math.max(1,opt.maxAccess))*.25:0;
-      const quality=clamp((42+9*mobility+11*m.park+8*m.school+7*m.clinic+6*m.fire+6*m.police+7*utility+publicCulture+denseWaste+industrySupport-18*clamp(pollution)-13*truckNoise-22*risk)/100);
-      const def=ZONES[lot.type];
+      const quality=clamp((42+9*mobility+11*m.park+8*m.school+7*m.clinic+6*m.fire+6*m.police+7*utility+7*(big.park||0)+(lot.type==='office'?7:3)*(big.education||0)+publicCulture+denseWaste+industrySupport-18*clamp(pollution)-13*truckNoise-22*risk)/100);
+      const def=ZONES[lot.type], sector=typeof opt.sectorFor==='function'?opt.sectorFor(lot):null;
+      const capAt=t=>t?Math.max(1,Math.round(lotCap(lot,t)*((sector?.capacity||def.cap)/def.cap))):0;
       const max=density(lot.density);
       const tier=!full?0:quality*100>=def.levels[2]&&max===3&&state.month>=9?3:quality*100>=def.levels[1]&&max>=2&&state.month>=4?2:1;
       const balance=lot.type==='residential'?clamp(.74+jobsPotential/Math.max(84,workers)*.14,.74,1.02):clamp(.53+workers/Math.max(100,jobsPotential)*.48,.53,1);
       const raw=qDemand[lot.type];
       const baselineMarket=finite(raw)?clamp(raw>1?raw/100:raw,.1,1.15):1;
       const boost=lot.type==='office'?.19*m.library:lot.type==='commercial'?.26*m.plaza+.07*m.logistics:lot.type==='industrial'?.32*m.logistics:0;
-      const market=clamp(baselineMarket*(1+boost),.1,1.5);
-      const taxRate=finite(opt.tax)?clamp(opt.tax,0,20):9;
-      const present=finite(opt.tax)?taxRate/9:1;
+      const market=clamp(baselineMarket*(1+boost)*(sector?.market||1)*(lot.type==='office'?1+.22*(big.education||0):1),.1,1.7);
+      const taxRate=finite(sector?.taxRate)?clamp(sector.taxRate,0,25):finite(opt.tax)?clamp(opt.tax,0,20):9;
+      const present=finite(sector?.taxRate)||finite(opt.tax)?taxRate/9:1;
       const taxEffect=clamp(1-(taxRate-9)*.024,.72,1.16);
-      m.quality=quality;m.tier=tier;m.capacity=lotCap(lot,tier);
+      m.quality=quality;m.tier=tier;m.capacity=capAt(tier);
       m.market=market;m.pollution=pollution;m.rawPollution=rawPollution;m.truckNoise=truckNoise;
       m.target=full?m.capacity*clamp((.43+quality*.59)*balance*market*taxEffect*(.75+Math.max(utility,opt.requireUtilities?0:.65)*.25)):0;
       m.reason=!access?'没有临街道路':opt.requireUtilities&&utility<.25?(m.power<.25?'供电不足':'供水不足'):risk>.42?'地块面临较高洪水风险':pollution>.55?'工业污染压低地价':truckNoise>.48?'物流车辆噪声压低住宅吸引力':quality<.61&&lot.density>1?'公共服务不足，暂不能升密':market<.45?'此类用地需求偏弱':'道路与市政服务可用';
       lotScores[lot.id]=m;
       if(full)total.coveredLots++;
       if(lot.level>0)total.developedLots++;
-      if(lot.type==='residential')total.population+=lot.occupants;else total.jobs+=lotCap(lot);
+      if(lot.type==='residential')total.population+=lot.occupants;else total.jobs+=capAt(lot.level);
       if(lot.type!=='residential')total.occupiedJobs+=lot.occupants;
       const activity=1+(lot.type==='industrial'?.12*m.logistics:lot.type==='commercial'?.08*m.plaza+.035*m.logistics:0);
-      total.income+=lot.occupants*def.tax*present*activity;
+      total.income+=lot.occupants*(sector?.baseTax||def.tax)*present*activity;
     }
     total.population=Math.round(total.population);total.jobs=Math.round(total.jobs);total.occupiedJobs=Math.round(total.occupiedJobs);
     total.income=Math.round(total.income);total.expense=Math.round(total.expense);total.net=total.income-total.expense;
