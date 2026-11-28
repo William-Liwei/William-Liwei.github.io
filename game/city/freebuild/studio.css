@@ -136,3 +136,7 @@
 #mobility-dialog{width:min(650px,calc(100vw - 28px));max-height:calc(100dvh - 26px);overflow:auto;overscroll-behavior:contain}
 #mobility-dialog section{border-top:1px solid #bccfcb77;margin-block:14px;padding-block-start:8px}
 #mobility-dialog h3{margin:2px 0 8px}#mobility-capacity li+li,#mobility-lots li+li{margin-block-start:5px}
+
+#works-dialog{width:min(660px,calc(100vw - 28px));max-height:calc(100dvh - 26px);overflow:auto;overscroll-behavior:contain}
+#works-dialog section{border-top:1px solid #bccfcb77;margin-block:14px;padding-top:8px}
+#works-dialog h3{margin-block:3px 8px}#works-waste-sites li+li{margin-block-start:.35rem}

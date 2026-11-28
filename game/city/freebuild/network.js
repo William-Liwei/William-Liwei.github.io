@@ -190,7 +190,7 @@ function turnPaths(adj,start,{arrival=null,target=null,departure=null,waypoints=
  }
  return {distances,route(n){if(!best.has(n))return null;const p=[];for(let a=best.get(n);a.via;a=a.prev)p.push({edge:a.via.edge,reverse:a.via.reverse});return p.reverse();}};
 }
-function capacity(e){return Math.max(12,(e.lanes-crossSection(e).busOffsets.length)*24*(e.kind==='highway'?1.8:1)*(e.oneway?1.1:1))}
+function capacity(e){return Math.max(7,Math.max(12,(e.lanes-crossSection(e).busOffsets.length)*24*(e.kind==='highway'?1.8:1)*(e.oneway?1.1:1))*(Number.isFinite(e.conditionCapacity)?clamp(e.conditionCapacity,.40,1):1))}
 function busLoop(g,stops){
  const start=stops[0],seq=[...stops.slice(1),start];
  if(g[RULES]?.size){

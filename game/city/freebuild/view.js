@@ -939,6 +939,19 @@
       const top=camera.y-this.height/2/camera.zoom-44,bottom=camera.y+this.height/2/camera.zoom+44;
       const visible=bb=>bb.maxX>=left&&bb.minX<=right&&bb.maxY>=top&&bb.minY<=bottom;
       this.paintRoadMesh(c,roadMesh,overlay,load,metrics.queue?.edgeTraffic,selected,visible);
+      if(overlay==='works'){
+       const works=city.publicWorks,assets=works?.assets||{},lots=works?.waste?.byLot||{};
+       for(const [,e,source,bb] of roads){
+        const k=assets[e.id]?.condition??100;if(!source?.length||!visible(bb))continue;
+        line(c,source,k<45?'#ef8a78':k<72?'#e2bd64':'#90c8a0',1.45);
+       }
+       for(const z of zones)for(const p of array(z.parcels)){
+        const v=lots[p.id];if(!(v?.backlog>.15))continue;
+        const size=clamp(2.5+Math.sqrt(v.backlog)*.8,3,8);
+        circle(c,p.x,p.y,size,'#764a5ab8','#edd5bb',.84);
+       }
+      }
+
       for(const v of array(city.campus)){
         const d=globalThis.CampusLife?.ASSETS[v.type];if(!d)continue;
         if(v.x<left-25||v.x>right+25||v.y<top-25||v.y>bottom+25)continue;

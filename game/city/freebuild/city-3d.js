@@ -606,6 +606,18 @@ class City3D{
    if(points.length>=2)outline(points,c,clamp(sane(g.width,2.25),1,30),!!g.closed);
    if(points.length===1){const p=points[0],z=lift(p,.6);cylinder(m,p.x,p.y,2.0,z,z+4.8,color(c),undefined,9,.12);}
   }
+  if(opt.overlay==='works'){
+   const data=world.publicWorks||{},assets=data.assets||{},lots=data.waste?.byLot||{};
+   for(const e of list(world.edges)){
+    const k=assets[e.id]?.condition??100,ps=list(e.pts||e.points);
+    const top=ps.filter(p=>!Number.isFinite(p.z)||p.z>-3);
+    if(top.length===ps.length)outline(top,k<45?'#f28a79':k<72?'#dbbe67':'#88c9a0',1.6);
+   }
+   for(const z of list(world.zones))for(const p of list(z.parcels)){
+    if(!(lots[p.id]?.backlog>.15))continue;
+    const h=this.surface(p);cylinder(m,p.x,p.y,2.3,h+3,h+5.1,color('#85586c'),color('#dfc1a1'),7,.3);
+   }
+  }
   if(opt.overlay==='wellbeing'){
    const homes=new Map(list(world.zones).flatMap(z=>list(z.buildings)).map(b=>[b.id,b]));
    for(const q of list(opt.wellbeing).slice(0,3000)){
