@@ -939,6 +939,37 @@
       const top=camera.y-this.height/2/camera.zoom-44,bottom=camera.y+this.height/2/camera.zoom+44;
       const visible=bb=>bb.maxX>=left&&bb.minX<=right&&bb.maxY>=top&&bb.minY<=bottom;
       this.paintRoadMesh(c,roadMesh,overlay,load,metrics.queue?.edgeTraffic,selected,visible);
+      for(const park of array(city.parks)){
+        for(const v of array(park.paths)){
+          const ar=globalThis.ParkLife?.PATHS[v.type];if(!ar)continue;
+          line(c,v.points,'#5c655697',ar.width+1.35);line(c,v.points,ar.color,ar.width);
+          if(overlay==='parks'&&selected.park===v.id)line(c,v.points,'#ffde91',1.2,[3,2]);
+        }
+        for(const v of array(park.assets)){
+          const ar=globalThis.ParkLife?.ASSETS[v.type];if(!ar)continue;
+          if(v.x<left-25||v.x>right+25||v.y<top-25||v.y>bottom+25)continue;
+          const w=ar.width,d=ar.depth,l=v.x-w/2,t=v.y-d/2;
+          const stroke=selected.park===v.id?'#eef1ad':'#3d5746';
+          shape(c,[{x:l,y:t},{x:l+w,y:t},{x:l+w,y:t+d},{x:l,y:t+d}],ar.color,stroke,.8);
+          if(v.type==='sports'){
+           const k=2.3;c.strokeStyle='#f4f6e0';c.lineWidth=.65;c.strokeRect(l+k,t+k,w-k*2,d-k*2);
+           line(c,[{x:v.x,y:t+k},{x:v.x,y:t+d-k}],'#f4f6e0',.65);circle(c,v.x,v.y,3,'#afc9cf','#f4f6e0',.6);
+          }else if(v.type==='gate'){
+           for(const sign of [-1,1])circle(c,v.x+sign*3.5,v.y,1.4,v.open?'#e5d5a4':'#b85d58','#514e45',.45);
+          }else if(v.type==='nature'||v.type==='garden'){
+           for(let i=0;i<5;i++)circle(c,l+3+(i%3)*(w-6)/2,t+3+Math.floor(i/3)*(d-6),v.type==='nature'?2.75:1.8,
+            v.type==='nature'?(i%2?'#3c7153':'#597f44'):(i%2?'#d8679b':'#f1d477'),'#526b52',.32);
+          }else if(v.type==='play'){
+           line(c,[{x:l+4,y:t+d-4},{x:v.x,y:t+4},{x:l+w-4,y:t+d-4}],'#a75648',1.4);circle(c,v.x+3,v.y+2,3,'#eff0a9','#ad724f',.7);
+          }else if(v.type==='picnic'){
+           for(const sign of [-1,1])line(c,[{x:v.x-4,y:v.y+sign*3},{x:v.x+4,y:v.y+sign*3}],'#edce90',1.35);
+          }else{
+           c.fillStyle=v.type==='vendor'?'#95806b':'#8296a7';c.fillRect(l+1.8,t+2,w-3.6,d-4);
+           line(c,[{x:l+2,y:t+3},{x:l+w-2,y:t+3}],'#fff1c8',.8);
+          }
+          if(overlay==='parks')label(c,ar.icon,v.x,v.y,5.5,'#1b3e35',800);
+        }
+      }
       for(const link of array(city.activeTravel)){
         const spec=globalThis.ActiveTravel?.TYPES?.[link.type];if(!spec)continue;
         const ps=link.points.map(p3),sel=selected.active===link.id,a=overlay==='active',width=spec.width;

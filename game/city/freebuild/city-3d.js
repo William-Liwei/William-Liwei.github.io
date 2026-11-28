@@ -510,6 +510,41 @@ class City3D{
    for(const b of list(z.buildings)){if(xy(b))mark(b,8);this.building(mesh,b,z.type);}
   }
   if(!zones.length)for(const b of list(world.buildings)){if(xy(b))mark(b,8);this.building(mesh,b,b.type);}
+  for(const park of list(world.parks)){
+   for(const p of list(park.paths)){const z=rootSpec('ParkLife','PATHS',p.type);if(z)this.road(mesh,{pts:p.points},{width:z.width,color:z.color,lift:.14});}
+   for(const a of list(park.assets)){
+    const z=rootSpec('ParkLife','ASSETS',a.type);if(!z||!xy(a))continue;mark(a,Math.max(z.width,z.depth)*.65);
+    const x=a.x,y=a.y,w=z.width,d=z.depth,h=this.surface(a),c=color(z.color),ink=color('#dce7c7');
+    plate(mesh,corners(x,y,w,d,0),p=>this.surface(p)+.18,c);
+    if(a.type==='gate'){
+     for(const s of [-1,1])box(mesh,x+s*4.3,y,1.2,1.25,h,h+4.2,dark(c,.72),0,c);
+     box(mesh,x,y,10,1.0,h+3.8,h+4.9,a.open?color('#819c68'):color('#ba625b'),0,c);
+    }else if(a.type==='nature'){
+     for(const [dx,dy,size] of [[-8,-5,5.5],[.5,4,8],[9,-3,6],[-9,5,4],[6,6,4.8]])this.tree(mesh,x+dx,y+dy,size);
+    }else if(a.type==='garden'){
+     for(const i of [-1,0,1]){
+      box(mesh,x+i*8,y,5.5,11,h+.22,h+.76,color(i%2?'#b56f95':'#ceb75e'),0,c);
+      for(const dy of [-3,0,3])cylinder(mesh,x+i*8,y+dy,.62,h+.8,h+1.55,color(i%2?'#efadbd':'#f1de91'),undefined,7,.4);
+     }
+    }else if(a.type==='sports'){
+     const line=(xx,yy,ww,dd)=>box(mesh,xx,yy,ww,dd,h+.2,h+.31,ink,0,ink);
+     line(x,y,.22,d-3);
+     for(const j of [-1,1]){
+      line(x,y+j*(d/2-1.55),w-3,.20);line(x+j*(w/2-1.55),y,.20,d-3);
+      box(mesh,x+j*(w/2-3),y,.27,2.3,h+.3,h+3.0,color('#a5afb3'),0,ink);
+     }
+    }else if(a.type==='play'){
+     for(const dx of [-3,3])box(mesh,x+dx,y,.42,.6,h,h+3.7,color('#785f50'),0,ink);
+     box(mesh,x,y,7.2,.85,h+3.0,h+3.8,color('#ad6a52'),0,color('#e6b780'));
+     box(mesh,x+5,y-2,2.4,3.1,h+.4,h+1.7,color('#8fbec8'),-.16);
+    }else if(a.type==='picnic'){
+     for(const dy of [-3.5,3.5]){box(mesh,x,y+dy,7.1,2.4,h+.35,h+1.5,color('#a7835a'),.04);box(mesh,x,y+dy-1.7,7.4,.65,h+.33,h+.84,color('#887260'),.04);}
+    }else{
+     box(mesh,x,y,w-1,d-1,h+.19,h+3.8,dark(c,.78),0,c);box(mesh,x,y,w+.5,d+.4,h+3.7,h+4.5,a.type==='vendor'?color('#98765c'):color('#657991'),0,c);
+     box(mesh,x,y-d/2+.41,w*.42,.45,h+1.3,h+2.4,color('#667c82'),0,ink);
+    }
+   }
+  }
   for(const b of list(world.services)){mark(b,15);this.civic(mesh,b);}
   for(const b of list(world.parking)){mark(b,13);this.civic(mesh,{...b,type:'parking'});}
   for(const b of list(world.transit?.stations)){

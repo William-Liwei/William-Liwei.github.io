@@ -1,6 +1,6 @@
 'use strict';
 (()=>{
-const CR=Careers,WB=Wellbeing,H=CargoLogistics,HG=CargoGateways,V=MunicipalFinance,W=MarketCycle,B=CityBalance,G=Progression,R=SocialCare,X=IndustryAreas,F=TerrainWork,Z=RoadsideZoning,S=TransitService,L=Labor,K=CareServices,J=Justice,Q=Education,I=CivicIncidents,A=ActiveTravel,P=Parking,N=Network,C=Civic,U=Utilities,T=Transit,E=Economy,D=Districts,M=CityMaps,$=s=>document.getElementById(s);
+const PL=ParkLife,CR=Careers,WB=Wellbeing,H=CargoLogistics,HG=CargoGateways,V=MunicipalFinance,W=MarketCycle,B=CityBalance,G=Progression,R=SocialCare,X=IndustryAreas,F=TerrainWork,Z=RoadsideZoning,S=TransitService,L=Labor,K=CareServices,J=Justice,Q=Education,I=CivicIncidents,A=ActiveTravel,P=Parking,N=Network,C=Civic,U=Utilities,T=Transit,E=Economy,D=Districts,M=CityMaps,$=s=>document.getElementById(s);
 const parameters=new URLSearchParams(location.search),map=M.select(parameters.get('map')),mapId=map.id,sandbox=parameters.get('mode')==='sandbox',startDifficulty=parameters.get('difficulty')==='challenge'?'challenge':'standard';
 const canvas=$('map'),view=new CityView(canvas,{width:1200,height:800}),storeKey=M.storage(mapId,sandbox),prefKey='city.blueprint.settings.1',format=new Intl.NumberFormat('zh-CN',{maximumFractionDigits:0});
 let prefs={};try{prefs=JSON.parse(localStorage.getItem(prefKey))||{};localStorage.setItem('city.blueprint.map.1',mapId);localStorage.setItem('city.blueprint.mode.1',sandbox?'sandbox':'career')}catch{}
@@ -8,7 +8,7 @@ $('map-name').textContent=map.name;document.querySelector('.brand p').textConten
 const serviceNames={fire:'消防',police:'警务',water:'供水',power:'电力',health:'医疗',clinic:'医疗',education:'教育',school:'教育',waste:'环卫站',park:'绿地',library:'图书馆',plaza:'市民广场',logistics:'物流中心'};
 const labels={residential:'住宅',commercial:'商业',office:'办公',industrial:'工业'};
 const techLabels={earthworks:'整地',arterial:'六/八车道路',signals:'交通信号',highway:'高速公路',bridge:'高架与桥梁',tunnel:'隧道',tram:'有轨电车',busLane:'公交专用车道',metro:'地铁',rail:'客运铁路',cargoRail:'货运铁路',cargoPort:'货运港口',cargoYard:'货物转运场',airport:'客运机场',cargoAirport:'货运机场',vocational:'职业学校',research:'科研院所',university:'大学',universityArea:'大学特别区',hospital:'综合医院',elder:'养老院',crematorium:'火葬场',industryProcessor:'产业加工厂',industryStorage:'产业仓库',mine:'采矿区',oil:'石油区',industryIntensive:'集约采集政策'};
-const defaults={socialType:"cemetery",industryKind:"extractor",earthMode:"level",earthRadius:42,earthAmount:5,earthTarget:10,earthSmooth:60,frontageMode:"route",careType:"fire",justiceType:"police",schoolType:'primary',schoolFunding:100,activeType:'sidewalk',activeAction:'build',activeHeight:6,activeApproach:'stairs',profile:'r2',oneway:false,bus:false,startZ:0,endZ:0,shape:'line',signalAction:'switch',signalEW:50,signalCycle:26,signalOffset:0,parkingType:'small',parkingFee:0,parkingMode:'build',snap:true,flip:false,zone:'residential',density:2,depth:38,side:'both',service:'fire',utilityType:'water',stationType:'tramStop',trackMode:'tram',trackStart:0,trackEnd:0,transitMode:'tram',districtType:'farm'};
+const defaults={parkDistrict:'',parkMode:'asset',parkAsset:'gate',parkPath:'trail',socialType:"cemetery",industryKind:"extractor",earthMode:"level",earthRadius:42,earthAmount:5,earthTarget:10,earthSmooth:60,frontageMode:"route",careType:"fire",justiceType:"police",schoolType:'primary',schoolFunding:100,activeType:'sidewalk',activeAction:'build',activeHeight:6,activeApproach:'stairs',profile:'r2',oneway:false,bus:false,startZ:0,endZ:0,shape:'line',signalAction:'switch',signalEW:50,signalCycle:26,signalOffset:0,parkingType:'small',parkingFee:0,parkingMode:'build',snap:true,flip:false,zone:'residential',density:2,depth:38,side:'both',service:'fire',utilityType:'water',stationType:'tramStop',trackMode:'tram',trackStart:0,trackEnd:0,transitMode:'tram',districtType:'farm'};
 function normalizeSignals(input,nodes){
  const valid=new Set(nodes.map(n=>n.id));
  if(!input||typeof input!=='object')return {};
@@ -30,13 +30,13 @@ function restoreWellbeingApplied(v,month){
  if(v?.month!==month)return {month:0,byLot:{}};
  return {month,byLot:Object.fromEntries(Object.entries(v.byLot||{}).slice(0,4000).filter(([,q])=>q&&[q.extra,q.before,q.base,q.actual].every(x=>Number.isFinite(x)&&Math.abs(x)<=10000)))};
 }
-const stateStore={make:()=>({version:1,network:N.create(),civic:C.create(17),mapId,sandbox,utilities:U.create(),transit:T.create(),districts:D.create(),economy:E.create(),parking:P.normalize(),activeTravel:A.create(),civicEvents:I.create(44017),education:Q.create(mapId),justice:J.create(mapId),care:K.create(mapId),labor:L.create(mapId),transitService:S.normalize(),terrain:F.create(mapId),industry:X.create(mapId),social:R.create(mapId),progression:G.create({mapId,sandbox}),balance:B.create({sandbox,mode:startDifficulty}),market:W.create(mapId),cargo:H.create(mapId),wellbeing:WB.create(mapId),careers:CR.create(mapId),careerProduction:{month:0,products:{}},wellbeingApplied:{month:0,byLot:{}},credit:V.create({month:1}),signals:{},month:1,contracts:{},history:[],finance:{tax:9,debt:0,frequency:"normal"}}),restore(raw){
+const stateStore={make:()=>({version:1,network:N.create(),civic:C.create(17),mapId,sandbox,utilities:U.create(),transit:T.create(),districts:D.create(),economy:E.create(),parking:P.normalize(),activeTravel:A.create(),civicEvents:I.create(44017),education:Q.create(mapId),justice:J.create(mapId),care:K.create(mapId),labor:L.create(mapId),transitService:S.normalize(),terrain:F.create(mapId),industry:X.create(mapId),social:R.create(mapId),progression:G.create({mapId,sandbox}),balance:B.create({sandbox,mode:startDifficulty}),market:W.create(mapId),cargo:H.create(mapId),wellbeing:WB.create(mapId),careers:CR.create(mapId),parks:PL.create(mapId),careerProduction:{month:0,products:{}},wellbeingApplied:{month:0,byLot:{}},credit:V.create({month:1}),signals:{},month:1,contracts:{},history:[],finance:{tax:9,debt:0,frequency:"normal"}}),restore(raw){
  if(raw?.version!==1||!Array.isArray(raw.network?.edges)||!Array.isArray(raw.network?.nodes)||!Array.isArray(raw.network?.buses)||!Array.isArray(raw.civic?.lots)||!Array.isArray(raw.civic?.zones)||!Array.isArray(raw.civic?.services)||!Number.isInteger(raw.month)||raw.month<1||!Number.isFinite(raw.network.cash)||!Number.isInteger(raw.network.next))throw Error('不兼容的城市存档');
  if((raw.mapId||'river')!==mapId||!!raw.sandbox!==sandbox)throw Error('此存档属于其他地图或模式，请先从大厅切换。');
  raw.mapId=mapId;
  const u=raw.utilities?U.restore(raw.utilities):U.create(), tt=raw.transit?T.normalize(raw.transit,{water:N.water}):T.create(), dd=raw.districts?D.normalize(raw.districts,{mapId,water:N.water,isBuildable:p=>M.land(p)}):D.create(), ee=raw.economy?E.restore(raw.economy):E.create();
  if(!u||!tt||!dd||!ee)throw Error('水电、交通、特别分区或产业存档无效');
- Object.assign(raw,{utilities:u,transit:tt,districts:dd,economy:ee,parking:P.normalize(raw.parking),activeTravel:A.normalize(raw.activeTravel),civicEvents:I.normalize(raw.civicEvents,44017),education:Q.normalize(raw.education,mapId),justice:J.normalize(raw.justice,mapId),care:K.normalize(raw.care,mapId),labor:L.normalize(raw.labor,mapId),transitService:(S.sanitize||S.normalize)(raw.transitService),terrain:F.normalize(raw.terrain,mapId),industry:X.normalize(raw.industry,mapId),social:R.normalize(raw.social,mapId),progression:G.normalize(raw.progression,{mapId,sandbox,...(!raw.progression?{legacy:true}:{})}),balance:B.normalize(raw.balance,{sandbox,...(!raw.balance?{legacy:true}:{})}),market:W.normalize(raw.market,mapId),cargo:H.normalize(raw.cargo,mapId),wellbeing:WB.normalize(raw.wellbeing,mapId),careers:CR.normalize(raw.careers,mapId),careerProduction:careerProduction(raw.careerProduction,raw.month),wellbeingApplied:restoreWellbeingApplied(raw.wellbeingApplied,raw.month),credit:V.normalize(raw.credit,{legacyDebt:raw.finance?.debt,month:raw.month}),signals:normalizeSignals(raw.signals,raw.network.nodes)});
+ Object.assign(raw,{utilities:u,transit:tt,districts:dd,economy:ee,parking:P.normalize(raw.parking),activeTravel:A.normalize(raw.activeTravel),civicEvents:I.normalize(raw.civicEvents,44017),education:Q.normalize(raw.education,mapId),justice:J.normalize(raw.justice,mapId),care:K.normalize(raw.care,mapId),labor:L.normalize(raw.labor,mapId),transitService:(S.sanitize||S.normalize)(raw.transitService),terrain:F.normalize(raw.terrain,mapId),industry:X.normalize(raw.industry,mapId),social:R.normalize(raw.social,mapId),progression:G.normalize(raw.progression,{mapId,sandbox,...(!raw.progression?{legacy:true}:{})}),balance:B.normalize(raw.balance,{sandbox,...(!raw.balance?{legacy:true}:{})}),market:W.normalize(raw.market,mapId),cargo:H.normalize(raw.cargo,mapId),wellbeing:WB.normalize(raw.wellbeing,mapId),careers:CR.normalize(raw.careers,mapId),parks:PL.normalize(raw.parks,mapId),careerProduction:careerProduction(raw.careerProduction,raw.month),wellbeingApplied:restoreWellbeingApplied(raw.wellbeingApplied,raw.month),credit:V.normalize(raw.credit,{legacyDebt:raw.finance?.debt,month:raw.month}),signals:normalizeSignals(raw.signals,raw.network.nodes)});
  const {nodes,edges,buses}=raw.network;
  if(nodes.length>1500||edges.length>1800||buses.length>200||raw.civic.lots.length>4000)throw Error('存档规模超出预览版上限');
  const ids=new Set();for(let n of nodes){if(typeof n.id!=='string'||ids.has(n.id)||![n.x,n.y,n.z].every(Number.isFinite))throw Error('无效节点');ids.add(n.id)}
@@ -148,8 +148,8 @@ function loadCity(){
 }
 city=loadCity();
 function changeCity(s){if(batch)return false;if(!save(s,true))return false;city=s;comparison=null;draft=[];selected={};playing=false;flowKey='';flowClock=0;showTools();$('auto').setAttribute('aria-pressed','false');$('auto').textContent='▶';refresh();return true;}
-const help={landTitle:"点击地块查看报价，只有与已拥有地块共享边的地块可买。购买也能加入批量蓝图，再接着规划施工。",social:"墓园与火葬场承接真实死亡事件；家庭和养老设施提供有限名额，研究所需要可通勤的合格工作人员。",industry:"先划一个特别产业区，再把采集站、加工厂或仓库建在该区内。加工和出货要用接通的道路、工人、以及必要的水电。",earth:"选择整地方式，指向地图看报价，点击加入蓝图。现有道路、轨道、已开发地块、水域及保护山脊不会被改动。",taxiDepot:"出租车队须有普通道路出入口。有限车辆要先到乘客处接人，再沿合法路线送达；右侧公共交通运营可试叫一辆。",careBuild:"消防队需要装备补给；诊所处理急症，重症按可达道路转到医院，社区中心只为可达住区提供有限走访。",justiceBuild:"建设后由警务、法院和监狱分别处理不同阶段。设施要有普通道路；市政厅可切换政策。返回右侧图层查看拥堵在哪一环。",schoolBuild:'选校种，在普通道路或人行道旁选一块陆地。学位有限，学生必须有通学路线；推进一月才更新实际入学。',active:'选择步行道、自行车道或人行天桥，再点起终点。立体天桥两端要能走到地面，不能作为机动车捷径。也可以用试走检查真正可达。',parking:'普通道路自带有限路侧位，私家车按同一到达节点找位，公交和货车不占位。选择建造或调整收费。别让收费车库挡住路面或占到旧地块。',junction:'点地图上的路口，再选择驶入方向。勾选要禁止的出口；应用后先审核蓝图，不会直接改路。转向规则影响汽车、货车和道路公交，不影响步行。',utility:'选水管或电线，沿地面点起点和终点；同类线相交即接通。可建独立支线，水电不会互串。首次编辑每一类网络会启用真实供给。',station:'先建有道路接驳的车站、港口、机场或车辆段。码头和船坞需要岸边，机场需要完整的陆地跑道。',track:'选地面铁路、地铁或电车轨道，在地图点起点和终点；端点贴近已有轨道、对应站点或车辆段才能接通。地面铁路可接东西边界口。',line:'选择运输方式和站点，依次加入。铁路、地铁、电车需要接通对应车辆段；轮渡和货轮必须有连续水域；飞机可选图外航点。',district:'选择独立特别分区，先打开资源图层找合适位置，然后点至少三个角。资源与运输条件共同决定产出。',signal:'点路口切换信号，或自定东西向时间配额、周期与相位。提高某向配额会压缩另一向；下游没空间时，绿灯也不会放行。',road:'直线点起终点；曲线依次点起点、控制点、终点。可分别调起终点高程。红色预览不可建设，选择「不吸附」可自由落点。',upgrade:'先选新断面，再点击现有同类型道路。单行方向按原路绘制方向。',bus:'按发车顺序在普通道路上点至少两个站，可选路口或路段中间。系统沿可行车方向闭环，遇单行须有回程。',frontage:'选两点自动沿相连普通街道，或点对角框选区域内的街道。可选侧向、纵深、密度；方框不生成独立分区。',polygon:'在地图点至少三个角，完成后按按钮或 Enter。区域不限栅格，地块仍需接近地面道路才能成长。',service:'选择设施，再点地图放置；设施须靠近可服务道路。可在此调服务预算，右侧图层检查实际覆盖。',inspect:'点道路、设施或分区看属性。高架与地面叠在一起时，可用图层辅助识别。',erase:'点击一段道路，确认后才拆除。相交分段有独立路段，断开的公交会暂停。'};
-const toolNames={active:'慢行设施',parking:'停车设施',junction:'路口规则',utility:'水电线路',station:'枢纽设施',track:'轨道',line:'运输线路',district:'特别分区',signal:'交通信号',road:'道路',upgrade:'道路改造',bus:'公交线路',frontage:'沿街分区',polygon:'多边形分区',service:'公共服务',inspect:'查阅',erase:'拆除'};
+const help={parkLife:'先画特别公园区；在右侧公园管理启用。建入口，铺数段相通步道，再在步道旁放设施。各项施工均可先放入批量蓝图。',landTitle:"点击地块查看报价，只有与已拥有地块共享边的地块可买。购买也能加入批量蓝图，再接着规划施工。",social:"墓园与火葬场承接真实死亡事件；家庭和养老设施提供有限名额，研究所需要可通勤的合格工作人员。",industry:"先划一个特别产业区，再把采集站、加工厂或仓库建在该区内。加工和出货要用接通的道路、工人、以及必要的水电。",earth:"选择整地方式，指向地图看报价，点击加入蓝图。现有道路、轨道、已开发地块、水域及保护山脊不会被改动。",taxiDepot:"出租车队须有普通道路出入口。有限车辆要先到乘客处接人，再沿合法路线送达；右侧公共交通运营可试叫一辆。",careBuild:"消防队需要装备补给；诊所处理急症，重症按可达道路转到医院，社区中心只为可达住区提供有限走访。",justiceBuild:"建设后由警务、法院和监狱分别处理不同阶段。设施要有普通道路；市政厅可切换政策。返回右侧图层查看拥堵在哪一环。",schoolBuild:'选校种，在普通道路或人行道旁选一块陆地。学位有限，学生必须有通学路线；推进一月才更新实际入学。',active:'选择步行道、自行车道或人行天桥，再点起终点。立体天桥两端要能走到地面，不能作为机动车捷径。也可以用试走检查真正可达。',parking:'普通道路自带有限路侧位，私家车按同一到达节点找位，公交和货车不占位。选择建造或调整收费。别让收费车库挡住路面或占到旧地块。',junction:'点地图上的路口，再选择驶入方向。勾选要禁止的出口；应用后先审核蓝图，不会直接改路。转向规则影响汽车、货车和道路公交，不影响步行。',utility:'选水管或电线，沿地面点起点和终点；同类线相交即接通。可建独立支线，水电不会互串。首次编辑每一类网络会启用真实供给。',station:'先建有道路接驳的车站、港口、机场或车辆段。码头和船坞需要岸边，机场需要完整的陆地跑道。',track:'选地面铁路、地铁或电车轨道，在地图点起点和终点；端点贴近已有轨道、对应站点或车辆段才能接通。地面铁路可接东西边界口。',line:'选择运输方式和站点，依次加入。铁路、地铁、电车需要接通对应车辆段；轮渡和货轮必须有连续水域；飞机可选图外航点。',district:'选择独立特别分区，先打开资源图层找合适位置，然后点至少三个角。资源与运输条件共同决定产出。',signal:'点路口切换信号，或自定东西向时间配额、周期与相位。提高某向配额会压缩另一向；下游没空间时，绿灯也不会放行。',road:'直线点起终点；曲线依次点起点、控制点、终点。可分别调起终点高程。红色预览不可建设，选择「不吸附」可自由落点。',upgrade:'先选新断面，再点击现有同类型道路。单行方向按原路绘制方向。',bus:'按发车顺序在普通道路上点至少两个站，可选路口或路段中间。系统沿可行车方向闭环，遇单行须有回程。',frontage:'选两点自动沿相连普通街道，或点对角框选区域内的街道。可选侧向、纵深、密度；方框不生成独立分区。',polygon:'在地图点至少三个角，完成后按按钮或 Enter。区域不限栅格，地块仍需接近地面道路才能成长。',service:'选择设施，再点地图放置；设施须靠近可服务道路。可在此调服务预算，右侧图层检查实际覆盖。',inspect:'点道路、设施或分区看属性。高架与地面叠在一起时，可用图层辅助识别。',erase:'点击一段道路，确认后才拆除。相交分段有独立路段，断开的公交会暂停。'};
+const toolNames={parkLife:'公园步道',active:'慢行设施',parking:'停车设施',junction:'路口规则',utility:'水电线路',station:'枢纽设施',track:'轨道',line:'运输线路',district:'特别分区',signal:'交通信号',road:'道路',upgrade:'道路改造',bus:'公交线路',frontage:'沿街分区',polygon:'多边形分区',service:'公共服务',inspect:'查阅',erase:'拆除'};
 const WB_ACTIONS={employment:'检查附近空缺与居民技能，优先增加他们可以到达的岗位。',commute:'检查住区与岗位之间的断路、单行和换乘，优先恢复一条往返通路。',housing:'查看就业工资和市场账本，增加平价住宅与必需品的稳定供给。',environment:'把高噪声装卸区与住宅隔开，改善污废处理。',amenities:'先检查水电，再补近处可达、未超载的学校、诊所或绿地。',safety:'检查消防、医疗与警务覆盖，以及附近的未处理事件。'};
 const WB_COMPONENTS={employment:'就业稳定',commute:'通勤可达',housing:'生活负担',environment:'污染与噪声',amenities:'设施便利',safety:'社区安全'};
 const wellNumber=new Intl.NumberFormat('zh-CN',{maximumFractionDigits:1});
@@ -209,7 +209,7 @@ $('wellbeing-sort').onchange=renderWellbeing;
 $('wellbeing-lot').onchange=renderWellbeingDetail;
 $('wellbeing-map-score').onchange=()=>{wellMarkerCache=null;lastSignature='';setLayer('wellbeing');};
 $('wellbeing-locate').onclick=()=>selectWellbeingLot($('wellbeing-lot').value);
-const layers={wellbeing:['满意度与幸福度','绿：70 分及以上，黄：50–69 分，珊瑚红：低于 50 分。可切换当月满意度和长期幸福度；点击住区查看原因。'],progress:["土地与科技","经营模式的新城须先购买相邻地块，再动土。科技树按可验证的经营里程碑和科研院所发放点数。老存档原施工范围保持不变。"],social:["市民照护与科研","显示墓园、火葬场、婴幼儿与产后照护中心、养老院和研究所。右侧可查经费、名额、等候与科研点。"],industry:["产业供应链","查看各区的开采、加工、仓储、外运和剩余资源。把采集、加工、仓库和市场用可以往返的道路串起来。"],earth:["海拔与坡度","5 米一条等高线。越密越陡，坡地可先整平；深色山脊受保护。土方可先列入蓝图，取消不扣款。"],serviceOps:["交通运营","读取各线路的容量、班距、待乘人次、车队成本和票款。出租车场按可达道路派车。"],labor:["就业与收入","住宅按就业比例显示颜色，企业点显示岗位是否空缺。右侧可区分交通不通、技能不符和岗位不足。"],care:["消防与医疗","地图显示消防、诊所、医院、社区中心和转诊等候点；绿色表示上月接受过社区走访的住宅。"],justice:["司法与市政","蓝色：调查。紫色：法院候审。橙色：待转送。地块上的点可在司法面板定位；路网单行和封路影响转送。"],schoolAccess:['学位与通学','圆点标出住区：绿色已入学，黄色有人候补，红色有需求但无人入学。校旁显示上月实际用位；切断道路会在下月重新分配。'],incidents:['应急事件','图标是待处理事件；点列表定位，事件优先级会改变有限服务如何派出。风险热区不是已发生事件。'],active:['步行与骑行','淡蓝为步行道，金色为天桥，绿色为自行车道。用「慢行」的试走功能检查连通。'],parking:['停车','P 表示公共场库，数字是已用／总位；红色已满，灰色未接通。小圆点是路侧位，蓝色队尾表示等待停车。'],connections:['对外连接','公路、铁路、港口和航空的城市外接点；铁路必须铺轨连到边界。'],resources:['自然资源','选特别分区类型后查看相应资源。'],districts:['特别分区','显示特别区边界及其用途。'],routes:['铁路、水运和航线','可查看有效线路和已建轨道、车辆段。'],none:['实景','鸟瞰地形、建筑、人车与道路。'],traffic:['道路交通','橙线：该方向正在排队。紫线：队尾堵住上游入口。用查阅工具点击道路查看停在哪、为什么。'],transit:['公共交通','青色标出有效公交线路；断线不发车。'],elevation:['高程／隧道','高架、桥梁与地下通道按高程显色。'],zones:['土地用途','住区、商业、办公与工业分色。'],land:['建设潜力','有道路、基础设施和服务的地块更容易升高密度。'],fire:['消防覆盖','由消防站经路网抵达；互不连通的道路不会跨河覆盖。'],police:['警务覆盖','由警务设施经道路提供。'],water:['供水覆盖','供水设施经道路计算覆盖；本版没有独立管线。'],power:['电力覆盖','电力设施经道路计算覆盖；本版没有独立电网。']};
+const layers={parks:['公园规划','入口和设施须接进真实步道；亮色标记连接，游客必须能从城市走到入口。'],wellbeing:['满意度与幸福度','绿：70 分及以上，黄：50–69 分，珊瑚红：低于 50 分。可切换当月满意度和长期幸福度；点击住区查看原因。'],progress:["土地与科技","经营模式的新城须先购买相邻地块，再动土。科技树按可验证的经营里程碑和科研院所发放点数。老存档原施工范围保持不变。"],social:["市民照护与科研","显示墓园、火葬场、婴幼儿与产后照护中心、养老院和研究所。右侧可查经费、名额、等候与科研点。"],industry:["产业供应链","查看各区的开采、加工、仓储、外运和剩余资源。把采集、加工、仓库和市场用可以往返的道路串起来。"],earth:["海拔与坡度","5 米一条等高线。越密越陡，坡地可先整平；深色山脊受保护。土方可先列入蓝图，取消不扣款。"],serviceOps:["交通运营","读取各线路的容量、班距、待乘人次、车队成本和票款。出租车场按可达道路派车。"],labor:["就业与收入","住宅按就业比例显示颜色，企业点显示岗位是否空缺。右侧可区分交通不通、技能不符和岗位不足。"],care:["消防与医疗","地图显示消防、诊所、医院、社区中心和转诊等候点；绿色表示上月接受过社区走访的住宅。"],justice:["司法与市政","蓝色：调查。紫色：法院候审。橙色：待转送。地块上的点可在司法面板定位；路网单行和封路影响转送。"],schoolAccess:['学位与通学','圆点标出住区：绿色已入学，黄色有人候补，红色有需求但无人入学。校旁显示上月实际用位；切断道路会在下月重新分配。'],incidents:['应急事件','图标是待处理事件；点列表定位，事件优先级会改变有限服务如何派出。风险热区不是已发生事件。'],active:['步行与骑行','淡蓝为步行道，金色为天桥，绿色为自行车道。用「慢行」的试走功能检查连通。'],parking:['停车','P 表示公共场库，数字是已用／总位；红色已满，灰色未接通。小圆点是路侧位，蓝色队尾表示等待停车。'],connections:['对外连接','公路、铁路、港口和航空的城市外接点；铁路必须铺轨连到边界。'],resources:['自然资源','选特别分区类型后查看相应资源。'],districts:['特别分区','显示特别区边界及其用途。'],routes:['铁路、水运和航线','可查看有效线路和已建轨道、车辆段。'],none:['实景','鸟瞰地形、建筑、人车与道路。'],traffic:['道路交通','橙线：该方向正在排队。紫线：队尾堵住上游入口。用查阅工具点击道路查看停在哪、为什么。'],transit:['公共交通','青色标出有效公交线路；断线不发车。'],elevation:['高程／隧道','高架、桥梁与地下通道按高程显色。'],zones:['土地用途','住区、商业、办公与工业分色。'],land:['建设潜力','有道路、基础设施和服务的地块更容易升高密度。'],fire:['消防覆盖','由消防站经路网抵达；互不连通的道路不会跨河覆盖。'],police:['警务覆盖','由警务设施经道路提供。'],water:['供水覆盖','供水设施经道路计算覆盖；本版没有独立管线。'],power:['电力覆盖','电力设施经道路计算覆盖；本版没有独立电网。']};
 function civicTypes(){return C.SERVICE_TYPES||C.SERVICES||{}}
 function serviceKeys(){let v=civicTypes();return Array.isArray(v)?v.map(x=>typeof x==='string'?x:x.id||x.type):Object.keys(v).length?Object.keys(v):['fire','police','water','power'];}
 for(let k of serviceKeys())if(!layers[k])layers[k]=[(serviceNames[k]||k)+'覆盖','沿可达道路计算服务覆盖，地块得分可用查阅工具查看。'];
@@ -219,7 +219,7 @@ const layerGroups={
  '总览与规划':['progress','industry','earth','none','zones','districts','elevation','resources'],
  '出行与对外连接':['serviceOps','traffic','transit','routes','parking','active','connections'],
  '水电与环境':['water','power','sewage','waste','pollution','noise'],
- '市政与生活':['wellbeing','social','labor','care','justice','schoolAccess','incidents','services','fire','police','health','education','clinic','school','park','library','plaza','logistics']
+ '市政与生活':['parks','wellbeing','social','labor','care','justice','schoolAccess','incidents','services','fire','police','health','education','clinic','school','park','library','plaza','logistics']
 };
 const grouped=new Set();
 function layerOptions(keys){return keys.filter(k=>Object.hasOwn(layers,k)&&!grouped.has(k)).map(k=>{grouped.add(k);return '<option value="'+k+'">'+layers[k][0]+'</option>';}).join('');}
@@ -290,6 +290,14 @@ function showToolsWork(){
  if(tool==='track')s=htmlSel('trackMode','轨道类别',listOptions(Object.fromEntries(Object.entries(T.MODES).filter(([,m])=>m.track))))+(opts.trackMode==='metro'?'<p class="help">地下标准标高 −12 m</p>':'<div class="row">'+value('trackStart','起点高程 m',0,50)+value('trackEnd','终点高程 m',0,50)+'</div>');
  if(tool==='line')s=htmlSel('transitMode','运输方式',listOptions(T.MODES));
  if(tool==='district')s=htmlSel('districtType','特别分区用途',listOptions(D.TYPES));
+ if(tool==='parkLife'){
+  const list=parkZones().filter(z=>city.parks.parks.some(q=>q.districtId===z.id));
+  if(!list.some(z=>z.id===opts.parkDistrict))opts.parkDistrict=list[0]?.id||'';
+  s=list.length?htmlSel('parkDistrict','施工公园',Object.fromEntries(list.map(z=>[z.id,'公园 '+clean(z.id)])))+
+   htmlSel('parkMode','建设类型',{asset:'地面设施或入口',path:'绘制公园步道'})+
+   (opts.parkMode==='path'?htmlSel('parkPath','步道类别',listOptions(PL.PATHS)):htmlSel('parkAsset','公园设施',listOptions(PL.ASSETS))):
+   '<p class="help">请先用「特别分区 → 公园区」画边界，再在右侧「公园管理」启用。</p>';
+ }
  if(tool==='social'){
   const q=R.TYPES[opts.socialType];
   s=htmlSel('socialType','市民服务设施',listOptions(R.TYPES))+'<p class="help">造价 ¥'+format.format(q.cost)+' · 额定 '+q.capacity+' · 月费 ¥'+format.format(q.monthly)+'</p>';
@@ -321,6 +329,7 @@ function showToolsWork(){
  $('options').querySelectorAll('select,input').forEach(el=>el.addEventListener('change',()=>{if(el.id==='service-budget'){if(batch){showTools();return notify('经营预算不属于施工蓝图，请先完成当前批次',true);}C.setBudget(city.civic,opts.service,+el.value);refresh();save();return}opts[el.id]=el.type==='checkbox'?el.checked:el.type==='number'?N.clamp(+el.value,+el.min,+el.max):el.value;if(el.id==='service'){showTools();setLayer(opts.service)}
  if(el.id==='profile'||el.id==='oneway'||el.id==='signalAction'||el.id==='parkingMode'||el.id==='parkingType'){showTools();hintDraft();$(el.id)?.focus({preventScroll:true});}
  if(['industryKind','socialType'].includes(el.id))showTools();
+ if(['parkDistrict','parkMode','parkPath','parkAsset'].includes(el.id)){draft=[];showTools();hintDraft();}
  if(el.id==='earthMode'){showTools();$(el.id)?.focus({preventScroll:true});}
  if(el.id==='frontageMode'){draft=[];hintDraft();}
  if(['schoolType','justiceType','careType'].includes(el.id)){showTools();$(el.id)?.focus({preventScroll:true});}
@@ -329,7 +338,7 @@ function showToolsWork(){
  if(['stationType','trackMode','transitMode','utilityType','districtType'].includes(el.id)){draft=[];showTools();if(el.id==='utilityType')setLayer(opts.utilityType);if(el.id==='districtType')setLayer('resources');}
  updatePreview();}));
  for(let [id,a,b] of [['ground',0,0],['bridge',18,18],['tunnel',-16,-16],['grade',0,18]])if($(id))$(id).onclick=()=>{opts.startZ=a;opts.endZ=b;draft=[];showTools();updatePreview()};
- $('actions').innerHTML=['bus','frontage','polygon','line','district'].includes(tool)?'<button id="finish">完成'+toolNames[tool]+'</button><button id="undo">撤回最后一点</button>':'';
+ $('actions').innerHTML=(['bus','frontage','polygon','line','district'].includes(tool)||tool==='parkLife'&&opts.parkMode==='path')?'<button id="finish">完成'+toolNames[tool]+'</button><button id="undo">撤回最后一点</button>':'';
  if(batch&&$('service-budget'))$('service-budget').disabled=true;
  if(tool==='line'){
   const list=T.stopOptions(city.transit,opts.transitMode,transitOpts());
@@ -658,6 +667,14 @@ function getAgents(t){
    meters-=d;
   }
  }
+ for(const q of parkVisualTrips){
+  const phase=((t*.00123+q.phase)%(2*q.length)+2*q.length)%(2*q.length),back=phase>q.length;
+  let left=back?2*q.length-phase:phase;
+  for(const seg of q.segments){
+   if(left<=seg.length){marks.push({...N.mix(seg.a,seg.b,left/seg.length),z:0,kind:'walk',angle:seg.angle+(back?Math.PI:0),id:q.id,color:q.color});break;}
+   left-=seg.length;
+  }
+ }
  return [...marks,...(micro?.agents()||[]),...(pedestrians?.agents(t)||[]),...T.agents(transitMetrics,t).filter(q=>!serviceOps||!['metro','rail','tram','ferry'].includes(q.mode)||q.freight>0&&q.mode==='rail'),...(serviceOps?.agents()||[])];
 }
 function renderFlow(s){
@@ -681,13 +698,100 @@ function paintCoverage(){coverageGrid=null;if(!serviceKeys().includes(layer)&&la
 let cargoGateways=[];
 function cargoNumbers(){return H.report(city.cargo).last?.totals||{};}
 function cargoOnLine(id){const g=H.report(city.cargo).last?.gateways?.find(x=>x.id.endsWith('-'+id)&&x.mode!=='road');return (g?.departed||0)+(g?.arrived||0);}
+let parksView=null,parkRouteCache=null,parkVisualTrips=[];
+function makeParkActors(r){
+ const list=[];
+ for(const p of Object.values(r?.districts||{})){
+  const park=city.parks.parks.find(x=>x.districtId===p.id);
+  for(const v of (p.paths||[])){
+   if(v.visitors<=0||list.length>=32)continue;
+   const points=park?.paths.find(x=>x.id===v.id)?.points;
+   if(!points)continue;
+   const segments=points.slice(1).map((b,i)=>{const a=points[i];return {a,b,length:N.dist(a,b),angle:Math.atan2(b.y-a.y,b.x-a.x)};}).filter(v=>v.length>.1);
+   const length=segments.reduce((n,v)=>n+v.length,0);if(!length)continue;
+   const num=Math.min(4,1+Math.floor(v.visitors/21));
+   for(let i=0;i<num&&list.length<32;i++)list.push({id:'park-visitor-'+v.id+'-'+i,segments,length,phase:2*length*(i+.28)/num,color:['#f0c887','#adc5d2','#dcab9d','#a5bc8a'][i]});
+  }
+ }
+ return list;
+}
+function parkZones(tr=city){return tr.districts.districts.filter(z=>z.type==='park');}
+function parkOperatingOptions(tr=city){
+ if(!tr.parks.parks.length)return {land:onLand,water:N.water};
+ const net=effective||tr.network,a=tr.activeTravel;
+ if(!parkRouteCache||parkRouteCache.net!==net||parkRouteCache.a!==a)parkRouteCache={net,a,g:A.build(a,net),cache:new Map(),at:new Map()};
+ const c=parkRouteCache,wet=N.water;
+ const fp=p=>({x:p.x,y:p.y,z:0});
+ function gateAccess(p){
+  const k=p.x+':'+p.y;if(!c.at.has(k))c.at.set(k,!!A.route(c.g,fp(p),fp(p),'walk',{radius:27,water:wet}));
+  return c.at.get(k);
+ }
+ return {land:onLand,water:wet,gateAccess,labor:L.report(tr.labor),accessFor(home,gate){
+  if(N.dist(home,gate)>490)return Infinity;
+  const k=[home.x,home.y,gate.x,gate.y].join(':');
+  if(!c.cache.has(k)){
+   if(c.cache.size>=14000)c.cache.clear();
+   c.cache.set(k,A.route(c.g,fp(home),fp(gate),'walk',{radius:41,water:wet})?.meters??Infinity);
+  }
+  return c.cache.get(k);
+ }};
+}
+function wellbeingParkMetrics(){
+ if(!parksView||!city.parks.parks.length)return metrics;
+ return {...metrics,lots:Object.fromEntries(Object.entries(metrics.lots||{}).map(([id,q])=>{
+  const v=PL.sample(parksView,id);return [id,v>q.park?{...q,park:v}:q];
+ }))};
+}
+function parkFoot(p,t){const a=PL.ASSETS[t];return padShape(p,a.width,a.depth);}
+function parkHit(p,tr=city,alsoPaths=true){
+ for(const q of tr.parks.parks){
+  const a=q.assets.find(x=>{const d=PL.ASSETS[x.type];return Math.abs(p.x-x.x)<d.width/2+2&&Math.abs(p.y-x.y)<d.depth/2+2;});
+  if(a)return a;
+  const path=alsoPaths&&nearestPolyline(q.paths,p,10/camera.zoom);if(path)return path;
+ }
+ return null;
+}
+function parkObstacles(tr){
+ return [...tr.civic.lots.filter(l=>l.level>0),...tr.civic.services,...tr.education.sites,...tr.justice.sites,...tr.care.sites,...tr.social.sites,
+  ...tr.transit.stations.map(v=>({...v,width:(T.FACILITIES[v.type]?.radius||10)*2,depth:(T.FACILITIES[v.type]?.radius||10)*2})),
+  ...tr.industry.modules,...tr.parking.lots,...tr.parks.parks.filter(q=>q.districtId!==opts.parkDistrict).flatMap(q=>q.assets.map(v=>({...v,...PL.ASSETS[v.type]})))];
+}
+function parkBuild(p,pts){
+ const tr=structuredClone(city),type=pts?opts.parkPath:opts.parkAsset;
+ if(!opts.parkDistrict)return {ok:false,reason:'请先在公园管理里启用一个特别公园区'};
+ if(!pts&&p){
+  const d=PL.ASSETS[type],near=N.snap({nodes:[],edges:tr.network.edges.filter(e=>e.kind==='road')},{...p,z:0},Math.hypot(d.width,d.depth)/2+15,true);
+  const e=near&&tr.network.edges.find(v=>v.id===near.edge);
+  if(e&&N.dist(p,near)<N.crossSection(e).width/2+Math.min(d.width,d.depth)*.49)return {ok:false,reason:'设施不能盖到行车道；入口请放在路边'};
+  facilityClaim(tr,p,d.width,d.depth);
+ }
+ if(pts)constructionLots(tr,{points:pts,clearance:PL.PATHS[type].width/2});
+ const r=PL.plan(tr.parks,tr,{districtId:opts.parkDistrict,kind:pts?'path':'asset',type,...p,points:pts},{land:onLand,water:N.water,occupied:parkObstacles(tr),cash:tr.network.cash});
+ if(!r.ok)return r;
+ if(!PL.add(tr.parks,r))return {ok:false,reason:'施工项目没有加入蓝图'};
+ tr.network.cash-=r.cost;
+ const f=pts?null:parkFoot(p,type);
+ return {...r,tr,geometry:pts?{kind:'active',points:pts,width:PL.PATHS[type].width}:{kind:'service',points:f,closed:true,foundation:f},
+   title:'建设 '+(pts?PL.PATHS[type].name:PL.ASSETS[type].name)};
+}
+function placeParkItem(p){
+ if(opts.parkMode==='path'){
+  if(draft.length>=24)return notify('一段可以有 24 个点。完成后可接着建下一段',true);
+  draft.push({...p,z:0});notify('已选步道第 '+draft.length+' 点；可继续或点完成');return;
+ }
+ const q=parkBuild(p);
+ if(!q.ok)return notify(q.reason,true);
+ beginPlan(q.tr,q,q.geometry,q.title,'parkLife','与入口和步道相接后才能开放');
+}
 function refresh(settleLabor=false){
  applyIncident();const fin=city.finance;
  utilityMetrics=U.evaluate(city.utilities,city.civic);
  regional=Outside.assess(effective,M.gates(mapId),city.civic,map,N);
  const districtBase=D.evaluate(city.districts,city.civic,districtOpts());
+ parksView=PL.evaluate(city.parks,city,parkOperatingOptions());
+ parkVisualTrips=makeParkActors(parksView);
  industryReport=X.report(city.industry,city,industryOptions());
- districtMetrics=X.merge(districtBase,industryReport);
+ districtMetrics=PL.merge(X.merge(districtBase,industryReport),parksView);
  updateDistrictTransit();
  const supply=supplyOptions(settleLabor?H.begin(city.cargo,city,{gateways:cargoGateways}).imports:city.cargo.inbound);E.allocate(city.civic,{...fin,economy:city.economy},supply);
  econ=E.evaluate(city.civic,{...fin,economy:city.economy},supply);
@@ -697,7 +801,9 @@ function refresh(settleLabor=false){
   const employed=L.advance(city.labor,city,{education:Q.report(city.education),economy:econ,civicMetrics:metrics,network:effective||city.network,activeTravel:city.activeTravel,water:N.water,career});
   CR.advance(city.careers,city,employed,career);
   industryReport=X.advance(city.industry,city,industryOptions());
-  districtMetrics=X.merge(districtBase,industryReport);
+  parksView=PL.advance(city.parks,city,parkOperatingOptions());
+  parkVisualTrips=makeParkActors(parksView);
+  districtMetrics=PL.merge(X.merge(districtBase,industryReport),parksView);
   R.advance(city.social,city,{...socialOptions(),incidents:city.civicEvents,labor:L.report(city.labor),industry:industryReport});
   G.advance(city.progression,city);
   updateDistrictTransit();
@@ -720,7 +826,7 @@ function refresh(settleLabor=false){
   }]))},city.month);
   W.advance(city.market,city,econ,{supply:finalSupply,labor:L.report(city.labor)});
   metrics=C.evaluate(city.civic,activeRoads,civicOptions());
-  WB.advance(city.wellbeing,city,{civicMetrics:metrics,labor:L.report(city.labor),market:W.report(city.market),incidents:I.report(city.civicEvents),industry:industryReport,social:R.report(city.social,city,socialOptions())});
+  WB.advance(city.wellbeing,city,{civicMetrics:wellbeingParkMetrics(),labor:L.report(city.labor),market:W.report(city.market),incidents:I.report(city.civicEvents),industry:industryReport,social:R.report(city.social,city,socialOptions())});
  }
  if(settleLabor&&city.labor.last){
   const {byWork,...f}=L.fiscal(city.labor,city,{economy:econ,civicMetrics:metrics});
@@ -765,7 +871,7 @@ function supplyOptions(imports={},exports={}){
 }
 function civicOptions(){
  return {...roadOpts,canDevelop:l=>!terrainActive()||foundation(lotFootprint(l)).ok,tax:city.finance.tax,utilityFor(lot,type){return ['water','power'].includes(type)&&U.isManaged(city.utilities,type)?utilityMetrics?.lots?.[lot.id]?.[type]||0:null;},
- districtFor:lot=>({park:D.sample(districtMetrics,'park',lot),education:D.sample(districtMetrics,'education',lot),pollution:D.sample(districtMetrics,'pollution',lot)}),
+ districtFor:lot=>({park:Math.max(D.sample(districtMetrics,'park',lot),PL.sample(parksView,lot)),education:D.sample(districtMetrics,'education',lot),pollution:D.sample(districtMetrics,'pollution',lot)}),
  sectorFor:lot=>E.modifiers(lot,{...city.finance,economy:city.economy},econ)};
 }
 function justiceEventCity(){
@@ -845,6 +951,59 @@ function renderLabor(){
  const why={};for(const row of Object.values(v.byHome||{}))for(const [k,n] of Object.entries(row.waitingReasons||{}))why[k]=(why[k]||0)+n;
  $('labor-reasons').innerHTML=Object.keys(why).length?lines(Object.entries(why).map(([key,n])=>[clean(L.REASONS[key]||key),n])):'暂无求职记录。';
 }
+function parkManageAction(kind){
+ if(pending||batch||!checkCanSave())return $('park-status').textContent='请先处理当前蓝图。';
+ const id=$('park-zone').value,tr=structuredClone(city),p=tr.parks.parks.find(v=>v.districtId===id);
+ let okay=false;
+ if(kind==='adopt')okay=!!PL.adopt(tr.parks,tr,id);
+ if(kind==='release')okay=PL.release(tr.parks,id);
+ if(kind==='settings'){
+  const b=$('park-budget'),f=$('park-fee');if(!b.reportValidity()||!f.reportValidity())return;
+  okay=PL.setBudget(tr.parks,id,+b.value)&&PL.setFee(tr.parks,id,+f.value);
+ }
+ if(kind==='toggle'){
+  const a=p?.assets.find(g=>g.id===$('park-gate').value&&g.type==='gate');if(a)okay=PL.setGate(tr.parks,a.id,!a.open);
+ }
+ if(!okay)return $('park-status').textContent=kind==='release'?'需要先拆除园内设施和步道。':'设置不可用，请重新选择公园。';
+ if(!save(tr))return $('park-status').textContent=saveError;
+ city=tr;opts.parkDistrict=id;refresh();showTools();renderParks();$('park-status').textContent=kind==='adopt'?'已启用。先把入口放在靠近道路的一侧。':kind==='release'?'已恢复旧公园区。':'已保存。已结算财政不会被追扣。';
+}
+function renderParks(){
+ const select=$('park-zone'),old=select.value||opts.parkDistrict,list=parkZones();
+ select.replaceChildren(...list.map(p=>new Option('公园区 '+p.id,p.id)));
+ if(list.some(p=>p.id===old))select.value=old;
+ const id=select.value,planned=city.parks.parks.find(q=>q.districtId===id),book=PL.report(city.parks),x=parksView?.districts[id],last=book.districts[id];
+ $('park-adopt').disabled=!id||!!planned||!!(pending||batch);$('park-release').disabled=!planned||!!(pending||batch);
+ $('park-build').disabled=!planned;
+ $('park-settings').hidden=!planned;
+ $('park-summary').innerHTML=x?lines([['运营状态',PL.REASONS[x.reason]||x.reason],['主题与等级',(PL.THEMES[x.theme]||x.theme)+' · '+(PL.BANDS[x.band]||x.band)],
+  ['预计访客／待入',wellNum(x.visitors)+' / '+wellNum(x.waiting)],['入口／游憩接通',x.connectedGates+' / '+x.connectedAttractions],['预计满意／拥挤',wellNum(x.enjoyment*100)+'% / '+wellNum(x.crowding*100)+'%'],
+  ['预计门票餐饮／养护','¥'+wellNum(x.income)+' / ¥'+wellNum(x.expense)],['已结算上次月报',last?'第 '+book.month+' 月 · '+last.visitors+' 访客 · 净额 '+moneyBadge(last.net):'尚未结算']]):
+  id?'此处目前沿用旧公园规则。启用后将按真实入口、路径和设施结算。':'还没有公园区。先用建设工具的「特别分区 → 公园区」绘制边界。';
+ if(planned){
+  $('park-budget').value=planned.budget;$('park-fee').value=planned.fee;
+  const gates=planned.assets.filter(v=>v.type==='gate');careerSelect($('park-gate'),gates,v=>v.id+' · '+(v.open?'开放':'关闭'));
+  $('park-toggle').disabled=!gates.length||!!(pending||batch);
+ }
+ const items=$('park-assets');items.replaceChildren();
+ for(const v of (x?.assets||[])){
+  const el=document.createElement('li');
+  el.textContent=PL.ASSETS[v.type].name+' · '+v.id+(v.connected?' · 已接通 · '+wellNum(v.visitors)+' 访客':' · 尚未接通');
+  items.append(el);
+ }
+}
+$('park-open').onclick=()=>{renderParks();$('park-status').textContent='';$('park-dialog').showModal();};
+$('park-close').onclick=()=>$('park-dialog').close();
+$('park-zone').onchange=renderParks;
+$('park-adopt').onclick=()=>parkManageAction('adopt');
+$('park-release').onclick=()=>parkManageAction('release');
+$('park-apply').onclick=()=>parkManageAction('settings');
+$('park-toggle').onclick=()=>parkManageAction('toggle');
+$('park-build').onclick=()=>{
+ opts.parkDistrict=$('park-zone').value;$('park-dialog').close();setLayer('parks');
+ document.querySelector('[data-tool=parkLife]').click();
+ const q=parksView?.districts[opts.parkDistrict];if(q)focusView(q.focus.x,q.focus.y,1.18);
+};
 function careerBuildingInfo(lot){
  const r=CR.report(city.careers),a=lot.type==='residential'?r.byHome[lot.id]:r.byWork[lot.id];if(!a)return [];
  return [['人均工作经验',wellNum(a.meanExperience)+' 月'],['实发工资／经验等加成','¥'+wellNum(a.payroll)+'／¥'+wellNum(a.premium)],
@@ -1640,6 +1799,10 @@ $('plan-flow-estimate').onclick=async()=>{
 function finish(){return withBuildCity(()=>finishWork());}
 function finishWork(){
  if(pending)return;
+ if(tool==='parkLife'){
+  const q=parkBuild(null,draft);if(!q.ok)return notify(q.reason,true);
+  return beginPlan(q.tr,q,q.geometry,q.title,'parkLife',Math.round(q.length||0)+' 米 · 可与另一段步道相接');
+ }
  let r,geometry={points:[...draft],kind:tool};const trial=structuredClone(city);
 
  if(tool==='line'){
@@ -1792,6 +1955,7 @@ function pointerActionWork(p){
   if(!selectedTile)return notify('请选择地图上的土地',true);
   renderProgress();lastSignature='';return;
  }
+ if(tool==='parkLife'){placeParkItem(p);updatePreview();hintDraft();return;}
  if(tool==='active'){activeClick(p);updatePreview();hintDraft();return;}
  if(tool==='junction'){const j=junction(p,2);if(!j)return notify('请选择有两段或以上道路的路口',true);turnNode=j.id;turnEnter=null;selected={junction:j.id};renderTurnEditor();return;}
  if(['utility','track','station','line','district','signal','parking'].includes(tool)){addInfraPlan(p);updatePreview();hintDraft();return;}
@@ -1868,6 +2032,7 @@ function pointerActionWork(p){
   beginPlan(trial,r,{points:[loc],kind:'service',foundation:padShape(p,25,25)},'建设 '+(serviceNames[opts.service]||def.name),'service','养护 ¥'+format.format(def.monthly)+' / 月');
  }
  else if(tool==='inspect'){
+  const park=layer==='parks'&&parkHit(p);if(park){selected={park:park.id};renderDetails();return;}
   const v=socialAt(p);if(v){selected={social:v.id};renderDetails();return;}
   const module=industryAt(p);if(module){selected={industry:module.id};renderDetails();return;}
   const h=careAt(p);if(h){selected={care:h.id};renderDetails();return;}
@@ -1906,6 +2071,11 @@ function pointerActionWork(p){
     if(x){const tr=structuredClone(city);if(!batch&&serviceOps&&serviceOwner===city)tr.transitService=serviceOps.snapshot();const draft=makeService(tr,commuteMap?.lines||[],tr.network);
      const removed=draft.removeTaxiDepot(x.id);if(!removed.ok)return notify(removed.reason,true);
      tr.transitService=draft.snapshot();beginPlan(tr,{ok:true},taxiShape(x),'拆除出租车场','taxiDepot','无退款');return;}
+    const feature=layer==='parks'&&parkHit(p);
+    if(feature){
+     const tr=structuredClone(city);PL.remove(tr.parks,feature.id);
+     return beginPlan(tr,{ok:true},{kind:'erase',points:feature.points||parkFoot(feature,feature.type),closed:!feature.points},'拆除 '+(PL.ASSETS[feature.type]?.name||PL.PATHS[feature.type]?.name),'erase','无退款；可能切断游客通路');
+    }
     const h=layer==='care'&&careAt(p);
     if(h){const tr=structuredClone(city);if(!K.remove(tr.care,h.id))return notify('此医院还有住院患者，暂不能拆除',true);
      beginPlan(tr,{ok:true},careShape(h,h.type),'拆除 '+K.TYPES[h.type].name,'careBuild','无退款');return;}
@@ -1925,7 +2095,7 @@ function pointerActionWork(p){
      beginPlan(t,{ok:true},{points:parkingOutline(parking,spec),closed:true,kind:'erase',parkNode:P.access(city.network,parking)?.node},'拆除'+spec.label,'erase','不返还造价，取消停车容量和月养护');return;
     }
     const u=['water','power'].includes(layer)&&nearestPolyline(city.utilities.lines.filter(l=>l.type===layer),p),d=layer==='districts'&&city.districts.districts.find(q=>inPoly(p,q.points)),st=layer==='routes'&&(nearestAt(city.transit.stations,p)||nearestPolyline(city.transit.tracks,p));
-    if(u||d||st){if(d&&city.industry.modules.some(q=>q.districtId===d.id))return notify('先清空并拆除区内产业设施',true);const tr=structuredClone(city);let r=st?T.remove(tr.transit,st.id):{ok:u?U.remove(tr.utilities,u.id):D.remove(tr.districts,d.id).ok};const hit=u||d||st;beginPlan(tr,r,{points:hit.points||[hit],closed:!!d,kind:'erase'},'拆除 '+(d?'特别区':u?'水电线路':'枢纽／轨道'),'erase');return;}
+    if(u||d||st){if(d&&city.industry.modules.some(q=>q.districtId===d.id))return notify('先清空并拆除区内产业设施',true);const tr=structuredClone(city);if(d&&tr.parks.parks.some(q=>q.districtId===d.id)&&!PL.release(tr.parks,d.id))return notify('此公园尚有道路或设施，请在公园图层拆除后再撤销边界',true);let r=st?T.remove(tr.transit,st.id):{ok:u?U.remove(tr.utilities,u.id):D.remove(tr.districts,d.id).ok};const hit=u||d||st;beginPlan(tr,r,{points:hit.points||[hit],closed:!!d,kind:'erase'},'拆除 '+(d?'特别区':u?'水电线路':'枢纽／轨道'),'erase');return;}
    }
    const e=edgeAt(p);if(!e)return notify('未选中道路；请在相关图层上拆除设施',true);
    const trial=structuredClone(city);let r;
@@ -1946,6 +2116,10 @@ function laborBuildingInfo(l){
 function renderDetails(){
  const n=city.network,e=n.edges.find(e=>e.id===selected.edge),z=city.civic.zones.find(z=>z.id===selected.zone),f=city.civic.services.find(s=>s.id===selected.service);
  const txt=$('details');
+ if(selected.park){
+  const q=city.parks.parks.flatMap(q=>[...q.assets,...q.paths]).find(q=>q.id===selected.park);
+  if(q){const t=PL.ASSETS[q.type]||PL.PATHS[q.type];txt.innerHTML=lines([['公园设施',t.name],['编号',clean(q.id)],['容量',t.capacity||0],...(q.points?[['步道长度',wellNum(q.length)+' 米']]:[]),...(q.type==='gate'?[['入口',q.open?'开放':'关闭']]:[])]);return;}
+ }
  if(selected.social){
   const v=(socialReport?.sites||[]).find(q=>q.id===selected.social);
   if(v){txt.innerHTML=lines([['设施',R.TYPES[v.type].name],['经费',v.funding+'%'],['使用／容量',(v.used??v.occupied??0)+'／'+(v.capacity||0)],['状态',clean(R.REASONS[v.reason]||(v.connected?'已连通':'未接通'))]]);return;}
@@ -2028,6 +2202,12 @@ function updatePreviewWork(){
    preview={points:[draft[0],q],kind:'active'};label('点选终点，系统检查是否可达');return;
   }
  }
+ if(tool==='parkLife'){
+  if(!opts.parkDistrict){preview=null;label('请先到公园管理启用一处公园区。');return;}
+  if(opts.parkMode==='path'&&draft.length){const points=hover?[...draft,{x:hover.x,y:hover.y,z:0}]:draft;preview={kind:'active',points,width:PL.PATHS[opts.parkPath].width};label('选了 '+draft.length+' 点 · 点击完成公园步道审核');return;}
+  if(hover&&opts.parkMode==='asset'){const d=PL.ASSETS[opts.parkAsset],z=parkZones().find(q=>q.id===opts.parkDistrict),ok=!!z&&onLand(hover)&&D.inPolygon(hover,z.points);
+   preview={kind:'service',points:parkFoot(hover,opts.parkAsset),closed:true,valid:ok};label(ok?d.name+' · ¥'+format.format(d.cost):'选择当前公园区内的陆地',!ok);return;}
+ }
  if(tool==='junction'){label();preview=turnPreview;return;}
  if(tool==='parking'&&hover&&opts.parkingMode==='build'){
   const r=parkingCandidate(hover),v=P.LOTS[opts.parkingType];
@@ -2102,7 +2282,7 @@ function showWorld(){
  const n=city.network,by=new Map(),parcels=new Map();
  for(const q of city.civic.lots){if(!parcels.has(q.zoneId))parcels.set(q.zoneId,[]);parcels.get(q.zoneId).push({...q,footprint:lotFootprint(q)});}
  for(let l of city.civic.lots){if(!by.has(l.zoneId))by.set(l.zoneId,[]);if(l.level>0)by.get(l.zoneId).push({...l,w:l.width,d:l.depth});}
- return {...n,terrain:terrainScene(),activeTravel:city.activeTravel.links,parking:city.parking.lots,buses:(effective||n).buses,utilities:city.utilities.lines,transit:city.transit,transitGates:T.gates(transitOpts()),roadGates:M.gates(mapId),districts:city.districts.districts,zones:city.civic.zones.map(z=>({...z,poly:z.polygon||z.poly||[],parcels:parcels.get(z.id)||[],buildings:by.get(z.id)||[]})),services:[...city.civic.services.map(s=>({...s,radius:130})),...city.education.sites.map(s=>({...s,type:'edu-'+s.type,radius:0})),...city.justice.sites.map(s=>({...s,type:'jst-'+s.type,radius:0})),...city.care.sites.map(s=>({...s,type:'csr-'+s.type,radius:0})),...city.industry.modules.map(s=>({...s,type:'ina-'+s.kind,radius:0})),...city.social.sites.map(s=>({...s,type:'soc-'+s.type,radius:0})),...(city.transitService?.taxiDepots||[]).map(s=>({...s,type:'taxi-depot',radius:0}))]};
+ return {...n,parks:city.parks.parks,terrain:terrainScene(),activeTravel:city.activeTravel.links,parking:city.parking.lots,buses:(effective||n).buses,utilities:city.utilities.lines,transit:city.transit,transitGates:T.gates(transitOpts()),roadGates:M.gates(mapId),districts:city.districts.districts,zones:city.civic.zones.map(z=>({...z,poly:z.polygon||z.poly||[],parcels:parcels.get(z.id)||[],buildings:by.get(z.id)||[]})),services:[...city.civic.services.map(s=>({...s,radius:130})),...city.education.sites.map(s=>({...s,type:'edu-'+s.type,radius:0})),...city.justice.sites.map(s=>({...s,type:'jst-'+s.type,radius:0})),...city.care.sites.map(s=>({...s,type:'csr-'+s.type,radius:0})),...city.industry.modules.map(s=>({...s,type:'ina-'+s.kind,radius:0})),...city.social.sites.map(s=>({...s,type:'soc-'+s.type,radius:0})),...(city.transitService?.taxiDepots||[]).map(s=>({...s,type:'taxi-depot',radius:0}))]};
 }
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 const fingers=new Map();let touchGesture=null;
@@ -2467,7 +2647,7 @@ function scene(now){
 }
 showTools();refresh();if(scenePrefs.enabled||parameters.get('view')==='3d')switchScene(true,{persist:false});updateRawExport();if(recoveryRaw!==null)reportSaveProblem(recoveryHint);window.requestAnimationFrame(scene);
  if(new URLSearchParams(location.search).get('menu')==='saves')$('file-dialog').showModal();
-window.Blueprint={careers:()=>CR.report(city.careers),careerProduction:()=>structuredClone(city.careerProduction),wellbeing:()=>WB.report(city.wellbeing),wellbeingApplied:()=>structuredClone(city.wellbeingApplied),cargo:()=>H.report(city.cargo),cargoGateways:()=>structuredClone(cargoGateways),credit:()=>V.report(city.credit),market:()=>W.report(city.market),balance:()=>B.report(city.balance),sceneStats:()=>renderer3d?.stats(),sceneMode:()=>mode3d?'3d':'2d',sceneCamera:()=>mode3d?{...renderer3d.camera}:{...camera},sceneProject:activeProject,sceneRaycast:p=>mode3d?renderer3d.raycast(p):view.screenToWorld(p,camera),progress:()=>G.report(city.progression,progressPoints()),social:()=>socialReport,industry:()=>industryReport,terrain:()=>({revision:city.terrain.revision,statistics:city.terrain.statistics}),ground:(x,y)=>F.height(city.terrain,landSurface,{x,y}),serviceOps:()=>serviceOps?.report(),labor:()=>L.report(city.labor),care:()=>K.report(city.care,city,careOpts()),justice:()=>J.report(city.justice,city,{network:effective||city.network,water:N.water}),education:()=>Q.report(city.education),events:()=>I.report(city.civicEvents),active:()=>activeResult,commute:()=>commuteModel?.stats(),batch:()=>batch&&({count:batch.items.length,cash:batch.world.network.cash}),preview:()=>preview,world:()=>city, metrics:()=>metrics,traffic:()=>trafficStats,view,camera:()=>({...camera}),setLayer,save,plan:()=>pending&&{title:pending.title,cost:pending.cash},forecast:()=>({...forecast}),incident:()=>incident,trafficSim:()=>micro?.stats(),map:()=>mapId,utility:()=>utilityMetrics,transit:()=>transitMetrics,districts:()=>districtMetrics,economy:()=>econ,agents:()=>getAgents(clock),coverage:()=>coverageGrid};
+window.Blueprint={parks:()=>PL.report(city.parks),parkForecast:()=>parksView,careers:()=>CR.report(city.careers),careerProduction:()=>structuredClone(city.careerProduction),wellbeing:()=>WB.report(city.wellbeing),wellbeingApplied:()=>structuredClone(city.wellbeingApplied),cargo:()=>H.report(city.cargo),cargoGateways:()=>structuredClone(cargoGateways),credit:()=>V.report(city.credit),market:()=>W.report(city.market),balance:()=>B.report(city.balance),sceneStats:()=>renderer3d?.stats(),sceneMode:()=>mode3d?'3d':'2d',sceneCamera:()=>mode3d?{...renderer3d.camera}:{...camera},sceneProject:activeProject,sceneRaycast:p=>mode3d?renderer3d.raycast(p):view.screenToWorld(p,camera),progress:()=>G.report(city.progression,progressPoints()),social:()=>socialReport,industry:()=>industryReport,terrain:()=>({revision:city.terrain.revision,statistics:city.terrain.statistics}),ground:(x,y)=>F.height(city.terrain,landSurface,{x,y}),serviceOps:()=>serviceOps?.report(),labor:()=>L.report(city.labor),care:()=>K.report(city.care,city,careOpts()),justice:()=>J.report(city.justice,city,{network:effective||city.network,water:N.water}),education:()=>Q.report(city.education),events:()=>I.report(city.civicEvents),active:()=>activeResult,commute:()=>commuteModel?.stats(),batch:()=>batch&&({count:batch.items.length,cash:batch.world.network.cash}),preview:()=>preview,world:()=>city, metrics:()=>metrics,traffic:()=>trafficStats,view,camera:()=>({...camera}),setLayer,save,plan:()=>pending&&{title:pending.title,cost:pending.cash},forecast:()=>({...forecast}),incident:()=>incident,trafficSim:()=>micro?.stats(),map:()=>mapId,utility:()=>utilityMetrics,transit:()=>transitMetrics,districts:()=>districtMetrics,economy:()=>econ,agents:()=>getAgents(clock),coverage:()=>coverageGrid};
 if(parameters.get('qa')==='commute'){
  window.Blueprint.commuteFastForward=advanceCommuteObservation;
  window.Blueprint.commuteLatest=()=>commuteLast.at(-1);
