@@ -96,3 +96,9 @@
 .market-block{padding:.65rem;border:1px solid #3c5860;border-radius:.6rem;margin:.65rem 0}
 .market-block h3{font-size:14px;margin:.1rem 0 .45rem}
 .market-block .line span:last-child{font-variant-numeric:tabular-nums}
+
+/* Municipal finances: distinct from the operating budget. */
+#finance-dialog{width:min(590px,calc(100vw - 28px));max-height:calc(100dvh - 26px);overflow:auto;overscroll-behavior:contain}
+.finance-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+#finance-dialog section{border-top:1px solid #bccfcb77;margin-block:14px;padding-top:8px}
+#finance-dialog h3{margin:4px 0 9px}#finance-loans{padding-inline-start:21px}#finance-loans li+li{margin-top:5px}

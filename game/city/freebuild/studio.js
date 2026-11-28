@@ -1,6 +1,6 @@
 'use strict';
 (()=>{
-const W=MarketCycle,B=CityBalance,G=Progression,R=SocialCare,X=IndustryAreas,F=TerrainWork,Z=RoadsideZoning,S=TransitService,L=Labor,K=CareServices,J=Justice,Q=Education,I=CivicIncidents,A=ActiveTravel,P=Parking,N=Network,C=Civic,U=Utilities,T=Transit,E=Economy,D=Districts,M=CityMaps,$=s=>document.getElementById(s);
+const V=MunicipalFinance,W=MarketCycle,B=CityBalance,G=Progression,R=SocialCare,X=IndustryAreas,F=TerrainWork,Z=RoadsideZoning,S=TransitService,L=Labor,K=CareServices,J=Justice,Q=Education,I=CivicIncidents,A=ActiveTravel,P=Parking,N=Network,C=Civic,U=Utilities,T=Transit,E=Economy,D=Districts,M=CityMaps,$=s=>document.getElementById(s);
 const parameters=new URLSearchParams(location.search),map=M.select(parameters.get('map')),mapId=map.id,sandbox=parameters.get('mode')==='sandbox',startDifficulty=parameters.get('difficulty')==='challenge'?'challenge':'standard';
 const canvas=$('map'),view=new CityView(canvas,{width:1200,height:800}),storeKey=M.storage(mapId,sandbox),prefKey='city.blueprint.settings.1',format=new Intl.NumberFormat('zh-CN',{maximumFractionDigits:0});
 let prefs={};try{prefs=JSON.parse(localStorage.getItem(prefKey))||{};localStorage.setItem('city.blueprint.map.1',mapId);localStorage.setItem('city.blueprint.mode.1',sandbox?'sandbox':'career')}catch{}
@@ -19,19 +19,19 @@ function normalizeSignals(input,nodes){
   return [];
  }));
 }
-const stateStore={make:()=>({version:1,network:N.create(),civic:C.create(17),mapId,sandbox,utilities:U.create(),transit:T.create(),districts:D.create(),economy:E.create(),parking:P.normalize(),activeTravel:A.create(),civicEvents:I.create(44017),education:Q.create(mapId),justice:J.create(mapId),care:K.create(mapId),labor:L.create(mapId),transitService:S.normalize(),terrain:F.create(mapId),industry:X.create(mapId),social:R.create(mapId),progression:G.create({mapId,sandbox}),balance:B.create({sandbox,mode:startDifficulty}),market:W.create(mapId),signals:{},month:1,contracts:{},history:[],finance:{tax:9,debt:0,frequency:"normal"}}),restore(raw){
+const stateStore={make:()=>({version:1,network:N.create(),civic:C.create(17),mapId,sandbox,utilities:U.create(),transit:T.create(),districts:D.create(),economy:E.create(),parking:P.normalize(),activeTravel:A.create(),civicEvents:I.create(44017),education:Q.create(mapId),justice:J.create(mapId),care:K.create(mapId),labor:L.create(mapId),transitService:S.normalize(),terrain:F.create(mapId),industry:X.create(mapId),social:R.create(mapId),progression:G.create({mapId,sandbox}),balance:B.create({sandbox,mode:startDifficulty}),market:W.create(mapId),credit:V.create({month:1}),signals:{},month:1,contracts:{},history:[],finance:{tax:9,debt:0,frequency:"normal"}}),restore(raw){
  if(raw?.version!==1||!Array.isArray(raw.network?.edges)||!Array.isArray(raw.network?.nodes)||!Array.isArray(raw.network?.buses)||!Array.isArray(raw.civic?.lots)||!Array.isArray(raw.civic?.zones)||!Array.isArray(raw.civic?.services)||!Number.isInteger(raw.month)||raw.month<1||!Number.isFinite(raw.network.cash)||!Number.isInteger(raw.network.next))throw Error('不兼容的城市存档');
  if((raw.mapId||'river')!==mapId||!!raw.sandbox!==sandbox)throw Error('此存档属于其他地图或模式，请先从大厅切换。');
  raw.mapId=mapId;
  const u=raw.utilities?U.restore(raw.utilities):U.create(), tt=raw.transit?T.normalize(raw.transit,{water:N.water}):T.create(), dd=raw.districts?D.normalize(raw.districts,{mapId,water:N.water,isBuildable:p=>M.land(p)}):D.create(), ee=raw.economy?E.restore(raw.economy):E.create();
  if(!u||!tt||!dd||!ee)throw Error('水电、交通、特别分区或产业存档无效');
- Object.assign(raw,{utilities:u,transit:tt,districts:dd,economy:ee,parking:P.normalize(raw.parking),activeTravel:A.normalize(raw.activeTravel),civicEvents:I.normalize(raw.civicEvents,44017),education:Q.normalize(raw.education,mapId),justice:J.normalize(raw.justice,mapId),care:K.normalize(raw.care,mapId),labor:L.normalize(raw.labor,mapId),transitService:(S.sanitize||S.normalize)(raw.transitService),terrain:F.normalize(raw.terrain,mapId),industry:X.normalize(raw.industry,mapId),social:R.normalize(raw.social,mapId),progression:G.normalize(raw.progression,{mapId,sandbox,...(!raw.progression?{legacy:true}:{})}),balance:B.normalize(raw.balance,{sandbox,...(!raw.balance?{legacy:true}:{})}),market:W.normalize(raw.market,mapId),signals:normalizeSignals(raw.signals,raw.network.nodes)});
+ Object.assign(raw,{utilities:u,transit:tt,districts:dd,economy:ee,parking:P.normalize(raw.parking),activeTravel:A.normalize(raw.activeTravel),civicEvents:I.normalize(raw.civicEvents,44017),education:Q.normalize(raw.education,mapId),justice:J.normalize(raw.justice,mapId),care:K.normalize(raw.care,mapId),labor:L.normalize(raw.labor,mapId),transitService:(S.sanitize||S.normalize)(raw.transitService),terrain:F.normalize(raw.terrain,mapId),industry:X.normalize(raw.industry,mapId),social:R.normalize(raw.social,mapId),progression:G.normalize(raw.progression,{mapId,sandbox,...(!raw.progression?{legacy:true}:{})}),balance:B.normalize(raw.balance,{sandbox,...(!raw.balance?{legacy:true}:{})}),market:W.normalize(raw.market,mapId),credit:V.normalize(raw.credit,{legacyDebt:raw.finance?.debt,month:raw.month}),signals:normalizeSignals(raw.signals,raw.network.nodes)});
  const {nodes,edges,buses}=raw.network;
  if(nodes.length>1500||edges.length>1800||buses.length>200||raw.civic.lots.length>4000)throw Error('存档规模超出预览版上限');
  const ids=new Set();for(let n of nodes){if(typeof n.id!=='string'||ids.has(n.id)||![n.x,n.y,n.z].every(Number.isFinite))throw Error('无效节点');ids.add(n.id)}
  const eids=new Set();for(let e of edges){if(typeof e.id!=='string'||eids.has(e.id)||!ids.has(e.a)||!ids.has(e.b)||!Array.isArray(e.pts)||e.pts.length<2||e.pts.length>500||!e.pts.every(p=>[p.x,p.y,p.z].every(Number.isFinite))||![2,3,4,6,8].includes(e.lanes)||!['road','highway','ramp'].includes(e.kind)||!Number.isFinite(e.speed)||e.speed<1)throw Error('无效道路');e.len=N.length(e.pts);eids.add(e.id);}
  if(buses.some(b=>!/^B[0-9]+$/.test(b.id)||!Array.isArray(b.stops)||b.stops.length<2||!b.stops.every(s=>ids.has(s)))||raw.civic.lots.some(l=>!Number.isFinite(l.x)||!Number.isFinite(l.y)||!Object.hasOwn(labels,l.type))||raw.civic.services.some(s=>!Number.isFinite(s.x)||!Number.isFinite(s.y)))throw Error('无效设施或地块');
- raw.finance={tax:N.clamp(Math.round(+raw.finance?.tax||9),5,16),debt:N.clamp(Math.round(+raw.finance?.debt||0),0,40000),frequency:raw.finance?.frequency==="frequent"?"frequent":"normal"};
+ raw.finance={tax:N.clamp(Math.round(+raw.finance?.tax||9),5,16),debt:V.report(raw.credit).debt,frequency:raw.finance?.frequency==="frequent"?"frequent":"normal"};
  raw.network.turns=N.normalizedTurns(raw.network);
  U.bootstrap(raw.utilities,raw.civic,N.mapRoads(raw.network));
  N.rebuildBuses(raw.network);
@@ -643,13 +643,15 @@ function refresh(settleLabor=false){
  const pop=metrics.totals?.population||0;
  grant=Math.max(0,Math.round(map.grant-pop*1.45));
  const road=Math.round(city.network.edges.reduce((n,e)=>n+e.len*(e.lanes*.28+(e.pts.some(q=>Math.abs(q.z)>3)?.85:0)),0));
- const bus=(fin.frequency==='frequent'?410:220)*city.network.buses.filter(b=>!b.broken).length,interest=Math.ceil(fin.debt*.012),principal=Math.min(fin.debt,1250);
+ const bus=(fin.frequency==='frequent'?410:220)*city.network.buses.filter(b=>!b.broken).length,interest=0,principal=0;
  const infra=utilityMetrics.maintenance||0, transit=Math.round((transitMetrics.total?.net||0)*(map.port+map.air)/2),district=Math.round(districtMetrics.total?.net||0),regionalNet=regional.net||0;
  const parking=city.parking.lots.reduce((v,l)=>v+P.LOTS[l.type].monthly,0);
  const walking=Math.round(city.activeTravel.links.reduce((v,l)=>v+(Number(A.TYPES[l.type].maintenance)||0)*l.length,0));
- const upkeep=techCosts().careUpkeep??1,social=Math.round(R.maintenance(city.social)*upkeep),care=Math.round(K.maintenance(city.care,city,careOpts())*upkeep),justice=J.maintenance(city.justice,city,{network:effective||city.network,water:N.water}),school=Q.maintenance(city.education),chains=Math.round(econ.totals?.taxAdjustment||0),laborTax=L.report(city.labor).month?L.fiscal(city.labor,city,{economy:econ,civicMetrics:metrics}):null;forecast={laborTax,social,care,justice,school,road,bus,infra,parking,walking,transit,district,regionalNet,chains,interest,principal,net:grant+(metrics.totals?.net||0)-road-bus-infra-parking-walking-school-justice-care-social-interest-principal+transit+district+regionalNet+chains+(laborTax?.adjustment||0)};
+ const upkeep=techCosts().careUpkeep??1,social=Math.round(R.maintenance(city.social)*upkeep),care=Math.round(K.maintenance(city.care,city,careOpts())*upkeep),justice=J.maintenance(city.justice,city,{network:effective||city.network,water:N.water}),school=Q.maintenance(city.education),chains=Math.round(econ.totals?.taxAdjustment||0),laborTax=L.report(city.labor).month?L.fiscal(city.labor,city,{economy:econ,civicMetrics:metrics}):null;forecast={laborTax,social,care,justice,school,road,bus,infra,parking,walking,transit,district,regionalNet,chains,interest,principal,net:grant+(metrics.totals?.net||0)-road-bus-infra-parking-walking-school-justice-care-social+transit+district+regionalNet+chains+(laborTax?.adjustment||0)};
  forecast.baseNet=forecast.net;forecast.inputs=balanceInputs();
- forecast.balance=B.forecast(city.balance,city,forecast.inputs);forecast.net=forecast.balance.net;buildTraffic();sceneWorld=showWorld();paintCoverage();stats();renderDetails();}
+ forecast.balance=B.forecast(city.balance,city,forecast.inputs);forecast.operatingNet=forecast.balance.net;
+ forecast.finance=V.forecast(city.credit,city,{cash:city.network.cash,operatingNet:forecast.operatingNet,month:city.month+1});
+ forecast.net=forecast.finance.net;forecast.interest=forecast.finance.interest;forecast.principal=forecast.finance.principal;buildTraffic();sceneWorld=showWorld();paintCoverage();stats();renderDetails();}
 function updateDistrictTransit(){
  const other=Object.fromEntries(Object.entries(districtMetrics.districts).filter(([,d])=>!X.TYPES[d.type]));
  transitMetrics=T.evaluate(city.transit,{...city.civic,lots:[...city.civic.lots,...D.freightLots({districts:other}),...X.freightLots(industryReport)]},{...transitOpts(),airportBoost:districtMetrics.airportBoost});
@@ -971,7 +973,8 @@ function tick(){
  refresh(true);
  const serviceAdjustment=bookServicePeriod();seedServiceDemand();
  const settled=B.advance(city.balance,city,{...forecast.inputs,baseNet:forecast.baseNet+serviceAdjustment,incidentCost:civicEventLoss+justiceCaseCost});
- const net=settled.net;city.network.cash+=net;city.finance.debt-=forecast.principal;
+ const credit=V.advance(city.credit,city,{month:city.month,cash:city.network.cash,operatingNet:settled.net});
+ const net=settled.net+(credit.cashDelta||0);city.network.cash+=net;city.finance.debt=V.report(city.credit).debt;
  const paid=Contracts.settle(city,contractInputs());city.history=(city.history||[]).concat({month:city.month,pop:metrics.totals?.population||0,net,bus:(trafficStats.busRiders||0)+(transitMetrics?.total?.passengers||0)}).slice(-18);
  refresh();save();return paid;
 }
@@ -1398,7 +1401,7 @@ $('batch-commit').onclick=()=>{
 window.addEventListener('beforeunload',e=>{if(batch?.items.length){e.preventDefault();e.returnValue='';}});
 function beginPlan(trial,r,geometry,title,kind,info=''){
  if(!r?.ok)return notify(r?.reason||'无法生成蓝图',true);
- if(!['land','research'].includes(kind)&&geometry.kind!=='erase'){const gate=checkBuildAccess(kind,geometry,trial);if(!gate.ok)return notify(gate.reason,true);}
+ if(!['land','research','finance'].includes(kind)&&geometry.kind!=='erase'){const gate=checkBuildAccess(kind,geometry,trial);if(!gate.ok)return notify(gate.reason,true);}
  if(geometry.foundation){
   const f=foundation(geometry.foundation);if(!f.ok)return notify(f.reason,true);
  }
@@ -1418,7 +1421,8 @@ function beginPlan(trial,r,geometry,title,kind,info=''){
  }
  pending={trial,geometry:{...geometry,valid:true},title,kind,cash,before:trafficBefore()};
  $('plan-title').textContent='待确认 · '+title;
- $('plan-cost').textContent='施工费用 ¥'+format.format(Math.max(0,cash))+' · 预计余额 ¥'+format.format(trial.network.cash)+(info?' · '+info:'');
+ $('plan-apply').textContent=kind==='finance'?'确认交易':'确认施工';
+ $('plan-cost').textContent=(kind==='finance'?'市库变动 '+moneyBadge(-cash):'施工费用 ¥'+format.format(Math.max(0,cash)))+' · 预计余额 ¥'+format.format(trial.network.cash)+(info?' · '+info:'');
  $('plan-review').hidden=false; $('build-guide').hidden=true;
  $('plan-flow-estimate').hidden=!geometry.signalNode&&!geometry.parkNode;
  $('plan-flow-estimate').disabled=false;$('plan-flow-result').hidden=true;$('plan-flow-result').textContent='';
@@ -2103,9 +2107,11 @@ function balanceInputs(){
 function moneyBadge(n){return (n<0?'−':'')+'¥'+format.format(Math.abs(n||0));}
 function showBudgetSignal(){
  const q=forecast?.balance,b=$('cash-runway');if(!q)return;
- const state=q.severity==='critical'?'紧张':q.severity==='watch'?'留意':'稳定';
- b.hidden=q.severity==='stable';b.dataset.severity=q.severity;
- b.textContent=q.runway===null?'财政 '+state:'现金约撑 '+q.runway+' 月';b.title=(q.reasons||[]).map(k=>B.REASONS[k]).filter(Boolean).join('；');
+ const f=forecast.finance,run=forecast.net<0?Math.floor(Math.max(0,city.network.cash)/Math.max(1,-forecast.net)):q.runway;
+ const severity=(f.overdue>0||f.severity==='critical'||run!==null&&run<2)?'critical':(q.severity!=='stable'||run!==null&&run<6)?'watch':'stable';
+ const state=severity==='critical'?'紧张':severity==='watch'?'留意':'稳定';
+ b.hidden=severity==='stable';b.dataset.severity=severity;
+ b.textContent=f.overdue>0?'预计部分债务逾期':run===null?'财政 '+state:'现金约撑 '+run+' 月';b.title=[...(q.reasons||[]).map(k=>B.REASONS[k]),...(f.reasons||[]).map(k=>V.REASONS[k])].filter(Boolean).join('；');
 }
 function showDifficulty(){
  const now=city.balance.mode,q=forecast.balance,p=B.MODES[now],v=$('balance-choice'),old=v.value;
@@ -2113,13 +2119,13 @@ function showDifficulty(){
  $('balance-choice-wrap').hidden=!can;v.value=can&&['standard','challenge'].includes(old)?old:now==='challenge'?'challenge':'standard';
  $('balance-mode').textContent=(now==='classic'?'旧档规则':p.name)+(can?' · 可在确认后选择难度':' · 当前存档');
  $('balance-mode-detail').textContent=p.description;
- const run=q.runway===null?'当前无月度现金缺口':q.net<0?'按当前收支可撑 '+q.runway+' 月':'本月可用资金已耗尽';
+ const net=forecast.net,run=net<0?'含偿债按当前收支可撑 '+Math.floor(Math.max(0,city.network.cash)/Math.max(1,-net))+' 月':q.runway===null?'当前无月度现金缺口':'本月可用资金已耗尽';
  $('balance-runway').textContent=run+'。'+(q.reasons||[]).map(k=>B.REASONS[k]).filter(Boolean).join('；');
  $('balance-decomposition').innerHTML=lines(q.isNeutral?[['原有营运补助',moneyBadge(q.baseGrant)],['新增调整','¥0']]:[
   ['开城扶持',moneyBadge(q.starter)],['基础服务配套',moneyBadge(q.serviceMatch)],['超前道路',moneyBadge(-q.breakdown.roads)],
   ['用地维护',moneyBadge(-q.breakdown.land)],['高开支设施配套压力',moneyBadge(-q.breakdown.optional)],
   ['可用扶持余额',moneyBadge(q.remainingAid)],['相对旧规则净调整',moneyBadge(q.adjustment)]]);
- const last=B.report(city.balance).last;$('balance-last').textContent=last?'第 '+last.month+' 月实际结余 '+moneyBadge(last.net)+'（含已记事件与运营）':'推进一月后显示实际收支。';
+ const last=B.report(city.balance).last;$('balance-last').textContent=last?'第 '+last.month+' 月实际结余 '+moneyBadge(last.net)+'（经营，未扣偿债）':'推进一月后显示实际收支。';
 }
 $('balance-mode-change').onclick=()=>{
  if(pending||batch||!checkCanSave())return;
@@ -2132,13 +2138,69 @@ function budgetInfo(){
  showDifficulty();
  const f=city.finance,t=metrics.totals||{};$('tax').value=f.tax;$('frequency').value=f.frequency;
  $('budget-info').innerHTML=lines([['税收','¥'+format.format(t.income||0)],['公共设施','−¥'+format.format(t.expense||0)],['道路养护','−¥'+format.format(forecast.road)],['停车设施养护','−¥'+format.format(forecast.parking)],['慢行设施养护','−¥'+format.format(forecast.walking)],['照护、安置与科研','−¥'+format.format(forecast.social)],['消防医疗与社区','−¥'+format.format(forecast.care)],['司法及市政运转','−¥'+format.format(forecast.justice)],['学校运营','−¥'+format.format(forecast.school)],['本月社区转介','−¥'+format.format(city.justice.last?.communityCost||0)],['本月应急支出','−¥'+format.format(civicEventLoss)],['公交运营','−¥'+format.format(forecast.bus)],['水电线养护','−¥'+format.format(forecast.infra)],['科技降低车队运维','¥'+format.format(city.serviceLedger?.discount||0)],['本期公交营运净调整','¥'+format.format(city.serviceLedger?.adjustment||0)],['铁路港航净额','¥'+format.format(forecast.transit)],['特别区净额','¥'+format.format(forecast.district)],['对外公路净额','¥'+format.format(forecast.regionalNet)],['就业工资税','¥'+format.format(forecast.laborTax?.payrollTax||0)],['就业后财政净调节','¥'+format.format(forecast.laborTax?.adjustment||0)],['供货与产出税差','¥'+format.format(forecast.chains)],['发展补助','¥'+format.format(grant)],['本金／利息','−¥'+format.format(forecast.principal)+'／¥'+format.format(forecast.interest)],['借款余额','¥'+format.format(f.debt)],['月结预测',moneyBadge(forecast.net)]]);
- $('loan-take').disabled=f.debt>0;$('loan-repay').disabled=f.debt<=0||city.network.cash<f.debt;
+ $('budget-credit-note').textContent='预算债务余额 '+moneyBadge(V.report(city.credit).debt)+' · 同期应偿 '+moneyBadge(forecast.finance.due);
 }
 $('budget').onclick=()=>{budgetInfo();$('budget-dialog').showModal();};
 $('tax-apply').onclick=()=>{city.finance.tax=N.clamp(Math.round(+$('tax').value||9),5,16);city.finance.frequency=$('frequency').value==='frequent'?'frequent':'normal';refresh();save();budgetInfo();};
-$('loan-take').onclick=()=>{if(city.finance.debt)return;city.finance.debt=40000;city.network.cash+=40000;refresh();save();budgetInfo();};
-$('loan-repay').onclick=()=>{const debt=city.finance.debt;if(city.network.cash<debt||debt<=0)return;city.finance.debt=0;city.network.cash-=debt;refresh();save();budgetInfo();};
 $('budget-close').onclick=()=>$('budget-dialog').close();
+function financeInputs(tr=city){return {cash:tr.network.cash,month:tr.month,operatingNet:forecast.operatingNet,population:metrics.totals?.population||0};}
+function percentBps(v){return (Number.isFinite(v)?v/100:0).toFixed(2)+'%';}
+function financeBegin(title,quote,commit,summary){
+ if(pending||batch||!checkCanSave())return;
+ const tr=structuredClone(city),input=financeInputs(tr),q=quote(tr.credit,input);
+ if(!q.ok){$('finance-quote-feedback').textContent=q.reason;return;}
+ const x=commit(tr.credit,q,input);
+ if(!x.ok||!Number.isFinite(x.cashDelta)){$('finance-quote-feedback').textContent=x.reason||'报价已变动，请重新报价';return;}
+ tr.network.cash+=x.cashDelta;tr.finance.debt=V.report(tr.credit).debt;
+ $('finance-dialog').close();
+ beginPlan(tr,q,{kind:'finance',points:[]},title, 'finance',summary(q));
+}
+function showFinance(){
+ const q=V.report(city.credit),d=forecast.finance,
+  includes=[['可动用现金',moneyBadge(city.network.cash)],['保护准备金',moneyBadge(q.reserve)],['未偿本金',moneyBadge(q.debt)],['已逾期',moneyBadge(q.overdue)],
+   ['下月应偿本金',moneyBadge(d.principalDue)],['下月应偿利息',moneyBadge(d.interestDue)],['按当前现金可实际付',moneyBadge(d.paid)]];
+ $('finance-current').innerHTML=lines(includes);
+ const last=q.last;$('finance-last').textContent=last?'第 '+last.month+' 月：实付 '+moneyBadge(last.paid)+'，到期 '+moneyBadge(last.due)+'，未付 '+moneyBadge(last.overdue):'尚无已结算的偿付记录。';
+ const loans=$('finance-loans');loans.replaceChildren();
+ for(const v of q.loans){
+  const li=document.createElement('li');li.textContent=v.id+' · '+v.name+' · 余额 '+moneyBadge(v.balance)+' · '+percentBps(v.rateBps)+'/月 · 第 '+v.nextDue+' 月到期'+(v.overdueMonths?' · 已拖欠 '+v.overdueMonths+' 月':'');loans.append(li);
+ }
+ if(!loans.children.length)loans.textContent='当前没有借款。';
+ const choose=$('finance-repay-id'),prev=choose.value;choose.replaceChildren(...q.loans.map(v=>new Option(v.id+' · '+v.name,v.id)));
+ if(q.loans.some(v=>v.id===prev))choose.value=prev;
+ $('finance-repay').disabled=!choose.value||!!(batch||pending);
+ const p=$('finance-product');if(!p.options.length)p.replaceChildren(...Object.entries(V.PRODUCTS).map(([k,v])=>new Option(v.name,k)));
+ const q1=V.PRODUCTS[p.value];$('finance-loan-value').min=q1.min;$('finance-loan-value').max=q1.max;
+ if(!Number.isFinite(+$('finance-loan-value').value)||+$('finance-loan-value').value<q1.min||+$('finance-loan-value').value>q1.max)$('finance-loan-value').value=q1.min;
+ financeQuotePreview();
+}
+function financeQuotePreview(){
+ const f=$('finance-loan-value'),id=$('finance-product').value,d=V.PRODUCTS[id],q=V.quoteLoan(city.credit,id,+f.value,financeInputs());
+ $('finance-loan-hint').textContent=d.description+' '+(q.ok?'预计 '+q.term+' 月，月利率 '+percentBps(q.rateBps)+'；签约费用 '+moneyBadge(q.fee)+'，到账 '+moneyBadge(q.proceeds):q.reason);
+ $('finance-borrow').disabled=!q.ok||!!(pending||batch);
+}
+function openFinance(){
+ if(pending||batch)return notify('请先处理当前蓝图',true);
+ $('budget-dialog').close();$('finance-quote-feedback').textContent='';showFinance();$('finance-dialog').showModal();
+}
+$('budget-finance').onclick=openFinance;
+$('finance-close').onclick=()=>{$('finance-dialog').close();budgetInfo();$('budget-dialog').showModal();};
+$('finance-product').onchange=showFinance;$('finance-loan-value').oninput=financeQuotePreview;
+$('finance-borrow').onclick=()=>{const id=$('finance-product').value,z=$('finance-loan-value');if(!z.reportValidity())return;
+ financeBegin('签订 '+V.PRODUCTS[id].name,(s,o)=>V.quoteLoan(s,id,+z.value,o),V.applyLoan,
+  q=>'本金 '+moneyBadge(q.amount)+' · '+q.term+' 月 · 月利率 '+percentBps(q.rateBps)+' · 费用 '+moneyBadge(q.fee)+' · 第 '+q.firstDue+' 月起还款');};
+$('finance-repay').onclick=()=>{
+ const id=$('finance-repay-id').value,n=$('finance-repay-amount'),full=$('finance-repay-full').checked;
+ if(!full&&!n.reportValidity())return;
+ financeBegin('提前还款 '+id,(s,o)=>V.quoteRepay(s,id,full?'full':+n.value,o),V.applyRepay,
+  q=>'本次本金 '+moneyBadge(q.principal)+' · 利息 '+moneyBadge(q.interest)+' · 手续费 '+moneyBadge(q.fee));
+};
+$('finance-deposit').onclick=()=>queueReserve('deposit');$('finance-withdraw').onclick=()=>queueReserve('withdraw');
+function queueReserve(action){
+ const n=$('finance-reserve-value');if(!n.reportValidity())return;
+ financeBegin(action==='deposit'?'划入保护准备金':'取回保护准备金',(s,o)=>V.quoteReserve(s,action,+n.value,o),V.applyReserve,
+  q=>'同额在市库和准备金之间划转；不增加资金或利息。');
+}
 const marketNumber=new Intl.NumberFormat('zh-CN',{maximumFractionDigits:1}),marketFmt=x=>marketNumber.format(Number.isFinite(x)?x:0);
 let marketReturn=false;
 function openMarket(fromIndustry=false){
@@ -2219,7 +2281,7 @@ function scene(now){
 }
 showTools();refresh();if(scenePrefs.enabled||parameters.get('view')==='3d')switchScene(true,{persist:false});updateRawExport();if(recoveryRaw!==null)reportSaveProblem(recoveryHint);window.requestAnimationFrame(scene);
  if(new URLSearchParams(location.search).get('menu')==='saves')$('file-dialog').showModal();
-window.Blueprint={market:()=>W.report(city.market),balance:()=>B.report(city.balance),sceneStats:()=>renderer3d?.stats(),sceneMode:()=>mode3d?'3d':'2d',sceneCamera:()=>mode3d?{...renderer3d.camera}:{...camera},sceneProject:activeProject,sceneRaycast:p=>mode3d?renderer3d.raycast(p):view.screenToWorld(p,camera),progress:()=>G.report(city.progression,progressPoints()),social:()=>socialReport,industry:()=>industryReport,terrain:()=>({revision:city.terrain.revision,statistics:city.terrain.statistics}),ground:(x,y)=>F.height(city.terrain,landSurface,{x,y}),serviceOps:()=>serviceOps?.report(),labor:()=>L.report(city.labor),care:()=>K.report(city.care,city,careOpts()),justice:()=>J.report(city.justice,city,{network:effective||city.network,water:N.water}),education:()=>Q.report(city.education),events:()=>I.report(city.civicEvents),active:()=>activeResult,commute:()=>commuteModel?.stats(),batch:()=>batch&&({count:batch.items.length,cash:batch.world.network.cash}),preview:()=>preview,world:()=>city, metrics:()=>metrics,traffic:()=>trafficStats,view,camera:()=>({...camera}),setLayer,save,plan:()=>pending&&{title:pending.title,cost:pending.cash},forecast:()=>({...forecast}),incident:()=>incident,trafficSim:()=>micro?.stats(),map:()=>mapId,utility:()=>utilityMetrics,transit:()=>transitMetrics,districts:()=>districtMetrics,economy:()=>econ,agents:()=>getAgents(clock),coverage:()=>coverageGrid};
+window.Blueprint={credit:()=>V.report(city.credit),market:()=>W.report(city.market),balance:()=>B.report(city.balance),sceneStats:()=>renderer3d?.stats(),sceneMode:()=>mode3d?'3d':'2d',sceneCamera:()=>mode3d?{...renderer3d.camera}:{...camera},sceneProject:activeProject,sceneRaycast:p=>mode3d?renderer3d.raycast(p):view.screenToWorld(p,camera),progress:()=>G.report(city.progression,progressPoints()),social:()=>socialReport,industry:()=>industryReport,terrain:()=>({revision:city.terrain.revision,statistics:city.terrain.statistics}),ground:(x,y)=>F.height(city.terrain,landSurface,{x,y}),serviceOps:()=>serviceOps?.report(),labor:()=>L.report(city.labor),care:()=>K.report(city.care,city,careOpts()),justice:()=>J.report(city.justice,city,{network:effective||city.network,water:N.water}),education:()=>Q.report(city.education),events:()=>I.report(city.civicEvents),active:()=>activeResult,commute:()=>commuteModel?.stats(),batch:()=>batch&&({count:batch.items.length,cash:batch.world.network.cash}),preview:()=>preview,world:()=>city, metrics:()=>metrics,traffic:()=>trafficStats,view,camera:()=>({...camera}),setLayer,save,plan:()=>pending&&{title:pending.title,cost:pending.cash},forecast:()=>({...forecast}),incident:()=>incident,trafficSim:()=>micro?.stats(),map:()=>mapId,utility:()=>utilityMetrics,transit:()=>transitMetrics,districts:()=>districtMetrics,economy:()=>econ,agents:()=>getAgents(clock),coverage:()=>coverageGrid};
 if(parameters.get('qa')==='commute'){
  window.Blueprint.commuteFastForward=advanceCommuteObservation;
  window.Blueprint.commuteLatest=()=>commuteLast.at(-1);
