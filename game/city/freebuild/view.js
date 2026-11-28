@@ -185,49 +185,159 @@
         }
       }
     }
-    paintRoad(c, e, pts, overlay, value, selected) {
-      if (pts.length<2) return;
-      if(pts.some(p=>(p.z||0)<-3)){
-        // Tunnel sections are a guide at grade, never a painted surface road.
+    roadMesh(roads,nodes) {
+      const groups=new Map(), links=new Map(), tunnels=[];
+      const group=n=>{
+        if(!groups.has(n))groups.set(n,{level:n,spans:[],marks:[],aprons:[]});
+        return groups.get(n);
+      };
+      const connect=(job,side,key)=>{
+        const n=nodes[key], end=side?job.pts.at(-1):job.pts[0];
+        if(!n||end.z<-3||Math.abs(end.z-n.z)>1.45||Math.hypot(end.x-n.x,end.y-n.y)>1.55)return;
+        const endpoint={job,side,node:key,peer:null,trim:0};
+        if(!links.has(key))links.set(key,[]);
+        links.get(key).push(endpoint);job.links[side]=endpoint;
+        // SplitAt may leave roundoff at the shared endpoint. Snap only this draw copy.
+        job.draw[side?job.draw.length-1:0]=p3(n);
+      };
+      for(const [i,e,pts,bb] of roads){
+        if(pts.length<2)continue;
+        const highway=e.kind==='highway',ramp=e.kind==='ramp';
+        const width=cl(+e.lanes||2,1,8)*(highway?3.8:3.35)+(highway?5.8:ramp?2.5:4.5);
         let start=0;
-        for(let i=1;i<pts.length;i++){
-          const buried=Math.min(pts[i-1].z||0,pts[i].z||0)<-3;
-          const changed=i===pts.length-1||buried!==(Math.min(pts[i].z||0,pts[i+1]?.z||0)<-3);
-          if(!changed)continue;
-          const run=pts.slice(start,i+1);start=i;
-          if(buried){
-            line(c,run,selected?'#ffffdacc':overlay==='elevation'?'#aa73d8':'#c6d2cc65',selected?7:5.5,[5,4]);
-            line(c,run,'#364d578c',selected?2.8:1.9,[4,4]);
-            for(const p of [run[0],run.at(-1)])if(!pts.every(p=>(p.z||0)<-3)&&Math.abs(p.x-riverX(p.y))>riverW(p.y)+1)circle(c,p.x,p.y,3.2,'#4d5f5b','#dae3cd',.85);
-          }else this.paintRoad(c,e,run,overlay,value,selected);
-        }
-        return;
-      }
-      const draw=pts.map(p3);
-      const highway=e.kind==='highway', ramp=e.kind==='ramp';
-      const width=cl(+e.lanes||2,1,8)*(highway?3.8:3.35)+(highway?5.8:ramp?2.5:4.5);
-      const bridge=pts.some(p=>(p.z||0)>4)||pts.some(p=>Math.abs(p.x-riverX(p.y))<riverW(p.y)-1);
-      if (bridge) {
-        line(c,draw.map((v,i)=>({x:v.x+2,y:pts[i].y+2})),'#25404366',width+5);
-        // Piers are anchored to the ground while the deck uses its real height.
-        for(let k=.14;k<.95;k+=.18){
-          const p=sample(pts,k);if((p.z||0)<3&&Math.abs(p.x-riverX(p.y))>riverW(p.y)-4)continue;
-          const deck=p3(p);
-          line(c,[{x:p.x,y:p.y+2},{x:deck.x,y:deck.y}],'#617f76',Math.max(2.5,width*.23));
-          circle(c,p.x,p.y+2,Math.max(1.7,width*.11),'#576d62');
+        for(let end=1;end<pts.length;end++){
+          const buried=Math.min(pts[end-1].z,pts[end].z)<-3;
+          const last=end===pts.length-1;
+          if(!last&&buried===(Math.min(pts[end].z,pts[end+1].z)<-3))continue;
+          const run=pts.slice(start,end+1),a=start;start=end;
+          if(buried){tunnels.push({e,run,bb,entrances:[...(a?[run[0]]:[]),...(!last?[run.at(-1)]:[])]});continue;}
+          const high=Math.max(...run.map(p=>p.z));
+          const layer=high>4?Math.max(1,Math.floor((high+2)/5)):0;
+          const bridge=layer>0||run.some(p=>Math.abs(p.x-riverX(p.y))<riverW(p.y)-1);
+          const draw=run.map(p3), l=draw.reduce((n,p,k)=>k?n+Math.hypot(p.x-draw[k-1].x,p.y-draw[k-1].y):n,0);
+          if(l<.1)continue;
+          const job={i,e,bb,pts:run,draw,length:l,width,links:[],layer,bridge,highway,
+            mark:width>=10.6?(highway?'highway':'surface'):'none'};
+          if(a===0)connect(job,0,e.a);
+          if(last)connect(job,1,e.b);
+          group(layer).spans.push(job);
         }
       }
-      if(selected) line(c,draw,'#fbffe3',width+8);
-      line(c,draw,'#62705d',width+3.7);
-      line(c,draw,bridge?'#ddded0':'#e0ddbe',width+1.6);
-      const norm=+value>1?+value/100:+value||0;
-      const street=overlay==='elevation'?(bridge?'#257e9b':'#69786d'):overlay==='traffic'?catRGB(mix([72,149,112],[209,91,68],cl(norm,0,1))):highway?'#505f5a':'#67756a';
-      line(c,draw,street,width);
-      if(width>=11)line(c,draw,highway?'#d6c69c95':'#e8e5d2b6',highway?1.3:.67,highway?[5,4]:[3.6,4.7]);
-      if(e.bus)line(c,draw,'#a9e0cbb0',1.2,[7,5]);
-      if(e.oneway){
-        const p=sample(pts,.7),v=p3(p);c.save();c.translate(v.x,v.y);c.rotate(p.angle||0);
-        shape(c,[{x:4,y:0},{x:-3,y:-2},{x:-1.5,y:0},{x:-3,y:2}],'#fffee1');c.restore();
+      function direction(ep) {
+        const a=ep.side?ep.job.draw.at(-1):ep.job.draw[0];
+        const seq=ep.side?[...ep.job.draw].reverse():ep.job.draw;
+        for(const b of seq){
+          const dist=Math.hypot(b.x-a.x,b.y-a.y);
+          if(dist>.5)return [(b.x-a.x)/dist,(b.y-a.y)/dist];
+        }
+        return [0,0];
+      }
+      for(const [key, ends] of links){
+        if(ends.length<2)continue;
+        const widest=Math.max(...ends.map(end=>end.job.width));
+        const layer=Math.max(...ends.map(end=>end.job.layer));
+        if(ends.some(end=>end.job.layer!==layer)){
+          const apron={p:p3(nodes[key]),radius:widest*.67+2,spans:ends.map(e=>e.job)};
+          group(layer).aprons.push(apron);
+        }
+        if(ends.length===2){
+          const [a,b]=ends, da=direction(a),db=direction(b);
+          const sameGrade=a.job.layer===b.job.layer;
+          if(sameGrade&&a.job.mark===b.job.mark&&a.job.e.bus===b.job.e.bus&&da[0]*db[0]+da[1]*db[1]<-.22){a.peer=b;b.peer=a;continue;}
+          for(const v of ends)v.trim=widest*.26;
+        }else{
+          for(const v of ends)v.trim=widest*.50+1.2;
+        }
+      }
+      function trim(points,head=0,tail=0){
+        if(head<=0&&tail<=0)return points;
+        const seg=[];let length=0;
+        for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],n=Math.hypot(b.x-a.x,b.y-a.y);seg.push({a,b,from:length,to:length+n,n});length+=n;}
+        const right=length-tail;
+        if(right-head<.55)return [];
+        const p=[];
+        for(const k of seg){
+          const from=Math.max(k.from,head),to=Math.min(k.to,right);
+          if(k.n<.01||to<=from)continue;
+          const at=t=>({x:k.a.x+(k.b.x-k.a.x)*(t-k.from)/k.n,y:k.a.y+(k.b.y-k.a.y)*(t-k.from)/k.n});
+          if(!p.length)p.push(at(from));
+          p.push(at(to));
+        }
+        return p;
+      }
+      for(const g of groups.values()){
+        const seen=new Set(), candidates=g.spans.filter(j=>j.mark!=='none'||j.e.bus);
+        // Start chains at a real endpoint, then consume remaining closed rings.
+        const ordered=[...candidates.filter(j=>!j.links[0]?.peer||!j.links[1]?.peer),...candidates];
+        for(const tile of ordered){
+          if(seen.has(tile))continue;
+          let pts=[],vis=[],j=tile,side=tile.links[0]?.peer&&!tile.links[1]?.peer?1:0;
+          const beginTrim=j.links[side]?.trim||0;let finishTrim=0;
+          while(j&&!seen.has(j)){
+            seen.add(j);vis.push(j.bb);
+            const samples=side?[...j.draw].reverse():j.draw;
+            pts.push(...(pts.length?samples.slice(1):samples));
+            const exit=j.links[1-side];finishTrim=exit?.trim||0;
+            const next=exit?.peer;
+            j=next?.job;side=next?.side;
+          }
+          pts=trim(pts,beginTrim,finishTrim);
+          if(pts.length>1)g.marks.push({pts,vis,hi:tile.highway,mark:tile.mark,bus:tile.e.bus});
+        }
+      }
+      return {groups:[...groups.values()].sort((a,b)=>a.level-b.level),tunnels};
+    }
+    paintRoadMesh(c,mesh,overlay,load,queue,selected,visible) {
+      const isSelected=e=>selected.edge===e.id||selected.type==='edge'&&selected.id===e.id;
+      const tint=s=>{
+        const {i,e,highway,bridge}=s;
+        if(overlay==='elevation')return bridge?'#257e9b':'#69786d';
+        if(overlay!=='traffic')return highway?'#505f5a':'#67756a';
+        const value=(load instanceof Map?load.get(e.id):typeof load==='number'?load:load[e.id]??load[i])??e.traffic??e.load??0;
+        const measured=queue?.[e.id];
+        const ratio=Math.max(+((value?.ratio??value?.congestion??value))||0,typeof measured==='number'?measured:0);
+        return catRGB(mix([72,149,112],[209,91,68],cl(ratio>1?ratio/100:ratio,0,1)));
+      };
+      for(const t of mesh.tunnels)if(visible(t.bb)){
+        const sel=isSelected(t.e);
+        line(c,t.run,sel?'#ffffdacc':overlay==='elevation'?'#aa73d8':'#c6d2cc65',sel?7:5.5,[5,4]);
+        line(c,t.run,'#364d578c',sel?2.8:1.9,[4,4]);
+        for(const p of t.entrances)if(Math.abs(p.x-riverX(p.y))>riverW(p.y)+1)circle(c,p.x,p.y,3.2,'#4d5f5b','#dae3cd',.85);
+      }
+      const pavement=spans=>{
+        // Paint a complete casing/curb/surface pass for each matching deck.
+        // A second road's cap can no longer cut across its neighbour's pavement.
+        for(const s of spans)if(isSelected(s.e))line(c,s.draw,'#fbffe3',s.width+8);
+        for(const s of spans)line(c,s.draw,'#62705d',s.width+3.7);
+        for(const s of spans)line(c,s.draw,s.bridge?'#ddded0':'#e0ddbe',s.width+1.6);
+        for(const s of spans)line(c,s.draw,tint(s),s.width);
+      };
+      for(const g of mesh.groups){
+        const visibleSpans=g.spans.filter(s=>visible(s.bb));
+        for(const s of visibleSpans)if(s.bridge){
+          line(c,s.draw.map((v,i)=>({x:v.x+2,y:s.pts[i].y+2})),'#25404366',s.width+5);
+          for(let k=.14;k<.95;k+=.18){
+            const p=sample(s.pts,k);if(p.z<3&&Math.abs(p.x-riverX(p.y))>riverW(p.y)-4)continue;
+            const deck=p3(p);
+            line(c,[{x:p.x,y:p.y+2},{x:deck.x,y:deck.y}],'#617f76',Math.max(2.5,s.width*.23));
+            circle(c,p.x,p.y+2,Math.max(1.7,s.width*.11),'#576d62');
+          }
+        }
+        pavement(visibleSpans);
+        for(const a of g.aprons)if(a.spans.some(s=>visible(s.bb))){
+          c.save();c.beginPath();c.arc(a.p.x,a.p.y,a.radius,0,TAU);c.clip();
+          pavement(a.spans);
+          c.restore();
+        }
+        for(const m of g.marks)if(m.vis.some(visible)){
+          if(m.mark!=='none')line(c,m.pts,m.hi?'#d6c69c95':'#e8e5d2b6',m.hi?1.3:.67,m.hi?[5,4]:[3.6,4.7]);
+          if(m.bus)line(c,m.pts,'#a9e0cbb0',1.2,[7,5]);
+        }
+        for(const s of visibleSpans)if(s.e.oneway&&s.length>25){
+          const p=sample(s.pts,.69),v=p3(p);
+          c.save();c.translate(v.x,v.y);c.rotate(p.angle||0);
+          shape(c,[{x:4,y:0},{x:-3,y:-2},{x:-1.5,y:0},{x:-3,y:2}],'#fffee1');c.restore();
+        }
       }
     }
     paintBuilding(c,b,z,overlay,zoom=1) {
@@ -537,10 +647,31 @@
       }
       const p=p3(a), style=a.kind??a.type, bus=style==='bus', walking=['walk','pedestrian','walker'].includes(style);
       if(walking) {
-        const f=Number.isFinite(a.phase)?Math.sin(a.phase):0;
-        circle(c,p.x+.65,p.y+1,1.9,'#2a45384c');
-        circle(c,p.x,p.y,1.65,a.color||'#fff1bb','#536b54',.55);
-        line(c,[{x:p.x-.7,y:p.y+1},{x:p.x+.6+f,y:p.y+2.5}],'#4b604d',.62);
+        c.save();if(valid(a.opacity))c.globalAlpha*=cl(a.opacity,0,1);
+        const angle=valid(a.angle)?a.angle:0, dx=Math.cos(angle),dy=Math.sin(angle),nx=-dy,ny=dx;
+        const phase=valid(a.phase)?a.phase:(this.frameTime||0)*.009+(a.x+a.y)%7;
+        const swing=Math.sin(phase)*1.4, bounce=(1-Math.abs(Math.sin(phase)))*.25;
+        const close=this.camera.zoom>=1.16, dark='#314946',skin='#f0c6a0',coat=a.color||'#e9b176';
+        const pnt=(u,v,h)=>({x:p.x+u*dx+v*nx-h*.13,y:p.y+u*dy+v*ny-h*.93});
+        const shadow=pnt(.26,.45,-.13);
+        circle(c,shadow.x,shadow.y,close?1.55:1.23,'#253e3a3f');
+        const hip=pnt(0,0,1.76+bounce),chest=pnt(.15,0,2.95+bounce),head=pnt(.24,0,4.03+bounce);
+        c.lineCap='round';c.lineJoin='round';
+        for(const side of [-1,1]){
+          const foot=pnt(side*swing,side*.44,Math.max(0,side*Math.sin(phase))*.30);
+          const knee=pnt(side*swing*.48,side*.32,.74+bounce*.39);
+          line(c,[hip,knee,foot],dark,close?.66:.80);
+          if(close)line(c,[foot,pnt(side*swing+.39,side*.44,Math.max(0,side*Math.sin(phase))*.30)],'#273c3b',.49);
+        }
+        if(close)for(const side of [-1,1]){
+          const arm=pnt(.08,side*.57,2.73+bounce),hand=pnt(-side*swing*.61,side*.72,1.59+bounce);
+          line(c,[chest,arm,hand],dark,.72);
+          circle(c,hand.x,hand.y,.29,skin);
+        }
+        line(c,[hip,chest,head],dark,close?1.58:1.53);
+        line(c,[hip,chest],coat,close?1.19:1.20);
+        circle(c,head.x,head.y,close?.74:.69,skin,dark,.37);
+        c.restore();
       } else {
         c.save();c.translate(p.x,p.y);c.rotate(+a.angle||0);
         const w=bus?8.8:4.2,h=bus?2.7:1.9;
@@ -602,7 +733,7 @@
       const c=this.ctx; if(!this.width||!this.height)this.resize();
       const d=this.dpr,w=this.worldWidth,h=this.worldHeight;
       const camera=this.camera={x:opts.camera?.x??w/2,y:opts.camera?.y??h/2,zoom:cl(opts.camera?.zoom??1,.15,8)};
-      const t=valid(timeMs)?Math.max(0,timeMs):typeof performance==='object'?performance.now():Date.now();
+      const t=this.frameTime=valid(timeMs)?Math.max(0,timeMs):typeof performance==='object'?performance.now():Date.now();
       const overlay=this.activeOverlay=opts.overlay??'none', metrics=opts.metrics??city.metrics??{}, selected=opts.selected||{};
       if(this.latestCity!==city){
       const civic=city.civic??city;
@@ -625,10 +756,11 @@
       });
       const ids=new Map(edges.map(([,e,pts])=>[String(e.id),pts]));
       const roads=edges.slice().sort((a,b)=>a[3].top-b[3].top);
+      const roadMesh=this.roadMesh(roads,nodes);
       const buildings=zones.flatMap(z=>array(z.buildings).map(b=>[b,z])).sort((a,b)=>a[0].y-b[0].y);
-      this.cachedScene={nodes,zones,sr,busLines,edges,ids,roads,buildings};this.latestCity=city;
+      this.cachedScene={nodes,zones,sr,busLines,edges,ids,roads,buildings,roadMesh};this.latestCity=city;
       }
-      const {nodes,zones,sr,busLines,edges,ids,roads,buildings}=this.cachedScene;
+      const {nodes,zones,sr,busLines,edges,ids,roads,buildings,roadMesh}=this.cachedScene;
       c.setTransform(d,0,0,d,0,0);c.fillStyle='#9cb290';c.fillRect(0,0,this.width,this.height);
       c.save();c.translate(this.width/2,this.height/2);c.scale(camera.zoom,camera.zoom);c.translate(-camera.x,-camera.y);
       if(this.terrain)c.drawImage(this.terrain,0,0);else this.paintGround(c,w,h);
@@ -652,12 +784,13 @@
       // Sort by deck height so overlapped bridges read as elevated.
       const left=camera.x-this.width/2/camera.zoom-44,right=camera.x+this.width/2/camera.zoom+44;
       const top=camera.y-this.height/2/camera.zoom-44,bottom=camera.y+this.height/2/camera.zoom+44;
-      for(const [i,e,pts,bb] of roads){
-        if(bb.maxX<left||bb.minX>right||bb.maxY<top||bb.minY>bottom)continue;
-        const measured=metrics.queue?.edgeTraffic?.[e.id];
-        const v=(load instanceof Map ? load.get(e.id) : typeof load==='number'?load:load[e.id]??load[i])??e.traffic??e.load??0;
-        this.paintRoad(c,e,pts,overlay,Math.max(v?.ratio??v?.congestion??v,typeof measured==='number'?measured:0),selected.edge===e.id||selected.type==='edge'&&selected.id===e.id);
-        if((metrics.closed||[]).includes(e.id)){line(c,pts.map(p3),'#ee9571',2.5,[5,4]);const q=p3(sample(pts,.5));circle(c,q.x,q.y,5,'#9b452e','#ffd7ba',1.2);label(c,'×',q.x,q.y+.1,7,'#fff0db',850);}
+      const visible=bb=>bb.maxX>=left&&bb.minX<=right&&bb.maxY>=top&&bb.minY<=bottom;
+      this.paintRoadMesh(c,roadMesh,overlay,load,metrics.queue?.edgeTraffic,selected,visible);
+      if(metrics.closed?.length){
+        const closed=new Set(metrics.closed);
+        for(const [,e,pts,bb] of roads)if(pts.length>1&&closed.has(e.id)&&visible(bb)){
+          line(c,pts.map(p3),'#ee9571',2.5,[5,4]);const q=p3(sample(pts,.5));circle(c,q.x,q.y,5,'#9b452e','#ffd7ba',1.2);label(c,'×',q.x,q.y+.1,7,'#fff0db',850);
+        }
       }
       if(overlay==='water'||overlay==='power'){
         const color=overlay==='water'?'#2682ca':'#edb33f';

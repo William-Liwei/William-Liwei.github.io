@@ -6,30 +6,68 @@ const create=()=>({nodes:[],edges:[],buses:[],next:1,cash:850000});
 const length=pts=>pts.slice(1).reduce((s,p,i)=>s+dist(p,pts[i]),0);
 function sample(points,t){if(points.length<2)return null;let l=clamp(t,0,1)*length(points);for(let i=1;i<points.length;i++){let a=points[i-1],b=points[i],d=dist(a,b);if(l<=d||i===points.length-1){let p=mix(a,b,d?clamp(l/d,0,1):0);return {...p,angle:Math.atan2(b.y-a.y,b.x-a.x)}}l-=d}}
 function nearest(a,b,p){let dx=b.x-a.x,dy=b.y-a.y,t=clamp(((p.x-a.x)*dx+(p.y-a.y)*dy)/(dx*dx+dy*dy||1),0,1);return {...mix(a,b,t),t}}
-function snap(city,p,r=13,matchZ=true){let best=null,d=r;for(let n of city.nodes){let d1=dist(n,p);if(d1<=d&&(!matchZ||Math.abs(n.z-p.z)<2)){d=d1;best={...n,node:n.id}}}if(best)return best;for(let e of city.edges)for(let i=1;i<e.pts.length;i++){let q=nearest(e.pts[i-1],e.pts[i],p),d1=dist(q,p);if(d1<d&&(!matchZ||Math.abs(q.z-p.z)<2)){d=d1;best={...q,edge:e.id,pos:i-1+q.t}}}return best}
+function snap(city,p,r=13,matchZ=true){
+ let node=null,nodeDist=r,edge=null,edgeDist=r;
+ const active=new Set(city.edges.flatMap(e=>[e.a,e.b]));
+ for(let n of city.nodes){let d=dist(n,p);if(active.has(n.id)&&d<=nodeDist&&(!matchZ||Math.abs(n.z-p.z)<2)){nodeDist=d;node={...n,node:n.id};}}
+ if(node&&nodeDist<.001)return node;
+ for(let e of city.edges)for(let i=1;i<e.pts.length;i++){
+  let q=nearest(e.pts[i-1],e.pts[i],p),d=dist(q,p);
+  if(d<edgeDist&&(!matchZ||Math.abs(q.z-p.z)<2)){edgeDist=d;edge={...q,edge:e.id,pos:i-1+q.t};}
+ }
+ return node&&(!edge||nodeDist<=edgeDist+1.75)?node:edge;
+}
 function plan(a,b,c=null){let pts=[],m=Math.max(2,Math.min(100,Math.ceil((c?dist(a,c)+dist(c,b):dist(a,b))/8)));for(let i=0;i<=m;i++){let t=i/m,p=c?mix(mix(a,c,t),mix(c,b,t),t):mix(a,b,t);p.z=a.z+(b.z-a.z)*t;pts.push(p)}return pts}
 function intersect(a,b,c,d){let vx=b.x-a.x,vy=b.y-a.y,wx=d.x-c.x,wy=d.y-c.y,den=vx*wy-vy*wx;if(Math.abs(den)<1e-7)return null;let x=c.x-a.x,y=c.y-a.y,t=(x*wy-y*wx)/den,u=(x*vy-y*vx)/den;return t>=-1e-7&&t<=1.0000001&&u>=-1e-7&&u<=1.0000001?[clamp(t,0,1),clamp(u,0,1)]:null}
 const kind=p=>p.kind||'road';
-function options(o){let spec=profiles[o.profile]||profiles.r2;return {...spec,profile:o.profile in profiles?o.profile:'r2',kind:kind(spec),oneway:!!(o.oneway||spec.oneway),bus:!!(o.bus&&kind(spec)==='road')}}
-function check(city,pts,o,starts=[]){let p=options(o),l=length(pts);if(l<22)return {ok:false,reason:'路段至少要有 22 米'};for(let i=0;i<pts.length;i++){let a=pts[i];if(![a.x,a.y,a.z].every(Number.isFinite)||a.x<2||a.x>1198||a.y<2||a.y>798||Math.abs(a.z)>70)return {ok:false,reason:'超出地图或高度限制'};if(globalThis.CityMaps?.current().ridge?.(a)>.67&&a.z>-12)return {ok:false,reason:'保护山脊需从地下穿越（不浅于 −12 m）'};if(water(a)&&a.z<10&&a.z>-12)return {ok:false,reason:'河道需要至少 +10 m 桥高或 −12 m 隧道深度'};if(i&&Math.abs(pts[i-1].z-a.z)>dist(pts[i-1],a)*.23+.02)return {ok:false,reason:'纵坡过陡，拉长坡道或降低高差'};}
+function options(o){const name=Object.hasOwn(profiles,o.profile)?o.profile:'r2',spec=profiles[name];return {...spec,profile:name,kind:kind(spec),oneway:!!(o.oneway||spec.oneway),bus:!!(o.bus&&kind(spec)==='road')}}
+const atEnd=(pos,pts)=>pos<.01||pos>pts.length-1.01;
+function permits(newKind,oldKind,newEnd,oldEnd){
+ if(newKind!=='highway'&&oldKind!=='highway')return true;
+ if(newKind===oldKind)return newEnd&&oldEnd;
+ if(newKind==='ramp')return newEnd;
+ return newKind==='highway'&&oldKind==='ramp'&&newEnd&&oldEnd;
+}
+function parallelOverlap(a,b,c,d){
+ const l=dist(a,b),m=dist(c,d);if(l<1e-5||m<1e-5)return false;
+ const dx=(b.x-a.x)/l,dy=(b.y-a.y)/l,ex=(d.x-c.x)/m,ey=(d.y-c.y)/m;
+ if(Math.abs(dx*ey-dy*ex)>.003)return false;
+ const u=(c.x-a.x)*dx+(c.y-a.y)*dy,v=(d.x-a.x)*dx+(d.y-a.y)*dy;
+ const lo=Math.max(0,Math.min(u,v)),hi=Math.min(l,Math.max(u,v));
+ if(hi-lo<.2)return false;
+ for(const x of [.15,.5,.85]){
+  const p=mix(a,b,(lo+(hi-lo)*x)/l),q=nearest(c,d,p);
+  if(dist(p,q)>.92||Math.abs(p.z-q.z)>1.3)return false;
+ }
+ return true;
+}
+function check(city,pts,o,starts=[]){let p=options(o),l=length(pts);if(l<22)return {ok:false,reason:'路段至少要有 22 米'};if(dist(pts[0],pts.at(-1))<1.4)return {ok:false,reason:'起点和终点须分开；环路请分段建设'};for(let i=0;i<pts.length;i++){let a=pts[i];if(![a.x,a.y,a.z].every(Number.isFinite)||a.x<2||a.x>1198||a.y<2||a.y>798||Math.abs(a.z)>70)return {ok:false,reason:'超出地图或高度限制'};if(globalThis.CityMaps?.current().ridge?.(a)>.67&&a.z>-12)return {ok:false,reason:'保护山脊需从地下穿越（不浅于 −12 m）'};if(water(a)&&a.z<10&&a.z>-12)return {ok:false,reason:'河道需要至少 +10 m 桥高或 −12 m 隧道深度'};if(i&&Math.abs(pts[i-1].z-a.z)>dist(pts[i-1],a)*.23+.02)return {ok:false,reason:'纵坡过陡，拉长坡道或降低高差'};}
 for(let i=1;i<pts.length;i++)for(let j=i+2;j<pts.length;j++){let q=intersect(pts[i-1],pts[i],pts[j-1],pts[j]);if(q&&dist(pts[i-1],pts[j])>.01)return {ok:false,reason:'该曲线与自己相交'};}
 let hits=[];for(let e of city.edges){
  for(let i=1;i<pts.length;i++){
  for(let j=1;j<e.pts.length;j++){
   let a=pts[i-1],b=pts[i],c=e.pts[j-1],d=e.pts[j],r=intersect(a,b,c,d);
-  if(!r){let dx=b.x-a.x,dy=b.y-a.y,ex=d.x-c.x,ey=d.y-c.y;if(Math.abs(dx*ey-dy*ex)/(dist(a,b)*dist(c,d)||1)<.025){const m=mix(a,b,.5),s=nearest(c,d,m);if(s.t>.02&&s.t<.98&&dist(m,s)<2.5&&Math.abs(m.z-s.z)<2)return {ok:false,reason:'道路重叠，请改线或用改造工具'};}continue;}
+  if(!r){if(parallelOverlap(a,b,c,d))return {ok:false,reason:'道路重叠，请改线或用改造工具'};continue;}
   let u=mix(a,b,r[0]),v=mix(c,d,r[1]),gap=Math.abs(u.z-v.z),p1=i-1+r[0],p2=j-1+r[1];
   if(gap>=6)continue;if(gap>1.3)return {ok:false,reason:'交叉净高至少需要 6 m，或降至同层相接'};
-  if(p.kind==='highway'||e.kind==='highway'){
-   let end=p1<.01||p1>pts.length-1.01, endOld=p2<.01||p2>e.pts.length-1.01;
-   const direct=end&&endOld&&p.kind===e.kind;
-   if(!(direct||(end&&(p.kind==='ramp'||(e.kind==='ramp'&&endOld)))))return {ok:false,reason:'高速不设平交路口，请在端点接互通匝道'};
-  }
+  if(!permits(p.kind,e.kind,atEnd(p1,pts),atEnd(p2,e.pts)))return {ok:false,reason:'高速不设平交路口，请在端点接互通匝道'};
   hits.push({p:u,newPos:p1,oldPos:p2,edge:e.id});
  }
  }
 }
-for(let k=0;k<2;k++){let s=starts[k];if(s&&s.edge){let e=city.edges.find(a=>a.id===s.edge);if(e.kind==='highway'&&p.kind!=='ramp')return {ok:false,reason:'高速入口请用互通匝道'};hits.push({p:s,newPos:k?pts.length-1:0,oldPos:s.pos,edge:s.edge});}}
+for(let k=0;k<2;k++){
+ let s=starts[k],end=k?pts.at(-1):pts[0];
+ // A collinear continuation may touch only an existing endpoint: it has no
+ // mathematical intersection, but will still share that endpoint in add().
+ const n=s?.node?city.nodes.find(n=>n.id===s.node):city.nodes.find(n=>dist(n,end)<1.4&&Math.abs(n.z-end.z)<1.3);
+ if(n&&city.edges.some(e=>(e.a===n.id||e.b===n.id)&&!permits(p.kind,e.kind,true,true)))return {ok:false,reason:'高速入口请用互通匝道'};
+ if(s?.edge){
+  let e=city.edges.find(a=>a.id===s.edge);
+  if(!e)return {ok:false,reason:'吸附的道路已改变，请重新选择端点'};
+  if(!permits(p.kind,e.kind,true,atEnd(s.pos,e.pts)))return {ok:false,reason:'高速入口请用互通匝道'};
+  hits.push({p:s,newPos:k?pts.length-1:0,oldPos:s.pos,edge:s.edge});
+ }
+}
 let cost=Math.round(l*(26+p.lanes*17+(p.bus?18:0)+(p.kind==='highway'?24:0)) + pts.slice(1).reduce((s,v,i)=>s+dist(v,pts[i])*(v.z<-2?80+Math.abs(v.z)*2:v.z>2?42+v.z*1.8:0),0));
 return city.cash<cost?{ok:false,reason:'市库不足',cost}:{ok:true,cost,hits,profile:p};}
 function add(city,pts,o,starts=[]){let out=check(city,pts,o,starts);if(!out.ok)return out;
@@ -59,15 +97,17 @@ function bus(city,stops){if(stops.length<2||new Set(stops).size!==stops.length)r
 function remove(city,id){city.edges=city.edges.filter(e=>e.id!==id);rebuildBuses(city)}
 function upgrade(city,id,o){let e=city.edges.find(x=>x.id===id);if(!e)return {ok:false,reason:'未找到道路'};let p=options(o);if(p.kind!==e.kind)return {ok:false,reason:'普通道路与高速需要重建接驳，不能直接互换'};let cost=Math.round(e.len*(7+4*Math.max(0,p.lanes-e.lanes)+(p.bus&&!e.bus?5:0)));if(city.cash<cost)return {ok:false,reason:'市库不足'};city.cash-=cost;Object.assign(e,p);rebuildBuses(city);return {ok:true,cost}}
 function splitAt(city,p){
- const q=snap(city,p,3,true);
- if(q?.node)return q.node;
+ const q=snap({nodes:city.nodes,edges:city.edges.filter(e=>e.kind==='road')},p,3,true);
+ if(q?.node)return q.z>=-3?q.node:null;
  if(!q?.edge)return null;
  const e=city.edges.find(e=>e.id===q.edge);
  if(e.kind!=='road'||q.z<-3)return null;
  if(dist(q,e.pts[0])<2)return e.a;if(dist(q,e.pts.at(-1))<2)return e.b;
  const id='n'+city.next++,i=Math.floor(q.pos),pt={x:q.x,y:q.y,z:q.z};
  city.nodes.push({...pt,id});
- const lhs=[...e.pts.slice(0,i+1),pt],rhs=[pt,...e.pts.slice(i+1)];
+ const lhs=e.pts.slice(0,i+1),rhs=e.pts.slice(i+1);
+ if(dist(lhs.at(-1),pt)>.0001)lhs.push(pt);else lhs[lhs.length-1]=pt;
+ if(!rhs.length||dist(rhs[0],pt)>.0001)rhs.unshift(pt);else rhs[0]=pt;
  const update=(a,b,pts)=>({...e,id:'e'+city.next++,a,b,pts,len:length(pts)});
  city.edges=city.edges.filter(s=>s.id!==e.id);
  city.edges.push(update(e.a,id,lhs),update(id,e.b,rhs));

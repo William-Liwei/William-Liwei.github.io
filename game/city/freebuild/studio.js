@@ -29,7 +29,7 @@ const stateStore={make:()=>({version:1,network:N.create(),civic:C.create(17),map
 }};
 const onLand=p=>M.land(p);
 const roadOpts={isBuildable:onLand};
-let coverageGrid=null,sceneWorld=null,edgeTraffic={},pending=null,utilityMetrics=null,regional=null,transitMetrics=null,districtMetrics=null,econ=null,micro=null;
+let coverageGrid=null,sceneWorld=null,edgeTraffic={},pending=null,utilityMetrics=null,regional=null,transitMetrics=null,districtMetrics=null,econ=null,micro=null,pedestrians=null;
 let opts={...defaults},tool='road',draft=[],hover=null,selected={},layer='none',playing=false,forecast=null,metrics={},load={},trips=[],city=null;
 let camera={x:600,y:400,zoom:1}, drag=null,panMode=false, lastAuto=0, clock=0, previous=0;
 function starter(){
@@ -204,13 +204,12 @@ function buildTraffic(){
  }
  for(let b of buses){for(let e of b.path)load[e.edge]=(load[e.edge]||0)+2;const p=b.path.map(e=>({...e,l:byId.get(e.edge)?.len||0})).filter(e=>e.l>0);const total=p.reduce((s,a)=>s+a.l,0);if(total)for(let i=0;i<(total>760?2:1)+(depotLines.has(b.id)?1:0);i++)trips.push({p,total,kind:'bus',phase:i*.5,speed:47,stops:b.stops,riders:bt.get(b.id)||0});}
  if(regional){for(const [id,count] of Object.entries(regional.loads))load[id]=(load[id]||0)+count;trips.push(...regional.paths);}
- micro=Traffic.create(n,trips,{seed:17,maxVehicles:180,warmupSeconds:6,signal:true});
+ micro=Traffic.create(n,trips.filter(t=>t.kind!=='walker'),{seed:17,maxVehicles:180,warmupSeconds:6,signal:true});pedestrians=Pedestrians.create(n,trips);
  for(const [id,on] of Object.entries(city.signals||{}))micro.setSignal(id,on);
  buildTraffic.edges=byId;edgeTraffic=Object.fromEntries(n.edges.map(e=>[e.id,Math.min(1,(load[e.id]||0)/N.capacity(e))]));
 }
 function getAgents(t){
- const out=micro?.advance(t)||[];for(let tr of trips.filter(i=>i.kind==='walker')){let k=(t/1000*tr.speed+tr.phase*tr.total)%tr.total;if(tr.kind!=='bus'&&k>tr.total*.97)continue;for(let e of tr.p){if(k>e.l){k-=e.l;continue}let p=N.sample(buildTraffic.edges.get(e.edge).pts,e.reverse?1-k/e.l:k/e.l);if(!p)break;
- const angle=p.angle+(e.reverse?Math.PI:0),side=tr.kind==='walker'?10:tr.kind==='bus'?5:2.7;out.push({...p,x:p.x-Math.sin(angle)*side,y:p.y+Math.cos(angle)*side,angle,kind:tr.kind,color:tr.kind==='bus'?'#f7d274':tr.kind==='walker'?'#d7f8c0':'#eaf4fc'});break;}}return out.concat(T.agents(transitMetrics,t));
+ return [...(micro?.advance(t)||[]),...(pedestrians?.agents(t)||[]),...T.agents(transitMetrics,t)];
 }
 function paintCoverage(){coverageGrid=null;if(!serviceKeys().includes(layer)&&layer!=='resources')return;
  const cells=[],dopt=layer==='resources'?districtOpts():null;for(let y=6;y<800;y+=12)for(let x=6;x<1200;x+=12){const p={x,y};let v=layer==='resources'?D.resource(opts.districtType,p,dopt):(['water','power'].includes(layer)&&U.isManaged(city.utilities,layer)?(onLand(p)?U.at(utilityMetrics,layer,p):0):C.serviceAt(metrics,layer,p));if(v>0)cells.push({x,y,strength:v});}
@@ -433,7 +432,60 @@ function zoom(z){camera.zoom=N.clamp(camera.zoom*z,.53,3.2);}
 canvas.addEventListener('wheel',e=>{e.preventDefault();let a=atPoint(e);zoom(Math.exp(-e.deltaY*.0015));let b=atPoint(e);camera.x+=a.x-b.x;camera.y+=a.y-b.y;},{passive:false});
 $('pan').onclick=()=>{panMode=!panMode;$('pan').setAttribute('aria-pressed',String(panMode));canvas.style.cursor=panMode?'grab':'';};
 $('zoom-in').onclick=()=>zoom(1.25);$('zoom-out').onclick=()=>zoom(.8);$('home').onclick=()=>{camera={x:600,y:400,zoom:1};};
-document.addEventListener('keydown',e=>{if(pending&&e.key==='Escape'){e.preventDefault();endPlan(false);return;}if(pending||$('budget-dialog').open||$('economy-dialog').open)return;if(e.target.matches('input,select,button')||$('file-dialog').open)return;if(e.key==='Escape'){draft=[];selected={};hintDraft();updatePreview();renderDetails();}if(e.key==='Enter'&&['bus','polygon','frontage','district','line'].includes(tool)){e.preventDefault();finish();}if(e.key.startsWith('Arrow')){e.preventDefault();camera.x+=e.key==='ArrowRight'?32:e.key==='ArrowLeft'?-32:0;camera.y+=e.key==='ArrowDown'?32:e.key==='ArrowUp'?-32:0;}});
+let menuChild='',menuDestination=null;
+const pauseDialog=$('pause-dialog'),settingsDialog=$('game-settings');
+const lobbyURL=location.protocol==='file:'&&location.pathname.includes('试玩.html')?'https://www.weili.space/game/city/':'../index.html';
+function modalOpen(){return !!document.querySelector('dialog[open]');}
+function clearLeave(){menuDestination=null;$('menu-leave-confirm').hidden=true;}
+function openMenu(){
+ if(modalOpen())return;
+ clearLeave();$('menu-status').textContent='';$('pause-location').textContent=map.name+' · '+(sandbox?'规划沙盒':'经营模式')+' · 第 '+city.month+' 月';
+ pauseDialog.showModal();$('resume-game').focus({preventScroll:true});
+}
+$('hall').onclick=openMenu;
+$('resume-game').onclick=()=>{pauseDialog.close();canvas.focus({preventScroll:true});};
+pauseDialog.addEventListener('close',()=>{clearLeave();lastAuto=performance.now();});
+$('menu-save').onclick=()=>{$('menu-status').textContent=save()?'当前进度已保存。':'保存失败，进度仍在游戏中。请到存档管理导出 JSON。';};
+function requestLeave(url){
+ if(pending||draft.length){menuDestination=url;$('menu-leave-confirm').hidden=false;$('menu-leave-cancel').focus();return;}
+ leaveGame(url);
+}
+function leaveGame(url){
+ if(!save()){$('menu-status').textContent='保存失败，未离开游戏。可在存档管理导出备份后再试。';return;}
+ location.assign(url);
+}
+$('menu-lobby').onclick=()=>requestLeave(lobbyURL);
+$('menu-website').onclick=()=>requestLeave('https://www.weili.space/');
+$('menu-leave-cancel').onclick=()=>{clearLeave();$('menu-lobby').focus();};
+$('menu-leave-apply').onclick=()=>{const target=menuDestination;if(target)leaveGame(target);};
+function switchMenuChild(id){menuChild=id;pauseDialog.close();$(id).showModal();}
+$('menu-files').onclick=()=>switchMenuChild('file-dialog');
+$('menu-settings').onclick=()=>{
+ $('motion-in-game').checked=animate;$('default-layer').innerHTML=$('layer').innerHTML;
+ $('default-layer').value=Object.hasOwn(layers,prefs.overlay)?prefs.overlay:'none';$('settings-status').textContent='';
+ switchMenuChild('game-settings');
+};
+function saveGameSettings(){
+ animate=$('motion-in-game').checked;prefs={...prefs,motion:animate,overlay:$('default-layer').value};
+ try{localStorage.setItem(prefKey,JSON.stringify(prefs));$('settings-status').textContent='设置已保存。';}
+ catch{$('settings-status').textContent='设置只在本次游戏生效，浏览器未允许保存。';}
+}
+$('motion-in-game').onchange=saveGameSettings;$('default-layer').onchange=saveGameSettings;
+$('settings-back').onclick=()=>settingsDialog.close();
+for(const id of ['file-dialog','game-settings'])$(id).addEventListener('close',()=>{lastAuto=performance.now();if(menuChild===id){menuChild='';openMenu();}});
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'){
+  if(pauseDialog.open){e.preventDefault();if(menuDestination)clearLeave();else $('resume-game').click();return;}
+  if(modalOpen())return; // Browser closes the foreground dialog only.
+  e.preventDefault();
+  if(pending){endPlan(false);return;}
+  if(draft.length){draft=[];selected={};hintDraft();updatePreview();renderDetails();return;}
+  openMenu();return;
+ }
+ if(pending||modalOpen()||e.target.matches('input,select,button'))return;
+ if(e.key==='Enter'&&['bus','polygon','frontage','district','line'].includes(tool)){e.preventDefault();finish();}
+ if(e.key.startsWith('Arrow')){e.preventDefault();camera.x+=e.key==='ArrowRight'?32:e.key==='ArrowLeft'?-32:0;camera.y+=e.key==='ArrowDown'?32:e.key==='ArrowUp'?-32:0;}
+});
 function budgetInfo(){
  const f=city.finance,t=metrics.totals||{};$('tax').value=f.tax;$('frequency').value=f.frequency;
  $('budget-info').innerHTML=lines([['税收','¥'+format.format(t.income||0)],['公共设施','−¥'+format.format(t.expense||0)],['道路养护','−¥'+format.format(forecast.road)],['公交运营','−¥'+format.format(forecast.bus)],['水电线养护','−¥'+format.format(forecast.infra)],['铁路港航净额','¥'+format.format(forecast.transit)],['特别区净额','¥'+format.format(forecast.district)],['对外公路净额','¥'+format.format(forecast.regionalNet)],['供货与产出税差','¥'+format.format(forecast.chains)],['发展补助','¥'+format.format(grant)],['本金／利息','−¥'+format.format(forecast.principal)+'／¥'+format.format(forecast.interest)],['借款余额','¥'+format.format(f.debt)],['月结预测','¥'+format.format(forecast.net)]]);
@@ -457,17 +509,16 @@ $('blank').onclick=()=>confirmAction('再点「清空重建」确认。请先导
 $('export').onclick=()=>{let url=URL.createObjectURL(new Blob([JSON.stringify(city)],{type:'application/json'}));let a=document.createElement('a');a.href=url;a.download='city-blueprint-'+mapId+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);};
 $('import').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;if(file.size>4000000)throw Error('文件过大');const s=stateStore.restore(JSON.parse(await file.text()));if(!window.confirm('用这个存档替换当前预览城市？'))return;changeCity(s);$('file-status').textContent='已载入。';}catch(x){$('file-status').textContent='导入失败：'+x.message;}finally{e.target.value='';}};
 let nextStats=0,liveQueues=null;let lastFrame=0,lastSignature='',lastWorld=null,lastPreview=null,lastSelection=null,animate=prefs.motion!==false;
-function scene(now){if(!previous)previous=now;if(animate)clock+=Math.min(50,now-previous);previous=now;
- if(!pending&&playing&&now-lastAuto>3100){lastAuto=now;const paid=tick();if(paid.length)notify('市政委托完成 · 拨款 ¥'+format.format(paid.reduce((s,p)=>s+p.reward,0)));}else if(!playing||pending)lastAuto=now;
+function scene(now){if(!previous)previous=now;const modal=modalOpen();if(animate&&!modal)clock+=Math.min(50,now-previous);previous=now;
+ if(!modal&&!pending&&playing&&now-lastAuto>3100){lastAuto=now;const paid=tick();if(paid.length)notify('市政委托完成 · 拨款 ¥'+format.format(paid.reduce((s,p)=>s+p.reward,0)));}else if(!playing||pending||modal)lastAuto=now;
  view.resize();const sig=[camera.x,camera.y,camera.zoom,layer,tool,view.width,view.height].join('|');
  const changed=sig!==lastSignature||lastWorld!==sceneWorld||lastPreview!==preview||lastSelection!==selected;
- if(!changed&&(!animate||now-lastFrame<1000/30)){window.requestAnimationFrame(scene);return;}
+ if(!changed&&(modal||!animate||now-lastFrame<1000/30)){window.requestAnimationFrame(scene);return;}
  lastFrame=now;lastSignature=sig;lastWorld=sceneWorld;lastPreview=preview;lastSelection=selected;
  const actors=getAgents(clock);
  if(now>=nextStats){liveQueues=micro?.stats();nextStats=now+460;if(selected.edge)renderDetails();}
  view.render(sceneWorld,{camera,overlay:layer,preview,selected,agents:actors,metrics:{...metrics,edgeTraffic,coverageGrid,closed:incident.closed||[],utilityMetrics,transitMetrics,districtMetrics,queue:liveQueues,signals:micro?.signals()},tool},clock);window.requestAnimationFrame(scene);}
 showTools();refresh();window.requestAnimationFrame(scene);
- $('hall').href='../index.html';if(location.protocol==='file:'&&location.pathname.includes('试玩.html'))$('hall').href='https://www.weili.space/game/city/';
  if(new URLSearchParams(location.search).get('menu')==='saves')$('file-dialog').showModal();
 window.Blueprint={world:()=>city, metrics:()=>metrics,traffic:()=>trafficStats,view,camera:()=>({...camera}),setLayer,save,plan:()=>pending&&{title:pending.title,cost:pending.cash},forecast:()=>({...forecast}),incident:()=>incident,trafficSim:()=>micro?.stats(),map:()=>mapId,utility:()=>utilityMetrics,transit:()=>transitMetrics,districts:()=>districtMetrics,economy:()=>econ,agents:()=>getAgents(clock),coverage:()=>coverageGrid};
 })();
