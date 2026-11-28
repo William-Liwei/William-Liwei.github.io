@@ -9,3 +9,5 @@
 #pause-dialog,#game-settings{width:min(430px,calc(100vw - 28px));max-height:calc(100dvh - 28px);overflow:auto}
 .pause-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.pause-actions .menu-primary{grid-column:1/-1;background:#285245;border-color:#72d0af;color:#dbffef;font-weight:700}
 #menu-leave-confirm{margin-top:12px;padding:9px 12px;border:1px solid #b78558;border-radius:7px;color:#f5ccab}#menu-status:not(:empty){margin-top:9px}
+
+#save-warning{position:absolute;left:12px;right:12px;top:52px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:8px;background:#423328;color:#ffe2bd;border:1px solid #b99774;border-radius:7px;padding:6px 9px;font-size:12px}#save-warning button{min-width:max-content}
