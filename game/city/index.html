@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#141e25">
-  <meta name="description" content="在弯湾河两岸铺设道路、规划分区、完善公共服务，发展你的城市。">
-  <title>岸城 · City</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="description" content="规划分区和公共服务，治理交通与财政。在第一张地图「一河两岸」建设你的城市。">
+  <title>城市蓝图 · City Blueprint</title>
+  <link rel="stylesheet" href="style.css?v=city-blueprint-1">
 </head>
 <body>
   <header class="top">
-    <div class="brand"><span class="brand-mark" data-icon="logo"></span><div><h1>岸城</h1><span class="brand-sub">CITY <span> / </span> 城市规划模拟</span></div></div>
+    <div class="brand"><span class="brand-mark" data-icon="logo"></span><div><h1>城市蓝图</h1><span class="brand-sub">CITY <span> / </span> 城市规划模拟</span></div></div>
     <div class="stats" aria-label="城市概况">
       <div class="stat"><span data-icon="cash"></span><div><span>市库余额</span><strong id="cash">¥145,000</strong></div></div>
       <div class="stat"><span data-icon="people"></span><div><span>居民</span><strong id="population">0</strong></div></div>
@@ -20,17 +20,18 @@
     <div class="top-actions"><button id="save" class="square" aria-label="保存进度" title="保存进度" data-icon="save"></button><button id="menu" class="square" aria-label="菜单" title="菜单" data-icon="menu"></button></div>
   </header>
   <main id="workspace" class="workspace">
-    <div class="map-shell" id="map-shell"><canvas id="map" aria-label="岸城规划地图" tabindex="0"></canvas></div>
-    <div class="map-label"><span data-icon="pin"></span> 弯湾河 · 自由建城</div>
+    <div class="map-shell" id="map-shell"><canvas id="map" aria-label="一河两岸规划地图" tabindex="0"></canvas></div>
+    <div class="map-label"><span data-icon="pin"></span> <span id="mode-label">一河两岸 · 自由建城</span></div>
     <aside id="overview" class="card overview" aria-label="建设目标">
       <div class="card-heading"><div class="heading-title"><span data-icon="flag"></span><h2>建设目标</h2></div><button class="panel-switch square" id="goals-toggle" aria-label="收起建设目标" aria-expanded="true" data-icon="chevron"></button></div>
-      <div id="goal-content" class="goal-content"></div>
+      <div id="goal-content" class="goal-content"></div><div id="scenario-progress" class="scenario-progress" hidden></div>
     </aside>
     <aside id="market" class="card market" aria-label="用地需求和财政">
       <div class="card-heading"><div class="heading-title"><span data-icon="chart"></span><h2>城市概况</h2></div><button id="market-toggle" class="panel-switch square" aria-label="收起城市概况" aria-expanded="true" data-icon="chevron"></button></div>
       <div id="market-content">
         <div class="section-label">用地需求</div><div id="demand" class="demand"></div>
-        <div class="finance"><div><span>月度结余</span><strong id="balance">¥0</strong></div><button id="accounts" class="small-link" type="button">账本</button></div>
+        <p id="city-pulse" class="city-pulse"></p>
+        <div class="finance"><div><span>月度结余</span><strong id="balance">¥0</strong></div><button id="accounts" class="small-link" type="button">经营</button></div>
       </div>
     </aside>
     <div class="views" aria-label="地图视图">
@@ -40,7 +41,7 @@
       <div id="layers" class="card layers" hidden></div>
     </div>
     <div class="map-meta"><div id="scale" class="scale">1 km</div><span>虚构地形</span></div>
-    <div class="map-lower">
+    <div class="map-lower"><p id="legend" class="legend" hidden></p>
       <div class="instruction" id="instruction" aria-live="polite"></div>
       <div id="toasts" aria-live="polite"></div>
     </div>
@@ -51,9 +52,10 @@
     <button id="info" class="square help" aria-label="操作指南" title="操作指南" data-icon="help"></button>
   </footer>
   <dialog id="dialog"><div id="dialog-body"></div></dialog>
-  <script src="terrain.js"></script>
-  <script src="simulation.js"></script>
-  <script src="map.js"></script>
-  <script src="app.js"></script>
+  <script src="terrain.js?v=city-blueprint-1"></script>
+  <script src="simulation.js?v=city-blueprint-1"></script>
+  <script src="two-banks.js?v=city-blueprint-1"></script>
+  <script src="map.js?v=city-blueprint-1"></script>
+  <script src="app.js?v=city-blueprint-1"></script>
 </body>
 </html>

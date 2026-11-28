@@ -13,12 +13,17 @@
   const fmt = new Intl.NumberFormat('zh-CN');
   const cash = n => `${n < 0 ? '−' : ''}¥${fmt.format(Math.abs(Math.round(n)))}`;
   const signed = n => n > 0 ? `+${cash(n)}` : cash(n);
-  const KEY = 'city.ancheng.v1';
+  const KEY = 'city.ancheng.v3', LEGACY_KEY = 'city.ancheng.v1';
   const canvas = id('map'), shell = id('map-shell'), dialog = id('dialog'), instruction = id('instruction');
   let slot = 'main', state = load('main') || S.blank(), metrics = S.analyze(state), tool = 'road', layer = 'none';
   let speed = 1, running = true, timer = 0, anchor = -1, cursor = -1, drag = null, vertical = false;
   const map = window.CityMap(canvas, u => { const span = id('scale'), cells = u>=7?8:16; span.style.width=`${Math.round(u*cells)}px`; span.textContent=cells===8?'1 km':'2 km'; });
-  function load(key) { try { return S.unpack(JSON.parse(localStorage.getItem(`${KEY}.${key}`))); } catch { return null; } }
+  function loadCurrent(key) { try { return S.unpack(JSON.parse(localStorage.getItem(`${KEY}.${key}`))); } catch { return null; } }
+  function load(key) {
+    const current=loadCurrent(key);if(current)return current;
+    const oldSlot=key==='port'?'revival':key==='river'?'green':key;
+    try{return S.unpack(JSON.parse(localStorage.getItem(LEGACY_KEY+'.'+oldSlot)));}catch{return null;}
+  }
   function store(notify = false) {
     try { localStorage.setItem(`${KEY}.${slot}`,JSON.stringify(S.pack(state))); if (notify) toast('城市进度已保存。'); }
     catch { if (notify) toast('浏览器无法写入存档。',true); }
@@ -29,9 +34,9 @@
     while (id('toasts').children.length>3) id('toasts').firstElementChild.remove();
     setTimeout(()=>el.remove(),4300);
   }
-  const layerNames = { none:['综合地图','#a7e4c4'], zoning:['分区','#b6a1eb'], power:['供电','#f6ca79'], water:['供水','#78d5f2'], traffic:['公交与通行','#76e3d3'] };
-  const keys = {inspect:'1',road:'2',bridge:'3',residential:'4',commercial:'5',office:'6',industrial:'7',services:'8',bulldoze:'9',pan:'M'};
-  const groups = [['inspect','pan'],['road','bridge'],['residential','commercial','office','industrial'],['services','bulldoze']];
+  const layerNames = { none:['综合地图','#a7e4c4'], zoning:['分区','#b6a1eb'], power:['供电','#f6ca79'], water:['供水','#78d5f2'], traffic:['道路负荷','#ff876b'],transit:['公交与渡轮','#76e3d3'],land:['地价与密度','#d4b6ff'],risk:['雨季风险','#8ccaff'],pollution:['工业污染','#ffac80'] };
+  const keys = {inspect:'1',road:'2',bridge:'3',residential:'4',commercial:'5',office:'6',industrial:'7',services:'8',bulldoze:'9',pan:'M',avenue:'A',busline:'U',ferry:'F'};
+  const groups = [['inspect','pan'],['road','bridge','avenue'],['residential','commercial','office','industrial'],['services','bulldoze'],['busline','ferry']];
   const toolButton = key => {
     const v = TOOLS[key] || { name:'设施', icon:'service' };
     const color = v.zone ? ZONES[v.zone].color : v.color || '#b0c9c1';
@@ -75,13 +80,28 @@
     const balance=id('balance'); balance.textContent=signed(metrics.net); balance.className=metrics.net>=0?'positive':'negative';
     id('date').textContent=`第 ${Math.floor(state.clock/12)+1} 年 · ${state.clock%12+1} 月`;
     for (let i=1;i<=4;i++) { const n=id(`demand-${i}`);n.textContent=metrics.demand[i];n.previousElementSibling.firstElementChild.style.width=`${metrics.demand[i]}%`; }
+    const mode=S.MODES[state.mode], objective=id('scenario-progress');
+    if(state.mode==='storm')id('date').textContent=state.clock?'防汛第 '+state.clock+' 月':'防汛准备期';
+    id('mode-label').textContent='一河两岸 · '+(slot==='demo'?'示例城':mode.name);
+    objective.hidden=!mode.months||slot==='demo';
+    if(!objective.hidden){
+      const status=state.result==='won'?'挑战完成'+(state.resultMonth?' · 第 '+state.resultMonth+' 月':'')+' · 拨款 ¥25,000':state.result==='late'?'已到期 · 可继续经营':'剩余 '+Math.max(0,mode.months-state.clock)+' 月';
+      objective.innerHTML='<strong>'+status+'</strong>'+S.scenarioCheck(state.mode,metrics).map(([label,value,goal,cap])=>'<span>'+label+' '+fmt.format(value)+(cap?' ≤ ':' / ')+fmt.format(goal)+'</span>').join('');
+    }
+    if(!objective.hidden&&state.mode==='storm')objective.insertAdjacentHTML('beforeend','<button type="button" class="small-link" data-emergency>防汛预案</button>');
+    id('city-pulse').textContent=metrics.rain?(metrics.rain.phase.label+' · 东岸缺勤 '+Math.round(metrics.rain.missed[1])+' · 缺货 '+Math.round(metrics.rain.shortage[1])):metrics.event.name==='常态经营'?'跨河车流 '+metrics.crossTraffic+' · 公交 '+Math.round(metrics.ridership*100)+'%'+(metrics.pendingProjects?' · 在建 '+metrics.pendingProjects+' 格':''):metrics.event.name;
+    const legends={risk:'橙色：易限流桥段　青色：高位或已加固',traffic:'蓝绿：畅通　黄：繁忙　红：拥堵',transit:'青色：公交　蓝色虚线：渡轮',land:'紫色越亮，地价越高',pollution:'橙色越亮，污染越强',power:'黄色：供电',water:'蓝色：供水'};
+    id('legend').textContent=legends[layer]||'';id('legend').hidden=!legends[layer];
     updateGoals();
     map.setScene(state,metrics,layer);
     updatePointer();
   }
   function nextMonth() {
-    const before = state.cash;
+    const before = state.cash, previous=state.result, event=metrics.event.name;
     metrics = S.tick(state,metrics);
+    if(metrics.rain&&state.clock>=5&&[5,7,10,11].includes(state.clock))toast('防汛公告：'+metrics.rain.phase.label,metrics.rain.phase.id==='severe');
+    if(previous!==state.result)toast(state.result==='won'?'挑战完成，获得 ¥25,000！':'挑战已到期，你可以继续建城。',state.result==='late');
+    if(event!==metrics.event.name&&metrics.event.name!=='常态经营')toast('城市动态：'+metrics.event.name);
     collect();
     if (before>=0 && state.cash<0) toast('市库告急。可以暂停、减少高维护设施或增加税源。',true);
     update(); store();
@@ -95,7 +115,7 @@
   function quoteAt() {
     if (cursor<0 || tool==='inspect' || tool==='pan' || drag?.pan) return null;
     const start = drag?.start ?? (anchor>=0 ? anchor : cursor);
-    if (tool==='bridge' && start===cursor) return null;
+    if (['bridge','busline','ferry'].includes(tool) && start===cursor) return null;
     return S.quote(state,tool,start,cursor,vertical);
   }
   function updatePointer() {
@@ -115,7 +135,7 @@
     if(!S.build(state,q)){if(q.message)toast(q.message,true);return false;}
     metrics=S.analyze(state);collect();update();store();return true;
   }
-  const stretch = () => tool==='road'||tool==='bridge'||!!TOOLS[tool].zone;
+  const stretch = () => ['road','bridge','avenue','busline','ferry'].includes(tool)||!!TOOLS[tool].zone;
   canvas.addEventListener('contextmenu',e=>e.preventDefault());
   canvas.addEventListener('pointerdown',e=>{
     if (drag || (e.button!==0&&e.button!==1&&e.button!==2)) return;
@@ -143,7 +163,7 @@
     if(cancelled||d.pan||cursor<0){updatePointer();return;}
     const start=anchor>=0?anchor:d.start;
     if(tool==='inspect')inspect(cursor);
-    else if(stretch() && !d.moved && anchor<0 && (tool==='road'||tool==='bridge')) anchor=cursor;
+    else if(stretch() && !d.moved && anchor<0 && ['road','bridge','avenue','busline','ferry'].includes(tool)) anchor=cursor;
     else {
       const ok=commit(stretch()?start:cursor,cursor);
       if(ok||anchor<0)anchor=-1;
@@ -174,12 +194,98 @@
   }
   dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
   function showHelp() {
-    openDialog('怎么开第一座城',`<ol><li>从地图西侧金色入口向内画道路。</li><li>选择「设施」，在道路旁分别建变电站和供水站。</li><li>在路边拖出一片住宅和一片商业，留些距离再划工业区。</li><li>等几个月看居民和岗位增长，再根据财政补建学校、公园或公交站场。</li></ol><p>工具栏 1–9 切换工具。绘路时按 Shift 换转弯方向，Esc 取消。右键拖动或选「移动」可平移。</p>`,[['回到地图',()=>dialog.close()],['看示例城',()=>switchCity('demo'),'secondary']]);
+    openDialog('怎么开第一座城',`<ol><li>从地图西侧金色入口向内画道路。</li><li>选择「设施」，在道路旁分别建变电站和供水站。</li><li>在路边拖出一片住宅和一片商业，留些距离再划工业区。</li><li>等几个月看居民和岗位增长，再根据财政补建学校、公园或公交站场。用 A 升级主干道；用 U 或 F 选两个端点开公交或渡轮。</li><li>到「经营」看车流和商铺供货；政策可先预估下个月再应用。</li></ol><p>工具栏 1–9 切换工具。绘路时按 Shift 换转弯方向，Esc 取消。右键拖动或选「移动」可平移。</p>`,[['回到地图',()=>dialog.close()],['看示例城',()=>switchCity('demo'),'secondary']]);
   }
-  function showAccounts() {
-    const m=metrics, high=Math.max(1,...state.history.map(Math.abs));
-    const bars=state.history.map(n=>`<i class="${n<0?'down':''}" style="--h:${Math.max(3,Math.round(Math.abs(n)/high*92))}%" title="${signed(n)}"></i>`).join('');
-    openDialog('市政账本',`<dl><dt>本月预估税收</dt><dd>${cash(m.income)}</dd><dt>道路和设施维护</dt><dd>${cash(m.expense)}</dd><dt>月度结余</dt><dd class="${m.net<0?'negative':'positive'}">${signed(m.net)}</dd><dt>市库余额</dt><dd>${cash(state.cash)}</dd><dt>交通负荷</dt><dd>${m.traffic}%</dd><dt>已接水电的分区</dt><dd>${m.utilityLots} / ${m.lots.reduce((a,b)=>a+b,0)} 格</dd></dl>${bars?`<div><p>近期月度结余</p><div class="mini-bars" aria-label="近期月度结余">${bars}</div></div>`:''}`);
+  function showAccounts(){
+    const m=metrics,last=state.record.at(-1);
+    const rows=[['税收',cash(m.income)],['支出',cash(m.expense)],['月度结余',signed(m.net)],['现有债务 / 月息',cash(state.debt)+' / '+cash(m.interest)],['跨河车流',fmt.format(m.crossTraffic)],['交通压力',m.traffic+'%'],['公交分担率',Math.round(m.ridership*100)+'%'],['本地供货',Math.round(m.local*100)+'%'],['外购成本',cash(m.imports)],['水电供给系数',Math.round(m.utility*100)+'%'],['施工中的用地',fmt.format(m.pendingProjects)+' 格'],['货运超载暴露',Math.round(m.freightExposure*100)+'%']];
+    if(last)rows.push(['较上月交通压力',(m.traffic-last.traffic>0?'+':'')+(m.traffic-last.traffic)+' 个百分点']);
+    const field=(k,title)=>'<label>'+title+'<span><input required type="number" name="'+k+'" min="'+S.rules[k][0]+'" max="'+S.rules[k][1]+'" value="'+state.rules[k]+'"> %</span></label>';
+    const controls='<form id="policy-form" class="policy-form">'+field('tax','税率')+field('service','市政服务预算')+field('transit','公交运营预算')+'<label><span>集中配送（每月 ¥180）</span><input name="consolidate" type="checkbox" '+(state.rules.consolidate?'checked':'')+'></label><div><button type="button" id="policy-preview">预估下个月</button> <button type="submit">应用政策</button></div><p id="policy-result" aria-live="polite"></p></form>';
+    const buttons=[['借款 ¥20,000',()=>change({type:'loan',amount:20000}),'secondary'],['还款 ¥20,000',()=>change({type:'loan',amount:-20000}),'secondary'],['管理线路',showLines,'secondary'],['推进一个月',()=>{nextMonth();showAccounts();},'secondary'],['经营复盘',showReview,'secondary']];
+    if(m.worst>=0)buttons.push(['找最堵路段',()=>{dialog.close();layer='traffic';setButtons();map.focus(m.worst);update();},'secondary']);
+    openDialog('市长办公桌','<dl>'+rows.map(([k,v])=>'<dt>'+k+'</dt><dd>'+v+'</dd>').join('')+'</dl><p>税收、覆盖与客流彼此影响。先预估，再决定是否应用。</p>'+controls,buttons);
+    const form=id('policy-form');
+    const proposed=()=>{const f=new FormData(form);return {type:'policy',value:{tax:+f.get('tax'),service:+f.get('service'),transit:+f.get('transit'),consolidate:f.has('consolidate')}};};
+    id('policy-preview').onclick=()=>{if(!form.reportValidity())return;const b=S.forecast(state),n=S.forecast(state,proposed());id('policy-result').textContent='预估月结 '+signed(n.net)+'（相对现行 '+signed(n.net-b.net)+'）；跨河车流 '+n.cross+'（原 '+b.cross+'）';};
+    form.onsubmit=e=>{e.preventDefault();change(proposed());};
+  }
+  function change(c){
+    if(!S.transact(state,c)){toast('操作不可用：检查市库余额或借款上限。',true);return;}
+    metrics=S.analyze(state);update();store();
+    if(c.type==='remove-line')showLines();else showAccounts();
+  }
+  function showLines(){
+    const items=metrics.lines.map((l,i)=>'<li><div><b>'+(l.type==='bus'?'公交':'渡轮')+' '+(i+1)+'</b>：'+(l.reason||Math.round(l.served)+' / '+Math.round(l.max)+' 人次')+'</div><button type="button" data-remove-line="'+i+'">停运</button></li>');
+    openDialog('公交与渡轮',items.length?'<ul class="line-list">'+items.join('')+'</ul>':'<p>还没有自建线路。工具栏选择公交或渡轮，再选两个端点。</p>',[['回到市长办公桌',showAccounts,'secondary']]);
+    for(const b of id('dialog-body').querySelectorAll('[data-remove-line]'))b.onclick=()=>change({type:'remove-line',index:+b.dataset.removeLine});
+  }
+  function showReview(){
+    const history=state.record.slice(-24),current=history.at(-1),base=history[0];
+    const labels=[['人口','pop'],['结余','net'],['跨河车流','cross'],['公交分担 %','transit'],['货运超载暴露 %','freight']];
+    const head=state.result==='won'?'已完成挑战'+(state.resultMonth?'（第 '+state.resultMonth+' 月）':''):'对照首条和最后一条月报';
+    const scope='<p>'+head+'。货运超载暴露是行经超载路段的货运载荷占比，不是实际等待时长。</p>';
+    const value=(obj,key)=>Number.isFinite(obj?.[key])?(key==='net'?signed(obj[key]):fmt.format(obj[key])):'—';
+    const content=!current?'<p>还没有月结。推进一个月后再回来。</p>':'<table class="review-table"><thead><tr><th scope="col">指标</th><th scope="col">第 '+base.clock+' 月</th><th scope="col">第 '+current.clock+' 月</th></tr></thead><tbody>'+labels.map(([label,k])=>'<tr><th scope="row">'+label+'</th><td>'+value(base,k)+'</td><td>'+value(current,k)+'</td></tr>').join('')+'</tbody></table>';
+    openDialog('经营复盘',scope+content,[['回到市长办公桌',showAccounts,'secondary']]);
+  }
+  const archives=['main','port','river','storm','demo'];
+  function downloadCity(){
+    const data={format:'ancheng-city-save',slot,city:S.pack(state)};
+    const blob=new Blob([JSON.stringify(data)],{type:'application/json'});
+    const url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download='ancheng-'+slot+'-month-'+state.clock+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1800);
+  }
+  function installCity(target,imported,restore=false){
+    const current=target===slot?state:load(target),key=KEY+'.'+target,backup=KEY+'.rollback.'+target;
+    try{
+      if(current)localStorage.setItem(backup,JSON.stringify(S.pack(current)));
+      localStorage.setItem(key,JSON.stringify(S.pack(imported)));
+    }catch{toast('浏览器无法保存备份，未切换城市。',true);return;}
+    slot=target;state=imported;metrics=S.analyze(state);
+    dialog.close();map.clearView();choose('inspect');update();
+    toast(restore?'已恢复上一个版本。':'已导入城市；原存档保存在回滚点。');
+  }
+  function showArchive(){
+    openDialog('存档管理','<p>导出的是本机文件。导入不会直接覆盖存档，确认后会先保留原城市作为回滚点。</p><label>选择存档 JSON<input id="import-city" type="file" accept=".json,application/json"></label><p id="archive-status" aria-live="polite"></p>',[['导出当前城市',downloadCity,'secondary'],['恢复上个存档',restoreCity,'secondary']]);
+    id('import-city').onchange=async e=>{
+      const file=e.target.files?.[0];if(!file)return;
+      const status=id('archive-status');
+      if(file.size>5*1024*1024){status.textContent='文件过大，不是可用的城市蓝图存档。';return;}
+      let raw,imported;
+      try{raw=JSON.parse(await file.text());imported=S.unpack(raw.format==='ancheng-city-save'?raw.city:raw);}catch{}
+      if(id('archive-status')!==status)return;
+      if(!imported){status.textContent='存档格式不受支持。未改动现有城市。';return;}
+      const target=raw.format==='ancheng-city-save'&&archives.includes(raw.slot)?raw.slot:imported.mode==='open'?'main':imported.mode;
+      const expected=target==='demo'||target==='main'?'open':target;
+      if(imported.mode!==expected){status.textContent='存档与剧本不匹配。未改动现有城市。';return;}
+      const label=target==='demo'?'示例城':S.MODES[imported.mode].name;
+      openDialog('确认导入存档','<p>要把第 '+imported.clock+' 月的进度导入「'+label+'」吗？原存档会保留一个回滚点。</p>',[['确认导入',()=>installCity(target,imported)],['取消',showArchive,'secondary']]);
+    };
+  }
+  function restoreCity(){
+    let old;try{old=S.unpack(JSON.parse(localStorage.getItem(KEY+'.rollback.'+slot)));}catch{}
+    if(!old){id('archive-status').textContent='当前剧本没有回滚点。';return;}
+    openDialog('恢复上个存档？','<p>当前城市会换回第 '+old.clock+' 月。当前进度会保留在回滚点，可再次恢复。</p>',[['确认恢复',()=>installCity(slot,old,true)],['取消',showArchive,'secondary']]);
+  }
+  id('scenario-progress').addEventListener('click',e=>{if(e.target.closest('[data-emergency]'))showEmergency();});
+  function showEmergency(){
+    if(!metrics.rain)return;
+    const r=metrics.rain,e=state.storm;
+    const go=(action,bank)=>{if(!S.transact(state,{type:'emergency',action,bank})){toast('行动不可用：检查市库、库存和复航进度。',true);return;}metrics=S.analyze(state);update();store();showEmergency();};
+    const fmtRound=x=>fmt.format(Math.round(x));
+    const labels=[['当前阶段',r.phase.label],['西岸 / 东岸本月未服务通勤',r.missed.map(fmtRound).join(' / ')],['西岸 / 东岸本月物资缺口',r.shortage.map(fmtRound).join(' / ')],['东岸库存',fmtRound(e.stock[1])],['累计未服务通勤 / 缺货',fmtRound(r.cumulativeMissed)+' / '+fmtRound(r.cumulativeShortage)],['恢复进度',r.recovered?'第 '+r.recovered+' 月恢复':'第 11 月起重新评估']];
+    const rules='<p><b>第 5–6 月</b>水位上升，备选泊位可保住部分渡轮运力；<b>第 7–9 月</b>强风期间所有渡轮停航，低位桥限流；<b>第 10 月</b>巡检、部分复航；<b>第 11 月</b>起恢复。</p><p>可先加固桥头，或提前在东岸发展本地岗位和工业并储备物资。车流变少不代表居民都到得了：胜负看缺勤、缺货、恢复和市库。</p>';
+    const items=[['加固低位桥头 ¥18,500',()=>go('reinforced'),'secondary'],['改用备选泊位 ¥6,800',()=>go('alternate'),'secondary'],['储备东岸物资 ¥7,200',()=>go('stock',1),'secondary'],['看雨季风险图',()=>{dialog.close();layer='risk';setButtons();update();},'secondary']];
+    openDialog('防汛预案',rules+'<dl>'+labels.map(([k,v])=>'<dt>'+k+'</dt><dd>'+v+'</dd>').join('')+'</dl>',items);
+    const buttons=id('dialog-body').querySelectorAll('.dialog-actions button');
+    buttons[0].disabled=state.clock>=11||e.reinforced||state.cash<18500;buttons[1].disabled=state.clock>=11||e.alternate||state.cash<6800;
+    buttons[2].disabled=state.clock>=11||e.stock[1]>360||state.cash<7200;
+    if(e.reinforced)buttons[0].textContent='低位桥头已加固';
+    if(e.alternate)buttons[1].textContent='备选泊位已准备';
+  }
+  function showScenarios(){
+    openDialog('选择城市剧本','<p>当前地图「一河两岸」的自由建城与三项限时挑战各自保存。挑战到期不影响继续建设。</p><ul><li>老港复兴：用较少的启动资金，让产业与财政同时站稳。</li><li>一座桥，三种解法：接手一座已建成的双岸城市，找出桥上谁在堵。修路、开渡轮或在对岸创造岗位。</li><li>雨季大考：在强风停航前保护交通或准备东岸本地供给。</li></ul>',Object.entries(S.MODES).map(([key,m])=>[m.name,()=>switchCity(key==='open'?'main':key),'secondary']));
   }
   function demo() {
     const s=S.blank();
@@ -197,17 +303,26 @@
     return s;
   }
   function switchCity(key) {
-    store();slot=key;state=load(key)||(key==='demo'?demo():S.blank());metrics=S.analyze(state);
-    dialog.close(); map.clearView(); choose(key==='demo'?'inspect':'road');update();store();toast(key==='demo'?'已打开独立示例城。':'已回到自己的城市。');
+    store();slot=key;state=load(key)||(key==='demo'?demo():S.startCity(key));metrics=S.analyze(state);
+    dialog.close(); map.clearView(); choose(key==='demo'?'inspect':'road');update();store();toast(key==='demo'?'已打开独立示例城。':'已打开 '+S.MODES[state.mode].name+'。');
   }
   function inspect(i) {
     const [x,y]=xy(i), f=FACILITIES[state.facilities[i]], zone=ZONES[state.zone[i]], road=state.road[i];
-    const title=f?.name||zone?.name||(road===2?'桥段':road?'道路':water[i]?'水面':'空地');
+    const title=f?.name||zone?.name||(road===2?'桥段':road===3?'主干道':road?'道路':water[i]?'水面':'空地');
     const connected=road?metrics.connected[i]>=0:metrics.near[i]>=0;
-    openDialog(`${title} · ${x+1}, ${y+1}`,`<dl><dt>外部公路</dt><dd>${connected?'已接入':'未接入'}</dd><dt>供电</dt><dd>${metrics.coverage.power[i]?'已覆盖':'未覆盖'}</dd><dt>供水</dt><dd>${metrics.coverage.water[i]?'已覆盖':'未覆盖'}</dd><dt>公交</dt><dd>${metrics.coverage.bus[i]?'已覆盖':'未覆盖'}</dd><dt>污染</dt><dd>${metrics.pollution[i]>.4?'偏高':'低'}</dd>${zone?`<dt>${state.zone[i]===1?'入住人数':'岗位数'}</dt><dd>${Math.round(state.use[i])} / ${zone.cap}</dd>`:''}${f?`<dt>月维护费</dt><dd>${cash(f.monthly)}</dd>`:''}</dl>${f?`<p>${f.help}</p>`:''}`);
+    openDialog(`${title} · ${x+1}, ${y+1}`,`<dl><dt>外部公路</dt><dd>${connected?'已接入':'未接入'}</dd><dt>供电</dt><dd>${metrics.coverage.power[i]?'已覆盖':'未覆盖'}</dd><dt>供水</dt><dd>${metrics.coverage.water[i]?'已覆盖':'未覆盖'}</dd><dt>公交</dt><dd>${metrics.coverage.bus[i]?'已覆盖':'未覆盖'}</dd><dt>污染</dt><dd>${metrics.pollution[i]>.4?'偏高':'低'}</dd>${road?'<dt>通勤车流 / 货运</dt><dd>'+Math.round(metrics.loads[i])+' / '+Math.round(metrics.freight[i])+'</dd><dt>该段容量利用</dt><dd>'+Math.round(metrics.pressure[i]*100)+'%</dd>':''}${zone?`<dt>${state.zone[i]===1?'入住人数':'岗位数'}</dt><dd>${Math.round(state.use[i])} / ${metrics.cap[i]}</dd><dt>地价指数</dt><dd>${Math.round(metrics.land[i]*100)}/100</dd><dt>当前状态</dt><dd>${metrics.explain[i]}</dd>`:''}${f?`<dt>月维护费</dt><dd>${cash(f.monthly)}</dd>`:''}</dl>${f?`<p>${f.help}</p>`:''}`);
+    if(road===2)bridgeBreakdown(i);
+  }
+  function bridgeBreakdown(i){
+    const flows=[...(metrics.bridgeOrigins.get(i)?.values()||[])].sort((a,b)=>b.load-a.load).slice(0,3);
+    const el=document.createElement('section');el.className='bridge-breakdown';
+    const where=n=>{const [x,y]=xy(n);return (x>=51?'东岸 ':'西岸 ')+(x+1)+','+(y+1);};
+    el.innerHTML='<h3>主要通勤流向</h3>'+(flows.length?'<ol>'+flows.map(f=>'<li>'+where(f.from)+' 至 '+where(f.to)+' · '+fmt.format(Math.round(f.load))+'<button type="button" data-map-focus="'+f.to+'">定位终点</button></li>').join('')+'</ol>':'<p>本月没有通过该段的道路通勤。</p>')+'<p>仅列道路通勤，不含货车；上方有货运总量。</p>';
+    id('dialog-body').querySelector('.dialog-content').append(el);
+    for(const b of el.querySelectorAll('[data-map-focus]'))b.onclick=()=>{dialog.close();map.focus(+b.dataset.mapFocus);};
   }
   id('accounts').onclick=showAccounts;id('info').onclick=showHelp;
-  id('menu').onclick=()=>openDialog('城市菜单',`<p>${slot==='demo'?'正在玩示例城，进度单独保存。':'正在规划自己的城市，建设和月结会自动保存。'}</p>`,[[slot==='demo'?'回到我的城市':'打开示例城',()=>switchCity(slot==='demo'?'main':'demo')],['操作指南',showHelp,'secondary'],['重开当前地图',()=>openDialog('重开当前地图？','<p>当前地图的建设与经营进度会清空。</p>',[['确认重开',()=>{state=slot==='demo'?demo():S.blank();metrics=S.analyze(state);dialog.close();map.clearView();choose('road');update();store();},'danger'],['取消',()=>dialog.close(),'secondary']]),'secondary']]);
+  id('menu').onclick=()=>openDialog('城市菜单',`<p>${slot==='demo'?'正在玩示例城，进度单独保存。':'正在规划自己的城市，建设和月结会自动保存。'}</p>`,[[slot==='demo'?'回到我的城市':'打开示例城',()=>switchCity(slot==='demo'?'main':'demo')],['城市剧本',showScenarios,'secondary'],['管理公交与渡轮',showLines,'secondary'],['存档管理',showArchive,'secondary'],['操作指南',showHelp,'secondary'],['重开当前地图',()=>openDialog('重开当前地图？','<p>当前地图的建设与经营进度会清空。</p>',[['确认重开',()=>{state=slot==='demo'?demo():S.startCity(slot);metrics=S.analyze(state);dialog.close();map.clearView();choose('road');update();store();},'danger'],['取消',()=>dialog.close(),'secondary']]),'secondary']]);
   document.addEventListener('keydown',e=>{
     if(dialog.open||e.repeat||e.metaKey||e.ctrlKey||e.altKey||/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))return;
     if(e.code==='Escape'){anchor=-1;drag=null;shell.dataset.drag='false';dismissMenus();updatePointer();return;}

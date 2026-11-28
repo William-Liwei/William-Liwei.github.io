@@ -3,7 +3,7 @@
   const S = window.CitySim, {W,H,index,xy,water,ZONES,FACILITIES,GATE} = S;
   const {shapes} = window.CITY_TERRAIN;
   const noise = (x,y,k = 0) => { const n = Math.sin(x * 28.171 + y * 21.327 + k * 7.7103) * 14731.7231; return n - Math.floor(n); };
-  const layerColors = {power:'246,194,95',water:'50,172,224',traffic:'94,219,185'};
+  const layerColors = {power:'246,194,95',water:'50,172,224',transit:'94,219,185'};
   function polygon(ctx, points) {
     ctx.moveTo(points[0], points[1]);
     for (let i = 2; i < points.length; i += 2) ctx.lineTo(points[i],points[i+1]);
@@ -45,6 +45,10 @@
       v.x = Math.max(-xLimit,Math.min(xLimit,v.x+dx));
       v.y = Math.max(-yLimit,Math.min(yLimit,v.y+dy));
       drawSoon();
+    }
+    function focus(i){
+      const [x,y]=xy(i);state.view={x:0,y:0,zoom:Math.max(1.8,state.view.zoom)};
+      const u=scale();pan((W/2-x-.5)*u,(H/2-y-.5)*u);
     }
     const point = e => { const r = canvas.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top]; };
     function cell(e) { const [x,y] = point(e), {ox,oy,u} = transform(); return index(Math.floor((x-ox)/u),Math.floor((y-oy)/u)); }
@@ -100,7 +104,7 @@
     if (window.ResizeObserver) new ResizeObserver(size).observe(shell);
     window.addEventListener('resize',size);
     size();
-    return {cell,point,zoom,pan,clearView,setScene,setPointer};
+    return {cell,point,zoom,pan,clearView,focus,setScene,setPointer};
   }
   function terrainArt(ctx,u) {
     ctx.scale(u,u);
@@ -155,7 +159,7 @@
   function drawCity(ctx,s,m,layer) {
     if (layerColors[layer]) {
       ctx.fillStyle='#173c4e3b'; ctx.fillRect(0,0,W,H);
-      const field = m.coverage[layer === 'traffic' ? 'bus' : layer];
+      const field = m.coverage[layer === 'transit' ? 'bus' : layer];
       for (let i=0;i<field.length;i++) if(field[i] && !water[i]) {
         const [x,y]=xy(i);ctx.fillStyle=`rgba(${layerColors[layer]},.29)`;ctx.fillRect(x,y,1,1);
       }
@@ -163,14 +167,14 @@
     for (let i=0;i<s.zone.length;i++) {
       const z=s.zone[i]; if(!z)continue;
       const [x,y]=xy(i), style=ZONES[z];
-      ctx.fillStyle=style.tint;ctx.fillRect(x+.03,y+.03,.94,.94);
+      ctx.fillStyle=layer==='land'?'rgba(206,165,255,'+(.15+m.land[i]*.78)+')':layer==='pollution'?'rgba(253,115,61,'+Math.min(.88,.09+m.pollution[i]*.35)+')':style.tint;ctx.fillRect(x+.03,y+.03,.94,.94);
       if (m.near[i] < 0 || !m.coverage.power[i] || !m.coverage.water[i]) {
         ctx.strokeStyle='#dee6ad34';ctx.lineWidth=.05;ctx.beginPath();ctx.moveTo(x+.15,y+.85);ctx.lineTo(x+.85,y+.15);ctx.stroke();
       }
-      if (s.use[i] < 2.3 || layer === 'zoning') {
+      if (s.use[i] < 2.3 || ['zoning','land','pollution'].includes(layer)) {
         ctx.strokeStyle=style.color+'a0';ctx.lineWidth=.045;ctx.strokeRect(x+.1,y+.1,.8,.8);
       } else {
-        building(ctx,x,y,z,s.use[i]/style.cap,noise(x,y,8));
+        building(ctx,x,y,z,s.use[i]/Math.max(1,m.cap[i]),noise(x,y,8));
       }
     }
     function trace() {
@@ -185,7 +189,22 @@
     ctx.lineCap='round';ctx.lineJoin='round';trace();
     ctx.strokeStyle='#34433a';ctx.lineWidth=.77;ctx.stroke();
     ctx.strokeStyle='#d6cfac';ctx.lineWidth=.59;ctx.stroke();
-    ctx.strokeStyle=layer==='traffic'&&m.traffic>55?'#ce9971':'#58605a';ctx.lineWidth=.45;ctx.stroke();
+    ctx.strokeStyle='#58605a';ctx.lineWidth=.45;ctx.stroke();
+    for(let i=0;i<s.road.length;i++)if(layer==='traffic'&&s.road[i]||s.road[i]===3){
+      const [x,y]=xy(i),p=m.pressure[i];ctx.fillStyle=layer!=='traffic'?'#6e93a5':m.connected[i]<0?'#9aa69e':p>.85?'#f47763':p>.46?'#e6bb74':'#8ac7a5';ctx.fillRect(x+.14,y+.14,.72,.72);
+    }
+    if(layer==='risk'){
+      const phase=m.rain?.phase.id,active=['moderate','severe','inspect'].includes(phase);
+      for(let i=0;i<s.road.length;i++)if(s.road[i]===2){
+        const [x,y]=xy(i),low=y>=30&&y<=37&&!s.storm.reinforced;
+        ctx.fillStyle=low?(active?'#fb8c52':'#edba73'):'#73dfca';
+        ctx.fillRect(x+.11,y+.11,.78,.78);
+      }
+    }
+    if(layer==='transit')for(const l of m.lines)if(l.path){
+      ctx.beginPath();l.path.forEach((i,j)=>{const [x,y]=xy(i);if(j)ctx.lineTo(x+.5,y+.5);else ctx.moveTo(x+.5,y+.5);});
+      ctx.lineWidth=.25;ctx.strokeStyle=l.type==='ferry'?'#72c7ff':'#62f8ce';ctx.setLineDash(l.type==='ferry'?[.52,.30]:[]);ctx.stroke();ctx.setLineDash([]);
+    }
     ctx.strokeStyle='#e7d59aa1';ctx.lineWidth=.036;ctx.setLineDash([.15,.16]);ctx.stroke();ctx.setLineDash([]);
     for (let i=0;i<s.road.length;i++) if(s.road[i]===2) {
       const [x,y]=xy(i);ctx.fillStyle='#e9deb9';
