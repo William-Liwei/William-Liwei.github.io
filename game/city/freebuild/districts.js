@@ -235,7 +235,7 @@ function evaluate(state,civic,options={}){
 function visitors(p,housing,r){let out=0;for(const l of housing){const d=dist(p,l);if(d<r)out+=l.occupants*(1-d/r);}return out;}
 function tick(state,civic,options={}){
  const m=evaluate(state,civic,options),geo=geometry(state,opt(options));
- for(const d of state.districts){const def=TYPES[d.type],s=m.districts[d.id];if(!def.stock)continue;
+ for(const d of state.districts){const def=TYPES[d.type],s=m.districts[d.id];if(!def.stock||options.excludeStockTypes?.includes(d.type))continue;
   const recovery=def.stock==='fish'?d.maxStock*.08:def.stock==='forest'?d.maxStock*.042:0;
   if(def.stock==='finite'&&s.production>0){
    const cells=geo.get(d.id).deposits,ledger=state.extraction??(state.extraction={});

@@ -552,7 +552,8 @@
       const civic=s.type?.startsWith('jst-')&&globalThis.Justice?.TYPES[s.type.slice(4)];
       const care=s.type?.startsWith('csr-')&&globalThis.CareServices?.TYPES[s.type.slice(4)];
       const taxi=s.type==='taxi-depot'?{color:'#d9b747',icon:'租'}:null;
-      const spec=edu||civic||care||taxi;
+      const industry=s.type?.startsWith('ina-')&&globalThis.IndustryAreas?.MODULES[s.type.slice(4)];
+      const spec=edu||civic||care||taxi||industry;
       const [col,sign]=spec?[spec.color,spec.icon]:(SERVICE[s.type]||['#64796b','·']);
       const x=+s.x,y=+s.y;
       if(!valid(x)||!valid(y))return;
@@ -608,6 +609,20 @@
             panel(-4,4,2.5,4.9,'#596f84');
             if(close)stripe(-7.5,7.5,6.3,'#f1edd4');
             break;
+          case 'ina-extractor':
+            shape(c,deck(-11.8,-8.5,11.1,7.8,0),'#b6ac84','#7e8265',.7);
+            block(-9,-6.4,3,2.75,6.8,col,'#d6c4a1','#938674');
+            tank(6.5,-2.1,2.75,4.9,'#d7d2a5');stripe(-8,8,5.0,'#e5e0bc');break;
+          case 'ina-processor':
+            block(-14,-9,13,7.1,10.4,col,'#dbc6af','#908475');
+            block(-10,-6,-2,4.1,13.7,'#a5a999','#babaa7','#80908b',10.4);
+            for(const x of [6,11])tank(x,-4,1.6,15,'#a3a597');
+            panel(-4,7,2,6.2,'#62736e',7.15);break;
+          case 'ina-storage':
+            shape(c,deck(-14,-9,14,9,0),'#a8b3a7','#778b82',.7);
+            block(-11.8,-7.3,12.5,5.2,6.6,col,'#c6d1c4','#839e94');
+            for(const x of [-10,-4,2,8])panel(x,x+3,.4,3.3,'#607668',5.42);
+            stripe(-12,12,7.5,'#ebecc8');break;
           case 'taxi-depot':
             block(-5,-3.6,4.8,2.5,4.2,col,'#d6d0af','#a9a58b');
             for(const a of [-4,0,4])block(a-1,2.9,a+1,4.3,1.1,'#f9da46');break;
@@ -885,7 +900,7 @@
       }
       const districtList=array(city.districts), transit=city.transit||{};
       if(districtList.length)for(const d of districtList){
-        const item=globalThis.Districts?.TYPES[d.type],active=overlay==='districts'||overlay==='resources'||selected.district===d.id;
+        const item=globalThis.Districts?.TYPES[d.type],active=overlay==='industry'||overlay==='districts'||overlay==='resources'||selected.district===d.id;
         if(item)shape(c,d.points,item.color+(active?'7a':'38'),item.color+(active?'ff':'a6'),active?1.8:.8);
       }
       this.paintZones(c,zones,overlay,selected);
@@ -983,7 +998,7 @@
           const p=p3(node);circle(c,p.x,p.y,3.8,'#f0fcde','#348478',1.55);
         }
       }
-      for(const s of sr)if(!field||field.key!==overlay||s.type===overlay)this.paintService(c,s,overlay==='zones'?'zones':'none',selected.care===s.id||selected.justice===s.id||selected.school===s.id||selected.service===s.id||selected.type==='service'&&selected.id===s.id,camera.zoom);
+      for(const s of sr)if(!field||field.key!==overlay||s.type===overlay)this.paintService(c,s,overlay==='zones'?'zones':'none',selected.industry===s.id||selected.care===s.id||selected.justice===s.id||selected.school===s.id||selected.service===s.id||selected.type==='service'&&selected.id===s.id,camera.zoom);
       for(const s of array(transit.stations)){
         const f=globalThis.Transit?.FACILITIES[s.type];if(!f)continue;
         if(s.x<left||s.x>right||s.y<top||s.y>bottom)continue;
