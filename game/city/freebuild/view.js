@@ -677,6 +677,12 @@
         }
         c.restore();return;
       }
+      if(a.kind==='bike'){
+        const p=p3(a);c.save();c.translate(p.x,p.y);c.rotate(a.angle||0);
+        for(const x of [-1.3,1.3])circle(c,x,0,.72,'#263e43','#c3eada',.2);
+        line(c,[{x:-1.3,y:0},{x:0,y:-.58},{x:1.3,y:0}],'#e4d761',.45);
+        circle(c,-.15,-.70,.53,a.color||'#eac16c');c.restore();return;
+      }
       const p=p3(a), style=a.kind??a.type, bus=style==='bus', walking=['walk','pedestrian','walker'].includes(style);
       if(walking) {
         c.save();if(valid(a.opacity))c.globalAlpha*=cl(a.opacity,0,1);
@@ -827,6 +833,16 @@
       const top=camera.y-this.height/2/camera.zoom-44,bottom=camera.y+this.height/2/camera.zoom+44;
       const visible=bb=>bb.maxX>=left&&bb.minX<=right&&bb.maxY>=top&&bb.minY<=bottom;
       this.paintRoadMesh(c,roadMesh,overlay,load,metrics.queue?.edgeTraffic,selected,visible);
+      for(const link of array(city.activeTravel)){
+        const spec=globalThis.ActiveTravel?.TYPES?.[link.type];if(!spec)continue;
+        const ps=link.points.map(p3),sel=selected.active===link.id,a=overlay==='active',width=spec.width;
+        if(!a&&!sel&&this.camera.zoom<.8&&link.type!=='bridge')continue;
+        if(link.type==='bridge')line(c,link.points.map(pt=>({x:pt.x+1.5,y:pt.y+1.6})),'#172d4060',width+2.8);
+        line(c,ps,sel?'#ffe0a4':'#254355b0',width+1.2);
+        line(c,ps,spec.color,width);
+        if(link.type==='bike')line(c,ps,'#e4ffe8a0',.45,[3,4]);
+      }
+
       if(['traffic','parking'].includes(overlay)&&metrics.queue?.directions){
         for(const [,e,pts,bb] of roads){
           const pair=metrics.queue.directions[e.id];

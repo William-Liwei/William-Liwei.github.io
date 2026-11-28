@@ -28,7 +28,7 @@ function nearest(a,b,p){
  const t=d>EPS?limit(((p.x-a.x)*x+(p.y-a.y)*y)/(d*d),0,1):0;
  return {...N.mix(a,b,t),t};
 }
-function makeAccess(net,land,maxSiteAccess){
+function makeAccess(net,land,maxSiteAccess,extraWalking){
  const nodeAt=new Map((net.nodes||[]).map(n=>[n.id,n])),edgeAt=new Map((net.edges||[]).map(e=>[e.id,e])),walkNet={...net,edges:(net.edges||[]).filter(walkable)};
  const walkGraph=N.graph(walkNet,'walk'),sideBins=new Map(),sideCell=48;
  const activeNodes=new Set(walkNet.edges.flatMap(e=>[e.a,e.b]));
@@ -75,10 +75,11 @@ function makeAccess(net,land,maxSiteAccess){
  }
  function walking(a,b,max){
   if(!a||!b||N.dist(a.p,b.p)>max+EPS)return null;
-  let best=null;
+  const extra=extraWalking?.(a.p,b.p);
+  let best=extra&&extra.meters<=max?{metres:extra.meters,path:extra.segments??[],active:true}:null;
   if(a.edge&&b.edge&&a.edge.id===b.edge.id){
    const metres=a.off+b.off+Math.abs(a.offset-b.offset);
-   if(metres<=max)best={metres,path:[{edge:a.edge.id,reverse:b.offset<a.offset,partial:true,fromDistance:a.offset,toDistance:b.offset}]};
+   if(metres<=max&&(!best||metres<best.metres))best={metres,path:[{edge:a.edge.id,reverse:b.offset<a.offset,partial:true,fromDistance:a.offset,toDistance:b.offset}]};
   }
   for(const start of a.connect){
    let tree=trees.get(start.node);
@@ -168,10 +169,10 @@ function addMetroLine(l,a,all,stopMap){
  }
 }
 function create({network={},transitMetrics,transit,parking,parkingConfig,isLand=noop,loads={},frequency='normal',depotLines,
-                 maxWalk,maxTransferWalk,walkSpeed,maxSiteAccess,maxTransfers:defaultTransfers}={}){
+                 maxWalk,maxTransferWalk,walkSpeed,maxSiteAccess,extraWalking,maxTransfers:defaultTransfers}={}){
  const net={nodes:[],edges:[],buses:[],...network},speed=num(walkSpeed,3.1,1.3,4.4);
  const walkMax=num(maxWalk,190,30,400),transferMax=num(maxTransferWalk,155,20,250),sourceLimit=num(maxSiteAccess,48,6,80);
- const a=makeAccess(net,isLand,sourceLimit),lines=[],stops=new Map(),liveBusStops=Object.create(null),liveBusTrips=Object.create(null);
+ const a=makeAccess(net,isLand,sourceLimit,extraWalking),lines=[],stops=new Map(),liveBusStops=Object.create(null),liveBusTrips=Object.create(null);
  for(const bus of net.buses.slice(0,75)){
   if(bus?.id==null)continue;
   const r=addBusLine(bus,net,a,lines,stops,liveBusStops,depotLines?.has?.(bus.id)||depotLines?.includes?.(bus.id),loads,frequency);
