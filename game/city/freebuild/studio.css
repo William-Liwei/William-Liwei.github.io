@@ -144,3 +144,9 @@
 #grid-dialog{width:min(650px,calc(100vw - 28px));max-height:calc(100dvh - 26px);overflow:auto;overscroll-behavior:contain}
 #grid-dialog section{border-top:1px solid #bccfcb77;margin-block:14px;padding-block-start:8px}
 #grid-dialog h3{margin-block:3px 8px}
+
+.edit-strip{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:7px 0;border-top:1px solid #a1b9b163;margin-top:8px}
+.edit-strip button{min-height:35px;min-width:57px}
+#edit-label{flex:1 1 105px;min-width:0;line-height:1.25}
+#view-fit{font-size:.68rem;font-weight:800}
+#map.temporary-pan{cursor:grab!important}

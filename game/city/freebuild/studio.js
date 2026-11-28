@@ -1,9 +1,10 @@
 'use strict';
 (()=>{
-const GR=GridResilience,PW=PublicWorks,WM=WorkMobility,SL=SystemLedger,CL=CampusLife,PL=ParkLife,CR=Careers,WB=Wellbeing,H=CargoLogistics,HG=CargoGateways,V=MunicipalFinance,W=MarketCycle,B=CityBalance,G=Progression,R=SocialCare,X=IndustryAreas,F=TerrainWork,Z=RoadsideZoning,S=TransitService,L=Labor,K=CareServices,J=Justice,Q=Education,I=CivicIncidents,A=ActiveTravel,P=Parking,N=Network,C=Civic,U=Utilities,T=Transit,E=Economy,D=Districts,M=CityMaps,$=s=>document.getElementById(s);
+const CH=ConstructionHistory,GR=GridResilience,PW=PublicWorks,WM=WorkMobility,SL=SystemLedger,CL=CampusLife,PL=ParkLife,CR=Careers,WB=Wellbeing,H=CargoLogistics,HG=CargoGateways,V=MunicipalFinance,W=MarketCycle,B=CityBalance,G=Progression,R=SocialCare,X=IndustryAreas,F=TerrainWork,Z=RoadsideZoning,S=TransitService,L=Labor,K=CareServices,J=Justice,Q=Education,I=CivicIncidents,A=ActiveTravel,P=Parking,N=Network,C=Civic,U=Utilities,T=Transit,E=Economy,D=Districts,M=CityMaps,$=s=>document.getElementById(s);
 const parameters=new URLSearchParams(location.search),map=M.select(parameters.get('map')),mapId=map.id,sandbox=parameters.get('mode')==='sandbox',startDifficulty=parameters.get('difficulty')==='challenge'?'challenge':'standard';
 const systemContext='city-'+mapId+(sandbox?'-sandbox':'-career'),scenarioRunner=parameters.get('ledger-runner')==='1'&&parent!==window;
 let scenarioOverride=null,scenarioControl='';
+const constructionHistory=CH.create({contextId:systemContext});let editSaving=false,strokeHistory=[],panHeld=false,snapHeld=false;
 const canvas=$('map'),view=new CityView(canvas,{width:1200,height:800}),storeKey=M.storage(mapId,sandbox),prefKey='city.blueprint.settings.1',format=new Intl.NumberFormat('zh-CN',{maximumFractionDigits:0});
 let prefs={};if(!scenarioRunner)try{prefs=JSON.parse(localStorage.getItem(prefKey))||{};localStorage.setItem('city.blueprint.map.1',mapId);localStorage.setItem('city.blueprint.mode.1',sandbox?'sandbox':'career')}catch{}
 $('map-name').textContent=map.name;document.querySelector('.brand p').textContent=(sandbox?'规划沙盒':'自由经营')+' · '+map.name;
@@ -137,7 +138,7 @@ function save(next=city,replacing=false){
  try{
   if(!replacing&&serviceOps&&serviceOwner===city&&(next===city||next.transitService===city.transitService||JSON.stringify(next.transitService)===JSON.stringify(city.transitService)))next.transitService=serviceOps.snapshot();
   const saved=JSON.stringify(next);
-  localStorage.setItem(storeKey,saved);lastStored=saved;recoveryRaw=null;updateRawExport();reportSaveProblem('');return true;
+  localStorage.setItem(storeKey,saved);if(!editSaving&&(next!==city||replacing))CH.clear(constructionHistory,'已切换存档或修改市政设置');lastStored=saved;recoveryRaw=null;updateRawExport();reportSaveProblem('');return true;
  }catch{reportSaveProblem('保存失败：浏览器无法写入本机存档，请先导出 JSON。');return false;}
 }
 window.addEventListener('storage',e=>{
@@ -263,7 +264,7 @@ function hasRoad(p,r=85,n=effective||city.network){return !!N.snap({nodes:[],edg
 function transitOpts(net=effective||city.network){return {water:N.water,isBuildable:onLand,width:1200,height:800,mapId,centerline:N.river,river:N.river,roadAccess:(p,r)=>hasRoad(p,Math.min(112,Math.max(58,(Number(r)||16)*2.7)),net)};}
 function districtOpts(net=effective||city.network){const stations=city.transit.stations;return {...transitOpts(net),transit:city.transit,waterAt:p=>U.isManaged(city.utilities,'water')?U.at(utilityMetrics,'water',p):1,powerAt:p=>U.isManaged(city.utilities,'power')?U.at(utilityMetrics,'power',p):1,roadAccess:(p,r)=>hasRoad(p,Math.min(76,Number(r)||58),net),seaports:stations.filter(s=>s.type==='cargoPort'||s.type==='ferryTerminal'),airports:stations.filter(s=>s.type==='airport'||s.type==='cargoAirport')};}
 let turnNode=null,turnEnter=null;
-function showTools(){return withBuildCity(()=>showToolsWork());}
+function showTools(){const v=withBuildCity(()=>showToolsWork());renderEditActions();return v;}
 function showToolsWork(){
  $('tools').querySelectorAll('button').forEach(b=>{b.classList.toggle('active',b.dataset.tool===tool);b.setAttribute('aria-pressed',b.dataset.tool===tool);});
  let s='';
@@ -340,7 +341,7 @@ function showToolsWork(){
  }
  if(tool==='service')s=htmlSel('service','服务种类',Object.fromEntries(serviceKeys().map(k=>[k,serviceNames[k]||k])))+'<label class="field">运营预算 %<input type="number" id="service-budget" min="25" max="160" step="5" value="'+(city.civic.budgets?.[opts.service]??100)+'"></label>';
  $('options').innerHTML=s;const locked=featureFor(tool).map(key=>G.checkFeature(city.progression,key)).find(q=>!q.ok);$('tool-help').textContent=(help[tool]||'')+(locked?' '+locked.reason:'');
- $('options').querySelectorAll('select,input').forEach(el=>el.addEventListener('change',()=>{if(el.id==='service-budget'){if(batch){showTools();return notify('经营预算不属于施工蓝图，请先完成当前批次',true);}C.setBudget(city.civic,opts.service,+el.value);refresh();save();return}opts[el.id]=el.type==='checkbox'?el.checked:el.type==='number'?N.clamp(+el.value,+el.min,+el.max):el.value;if(el.id==='service'){showTools();setLayer(opts.service)}
+ $('options').querySelectorAll('select,input').forEach(el=>el.addEventListener('change',()=>{if(el.id==='service-budget'){if(batch){showTools();return notify('经营预算不属于施工蓝图，请先完成当前批次',true);}CH.clear(constructionHistory,'已修改公共服务预算');renderEditActions();C.setBudget(city.civic,opts.service,+el.value);refresh();save();return}opts[el.id]=el.type==='checkbox'?el.checked:el.type==='number'?N.clamp(+el.value,+el.min,+el.max):el.value;if(el.id==='service'){showTools();setLayer(opts.service)}
  if(el.id==='profile'||el.id==='oneway'||el.id==='signalAction'||el.id==='parkingMode'||el.id==='parkingType'){showTools();hintDraft();$(el.id)?.focus({preventScroll:true});}
  if(['industryKind','socialType','gridAsset'].includes(el.id))showTools();
  if(['parkDistrict','parkMode','parkPath','parkAsset','campusDistrict','campusAsset'].includes(el.id)){draft=[];showTools();hintDraft();}
@@ -373,7 +374,7 @@ function showToolsWork(){
  if(tool==='junction')renderTurnEditor();
  if($('finish')){$('finish').onclick=finish;$('undo').onclick=()=>{draft.pop();updatePreview();hintDraft()}}
 }
-$('tools').onclick=e=>{let b=e.target.closest('[data-tool]');if(!b)return;if(b.dataset.tool!==tool){tool=b.dataset.tool;draft=[];selected={};turnNode=null;turnEnter=null;turnPreview=null;if(tool==='bus')setLayer('transit');if(tool==='line'||tool==='track'||tool==='station')setLayer('routes');if(tool==='utility')setLayer(opts.utilityType);if(tool==='district')setLayer('resources');if(tool==='signal'||tool==='junction')setLayer('traffic');if(tool==='parking')setLayer('parking');if(tool==='active'){activeResult=null;setLayer('active');}if(tool==='service')setLayer(opts.service);if(tool==='schoolBuild')setLayer('schoolAccess');if(tool==='justiceBuild')setLayer('justice');if(tool==='careBuild')setLayer('care');if(tool==='taxiDepot')setLayer('serviceOps');if(tool==='earth')setLayer('earth');if(tool==='industry')setLayer('industry');if(tool==='social')setLayer('social');if(tool==='landTitle')setLayer('progress');if(tool==='polygon'||tool==='frontage')setLayer('zones');showTools();updatePreview()}};
+$('tools').onclick=e=>{let b=e.target.closest('[data-tool]');if(!b)return;if(b.dataset.tool!==tool){tool=b.dataset.tool;strokeHistory=[];draft=[];selected={};turnNode=null;turnEnter=null;turnPreview=null;if(tool==='bus')setLayer('transit');if(tool==='line'||tool==='track'||tool==='station')setLayer('routes');if(tool==='utility')setLayer(opts.utilityType);if(tool==='district')setLayer('resources');if(tool==='signal'||tool==='junction')setLayer('traffic');if(tool==='parking')setLayer('parking');if(tool==='active'){activeResult=null;setLayer('active');}if(tool==='service')setLayer(opts.service);if(tool==='schoolBuild')setLayer('schoolAccess');if(tool==='justiceBuild')setLayer('justice');if(tool==='careBuild')setLayer('care');if(tool==='taxiDepot')setLayer('serviceOps');if(tool==='earth')setLayer('earth');if(tool==='industry')setLayer('industry');if(tool==='social')setLayer('social');if(tool==='landTitle')setLayer('progress');if(tool==='polygon'||tool==='frontage')setLayer('zones');showTools();updatePreview()}};
 const turnPoint=(e,n)=>{
  const f=Math.min(.45,(16+N.crossSection(e).width*.24)/Math.max(e.len,1));
  return N.sample(e.pts,e.a===n.id?f:1-f);
@@ -1727,7 +1728,7 @@ function citySystemMonth(opening,settled,credit,paid){
   services:{...sv,waste:{...sv.waste,funded:forecast.works?.wasteSpend,spent:forecast.works?.wasteSpend,need:PW.report(city.publicWorks).waste.generated,served:PW.report(city.publicWorks).waste.collected,reach:PW.report(city.publicWorks).waste.coverage}},booking:city.serviceLedger,districts:districtEvidence});
 }
 function tick(){
- if(pending||batch||saveConflict)return [];comparison=null;const opening=city.network.cash;city.month++;applyIncident();
+ if(pending||batch||saveConflict)return [];comparison=null;const opening=city.network.cash;CH.clear(constructionHistory,'已推进月份');strokeHistory=[];city.month++;applyIncident();
  PW.advance(city.publicWorks,city,publicWorksOptions());applyIncident();
  D.tick(city.districts,city.civic,{...districtOpts(),excludeStockTypes:Object.keys(X.TYPES)});
  const applied={month:city.month,byLot:Object.create(null)};
@@ -1748,10 +1749,10 @@ function tick(){
  const credit=V.advance(city.credit,city,{month:city.month,cash:city.network.cash,operatingNet:settled.net});
  const net=settled.net+(credit.cashDelta||0);city.network.cash+=net;city.finance.debt=V.report(city.credit).debt;
  const paid=Contracts.settle(city,contractInputs());citySystemMonth(opening,settled,credit,paid);city.history=(city.history||[]).concat({month:city.month,pop:metrics.totals?.population||0,net,bus:(trafficStats.busRiders||0)+(transitMetrics?.total?.passengers||0)}).slice(-18);
- refresh();save();return paid;
+ refresh();save();renderEditActions();return paid;
 }
 $('step').onclick=()=>{if(!checkCanSave())return;const paid=tick();notify(paid.length?paid.map(x=>x.title+' · 拨款 ¥'+format.format(x.reward)).join('；'):'月报已更新')};$('auto').onclick=()=>{if(!checkCanSave())return;playing=!playing;$('auto').setAttribute('aria-pressed',String(playing));$('auto').textContent=playing?'Ⅱ':'▶';};
-function roadPoint(p,z){const u={...p,y:p.y+(mode3d?0:.76*z),z};const gate=opts.snap&&z===0&&M.gates(mapId).find(q=>N.dist(u,q)<13/camera.zoom);if(gate)return {x:gate.x,y:gate.y,z:0};return opts.snap?(N.snap(city.network,u,Math.max(5,13/camera.zoom),true)||u):u;}
+function roadPoint(p,z){const snapping=opts.snap&&!snapHeld;const u={...p,y:p.y+(mode3d?0:.76*z),z};const gate=snapping&&z===0&&M.gates(mapId).find(q=>N.dist(u,q)<13/camera.zoom);if(gate)return {x:gate.x,y:gate.y,z:0};return snapping?(N.snap(city.network,u,Math.max(5,13/camera.zoom),true)||u):u;}
 function activeProject(p){return mode3d?renderer3d.project(p):view.worldToScreen(p,camera);}
 function atPoint(event){const p=screenPoint(event.clientX,event.clientY);return mode3d?renderer3d.raycast(p):view.screenToWorld(p,camera);}
 function scenePreference(){
@@ -2125,7 +2126,7 @@ function withBuildCity(fn){
  city=batch.world;effective=null;
  try{return fn();}finally{city=live;effective=net;buildDepth--;}
 }
-function clearBuildSelection(){activeResult=null;activeProbe=null;draft=[];hover=null;selected={};turnNode=null;turnEnter=null;turnPreview=null;}
+function clearBuildSelection(){strokeHistory=[];activeResult=null;activeProbe=null;draft=[];hover=null;selected={};turnNode=null;turnEnter=null;turnPreview=null;}
 function renderBatch(){
  const enabled=!!batch;
  $('batch-toggle').setAttribute('aria-pressed',String(enabled));
@@ -2140,6 +2141,58 @@ function renderBatch(){
  }));
  for(const id of ['batch-undo','batch-commit'])$(id).disabled=!batch.items.length;
 }
+const EDIT_REASONS={changed:'当前城市相关数据已改变',contextMismatch:'不能跨地图或游戏模式操作',month:'不能撤销过去月份',cash:'现金已变化',stale:'历史已更新',empty:'没有可操作的记录',conflict:'施工数据已改变'};
+function strokeUndo(redo){
+ if(redo){
+  const item=strokeHistory.pop();if(!item||item.tool!==tool)return false;
+  draft.push(item.value);
+ }else{
+  if(!draft.length)return false;
+  strokeHistory.push({tool,value:draft.pop()});
+ }
+ hintDraft();updatePreview();renderEditActions();return true;
+}
+function redrawEdit(){
+ showTools();updatePreview();hintDraft();renderEditActions();
+}
+function renderEditActions(){
+ const h=CH.report(constructionHistory),u=$('edit-undo'),v=$('edit-redo'),status=$('edit-label');
+ if(!u||!v||!status)return;
+ u.disabled=!pending&&!draft.length&&!(batch?.items.length)&&!h.undo;
+ v.disabled=!!pending||!(strokeHistory.length||batch?.redos?.length||!batch&&!draft.length&&h.redo);
+ u.textContent=pending?'取消蓝图':draft.length?'撤回一点':batch?.items.length?'撤回蓝图项':'撤销';
+ v.textContent=strokeHistory.length?'重做一点':batch?.redos?.length?'重做蓝图项':'重做';
+ status.textContent=pending?'待审核，不会自动施工':draft.length?'画图中 · '+draft.length+' 点':batch?'批量蓝图 · '+batch.items.length+' 项':h.undoTop?.label?'本月：'+h.undoTop.label:h.redoTop?.label?'可重做：'+h.redoTop.label:'本月施工可撤销';
+}
+function saveConstruction(trial){
+ editSaving=true;
+ try{return save(trial);}finally{editSaving=false;}
+}
+function addConstructionStep(before,after,spec){
+ if(!CH.record(constructionHistory,before,after,{...spec,month:after.month,contextId:systemContext}).ok)CH.clear(constructionHistory,'不可逆或范围过大');
+ renderEditActions();
+}
+function reapplyBatchDraft(){
+ if(!batch?.redos?.length||draft.length)return false;
+ const item=batch.redos.pop();batch.items.push(item.entry);batch.world=item.after;batch.ghosts=batch.items.map(v=>v.geometry);
+ clearBuildSelection();updateBatchScene();notify('已重做：'+item.entry.title);return true;
+}
+function applyConstruction(direction){
+ const redo=direction==='redo';
+ if(pending){if(!redo)endPlan(false);return;}
+ if(strokeUndo(redo))return;
+ if(batch){if(redo)reapplyBatchDraft();else $('batch-undo').click();return;}
+ const plan=CH.quote(constructionHistory,direction,city,{contextId:systemContext});
+ if(!plan.ok){notify(EDIT_REASONS[plan.reason]||'没有可用施工历史，或当前城市已变化',true);renderEditActions();return;}
+ const result=CH.apply(constructionHistory,plan,city);
+ if(!result.ok)return notify(EDIT_REASONS[result.reason]||'施工状态已变化，未应用',true);
+ if(!saveConstruction(result.world))return notify(saveError,true);
+ CH.commit(constructionHistory,plan,result.world);
+ city=result.world;clearBuildSelection();refresh();redrawEdit();
+ notify((redo?'已重做 · ':'已撤销 · ')+plan.label);
+}
+$('edit-undo').onclick=()=>applyConstruction('undo');
+$('edit-redo').onclick=()=>applyConstruction('redo');
 function updateBatchScene(){if(batch)batch.scene=withBuildCity(showWorld);renderBatch();showTools();updatePreview();if(layer==='progress')withBuildCity(renderProgress);}
 function discardBatch(){
  batch=null;clearBuildSelection();renderBatch();showTools();updatePreview();
@@ -2150,12 +2203,12 @@ $('batch-toggle').onclick=()=>{
  if(batch){$('batch-review').scrollIntoView({block:'nearest'});return;}
  if(!checkCanSave())return;
  if(serviceOps&&serviceOwner===city)city.transitService=serviceOps.snapshot();
- clearBuildSelection();batch={world:city,items:[],ghosts:[],scene:sceneWorld};renderBatch();showTools();updatePreview();
+ clearBuildSelection();batch={world:city,items:[],redos:[],ghosts:[],scene:sceneWorld};renderBatch();showTools();updatePreview();
  notify('批量蓝图已打开。继续画路、摆设施，最后一次施工。');
 };
 $('batch-undo').onclick=()=>{
  if(!batch?.items.length)return;
- const last=batch.items.pop();batch.world=last.prior;batch.ghosts=batch.items.map(v=>v.geometry);
+ const last=batch.items.pop();batch.redos.push({entry:last,after:batch.world});batch.world=last.prior;batch.ghosts=batch.items.map(v=>v.geometry);
  clearBuildSelection();$('batch-discard').textContent='退出／放弃';updateBatchScene();notify('已撤回：'+last.title);
 };
 $('batch-discard').onclick=()=>{
@@ -2166,8 +2219,11 @@ $('batch-commit').onclick=()=>{
  if(!batch?.items.length)return;
  const p=batch;
  if(draft.length){notify('还有未完成的绘制，先完成或按 Esc 收起这笔',true);return;}
- if(!save(p.world)){notify(saveError,true);return;} // Persist the full plan before swapping any live state.
- batch=null;city=p.world;clearBuildSelection();renderBatch();refresh();showTools();updatePreview();
+ const before=city;
+ if(!saveConstruction(p.world)){notify(saveError,true);return;} // Persist the full plan before swapping any live state.
+ batch=null;city=p.world;clearBuildSelection();renderBatch();refresh();
+ addConstructionStep(before,city,{label:'批量施工 '+p.items.length+' 项',kind:'batch',kinds:p.items.map(x=>x.kind)});
+ showTools();updatePreview();
  notify('已一次施工 '+p.items.length+' 项 · 本月生效');
 };
 window.addEventListener('beforeunload',e=>{if(batch?.items.length){e.preventDefault();e.returnValue='';}});
@@ -2186,7 +2242,7 @@ function beginPlan(trial,r,geometry,title,kind,info=''){
  if(!batch&&kind!=='taxiDepot'&&serviceOps&&serviceOwner===city)trial.transitService=serviceOps.snapshot();
  if(batch){
   if(batch.items.length>=BATCH_LIMIT)return notify('单批最多 '+BATCH_LIMIT+' 项；可先确认这批或撤回最后一项',true);
-  batch.items.push({prior:batch.world,title,kind,cash,geometry,info});batch.world=trial;batch.ghosts=batch.items.map(v=>v.geometry);
+  batch.redos=[];batch.items.push({prior:batch.world,title,kind,cash,geometry,info});batch.world=trial;batch.ghosts=batch.items.map(v=>v.geometry);
   clearBuildSelection();$('batch-discard').textContent='退出／放弃';
   // Refresh outside the planning context so the subtotal is computed against live cash.
   queueMicrotask(updateBatchScene);notify('已加入蓝图 · '+title);return;
@@ -2200,14 +2256,18 @@ function beginPlan(trial,r,geometry,title,kind,info=''){
  $('plan-flow-estimate').disabled=false;$('plan-flow-result').hidden=true;$('plan-flow-result').textContent='';
  for(const id of ['step','auto','budget','economy','files'])$(id).disabled=true;
  for(const el of document.querySelectorAll('#tools button,#options input,#options select,#options button,#actions button'))el.disabled=true;
- notify('');updatePreview();$('plan-apply').focus({preventScroll:true});
+ notify('');updatePreview();renderEditActions();$('plan-apply').focus({preventScroll:true});
 }
 function endPlan(apply){
- if(!pending)return;if(apply&&!checkCanSave()){notify(saveError,true);return;}const p=pending;pending=null;
+ if(!pending)return;const p=pending,prev=city;
+ if(apply&&!saveConstruction(p.trial)){notify(saveError,true);return;}
+ pending=null;strokeHistory=[];
  $('plan-review').hidden=true;
  for(const id of ['step','auto','budget','economy','files'])$(id).disabled=false;
  for(const el of document.querySelectorAll('#tools button'))el.disabled=false;
- if(apply){city=p.trial;draft=[];hover=null;selected={};refresh();if(['road','bus','upgrade','erase','junction','active'].includes(p.kind))comparePlan(p.before);if(save())notify('已确认 · '+p.title);else notify(saveError,true);}
+ if(apply){city=p.trial;draft=[];hover=null;selected={};refresh();if(['road','bus','upgrade','erase','junction','active'].includes(p.kind))comparePlan(p.before);
+  addConstructionStep(prev,city,{label:p.title,kind:p.kind});notify('已确认 · '+p.title);}
+
  else {draft=[];hover=null;notify('蓝图已取消，未扣款');}
  showTools();updatePreview();hintDraft();canvas.focus({preventScroll:true});
 }
@@ -2404,7 +2464,7 @@ function activeClick(p){
  trial.network.cash-=r.cost;
  beginPlan(trial,r,{points:r.link.points,kind:'active',width:A.TYPES[r.link.type].width},'建设 '+A.TYPES[r.link.type].name,'active',Math.round(r.link.length)+' 米 · 仅慢行');
 }
-function pointerAction(p){return withBuildCity(()=>pointerActionWork(p));}
+function pointerAction(p){strokeHistory=[];const v=withBuildCity(()=>pointerActionWork(p));renderEditActions();return v;}
 function pointerActionWork(p){
  if(pending)return;
  if(tool==='landTitle'){
@@ -2785,8 +2845,8 @@ canvas.addEventListener('pointerdown',e=>{
   beginTouch();if(touchGesture.moved){hover=null;updatePreview();}return;
  }
  if(e.button<0||e.button>2)return;
- const moved=e.button!==0||e.shiftKey||panMode;
- drag={id:e.pointerId,world:atPoint(e),x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY,moved,orbit:e.button===2&&!e.shiftKey};
+ const moved=e.button!==0||e.shiftKey||e.altKey||panHeld||panMode;
+ drag={id:e.pointerId,world:atPoint(e),x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY,moved,orbit:(e.button===2||e.altKey)&&!e.shiftKey&&!panHeld};
  canvas.setPointerCapture(e.pointerId);
  if(moved){canvas.style.cursor='grabbing';hover=null;updatePreview();}
 
@@ -2808,7 +2868,7 @@ canvas.addEventListener('pointermove',e=>{
     else renderer3d.pan(c.x-b.x,c.y-b.y);
     g.last=c;sync3dZoom();return;
    }
-   if(c.d>0&&g.d>0)camera.zoom=N.clamp(g.zoom*c.d/g.d,.53,3.2);
+   if(c.d>0&&g.d>0)camera.zoom=N.clamp(g.zoom*c.d/g.d,.26,3.2);
    const here=view.screenToWorld(screenPoint(c.x,c.y),camera);
    camera.x+=g.world.x-here.x;camera.y+=g.world.y-here.y;
   }return;
@@ -2833,7 +2893,7 @@ function releasePointer(e,cancelled=false){
   if(fingers.size)beginTouch(true);else touchGesture=null;
   if(tap){const hit=atPoint(e);canvas.focus({preventScroll:true});if(hit)pointerAction(hit);}else if(mode3d)scenePreference();
  }else if(drag?.id===e.pointerId){
-  const d=drag;drag=null;canvas.style.cursor=panMode?'grab':'';
+  const d=drag;drag=null;panCursor();
   if(!cancelled&&!d.moved&&Math.hypot(e.clientX-d.x,e.clientY-d.y)<=5){
    hover=atPoint(e);canvas.focus({preventScroll:true});if(hover)pointerAction(hover);
   }else {if(mode3d)scenePreference();updatePreview();}
@@ -2841,9 +2901,15 @@ function releasePointer(e,cancelled=false){
 }
 canvas.addEventListener('pointerup',e=>releasePointer(e));canvas.addEventListener('pointercancel',e=>releasePointer(e,true));
 canvas.addEventListener('lostpointercapture',e=>{if(fingers.has(e.pointerId)||drag?.id===e.pointerId)releasePointer(e,true);});
-function zoom(z,p){if(mode3d){renderer3d.zoom(z,p);sync3dZoom();scenePreference();}else camera.zoom=N.clamp(camera.zoom*z,.53,3.2);}
+function zoom(z,p){if(mode3d){renderer3d.zoom(z,p);sync3dZoom();scenePreference();}else camera.zoom=N.clamp(camera.zoom*z,.26,3.2);}
 canvas.addEventListener('wheel',e=>{e.preventDefault();if(mode3d){zoom(Math.exp(-e.deltaY*.0015),screenPoint(e.clientX,e.clientY));return;}let a=atPoint(e);zoom(Math.exp(-e.deltaY*.0015));let b=atPoint(e);camera.x+=a.x-b.x;camera.y+=a.y-b.y;},{passive:false});
-$('pan').onclick=()=>{panMode=!panMode;$('pan').setAttribute('aria-pressed',String(panMode));canvas.style.cursor=panMode?'grab':'';};
+function panCursor(){canvas.style.cursor=(panMode||panHeld)?'grab':'';canvas.classList.toggle('temporary-pan',panHeld);}
+$('pan').onclick=()=>{panMode=!panMode;$('pan').setAttribute('aria-pressed',String(panMode));panCursor();};
+$('view-fit').onclick=()=>{
+ if(mode3d){const opt=scenicCamera();renderer3d.reset({...opt,x:600,y:400,distance:Math.max(opt.distance,1560)});sync3dZoom();scenePreference();}
+ else camera={x:600,y:400,zoom:N.clamp(Math.min((view.width-35)/1200,(view.height-26)/800),.26,1.5)};
+ updatePreview();
+};
 $('zoom-in').onclick=()=>zoom(1.25);$('zoom-out').onclick=()=>zoom(.8);$('home').onclick=()=>{camera={x:600,y:400,zoom:1};if(mode3d){renderer3d.reset(scenicCamera());sync3dZoom();scenePreference();}};
 let menuChild='',menuDestination=null;
 const pauseDialog=$('pause-dialog'),settingsDialog=$('game-settings');
@@ -2887,17 +2953,21 @@ $('motion-in-game').onchange=saveGameSettings;$('default-layer').onchange=saveGa
 $('settings-back').onclick=()=>settingsDialog.close();
 for(const id of ['file-dialog','game-settings'])$(id).addEventListener('close',()=>{lastAuto=performance.now();if(menuChild===id){menuChild='';openMenu();}});
 document.addEventListener('keydown',e=>{
+ const writing=e.target.matches('input,select,textarea,[contenteditable=true]');
+ if(!writing&&!modalOpen()&&(e.metaKey||e.ctrlKey)&&['z','y'].includes(e.key.toLowerCase())){e.preventDefault();applyConstruction(e.shiftKey||e.key.toLowerCase()==='y'?'redo':'undo');return;}
+ if(!writing&&!modalOpen()&&!e.target.matches('button')&&e.code==='Space'){e.preventDefault();panHeld=true;panCursor();hover=null;updatePreview();return;}
+ if(!writing&&!modalOpen()&&!e.metaKey&&!e.ctrlKey&&e.code==='KeyX'){e.preventDefault();snapHeld=true;updatePreview();return;}
  if(e.key==='Escape'){
   if(pauseDialog.open){e.preventDefault();if(menuDestination)clearLeave();else $('resume-game').click();return;}
   if(modalOpen())return; // Browser closes the foreground dialog only.
   e.preventDefault();
   if(pending){endPlan(false);return;}
   if(turnNode&&tool==='junction'){turnNode=null;turnEnter=null;turnPreview=null;selected={};renderTurnEditor();updatePreview();return;}
-  if(draft.length){draft=[];selected={};hintDraft();updatePreview();renderDetails();return;}
+  if(draft.length){draft=[];strokeHistory=[];selected={};hintDraft();updatePreview();renderDetails();renderEditActions();return;}
   openMenu();return;
  }
  if(pending||modalOpen()||e.target.matches('input,select,button'))return;
- if(e.key==='Enter'&&['bus','polygon','frontage','district','line'].includes(tool)){e.preventDefault();finish();}
+ if(e.key==='Enter'&&(['bus','polygon','frontage','district','line'].includes(tool)||tool==='parkLife'&&opts.parkMode==='path')){e.preventDefault();finish();}
  if(mode3d&&['q','e','r','f'].includes(e.key.toLowerCase())){
   e.preventDefault();const k=e.key.toLowerCase();orient(k==='q'?-34:k==='e'?34:0,k==='r'?-22:k==='f'?22:0);return;
  }
@@ -2906,6 +2976,8 @@ document.addEventListener('keydown',e=>{
  }
  if(e.key.startsWith('Arrow')){e.preventDefault();camera.x+=e.key==='ArrowRight'?32:e.key==='ArrowLeft'?-32:0;camera.y+=e.key==='ArrowDown'?32:e.key==='ArrowUp'?-32:0;}
 });
+document.addEventListener('keyup',e=>{if(e.code==='Space'){panHeld=false;panCursor();}if(e.code==='KeyX'){snapHeld=false;updatePreview();}});
+window.addEventListener('blur',()=>{panHeld=false;snapHeld=false;panCursor();});
 function balanceInputs(){
  const t=metrics.totals||{},f=forecast,existing=metrics.services||{};
  const projected=K.responders(city.care,city);
@@ -2961,7 +3033,7 @@ function budgetInfo(){
  $('budget-credit-note').textContent='预算债务余额 '+moneyBadge(V.report(city.credit).debt)+' · 同期应偿 '+moneyBadge(forecast.finance.due);
 }
 $('budget').onclick=()=>{budgetInfo();$('budget-dialog').showModal();};
-$('tax-apply').onclick=()=>{city.finance.tax=N.clamp(Math.round(+$('tax').value||9),5,16);city.finance.frequency=$('frequency').value==='frequent'?'frequent':'normal';refresh();save();budgetInfo();};
+$('tax-apply').onclick=()=>{CH.clear(constructionHistory,'已修改财政政策');renderEditActions();city.finance.tax=N.clamp(Math.round(+$('tax').value||9),5,16);city.finance.frequency=$('frequency').value==='frequent'?'frequent':'normal';refresh();save();budgetInfo();};
 $('budget-close').onclick=()=>$('budget-dialog').close();
 function financeInputs(tr=city){return {cash:tr.network.cash,month:tr.month,operatingNet:forecast.operatingNet,population:metrics.totals?.population||0};}
 function percentBps(v){return (Number.isFinite(v)?v/100:0).toFixed(2)+'%';}
@@ -3088,7 +3160,7 @@ function policyView(){
  $('product-table').innerHTML='<table><tr><th>产品</th><th>产出</th><th>需求</th><th>缺口</th></tr>'+table+'</table>';
 }
 $('sector-policy').innerHTML=Object.entries(E.SECTORS).map(([id,k])=>'<option value="'+id+'">'+clean(k.name)+'</option>').join('');
-$('sector-policy').onchange=policyView;$('sector-apply').onclick=()=>{const v=$('sector-tax').value;E.setPolicy(city.economy,$('sector-policy').value,{stance:$('stance').value,tax:v===''?null:+v});refresh();save();policyView();};$('economy').onclick=()=>{policyView();$('economy-dialog').showModal()};$('economy-close').onclick=()=>$('economy-dialog').close();
+$('sector-policy').onchange=policyView;$('sector-apply').onclick=()=>{CH.clear(constructionHistory,'已修改产业政策');renderEditActions();const v=$('sector-tax').value;E.setPolicy(city.economy,$('sector-policy').value,{stance:$('stance').value,tax:v===''?null:+v});refresh();save();policyView();};$('economy').onclick=()=>{policyView();$('economy-dialog').showModal()};$('economy-close').onclick=()=>$('economy-dialog').close();
 $('files').onclick=()=>$('file-dialog').showModal();$('close').onclick=()=>$('file-dialog').close();$('save-warning-open').onclick=()=>{if(!modalOpen())$('file-dialog').showModal();};
 function confirmAction(label,fn){
  if(recoveryRaw!==null)label='原存档将被替换。请先导出原始存档。'+label;
@@ -3131,7 +3203,7 @@ function scene(now){
 }
 showTools();refresh();if(!scenarioRunner&&(scenePrefs.enabled||parameters.get('view')==='3d'))switchScene(true,{persist:false});updateRawExport();if(recoveryRaw!==null)reportSaveProblem(recoveryHint);if(!scenarioRunner)window.requestAnimationFrame(scene);
  if(new URLSearchParams(location.search).get('menu')==='saves')$('file-dialog').showModal();
-window.Blueprint={grid:()=>GR.report(city.grid),gridPlan:()=>gridPlan,publicNetwork:()=>({edges:(effective||city.network).edges.map(e=>({id:e.id,speed:e.speed,capacity:N.capacity(e)}))}),publicWorks:()=>PW.report(city.publicWorks),mobility:()=>structuredClone(city.workMobility),systems:()=>SL.report(city.systemLedger),lastStudy:()=>structuredClone(lastStudy),campus:()=>CL.report(city.campus),parks:()=>PL.report(city.parks),parkForecast:()=>parksView,careers:()=>CR.report(city.careers),careerProduction:()=>structuredClone(city.careerProduction),wellbeing:()=>WB.report(city.wellbeing),wellbeingApplied:()=>structuredClone(city.wellbeingApplied),cargo:()=>H.report(city.cargo),cargoGateways:()=>structuredClone(cargoGateways),credit:()=>V.report(city.credit),market:()=>W.report(city.market),balance:()=>B.report(city.balance),sceneStats:()=>renderer3d?.stats(),sceneMode:()=>mode3d?'3d':'2d',sceneCamera:()=>mode3d?{...renderer3d.camera}:{...camera},sceneProject:activeProject,sceneRaycast:p=>mode3d?renderer3d.raycast(p):view.screenToWorld(p,camera),progress:()=>G.report(city.progression,progressPoints()),social:()=>socialReport,industry:()=>industryReport,terrain:()=>({revision:city.terrain.revision,statistics:city.terrain.statistics}),ground:(x,y)=>F.height(city.terrain,landSurface,{x,y}),serviceOps:()=>serviceOps?.report(),labor:()=>L.report(city.labor),care:()=>K.report(city.care,city,careOpts()),justice:()=>J.report(city.justice,city,{network:effective||city.network,water:N.water}),education:()=>Q.report(city.education),events:()=>I.report(city.civicEvents),active:()=>activeResult,commute:()=>commuteModel?.stats(),batch:()=>batch&&({count:batch.items.length,cash:batch.world.network.cash}),preview:()=>preview,world:()=>city, metrics:()=>metrics,traffic:()=>trafficStats,view,camera:()=>({...camera}),setLayer,save,plan:()=>pending&&{title:pending.title,cost:pending.cash},forecast:()=>({...forecast}),incident:()=>incident,trafficSim:()=>micro?.stats(),map:()=>mapId,utility:()=>utilityMetrics,transit:()=>transitMetrics,districts:()=>districtMetrics,economy:()=>econ,agents:()=>getAgents(clock),coverage:()=>coverageGrid};
+window.Blueprint={editHistory:()=>CH.report(constructionHistory),drawing:()=>({tool,draft:draft.length,draftPoints:draft.map(p=>({x:p.x,y:p.y,z:p.z})),batch:batch?.items.length||0}),grid:()=>GR.report(city.grid),gridPlan:()=>gridPlan,publicNetwork:()=>({edges:(effective||city.network).edges.map(e=>({id:e.id,speed:e.speed,capacity:N.capacity(e)}))}),publicWorks:()=>PW.report(city.publicWorks),mobility:()=>structuredClone(city.workMobility),systems:()=>SL.report(city.systemLedger),lastStudy:()=>structuredClone(lastStudy),campus:()=>CL.report(city.campus),parks:()=>PL.report(city.parks),parkForecast:()=>parksView,careers:()=>CR.report(city.careers),careerProduction:()=>structuredClone(city.careerProduction),wellbeing:()=>WB.report(city.wellbeing),wellbeingApplied:()=>structuredClone(city.wellbeingApplied),cargo:()=>H.report(city.cargo),cargoGateways:()=>structuredClone(cargoGateways),credit:()=>V.report(city.credit),market:()=>W.report(city.market),balance:()=>B.report(city.balance),sceneStats:()=>renderer3d?.stats(),sceneMode:()=>mode3d?'3d':'2d',sceneCamera:()=>mode3d?{...renderer3d.camera}:{...camera},sceneProject:activeProject,sceneRaycast:p=>mode3d?renderer3d.raycast(p):view.screenToWorld(p,camera),progress:()=>G.report(city.progression,progressPoints()),social:()=>socialReport,industry:()=>industryReport,terrain:()=>({revision:city.terrain.revision,statistics:city.terrain.statistics}),ground:(x,y)=>F.height(city.terrain,landSurface,{x,y}),serviceOps:()=>serviceOps?.report(),labor:()=>L.report(city.labor),care:()=>K.report(city.care,city,careOpts()),justice:()=>J.report(city.justice,city,{network:effective||city.network,water:N.water}),education:()=>Q.report(city.education),events:()=>I.report(city.civicEvents),active:()=>activeResult,commute:()=>commuteModel?.stats(),batch:()=>batch&&({count:batch.items.length,cash:batch.world.network.cash}),preview:()=>preview,world:()=>city, metrics:()=>metrics,traffic:()=>trafficStats,view,camera:()=>({...camera}),setLayer,save,plan:()=>pending&&{title:pending.title,cost:pending.cash},forecast:()=>({...forecast}),incident:()=>incident,trafficSim:()=>micro?.stats(),map:()=>mapId,utility:()=>utilityMetrics,transit:()=>transitMetrics,districts:()=>districtMetrics,economy:()=>econ,agents:()=>getAgents(clock),coverage:()=>coverageGrid};
 if(parameters.get('qa')==='commute'){
  window.Blueprint.commuteFastForward=advanceCommuteObservation;
  window.Blueprint.commuteLatest=()=>commuteLast.at(-1);
