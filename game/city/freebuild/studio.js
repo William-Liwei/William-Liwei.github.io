@@ -1,13 +1,13 @@
 'use strict';
 (()=>{
-const J=Justice,Q=Education,I=CivicIncidents,A=ActiveTravel,P=Parking,N=Network,C=Civic,U=Utilities,T=Transit,E=Economy,D=Districts,M=CityMaps,$=s=>document.getElementById(s);
+const K=CareServices,J=Justice,Q=Education,I=CivicIncidents,A=ActiveTravel,P=Parking,N=Network,C=Civic,U=Utilities,T=Transit,E=Economy,D=Districts,M=CityMaps,$=s=>document.getElementById(s);
 const parameters=new URLSearchParams(location.search),map=M.select(parameters.get('map')),mapId=map.id,sandbox=parameters.get('mode')==='sandbox';
 const canvas=$('map'),view=new CityView(canvas,{width:1200,height:800}),storeKey=M.storage(mapId,sandbox),prefKey='city.blueprint.settings.1',format=new Intl.NumberFormat('zh-CN',{maximumFractionDigits:0});
 let prefs={};try{prefs=JSON.parse(localStorage.getItem(prefKey))||{};localStorage.setItem('city.blueprint.map.1',mapId);localStorage.setItem('city.blueprint.mode.1',sandbox?'sandbox':'career')}catch{}
 $('map-name').textContent=map.name;document.querySelector('.brand p').textContent=(sandbox?'规划沙盒':'自由经营')+' · '+map.name;
 const serviceNames={fire:'消防',police:'警务',water:'供水',power:'电力',health:'医疗',clinic:'医疗',education:'教育',school:'教育',waste:'环卫站',park:'绿地',library:'图书馆',plaza:'市民广场',logistics:'物流中心'};
 const labels={residential:'住宅',commercial:'商业',office:'办公',industrial:'工业'};
-const defaults={justiceType:"police",schoolType:'primary',schoolFunding:100,activeType:'sidewalk',activeAction:'build',activeHeight:6,activeApproach:'stairs',profile:'r2',oneway:false,bus:false,startZ:0,endZ:0,shape:'line',signalAction:'switch',signalEW:50,signalCycle:26,signalOffset:0,parkingType:'small',parkingFee:0,parkingMode:'build',snap:true,flip:false,zone:'residential',density:2,depth:38,side:'both',service:'fire',utilityType:'water',stationType:'tramStop',trackMode:'tram',trackStart:0,trackEnd:0,transitMode:'tram',districtType:'farm'};
+const defaults={careType:"fire",justiceType:"police",schoolType:'primary',schoolFunding:100,activeType:'sidewalk',activeAction:'build',activeHeight:6,activeApproach:'stairs',profile:'r2',oneway:false,bus:false,startZ:0,endZ:0,shape:'line',signalAction:'switch',signalEW:50,signalCycle:26,signalOffset:0,parkingType:'small',parkingFee:0,parkingMode:'build',snap:true,flip:false,zone:'residential',density:2,depth:38,side:'both',service:'fire',utilityType:'water',stationType:'tramStop',trackMode:'tram',trackStart:0,trackEnd:0,transitMode:'tram',districtType:'farm'};
 function normalizeSignals(input,nodes){
  const valid=new Set(nodes.map(n=>n.id));
  if(!input||typeof input!=='object')return {};
@@ -18,13 +18,13 @@ function normalizeSignals(input,nodes){
   return [];
  }));
 }
-const stateStore={make:()=>({version:1,network:N.create(),civic:C.create(17),mapId,sandbox,utilities:U.create(),transit:T.create(),districts:D.create(),economy:E.create(),parking:P.normalize(),activeTravel:A.create(),civicEvents:I.create(44017),education:Q.create(mapId),justice:J.create(mapId),signals:{},month:1,contracts:{},history:[],finance:{tax:9,debt:0,frequency:"normal"}}),restore(raw){
+const stateStore={make:()=>({version:1,network:N.create(),civic:C.create(17),mapId,sandbox,utilities:U.create(),transit:T.create(),districts:D.create(),economy:E.create(),parking:P.normalize(),activeTravel:A.create(),civicEvents:I.create(44017),education:Q.create(mapId),justice:J.create(mapId),care:K.create(mapId),signals:{},month:1,contracts:{},history:[],finance:{tax:9,debt:0,frequency:"normal"}}),restore(raw){
  if(raw?.version!==1||!Array.isArray(raw.network?.edges)||!Array.isArray(raw.network?.nodes)||!Array.isArray(raw.network?.buses)||!Array.isArray(raw.civic?.lots)||!Array.isArray(raw.civic?.zones)||!Array.isArray(raw.civic?.services)||!Number.isInteger(raw.month)||raw.month<1||!Number.isFinite(raw.network.cash)||!Number.isInteger(raw.network.next))throw Error('不兼容的城市存档');
  if((raw.mapId||'river')!==mapId||!!raw.sandbox!==sandbox)throw Error('此存档属于其他地图或模式，请先从大厅切换。');
  raw.mapId=mapId;
  const u=raw.utilities?U.restore(raw.utilities):U.create(), tt=raw.transit?T.normalize(raw.transit,{water:N.water}):T.create(), dd=raw.districts?D.normalize(raw.districts,{mapId,water:N.water,isBuildable:p=>M.land(p)}):D.create(), ee=raw.economy?E.restore(raw.economy):E.create();
  if(!u||!tt||!dd||!ee)throw Error('水电、交通、特别分区或产业存档无效');
- Object.assign(raw,{utilities:u,transit:tt,districts:dd,economy:ee,parking:P.normalize(raw.parking),activeTravel:A.normalize(raw.activeTravel),civicEvents:I.normalize(raw.civicEvents,44017),education:Q.normalize(raw.education,mapId),justice:J.normalize(raw.justice,mapId),signals:normalizeSignals(raw.signals,raw.network.nodes)});
+ Object.assign(raw,{utilities:u,transit:tt,districts:dd,economy:ee,parking:P.normalize(raw.parking),activeTravel:A.normalize(raw.activeTravel),civicEvents:I.normalize(raw.civicEvents,44017),education:Q.normalize(raw.education,mapId),justice:J.normalize(raw.justice,mapId),care:K.normalize(raw.care,mapId),signals:normalizeSignals(raw.signals,raw.network.nodes)});
  const {nodes,edges,buses}=raw.network;
  if(nodes.length>1500||edges.length>1800||buses.length>200||raw.civic.lots.length>4000)throw Error('存档规模超出预览版上限');
  const ids=new Set();for(let n of nodes){if(typeof n.id!=='string'||ids.has(n.id)||![n.x,n.y,n.z].every(Number.isFinite))throw Error('无效节点');ids.add(n.id)}
@@ -44,7 +44,8 @@ const parkedLand=(p,pad=0)=>city?.parking?.lots.some(l=>{
 });
 const campusLand=(p,pad=0)=>city?.education?.sites.some(s=>{const q=Q.TYPES[s.type];return Math.abs(p.x-s.x)<q.width/2+pad&&Math.abs(p.y-s.y)<q.depth/2+pad;});
 const justiceLand=(p,pad=0)=>city?.justice?.sites.some(s=>{const q=J.TYPES[s.type];return !!q&&Math.abs(p.x-s.x)<q.width/2+pad&&Math.abs(p.y-s.y)<q.depth/2+pad;});
-const roadOpts={isBuildable:p=>onLand(p)&&!parkedLand(p,2.5)&&!campusLand(p,3)&&!justiceLand(p,3)};
+const careLand=(p,pad=0)=>city?.care?.sites.some(s=>{const q=K.TYPES[s.type];return !!q&&Math.abs(p.x-s.x)<q.width/2+pad&&Math.abs(p.y-s.y)<q.depth/2+pad;});
+const roadOpts={isBuildable:p=>onLand(p)&&!parkedLand(p,2.5)&&!campusLand(p,3)&&!justiceLand(p,3)&&!careLand(p,3)};
 let coverageGrid=null,sceneWorld=null,edgeTraffic={},pending=null,utilityMetrics=null,regional=null,transitMetrics=null,districtMetrics=null,econ=null,micro=null,pedestrians=null;
 let opts={...defaults},tool='road',draft=[],hover=null,selected={},layer='none',playing=false,forecast=null,metrics={},load={},trips=[],city=null;
 let camera={x:600,y:400,zoom:1}, drag=null,panMode=false, lastAuto=0, clock=0, previous=0;
@@ -126,9 +127,9 @@ function loadCity(){
 }
 city=loadCity();
 function changeCity(s){if(batch)return false;if(!save(s,true))return false;city=s;comparison=null;draft=[];selected={};playing=false;flowKey='';flowClock=0;showTools();$('auto').setAttribute('aria-pressed','false');$('auto').textContent='▶';refresh();return true;}
-const help={justiceBuild:"建设后由警务、法院和监狱分别处理不同阶段。设施要有普通道路；市政厅可切换政策。返回右侧图层查看拥堵在哪一环。",schoolBuild:'选校种，在普通道路或人行道旁选一块陆地。学位有限，学生必须有通学路线；推进一月才更新实际入学。',active:'选择步行道、自行车道或人行天桥，再点起终点。立体天桥两端要能走到地面，不能作为机动车捷径。也可以用试走检查真正可达。',parking:'普通道路自带有限路侧位，私家车按同一到达节点找位，公交和货车不占位。选择建造或调整收费。别让收费车库挡住路面或占到旧地块。',junction:'点地图上的路口，再选择驶入方向。勾选要禁止的出口；应用后先审核蓝图，不会直接改路。转向规则影响汽车、货车和道路公交，不影响步行。',utility:'选水管或电线，沿地面点起点和终点；同类线相交即接通。可建独立支线，水电不会互串。首次编辑每一类网络会启用真实供给。',station:'先建有道路接驳的车站、港口、机场或车辆段。码头和船坞需要岸边，机场需要完整的陆地跑道。',track:'选地面铁路、地铁或电车轨道，在地图点起点和终点；端点贴近已有轨道、对应站点或车辆段才能接通。地面铁路可接东西边界口。',line:'选择运输方式和站点，依次加入。铁路、地铁、电车需要接通对应车辆段；轮渡和货轮必须有连续水域；飞机可选图外航点。',district:'选择独立特别分区，先打开资源图层找合适位置，然后点至少三个角。资源与运输条件共同决定产出。',signal:'点路口切换信号，或自定东西向时间配额、周期与相位。提高某向配额会压缩另一向；下游没空间时，绿灯也不会放行。',road:'直线点起终点；曲线依次点起点、控制点、终点。可分别调起终点高程。红色预览不可建设，选择「不吸附」可自由落点。',upgrade:'先选新断面，再点击现有同类型道路。单行方向按原路绘制方向。',bus:'按发车顺序在普通道路上点至少两个站，可选路口或路段中间。系统沿可行车方向闭环，遇单行须有回程。',frontage:'沿普通道路点击起点和终点；要跟随弯道可加入中间点。可选单侧或两侧、纵深与密度。',polygon:'在地图点至少三个角，完成后按按钮或 Enter。区域不限栅格，地块仍需接近地面道路才能成长。',service:'选择设施，再点地图放置；设施须靠近可服务道路。可在此调服务预算，右侧图层检查实际覆盖。',inspect:'点道路、设施或分区看属性。高架与地面叠在一起时，可用图层辅助识别。',erase:'点击一段道路，确认后才拆除。相交分段有独立路段，断开的公交会暂停。'};
+const help={careBuild:"消防队需要装备补给；诊所处理急症，重症按可达道路转到医院，社区中心只为可达住区提供有限走访。",justiceBuild:"建设后由警务、法院和监狱分别处理不同阶段。设施要有普通道路；市政厅可切换政策。返回右侧图层查看拥堵在哪一环。",schoolBuild:'选校种，在普通道路或人行道旁选一块陆地。学位有限，学生必须有通学路线；推进一月才更新实际入学。',active:'选择步行道、自行车道或人行天桥，再点起终点。立体天桥两端要能走到地面，不能作为机动车捷径。也可以用试走检查真正可达。',parking:'普通道路自带有限路侧位，私家车按同一到达节点找位，公交和货车不占位。选择建造或调整收费。别让收费车库挡住路面或占到旧地块。',junction:'点地图上的路口，再选择驶入方向。勾选要禁止的出口；应用后先审核蓝图，不会直接改路。转向规则影响汽车、货车和道路公交，不影响步行。',utility:'选水管或电线，沿地面点起点和终点；同类线相交即接通。可建独立支线，水电不会互串。首次编辑每一类网络会启用真实供给。',station:'先建有道路接驳的车站、港口、机场或车辆段。码头和船坞需要岸边，机场需要完整的陆地跑道。',track:'选地面铁路、地铁或电车轨道，在地图点起点和终点；端点贴近已有轨道、对应站点或车辆段才能接通。地面铁路可接东西边界口。',line:'选择运输方式和站点，依次加入。铁路、地铁、电车需要接通对应车辆段；轮渡和货轮必须有连续水域；飞机可选图外航点。',district:'选择独立特别分区，先打开资源图层找合适位置，然后点至少三个角。资源与运输条件共同决定产出。',signal:'点路口切换信号，或自定东西向时间配额、周期与相位。提高某向配额会压缩另一向；下游没空间时，绿灯也不会放行。',road:'直线点起终点；曲线依次点起点、控制点、终点。可分别调起终点高程。红色预览不可建设，选择「不吸附」可自由落点。',upgrade:'先选新断面，再点击现有同类型道路。单行方向按原路绘制方向。',bus:'按发车顺序在普通道路上点至少两个站，可选路口或路段中间。系统沿可行车方向闭环，遇单行须有回程。',frontage:'沿普通道路点击起点和终点；要跟随弯道可加入中间点。可选单侧或两侧、纵深与密度。',polygon:'在地图点至少三个角，完成后按按钮或 Enter。区域不限栅格，地块仍需接近地面道路才能成长。',service:'选择设施，再点地图放置；设施须靠近可服务道路。可在此调服务预算，右侧图层检查实际覆盖。',inspect:'点道路、设施或分区看属性。高架与地面叠在一起时，可用图层辅助识别。',erase:'点击一段道路，确认后才拆除。相交分段有独立路段，断开的公交会暂停。'};
 const toolNames={active:'慢行设施',parking:'停车设施',junction:'路口规则',utility:'水电线路',station:'枢纽设施',track:'轨道',line:'运输线路',district:'特别分区',signal:'交通信号',road:'道路',upgrade:'道路改造',bus:'公交线路',frontage:'沿街分区',polygon:'多边形分区',service:'公共服务',inspect:'查阅',erase:'拆除'};
-const layers={justice:["司法与市政","蓝色：调查。紫色：法院候审。橙色：待转送。地块上的点可在司法面板定位；路网单行和封路影响转送。"],schoolAccess:['学位与通学','圆点标出住区：绿色已入学，黄色有人候补，红色有需求但无人入学。校旁显示上月实际用位；切断道路会在下月重新分配。'],incidents:['应急事件','图标是待处理事件；点列表定位，事件优先级会改变有限服务如何派出。风险热区不是已发生事件。'],active:['步行与骑行','淡蓝为步行道，金色为天桥，绿色为自行车道。用「慢行」的试走功能检查连通。'],parking:['停车','P 表示公共场库，数字是已用／总位；红色已满，灰色未接通。小圆点是路侧位，蓝色队尾表示等待停车。'],connections:['对外连接','公路、铁路、港口和航空的城市外接点；铁路必须铺轨连到边界。'],resources:['自然资源','选特别分区类型后查看相应资源。'],districts:['特别分区','显示特别区边界及其用途。'],routes:['铁路、水运和航线','可查看有效线路和已建轨道、车辆段。'],none:['实景','鸟瞰地形、建筑、人车与道路。'],traffic:['道路交通','橙线：该方向正在排队。紫线：队尾堵住上游入口。用查阅工具点击道路查看停在哪、为什么。'],transit:['公共交通','青色标出有效公交线路；断线不发车。'],elevation:['高程／隧道','高架、桥梁与地下通道按高程显色。'],zones:['土地用途','住区、商业、办公与工业分色。'],land:['建设潜力','有道路、基础设施和服务的地块更容易升高密度。'],fire:['消防覆盖','由消防站经路网抵达；互不连通的道路不会跨河覆盖。'],police:['警务覆盖','由警务设施经道路提供。'],water:['供水覆盖','供水设施经道路计算覆盖；本版没有独立管线。'],power:['电力覆盖','电力设施经道路计算覆盖；本版没有独立电网。']};
+const layers={care:["消防与医疗","地图显示消防、诊所、医院、社区中心和转诊等候点；绿色表示上月接受过社区走访的住宅。"],justice:["司法与市政","蓝色：调查。紫色：法院候审。橙色：待转送。地块上的点可在司法面板定位；路网单行和封路影响转送。"],schoolAccess:['学位与通学','圆点标出住区：绿色已入学，黄色有人候补，红色有需求但无人入学。校旁显示上月实际用位；切断道路会在下月重新分配。'],incidents:['应急事件','图标是待处理事件；点列表定位，事件优先级会改变有限服务如何派出。风险热区不是已发生事件。'],active:['步行与骑行','淡蓝为步行道，金色为天桥，绿色为自行车道。用「慢行」的试走功能检查连通。'],parking:['停车','P 表示公共场库，数字是已用／总位；红色已满，灰色未接通。小圆点是路侧位，蓝色队尾表示等待停车。'],connections:['对外连接','公路、铁路、港口和航空的城市外接点；铁路必须铺轨连到边界。'],resources:['自然资源','选特别分区类型后查看相应资源。'],districts:['特别分区','显示特别区边界及其用途。'],routes:['铁路、水运和航线','可查看有效线路和已建轨道、车辆段。'],none:['实景','鸟瞰地形、建筑、人车与道路。'],traffic:['道路交通','橙线：该方向正在排队。紫线：队尾堵住上游入口。用查阅工具点击道路查看停在哪、为什么。'],transit:['公共交通','青色标出有效公交线路；断线不发车。'],elevation:['高程／隧道','高架、桥梁与地下通道按高程显色。'],zones:['土地用途','住区、商业、办公与工业分色。'],land:['建设潜力','有道路、基础设施和服务的地块更容易升高密度。'],fire:['消防覆盖','由消防站经路网抵达；互不连通的道路不会跨河覆盖。'],police:['警务覆盖','由警务设施经道路提供。'],water:['供水覆盖','供水设施经道路计算覆盖；本版没有独立管线。'],power:['电力覆盖','电力设施经道路计算覆盖；本版没有独立电网。']};
 function civicTypes(){return C.SERVICE_TYPES||C.SERVICES||{}}
 function serviceKeys(){let v=civicTypes();return Array.isArray(v)?v.map(x=>typeof x==='string'?x:x.id||x.type):Object.keys(v).length?Object.keys(v):['fire','police','water','power'];}
 for(let k of serviceKeys())if(!layers[k])layers[k]=[(serviceNames[k]||k)+'覆盖','沿可达道路计算服务覆盖，地块得分可用查阅工具查看。'];
@@ -138,7 +139,7 @@ const layerGroups={
  '总览与规划':['none','zones','districts','elevation','resources'],
  '出行与对外连接':['traffic','transit','routes','parking','active','connections'],
  '水电与环境':['water','power','sewage','waste','pollution','noise'],
- '市政与生活':['justice','schoolAccess','incidents','services','fire','police','health','education','clinic','school','park','library','plaza','logistics']
+ '市政与生活':['care','justice','schoolAccess','incidents','services','fire','police','health','education','clinic','school','park','library','plaza','logistics']
 };
 const grouped=new Set();
 function layerOptions(keys){return keys.filter(k=>Object.hasOwn(layers,k)&&!grouped.has(k)).map(k=>{grouped.add(k);return '<option value="'+k+'">'+layers[k][0]+'</option>';}).join('');}
@@ -146,12 +147,12 @@ $('layer').innerHTML=Object.entries(layerGroups).map(([name,keys])=>{const x=lay
  (Object.keys(layers).some(k=>!grouped.has(k))?'<optgroup label="其他服务">'+layerOptions(Object.keys(layers))+'</optgroup>':'');
 let commuteModel=null,commuteMap=null,commuteLast=[],commuteId=0,commuteSchedule=new Map(),commuteDirect=new Map(),commutePairs=new Map(),commuteHistory=new Map();
 const justiceStage={investigation:"调查中",court:"等待审理",transfer:"等待转送"};
-let effective=null,justiceCaseCost=0,justiceSnapshot=null,civicEventLoss=0,eventRisk=null,batch=null,buildDepth=0;
-function setLayer(k){layer=k;$('layer').value=k;$('legend').textContent=layers[k][1];$('flow-panel').hidden=!['traffic','parking'].includes(k);if(metrics.graph)paintCoverage();$('commute-panel').hidden=k!=='transit';if(k==='transit'){commuteFill();renderCommute();}if(k==='incidents')renderCivicEvents();$('education-panel').hidden=k!=='schoolAccess';if(k==='schoolAccess')renderEducation();$('justice-panel').hidden=k!=='justice';if(k==='justice')renderJustice();}
+let effective=null,careSnapshot=null,justiceCaseCost=0,justiceSnapshot=null,civicEventLoss=0,eventRisk=null,batch=null,buildDepth=0;
+function setLayer(k){layer=k;$('layer').value=k;$('legend').textContent=layers[k][1];$('flow-panel').hidden=!['traffic','parking'].includes(k);if(metrics.graph)paintCoverage();$('commute-panel').hidden=k!=='transit';if(k==='transit'){commuteFill();renderCommute();}if(k==='incidents')renderCivicEvents();$('education-panel').hidden=k!=='schoolAccess';if(k==='schoolAccess')renderEducation();$('justice-panel').hidden=k!=='justice';if(k==='justice')renderJustice();$('care-panel').hidden=k!=='care';if(k==='care')renderCare();}
 $('layer').onchange=e=>setLayer(e.target.value);setLayer(Object.hasOwn(layers,prefs.overlay)?prefs.overlay:'none');
 function lines(entries){return entries.map(([k,v])=>'<div class="line"><span>'+k+'</span><span>'+v+'</span></div>').join('');}
 function stats(){
- const t=metrics.totals||{};renderContracts();renderCivicEvents();if(layer==='schoolAccess')renderEducation();if(layer==='justice')renderJustice();$('event-status').textContent=[incident.name,incident.detail].filter(Boolean).join(' · ');
+ const t=metrics.totals||{};renderContracts();renderCivicEvents();if(layer==='schoolAccess')renderEducation();if(layer==='justice')renderJustice();if(layer==='care')renderCare();$('event-status').textContent=[incident.name,incident.detail].filter(Boolean).join(' · ');
  $('cash').textContent='¥'+format.format(city.network.cash);$('pop').textContent=format.format(t.population||0);
  $('jobs').textContent=format.format(t.jobs||0);const net=forecast?.net??(t.net||0);
  $('net').textContent=(net>0?'+':'')+'¥'+format.format(net);$('month').textContent='第 '+city.month+' 月';
@@ -207,6 +208,10 @@ function showToolsWork(){
  if(tool==='track')s=htmlSel('trackMode','轨道类别',listOptions(Object.fromEntries(Object.entries(T.MODES).filter(([,m])=>m.track))))+(opts.trackMode==='metro'?'<p class="help">地下标准标高 −12 m</p>':'<div class="row">'+value('trackStart','起点高程 m',0,50)+value('trackEnd','终点高程 m',0,50)+'</div>');
  if(tool==='line')s=htmlSel('transitMode','运输方式',listOptions(T.MODES));
  if(tool==='district')s=htmlSel('districtType','特别分区用途',listOptions(D.TYPES));
+ if(tool==='careBuild'){
+  const q=K.TYPES[opts.careType];
+  s=htmlSel('careType','服务设施种类',listOptions(K.TYPES))+'<p class="help">造价 ¥'+format.format(q.cost)+' · 基准月费 ¥'+format.format(q.monthly)+'</p>';
+ }
  if(tool==='justiceBuild'){
   const q=J.TYPES[opts.justiceType];
   s=htmlSel('justiceType','市政设施种类',listOptions(J.TYPES))+
@@ -221,7 +226,7 @@ function showToolsWork(){
  $('options').innerHTML=s;$('tool-help').textContent=help[tool];
  $('options').querySelectorAll('select,input').forEach(el=>el.addEventListener('change',()=>{if(el.id==='service-budget'){if(batch){showTools();return notify('经营预算不属于施工蓝图，请先完成当前批次',true);}C.setBudget(city.civic,opts.service,+el.value);refresh();save();return}opts[el.id]=el.type==='checkbox'?el.checked:el.type==='number'?N.clamp(+el.value,+el.min,+el.max):el.value;if(el.id==='service'){showTools();setLayer(opts.service)}
  if(el.id==='profile'||el.id==='oneway'||el.id==='signalAction'||el.id==='parkingMode'||el.id==='parkingType'){showTools();hintDraft();$(el.id)?.focus({preventScroll:true});}
- if(['schoolType','justiceType'].includes(el.id)){showTools();$(el.id)?.focus({preventScroll:true});}
+ if(['schoolType','justiceType','careType'].includes(el.id)){showTools();$(el.id)?.focus({preventScroll:true});}
  if(['activeAction','activeType'].includes(el.id)){draft=[];activeResult=null;showTools();}
  if(el.id==='shape'||el.id==='startZ'){draft=[];hintDraft();}
  if(['stationType','trackMode','transitMode','utilityType','districtType'].includes(el.id)){draft=[];showTools();if(el.id==='utilityType')setLayer(opts.utilityType);if(el.id==='districtType')setLayer('resources');}
@@ -248,7 +253,7 @@ function showToolsWork(){
  if(tool==='junction')renderTurnEditor();
  if($('finish')){$('finish').onclick=finish;$('undo').onclick=()=>{draft.pop();updatePreview();hintDraft()}}
 }
-$('tools').onclick=e=>{let b=e.target.closest('[data-tool]');if(!b)return;if(b.dataset.tool!==tool){tool=b.dataset.tool;draft=[];selected={};turnNode=null;turnEnter=null;turnPreview=null;if(tool==='bus')setLayer('transit');if(tool==='line'||tool==='track'||tool==='station')setLayer('routes');if(tool==='utility')setLayer(opts.utilityType);if(tool==='district')setLayer('resources');if(tool==='signal'||tool==='junction')setLayer('traffic');if(tool==='parking')setLayer('parking');if(tool==='active'){activeResult=null;setLayer('active');}if(tool==='service')setLayer(opts.service);if(tool==='schoolBuild')setLayer('schoolAccess');if(tool==='justiceBuild')setLayer('justice');if(tool==='polygon'||tool==='frontage')setLayer('zones');showTools();updatePreview()}};
+$('tools').onclick=e=>{let b=e.target.closest('[data-tool]');if(!b)return;if(b.dataset.tool!==tool){tool=b.dataset.tool;draft=[];selected={};turnNode=null;turnEnter=null;turnPreview=null;if(tool==='bus')setLayer('transit');if(tool==='line'||tool==='track'||tool==='station')setLayer('routes');if(tool==='utility')setLayer(opts.utilityType);if(tool==='district')setLayer('resources');if(tool==='signal'||tool==='junction')setLayer('traffic');if(tool==='parking')setLayer('parking');if(tool==='active'){activeResult=null;setLayer('active');}if(tool==='service')setLayer(opts.service);if(tool==='schoolBuild')setLayer('schoolAccess');if(tool==='justiceBuild')setLayer('justice');if(tool==='careBuild')setLayer('care');if(tool==='polygon'||tool==='frontage')setLayer('zones');showTools();updatePreview()}};
 const turnPoint=(e,n)=>{
  const f=Math.min(.45,(16+N.crossSection(e).width*.24)/Math.max(e.len,1));
  return N.sample(e.pts,e.a===n.id?f:1-f);
@@ -562,7 +567,7 @@ function refresh(){
  const infra=utilityMetrics.maintenance||0, transit=Math.round((transitMetrics.total?.net||0)*(map.port+map.air)/2),district=Math.round(districtMetrics.total?.net||0),regionalNet=regional.net||0;
  const parking=city.parking.lots.reduce((v,l)=>v+P.LOTS[l.type].monthly,0);
  const walking=Math.round(city.activeTravel.links.reduce((v,l)=>v+(Number(A.TYPES[l.type].maintenance)||0)*l.length,0));
- const justice=J.maintenance(city.justice,city,{network:effective||city.network,water:N.water}),school=Q.maintenance(city.education),chains=Math.round(econ.totals?.taxAdjustment||0);forecast={justice,school,road,bus,infra,parking,walking,transit,district,regionalNet,chains,interest,principal,net:grant+(metrics.totals?.net||0)-road-bus-infra-parking-walking-school-justice-interest-principal+transit+district+regionalNet+chains};buildTraffic();sceneWorld=showWorld();paintCoverage();stats();renderDetails();}
+ const care=K.maintenance(city.care,city,careOpts()),justice=J.maintenance(city.justice,city,{network:effective||city.network,water:N.water}),school=Q.maintenance(city.education),chains=Math.round(econ.totals?.taxAdjustment||0);forecast={care,justice,school,road,bus,infra,parking,walking,transit,district,regionalNet,chains,interest,principal,net:grant+(metrics.totals?.net||0)-road-bus-infra-parking-walking-school-justice-care-interest-principal+transit+district+regionalNet+chains};buildTraffic();sceneWorld=showWorld();paintCoverage();stats();renderDetails();}
 function supplyOptions(){
  const d=districtMetrics?.total?.goodsByType||{},t=transitMetrics?.total||{};
  const incoming=(t.cargoIn||0)+(regional?.freight||0);
@@ -580,9 +585,10 @@ function civicOptions(){
 }
 function justiceEventCity(){
  const newPolice=J.responders(city.justice).map(q=>({...q,funding:city.justice.sites.find(s=>s.id===q.id)?.funding??100}));
- return newPolice.length?{...city,civic:{...city.civic,services:[...city.civic.services,...newPolice]}}:city;
+ const sites=[...newPolice,...K.responders(city.care,city)];
+ return sites.length?{...city,civic:{...city.civic,services:[...city.civic.services,...sites]}}:city;
 }
-function justiceOpts(tr=city){return {network:tr.network,water:N.water,land:p=>onLand(p)&&!campusLand(p,3)&&!parkedLand(p,3)};}
+function justiceOpts(tr=city){return {network:tr.network,water:N.water,land:p=>onLand(p)&&!campusLand(p,3)&&!parkedLand(p,3)&&!careLand(p,3)};}
 function justiceCandidate(tr,p){
  const q=J.TYPES[opts.justiceType],net=tr.network;
  const near=N.snap({nodes:[],edges:net.edges.filter(e=>e.kind==='road')},{...p,z:0},35,true);
@@ -644,6 +650,48 @@ function renderJustice(){
  if(!logs.children.length)logs.textContent='暂无流转记录。';
 }
 $('justice-show').onclick=()=>setLayer('justice');
+function careOpts(tr=city){return {network:tr===city?(effective||tr.network):tr.network,activeTravel:tr.activeTravel,water:N.water,land:onLand};}
+function careBuildOpts(tr){return {...careOpts(tr),network:tr.network,occupied:[...tr.civic.lots,...tr.civic.services,
+ ...tr.education.sites.map(s=>({...s,width:Q.TYPES[s.type].width,depth:Q.TYPES[s.type].depth})),
+ ...tr.justice.sites.map(s=>({...s,width:J.TYPES[s.type].width,depth:J.TYPES[s.type].depth})),
+ ...tr.parking.lots.map(s=>({...s,width:P.LOTS[s.type].w,depth:P.LOTS[s.type].h})),...tr.transit.stations]};}
+function careShape(p,type){const q=K.TYPES[type],w=q.width/2,d=q.depth/2;
+ return {kind:'service',closed:true,points:[{x:p.x-w,y:p.y-d},{x:p.x+w,y:p.y-d},{x:p.x+w,y:p.y+d},{x:p.x-w,y:p.y+d}]};}
+function careAt(p){return city.care.sites.find(s=>{const q=K.TYPES[s.type];return q&&Math.abs(s.x-p.x)<=q.width/2+3&&Math.abs(s.y-p.y)<=q.depth/2+3;});}
+function renderCare(){
+ const v=careSnapshot=K.report(city.care,city,careOpts()),sites=v.sites||[],queue=v.referrals||[],patients=v.patients||[];
+ $('care-status').textContent=queue.length+' 人等待转诊 · '+patients.length+' 人住院 · 运营 ¥'+format.format(v.maintenance||0)+'／月';
+ $('care-results').textContent=v.month?'第 '+v.month+' 月 · 入院 '+(v.last?.admitted||0)+' 人 · 出院 '+(v.last?.discharged||0)+' 人 · 社区走访 '+(v.last?.outreach||0)+' 户':'推进月份后查看服务记录。';
+ const s=$('care-sites');s.replaceChildren();
+ for(const q of sites){
+  const d=K.TYPES[q.type],row=document.createElement('div');row.className='school-entry';
+  const title=document.createElement('span');title.textContent=(q.legacy?'原有':'')+d.name+' · '+(q.stockMax>0?(q.deployed||0)+'/'+(q.lastCapacity||q.capacity||0)+' 装备用量':(q.used||0)+'/'+(q.capacity||0))+(q.stockMax>0?' · 装备 '+q.stock+'/'+q.stockMax:'')+(q.connected?'':' · 未接通');
+  const b=document.createElement('button');b.textContent='定位';b.onclick=()=>{camera={x:q.x,y:q.y,zoom:Math.max(camera.zoom,1.3)};selected={care:q.id};renderDetails();};row.append(title,b);
+  if(!q.legacy){
+   const f=document.createElement('input');f.type='number';f.required=true;f.min=0;f.max=100;f.step=1;f.value=q.funding;f.setAttribute('aria-label',d.name+' '+q.id+' 运营经费');
+   const a=document.createElement('button');a.textContent='设置经费';a.disabled=!!(batch||pending);a.onclick=()=>{
+    if(batch||pending||!f.reportValidity())return;const tr=structuredClone(city);if(!K.setFunding(tr.care,q.id,+f.value))return;
+    if(!save(tr)){notify(saveError,true);return;}city=tr;refresh();notify('已更新经费；补给和出诊将受影响');
+   };row.append(f,a);
+  }
+  s.append(row);
+ }
+ if(!s.children.length)s.textContent='可在「建设 → 消防与医疗」规划设施。';
+ const list=$('care-queue');list.replaceChildren();
+ for(const q of queue.slice(0,18)){
+  const row=document.createElement('div'),t=document.createElement('span');row.className='civic-event';
+  t.textContent=q.id+' · '+(K.REASONS?.[q.reason]||q.reason||'待分配病床');
+  const b=document.createElement('button');b.textContent='定位';b.disabled=!Number.isFinite(q.x)||!Number.isFinite(q.y);
+  b.onclick=()=>{camera={x:q.x,y:q.y,zoom:Math.max(camera.zoom,1.3)};};row.append(t,b);list.append(row);
+ }
+ if(!list.children.length)list.textContent='当前没有待转诊记录。';
+ const logs=$('care-log');logs.replaceChildren();
+ for(const row of (v.log||[]).slice(-10).reverse()){
+  const li=document.createElement('li');li.textContent='第 '+row.month+' 月 · '+(K.ACTION_LABELS?.[row.action]||{referred:'转诊登记',response:'动用救援装备',restock:'补充装备',outreach:'社区走访',expired:'转诊归档',skipped:'未重复登记',referral:'转诊登记',admitted:'入院',discharged:'出院',unserved:'未接诊',served:'已走访',ready:'已补给'}[row.action]||row.action)+(row.reason?' · '+(K.REASONS?.[row.reason]||row.reason):'');logs.append(li);
+ }
+ if(!logs.children.length)logs.textContent='暂无服务记录。';
+}
+$('care-show').onclick=()=>setLayer('care');
 function eventLot(e){
  const l=city.civic.lots.find(l=>l.id===(e.lotId??e.lot));
  return l??(Number.isFinite(e.x)&&Number.isFinite(e.y)?e:null);
@@ -675,7 +723,7 @@ function renderCivicEvents(){
   li.textContent='第 '+(e.month??city.month)+' 月 · '+(I.TYPES[e.type]?.name||e.type)+' · '+desc;log.append(li);
  }
  if(!log.children.length)log.textContent='暂无处理记录。';
- if(layer==='incidents'&&metrics.graph)eventRisk=I.forecast(city.civicEvents,justiceEventCity(),{network:effective||city.network,metrics,water:N.water});
+ if(layer==='incidents'&&metrics.graph)eventRisk=I.forecast(city.civicEvents,justiceEventCity(),{network:effective||city.network,metrics:K.riskMetrics(city.care,metrics,city),water:N.water});
  const u=report.facilities||[],damage=report.impact||{};
  $('civic-impact').textContent='本月处理 '+(report.resolved||0)+' · 未赶上 '+(report.expired||0)+' · 建筑受损 '+(damage.damage||0)+' · 搬离 '+(damage.displaced||0)+' · 死亡 '+(damage.deaths||0);
  $('civic-capacity').textContent=u.length?'应急服务用量 '+u.reduce((v,x)=>v+x.used,0)+' / '+u.reduce((v,x)=>v+x.capacity,0)+' · 已连通 '+u.filter(x=>x.connected).length+' 处':'推进月份后可查服务容量。';
@@ -688,7 +736,7 @@ $('civic-practice').onclick=()=>{
  const lot=city.civic.lots.find(l=>l.level>0&&(type!=='illness'&&type!=='death'||l.type==='residential'&&l.occupants>0));
  if(!lot)return notify('先让城市出现正在使用的地块，再做演练',true);
  const next=structuredClone(city);
- const evt=I.enqueue(next.civicEvents,{type,lot,month:city.month,severity:2});
+ const evt=I.enqueue(next.civicEvents,{type,lot,month:city.month,severity:Number($('civic-drill-severity').value)||2});
  if(!evt)return notify('该地块已有同类事件或已达上限',true);
  if(!save(next)){notify(saveError,true);return;}
  city=next;refresh();setLayer('incidents');notify('练习事件已加入；推进一月查看实际响应');
@@ -696,7 +744,7 @@ $('civic-practice').onclick=()=>{
 function schoolGeometry(p,type){const q=Q.TYPES[type],w=q.width/2,d=q.depth/2;
  return {kind:'service',closed:true,points:[{x:p.x-w,y:p.y-d},{x:p.x+w,y:p.y-d},{x:p.x+w,y:p.y+d},{x:p.x-w,y:p.y+d}]};}
 function schoolOpts(tr=city){return {land:onLand,water:N.water,network:tr.network,activeTravel:tr.activeTravel,
- occupied:[...tr.justice.sites.map(s=>({...s,width:J.TYPES[s.type].width,depth:J.TYPES[s.type].depth})),...tr.civic.lots,...tr.civic.services.map(s=>({...s,width:21,depth:17})),
+ occupied:[...tr.care.sites.map(s=>({...s,width:K.TYPES[s.type].width,depth:K.TYPES[s.type].depth})),...tr.justice.sites.map(s=>({...s,width:J.TYPES[s.type].width,depth:J.TYPES[s.type].depth})),...tr.civic.lots,...tr.civic.services.map(s=>({...s,width:21,depth:17})),
   ...tr.transit.stations.map(s=>{const d=T.FACILITIES[s.type];return {...s,width:d?.width||24,depth:d?.depth||21};}),
   ...tr.parking.lots.map(s=>({...s,width:P.LOTS[s.type].w,depth:P.LOTS[s.type].h}))]};}
 function schoolAt(p){return city.education.sites.find(s=>{const q=Q.TYPES[s.type];return Math.abs(s.x-p.x)<=q.width/2+3&&Math.abs(s.y-p.y)<=q.depth/2+3;});}
@@ -724,8 +772,9 @@ function renderEducation(){
 $('education-show').onclick=()=>setLayer('schoolAccess');
 function tick(){
  if(pending||batch||saveConflict)return [];comparison=null;city.month++;applyIncident();D.tick(city.districts,city.civic,districtOpts());C.tick(city.civic,activeRoads,civicOptions());
- const events=I.advance(city.civicEvents,justiceEventCity(),{network:effective||city.network,metrics,water:N.water});
+ const events=I.advance(city.civicEvents,justiceEventCity(),{network:effective||city.network,metrics:K.riskMetrics(city.care,metrics,city),water:N.water});
  civicEventLoss=Math.max(0,Number(events?.cost)||0);
+ K.advance(city.care,city,{incidents:city.civicEvents,...careOpts()});
  const justiceMonth=J.advance(city.justice,city,{incidents:city.civicEvents,network:effective||city.network,water:N.water});
  justiceCaseCost=justiceMonth.last?.communityCost||0;
  Q.advance(city.education,city,{network:effective||city.network,activeTravel:city.activeTravel,water:N.water});
@@ -1046,6 +1095,14 @@ function pointerActionWork(p){
  }draft.push(q);}
  else if(tool==='bus'){let q=junction(p);if(q&&!city.network.edges.some(e=>e.kind==='road'&&(e.a===q.id||e.b===q.id)))q=null;q=q||groundRoad(p);
  if(!q)return notify('请点普通道路上的站点位置',true);if(draft.some(v=>N.dist(v,q)<8))return notify('这个站点已在当前线路中',true);draft.push(q);notify('已添加第 '+draft.length+' 站');}
+ else if(tool==='careBuild'){
+  const tr=structuredClone(city),plan=K.plan(tr.care,tr,{...p,type:opts.careType},careBuildOpts(tr));
+  if(!plan.ok)return notify(plan.reason,true);
+  if(tr.network.cash<plan.cost)return notify('市库不足 · 需要 ¥'+format.format(plan.cost),true);
+  if(!K.add(tr.care,plan))return notify('未能加入施工蓝图',true);
+  tr.network.cash-=plan.cost;const q=K.TYPES[opts.careType];
+  beginPlan(tr,plan,careShape(p,opts.careType),'建设 '+q.name,'careBuild','基准运营 ¥'+format.format(q.monthly)+'／月');
+ }
  else if(tool==='justiceBuild'){
   const tr=structuredClone(city),plan=justiceCandidate(tr,p);
   if(!plan.ok)return notify(plan.reason,true);
@@ -1061,7 +1118,7 @@ function pointerActionWork(p){
   beginPlan(tr,r,schoolGeometry(p,opts.schoolType),'建设 '+Q.TYPES[opts.schoolType].name,'schoolBuild',r.capacity+' 位 · ¥'+format.format(r.monthly)+'／月');
  }
  else if(tool==='service'){
-  if(!onLand(p)||campusLand(p,11)||justiceLand(p,11))return notify('设施需要陆地，且不能和校区重叠',true);
+  if(!onLand(p)||campusLand(p,11)||justiceLand(p,11)||careLand(p,11))return notify('设施需要陆地，且不能和校区重叠',true);
   const trial=structuredClone(city),r=C.addService(trial.civic,{type:opts.service,...p,...roadOpts},roadsAt(),roadOpts);
   if(!r.ok)return notify(r.reason,true);
   if(trial.network.cash<r.cost)return notify('市库不足 · 需要 ¥'+format.format(r.cost),true);
@@ -1070,6 +1127,7 @@ function pointerActionWork(p){
   beginPlan(trial,r,{points:[loc],kind:'service'},'建设 '+(serviceNames[opts.service]||def.name),'service','养护 ¥'+format.format(def.monthly)+' / 月');
  }
  else if(tool==='inspect'){
+  const h=careAt(p);if(h){selected={care:h.id};renderDetails();return;}
   const j=justiceAt(p);if(j){selected={justice:j.id};renderDetails();return;}
   const school=schoolAt(p);if(school){selected={school:school.id};renderDetails();return;}
   if(layer==='active'){
@@ -1093,6 +1151,9 @@ function pointerActionWork(p){
   selected=f?{service:f.id}:e?{edge:e.id}:z?{zone:z.id}:{};renderDetails();}
  else if(tool==='erase'||tool==='upgrade'){
    if(tool==='erase'){
+    const h=layer==='care'&&careAt(p);
+    if(h){const tr=structuredClone(city);if(!K.remove(tr.care,h.id))return notify('此医院还有住院患者，暂不能拆除',true);
+     beginPlan(tr,{ok:true},careShape(h,h.type),'拆除 '+K.TYPES[h.type].name,'careBuild','无退款');return;}
     const j=layer==='justice'&&justiceAt(p);
     if(j){const tr=structuredClone(city);if(!J.remove(tr.justice,j.id))return notify('此设施还有待安置人员，暂不能拆除',true);
      beginPlan(tr,{ok:true},justiceShape(j,j.type),'拆除 '+J.TYPES[j.type].name,'justiceBuild','无退款；城市下月更新可用处理能力');return;}
@@ -1124,6 +1185,10 @@ function pointerActionWork(p){
 function renderDetails(){
  const n=city.network,e=n.edges.find(e=>e.id===selected.edge),z=city.civic.zones.find(z=>z.id===selected.zone),f=city.civic.services.find(s=>s.id===selected.service);
  const txt=$('details');
+ if(selected.care){
+  const q=(K.report(city.care,city,careOpts()).sites||[]).find(s=>s.id===selected.care);
+  if(q){txt.innerHTML=lines([['设施',K.TYPES[q.type].name],['经费',q.funding+'%'],['已用／容量',(q.stockMax>0?q.deployed||0:q.used||0)+' / '+(q.stockMax>0?q.lastCapacity||q.capacity||0:q.capacity||0)],...(q.stockMax>0?[['下月可用队伍',q.capacity],['补给',q.stock+' / '+q.stockMax]]:[]),['道路接驳',q.connected?'已接通':'未接通']]);return;}
+ }
  if(selected.justice){
   const q=(J.report(city.justice,city,{network:effective||city.network,water:N.water}).sites||[]).find(s=>s.id===selected.justice);
   if(q){txt.innerHTML=lines([['设施',J.TYPES[q.type].name],['经费',q.funding+'%'],['可用处理量',q.capacity],['已占用／已使用',q.used],['道路接驳',q.connected?'已接通':'未接通']]);return;}
@@ -1214,6 +1279,10 @@ function updatePreviewWork(){
   let pts=[...draft];if(hover&&['polygon','frontage','utility','track','district'].includes(tool))pts.push(tool==='track'?trackPoint(hover):tool==='frontage'?groundRoad(hover)||hover:hover);
   preview={points:pts,valid:true,kind:tool==='track'?'road':tool,closed:['polygon','district'].includes(tool)&&pts.length>2};label();return;
  }
+ if(tool==='careBuild'&&hover){
+  const r=K.plan(city.care,city,{...hover,type:opts.careType},careBuildOpts(city));
+  preview={...careShape(hover,opts.careType),valid:r.ok};label(r.ok?'¥'+format.format(r.cost):r.reason,!r.ok);return;
+ }
  if(tool==='justiceBuild'&&hover){
   const r=justiceCandidate(city,hover);
   preview={...justiceShape(hover,opts.justiceType),valid:r.ok};label(r.ok?'¥'+format.format(r.cost):r.reason,!r.ok);return;
@@ -1228,7 +1297,7 @@ function updatePreviewWork(){
 function showWorld(){
  const n=city.network,by=new Map();
  for(let l of city.civic.lots){if(!by.has(l.zoneId))by.set(l.zoneId,[]);if(l.level>0)by.get(l.zoneId).push({...l,w:l.width,d:l.depth});}
- return {...n,activeTravel:city.activeTravel.links,parking:city.parking.lots,buses:(effective||n).buses,utilities:city.utilities.lines,transit:city.transit,transitGates:T.gates(transitOpts()),roadGates:M.gates(mapId),districts:city.districts.districts,zones:city.civic.zones.map(z=>({...z,poly:z.polygon||z.poly||[],buildings:by.get(z.id)||[]})),services:[...city.civic.services.map(s=>({...s,radius:130})),...city.education.sites.map(s=>({...s,type:'edu-'+s.type,radius:0})),...city.justice.sites.map(s=>({...s,type:'jst-'+s.type,radius:0}))]};
+ return {...n,activeTravel:city.activeTravel.links,parking:city.parking.lots,buses:(effective||n).buses,utilities:city.utilities.lines,transit:city.transit,transitGates:T.gates(transitOpts()),roadGates:M.gates(mapId),districts:city.districts.districts,zones:city.civic.zones.map(z=>({...z,poly:z.polygon||z.poly||[],buildings:by.get(z.id)||[]})),services:[...city.civic.services.map(s=>({...s,radius:130})),...city.education.sites.map(s=>({...s,type:'edu-'+s.type,radius:0})),...city.justice.sites.map(s=>({...s,type:'jst-'+s.type,radius:0})),...city.care.sites.map(s=>({...s,type:'csr-'+s.type,radius:0}))]};
 }
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 const fingers=new Map();let touchGesture=null;
@@ -1348,7 +1417,7 @@ document.addEventListener('keydown',e=>{
 });
 function budgetInfo(){
  const f=city.finance,t=metrics.totals||{};$('tax').value=f.tax;$('frequency').value=f.frequency;
- $('budget-info').innerHTML=lines([['税收','¥'+format.format(t.income||0)],['公共设施','−¥'+format.format(t.expense||0)],['道路养护','−¥'+format.format(forecast.road)],['停车设施养护','−¥'+format.format(forecast.parking)],['慢行设施养护','−¥'+format.format(forecast.walking)],['司法及市政运转','−¥'+format.format(forecast.justice)],['学校运营','−¥'+format.format(forecast.school)],['本月社区转介','−¥'+format.format(city.justice.last?.communityCost||0)],['本月应急支出','−¥'+format.format(civicEventLoss)],['公交运营','−¥'+format.format(forecast.bus)],['水电线养护','−¥'+format.format(forecast.infra)],['铁路港航净额','¥'+format.format(forecast.transit)],['特别区净额','¥'+format.format(forecast.district)],['对外公路净额','¥'+format.format(forecast.regionalNet)],['供货与产出税差','¥'+format.format(forecast.chains)],['发展补助','¥'+format.format(grant)],['本金／利息','−¥'+format.format(forecast.principal)+'／¥'+format.format(forecast.interest)],['借款余额','¥'+format.format(f.debt)],['月结预测','¥'+format.format(forecast.net)]]);
+ $('budget-info').innerHTML=lines([['税收','¥'+format.format(t.income||0)],['公共设施','−¥'+format.format(t.expense||0)],['道路养护','−¥'+format.format(forecast.road)],['停车设施养护','−¥'+format.format(forecast.parking)],['慢行设施养护','−¥'+format.format(forecast.walking)],['消防医疗与社区','−¥'+format.format(forecast.care)],['司法及市政运转','−¥'+format.format(forecast.justice)],['学校运营','−¥'+format.format(forecast.school)],['本月社区转介','−¥'+format.format(city.justice.last?.communityCost||0)],['本月应急支出','−¥'+format.format(civicEventLoss)],['公交运营','−¥'+format.format(forecast.bus)],['水电线养护','−¥'+format.format(forecast.infra)],['铁路港航净额','¥'+format.format(forecast.transit)],['特别区净额','¥'+format.format(forecast.district)],['对外公路净额','¥'+format.format(forecast.regionalNet)],['供货与产出税差','¥'+format.format(forecast.chains)],['发展补助','¥'+format.format(grant)],['本金／利息','−¥'+format.format(forecast.principal)+'／¥'+format.format(forecast.interest)],['借款余额','¥'+format.format(f.debt)],['月结预测','¥'+format.format(forecast.net)]]);
  $('loan-take').disabled=f.debt>0;$('loan-repay').disabled=f.debt<=0||city.network.cash<f.debt;
 }
 $('budget').onclick=()=>{budgetInfo();$('budget-dialog').showModal();};
@@ -1397,10 +1466,10 @@ function scene(now){
  if(!changed&&!diagnostics&&(modal||!animate||now-lastFrame<1000/30)){window.requestAnimationFrame(scene);return;}
  lastFrame=now;lastSignature=sig;lastWorld=visualWorld;lastPreview=preview;lastSelection=selected;
  const actors=getAgents(clock);
- view.render(visualWorld,{camera,overlay:layer,civicFilter:$('civic-kind').value,civicEvents:city.civicEvents?.active,justice:layer==='justice'?justiceSnapshot:null,education:layer==='schoolAccess'?Q.report(city.education):null,eventRisk,preview,selected,batchGhosts:batch?.ghosts,agents:actors,metrics:{...metrics,edgeTraffic,coverageGrid,closed:incident.closed||[],utilityMetrics,transitMetrics,districtMetrics,queue:liveQueues,signals:micro?.signals()},tool},clock);window.requestAnimationFrame(scene);}
+ view.render(visualWorld,{camera,overlay:layer,civicFilter:$('civic-kind').value,civicEvents:city.civicEvents?.active,justice:layer==='justice'?justiceSnapshot:null,care:layer==='care'?careSnapshot:null,education:layer==='schoolAccess'?Q.report(city.education):null,eventRisk,preview,selected,batchGhosts:batch?.ghosts,agents:actors,metrics:{...metrics,edgeTraffic,coverageGrid,closed:incident.closed||[],utilityMetrics,transitMetrics,districtMetrics,queue:liveQueues,signals:micro?.signals()},tool},clock);window.requestAnimationFrame(scene);}
 showTools();refresh();updateRawExport();if(recoveryRaw!==null)reportSaveProblem(recoveryHint);window.requestAnimationFrame(scene);
  if(new URLSearchParams(location.search).get('menu')==='saves')$('file-dialog').showModal();
-window.Blueprint={justice:()=>J.report(city.justice,city,{network:effective||city.network,water:N.water}),education:()=>Q.report(city.education),events:()=>I.report(city.civicEvents),active:()=>activeResult,commute:()=>commuteModel?.stats(),batch:()=>batch&&({count:batch.items.length,cash:batch.world.network.cash}),preview:()=>preview,world:()=>city, metrics:()=>metrics,traffic:()=>trafficStats,view,camera:()=>({...camera}),setLayer,save,plan:()=>pending&&{title:pending.title,cost:pending.cash},forecast:()=>({...forecast}),incident:()=>incident,trafficSim:()=>micro?.stats(),map:()=>mapId,utility:()=>utilityMetrics,transit:()=>transitMetrics,districts:()=>districtMetrics,economy:()=>econ,agents:()=>getAgents(clock),coverage:()=>coverageGrid};
+window.Blueprint={care:()=>K.report(city.care,city,careOpts()),justice:()=>J.report(city.justice,city,{network:effective||city.network,water:N.water}),education:()=>Q.report(city.education),events:()=>I.report(city.civicEvents),active:()=>activeResult,commute:()=>commuteModel?.stats(),batch:()=>batch&&({count:batch.items.length,cash:batch.world.network.cash}),preview:()=>preview,world:()=>city, metrics:()=>metrics,traffic:()=>trafficStats,view,camera:()=>({...camera}),setLayer,save,plan:()=>pending&&{title:pending.title,cost:pending.cash},forecast:()=>({...forecast}),incident:()=>incident,trafficSim:()=>micro?.stats(),map:()=>mapId,utility:()=>utilityMetrics,transit:()=>transitMetrics,districts:()=>districtMetrics,economy:()=>econ,agents:()=>getAgents(clock),coverage:()=>coverageGrid};
 if(parameters.get('qa')==='commute'){
  window.Blueprint.commuteFastForward=advanceCommuteObservation;
  window.Blueprint.commuteLatest=()=>commuteLast.at(-1);

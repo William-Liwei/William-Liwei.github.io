@@ -55,3 +55,6 @@
 #justice-panel{margin:.65rem 0;padding:.7rem;border:1px solid #536776;border-radius:.65rem}
 #justice-panel h2{margin-top:0}#justice-panel summary{cursor:pointer}
 #justice-panel details{margin-top:.55rem}
+#care-panel{margin:.65rem 0;padding:.7rem;border:1px solid #53766d;border-radius:.65rem}
+#care-panel h2{margin-top:0}#care-panel details{margin-top:.55rem}
+#care-panel summary{cursor:pointer}

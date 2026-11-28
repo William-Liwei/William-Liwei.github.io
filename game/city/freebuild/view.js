@@ -549,7 +549,8 @@
     paintService(c,s,overlay,selected,zoom=1) {
       const edu=s.type?.startsWith('edu-')&&globalThis.Education?.TYPES[s.type.slice(4)];
       const civic=s.type?.startsWith('jst-')&&globalThis.Justice?.TYPES[s.type.slice(4)];
-      const spec=edu||civic;
+      const care=s.type?.startsWith('csr-')&&globalThis.CareServices?.TYPES[s.type.slice(4)];
+      const spec=edu||civic||care;
       const [col,sign]=spec?[spec.color,spec.icon]:(SERVICE[s.type]||['#64796b','·']);
       const x=+s.x,y=+s.y;
       if(!valid(x)||!valid(y))return;
@@ -605,6 +606,22 @@
             panel(-4,4,2.5,4.9,'#596f84');
             if(close)stripe(-7.5,7.5,6.3,'#f1edd4');
             break;
+          case 'csr-fire':
+            block(-10,-7,9,5,8.7,col,'#d6b3a6','#a6857c');
+            for(const a of [-8,-2,4])panel(a,a+4.3,.4,5,'#703d39',5.05);
+            block(4,-5.5,8,-1.8,13,'#e3b9a6','#d2ab9a','#a57e71',8.7);break;
+          case 'csr-clinic':
+            block(-9,-5.4,8.1,5.8,6.5,col,'#e3ece0','#a3b9ac');
+            line(c,[pt(-3,.1,6.5),pt(3,.1,6.5)],'#86bca6',1.8);line(c,[pt(0,-2.3,6.5),pt(0,2.5,6.5)],'#86bca6',1.7);
+            panel(-6,-.8,1.4,3.9,'#6e9988',5.85);break;
+          case 'csr-hospital':
+            block(-16,-9.8,15,7.8,13.5,col,'#e3e8e3','#99b1ab');block(5,-5,13,4.4,18,'#c3d6cb','#bacec3','#8ea99a',13.5);
+            block(-12,7,-3,12,5,'#bdcfc3');panel(-13,3,1.4,9,'#789ca0',7.85);
+            line(c,[pt(-11,-3,13.5),pt(-3,-3,13.5)],'#bb6a73',1.9);line(c,[pt(-7,-6.1,13.5),pt(-7,.4,13.5)],'#bb6a73',1.9);break;
+          case 'csr-community':
+            shape(c,deck(-13,-10,13,10,0),'#a9be86','#8f9f7f',.8);
+            block(-11,-8,8,1.4,6.7,col,'#dec99d','#a9a086');tree(-5,6,2);tree(8,6,2);
+            stripe(-10,8,6,'#ead5a2');break;
           case 'jst-police':
             block(-9,-6,8,4.4,7.6,col,'#dae8ea','#859ea7');
             block(-4,-2.8,4,2,9.2,'#b3ccd5');panel(-6,5,1.9,4.2,'#4f788a');break;
@@ -947,7 +964,7 @@
           const p=p3(node);circle(c,p.x,p.y,3.8,'#f0fcde','#348478',1.55);
         }
       }
-      for(const s of sr)if(!field||field.key!==overlay||s.type===overlay)this.paintService(c,s,overlay==='zones'?'zones':'none',selected.justice===s.id||selected.school===s.id||selected.service===s.id||selected.type==='service'&&selected.id===s.id,camera.zoom);
+      for(const s of sr)if(!field||field.key!==overlay||s.type===overlay)this.paintService(c,s,overlay==='zones'?'zones':'none',selected.care===s.id||selected.justice===s.id||selected.school===s.id||selected.service===s.id||selected.type==='service'&&selected.id===s.id,camera.zoom);
       for(const s of array(transit.stations)){
         const f=globalThis.Transit?.FACILITIES[s.type];if(!f)continue;
         if(s.x<left||s.x>right||s.y<top||s.y>bottom)continue;
@@ -1002,6 +1019,16 @@
         else if(p.length>1)line(c,p,'#aadcffc9',Math.max(1.2,(g.width||8)*.19),[4,3]);
         const q=p[Math.floor((p.length-1)/2)];
         circle(c,q.x,q.y,3.6,'#265179','#d3eeff',.8);label(c,String(i+1),q.x,q.y,4.9,'#fff',850);
+      }
+      if(overlay==='care'&&opts.care){
+        for(const q of array(opts.care.referrals)){
+          if(q.x<left||q.x>right||q.y<top||q.y>bottom)continue;
+          circle(c,q.x,q.y,5,'#ffae7e','#473a36',1);
+        }
+        for(const q of array(opts.care.assignments)){
+          if(!Number.isFinite(q.x)||q.x<left||q.x>right||q.y<top||q.y>bottom)continue;
+          circle(c,q.x,q.y,4,'#9bd78f','#385447',.9);
+        }
       }
       if(overlay==='justice'&&opts.justice){
         const styles={investigation:'#7dcfff',court:'#c69bff',transfer:'#ffae6f'};
