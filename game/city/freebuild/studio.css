@@ -61,3 +61,7 @@
 #labor-panel{margin:.65rem 0;padding:.7rem;border:1px solid #53766d;border-radius:.65rem}
 #labor-panel h2{margin-top:0}#labor-panel details{margin-top:.55rem}
 #labor-panel summary{cursor:pointer}
+#service-ops{margin:.65rem 0;padding:.7rem;border:1px solid #53756b;border-radius:.65rem}
+#service-ops h2{margin-top:0}#service-ops details{margin-top:.65rem}
+#service-ops summary{cursor:pointer}
+#service-ops-line-readout,#service-ops-finance,#service-ops-taxi{font-variant-numeric:tabular-nums}

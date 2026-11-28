@@ -169,7 +169,7 @@ function addMetroLine(l,a,all,stopMap){
  }
 }
 function create({network={},transitMetrics,transit,parking,parkingConfig,isLand=noop,loads={},frequency='normal',depotLines,
-                 maxWalk,maxTransferWalk,walkSpeed,maxSiteAccess,extraWalking,maxTransfers:defaultTransfers}={}){
+                 maxWalk,maxTransferWalk,walkSpeed,maxSiteAccess,extraWalking,operatingLines,maxTransfers:defaultTransfers}={}){
  const net={nodes:[],edges:[],buses:[],...network},speed=num(walkSpeed,3.1,1.3,4.4);
  const walkMax=num(maxWalk,190,30,400),transferMax=num(maxTransferWalk,155,20,250),sourceLimit=num(maxSiteAccess,48,6,80);
  const a=makeAccess(net,isLand,sourceLimit,extraWalking),lines=[],stops=new Map(),liveBusStops=Object.create(null),liveBusTrips=Object.create(null);
@@ -180,6 +180,23 @@ function create({network={},transitMetrics,transit,parking,parkingConfig,isLand=
  }
  const models=transitMetrics||(transit?.lines&&!Array.isArray(transit.lines)?transit:null);
  for(const model of Object.values(models?.lines||{}))addMetroLine(model,a,lines,stops);
+ if(Array.isArray(operatingLines)){
+  const stations=new Map(Object.values(models?.lines||{}).flatMap(l=>(l.points||[]).filter(p=>p&&!p.external).map(p=>[l.mode+':'+p.id,p])));
+  const selected=new Map();
+  for(const l of operatingLines){
+   if(!l||typeof l.id!=='string'||!['bus','metro','tram','rail','ferry'].includes(l.mode)||!Array.isArray(l.stops)||l.stops.length<2||
+     !Array.isArray(l.ride)||l.ride.length!==l.stops.length-1||l.ride.some(v=>!Number.isFinite(v)||v<=0))continue;
+   for(const [index,id] of l.stops.entries()){
+    if(stops.has(id))continue;
+    const p=stations.get(id);
+    if(p)stops.set(id,{id,node:p.id,mode:l.mode,x:p.x,y:p.y,z:p.z||0,anchor:a.anchor(p),index});
+   }
+   if(l.stops.filter(id=>stops.get(id)?.anchor).length<2)continue;
+   selected.set(l.id,{...l});
+  }
+  lines.splice(0,lines.length,...selected.values());
+ }
+
  const rides=new Map(),services=new Map(lines.map(l=>[l.id,l]));
  for(const l of lines){
   for(let i=0;i<l.stops.length-1;i++){
@@ -265,9 +282,9 @@ function create({network={},transitMetrics,transit,parking,parkingConfig,isLand=
                 parkingFeeLimit=10}={}){
   const start=a.anchor(from),end=a.anchor(to);
   if(!start||!end)return {ok:false,reason:'出发地或目的地没有可达普通道路'};
-  if(!lines.length)return {ok:false,reason:'没有可用的公交或地铁'};
+  if(!lines.length)return {ok:false,reason:'没有可用的公共交通线路'};
   const cap=num(override,walkMax,30,400),maxLegs=1+Math.trunc(num(maxTransfers,2,0,3));
-  const exits=entries(end,cap);if(!exits.size)return {ok:false,reason:'目的地没有可走到的公交或地铁站'};
+  const exits=entries(end,cap);if(!exits.size)return {ok:false,reason:'目的地没有可走到的公共交通站'};
   const starts=[...entries(start,cap)].map(([stop,w])=>({stop,seconds:w.metres/speed,path:w.path}));
   const plain=findSchedule(starts,exits,maxLegs);
   let parkRoute=null;

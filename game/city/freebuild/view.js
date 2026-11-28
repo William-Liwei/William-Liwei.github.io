@@ -550,7 +550,8 @@
       const edu=s.type?.startsWith('edu-')&&globalThis.Education?.TYPES[s.type.slice(4)];
       const civic=s.type?.startsWith('jst-')&&globalThis.Justice?.TYPES[s.type.slice(4)];
       const care=s.type?.startsWith('csr-')&&globalThis.CareServices?.TYPES[s.type.slice(4)];
-      const spec=edu||civic||care;
+      const taxi=s.type==='taxi-depot'?{color:'#d9b747',icon:'租'}:null;
+      const spec=edu||civic||care||taxi;
       const [col,sign]=spec?[spec.color,spec.icon]:(SERVICE[s.type]||['#64796b','·']);
       const x=+s.x,y=+s.y;
       if(!valid(x)||!valid(y))return;
@@ -606,6 +607,9 @@
             panel(-4,4,2.5,4.9,'#596f84');
             if(close)stripe(-7.5,7.5,6.3,'#f1edd4');
             break;
+          case 'taxi-depot':
+            block(-5,-3.6,4.8,2.5,4.2,col,'#d6d0af','#a9a58b');
+            for(const a of [-4,0,4])block(a-1,2.9,a+1,4.3,1.1,'#f9da46');break;
           case 'csr-fire':
             block(-10,-7,9,5,8.7,col,'#d6b3a6','#a6857c');
             for(const a of [-8,-2,4])panel(a,a+4.3,.4,5,'#703d39',5.05);
@@ -710,7 +714,7 @@
       if(!valid(a.x)||!valid(a.y)||((a.z||0)<-3&&!a.underground))return;
       const specialized=['train','metro','tram','ferry','ship','plane','cargoPlane','truck'].includes(a.kind);
       if(specialized){
-        if(a.underground&&this.activeOverlay!=='routes'&&this.activeOverlay!=='elevation')return;
+        if(a.underground&&this.activeOverlay!=='routes'&&this.activeOverlay!=='elevation'&&this.activeOverlay!=='serviceOps')return;
         const p=p3({...a,z:a.underground?0:a.z});c.save();c.translate(p.x,p.y);c.rotate(a.angle||0);
         const col=a.color||({train:'#8952b3',metro:'#7765d4',tram:'#ecab49',ferry:'#e8e8dc',ship:'#4f6a9d',plane:'#e5efe8',cargoPlane:'#e2af72',truck:'#b96849'})[a.kind];
         c.fillStyle=col;c.strokeStyle='#2a3f46';c.lineWidth=.55;
@@ -1019,6 +1023,13 @@
         else if(p.length>1)line(c,p,'#aadcffc9',Math.max(1.2,(g.width||8)*.19),[4,3]);
         const q=p[Math.floor((p.length-1)/2)];
         circle(c,q.x,q.y,3.6,'#265179','#d3eeff',.8);label(c,String(i+1),q.x,q.y,4.9,'#fff',850);
+      }
+      if(overlay==='serviceOps'){
+        for(const q of array(opts.serviceStopMarks)){
+          if(q.x<left||q.x>right||q.y<top||q.y>bottom)continue;
+          const fill=q.count>=20?'#eea05d':'#87d8ee';
+          circle(c,q.x,q.y,5.6,fill,'#20373d',.9);label(c,String(q.count),q.x,q.y,5.2,'#20343c',800);
+        }
       }
       if(overlay==='labor'&&opts.labor){
         for(const q of Object.values(opts.labor.byHome||{})){

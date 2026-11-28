@@ -150,7 +150,7 @@
       const interval=number(desc.interval,kind==='bus'?Math.max(17,total/cruise*.9):clamp(15+total/cruise*.45,17,45),.12,2000)/arrivalScale;
       const offset=Math.min(kind==='bus'?5:11,interval*1.1)*phase;
       const profile=Object.hasOwn(PROFILES,desc.profile)?desc.profile:'steady';
-      return {kind,path,total,cruise,phase,stops,continuous,interval,oneShot,busId:line?.id??desc.busId??null,
+      return {kind,path,total,cruise,phase,stops,continuous,interval,oneShot,terminal:id(desc.terminal??''),terminalDwell:number(desc.terminalDwell,0,0,420),busId:line?.id??desc.busId??null,
         journeyId:oneShot&&typeof desc.journeyId==='string'?desc.journeyId:null,
         parkingSite:oneShot&&typeof desc.parkingSite==='string'?desc.parkingSite:null,
         needsParking:Boolean(park&&kind==='car'&&desc.parking===true),parkDwell:number(desc.parkDwell,0,0,1500),profile,credit:0,tag:typeof desc.tag==='string'?desc.tag.slice(0,72):null,
@@ -290,7 +290,7 @@
         a.speed=Math.min(speed,ds/dt);
         let atEnd=!ahead&&end-a.s<.22;
         if(atEnd&&a.kind==='bus'&&a.route.stops.has(a.route.path[a.index].to)&&a.busDwellUntil===null){
-          a.busDwellUntil=seconds+dwellTime;
+          a.busDwellUntil=seconds+dwellTime+(a.route.terminal===a.route.path[a.index].to?a.route.terminalDwell:0);
           if(dwellTime>0)a.dwellCount++;
           if(a.route.busId)options.onBusStop?.({busId:a.route.busId,vehicleId:a.id,node:a.route.path[a.index].to,at:seconds});
         }
