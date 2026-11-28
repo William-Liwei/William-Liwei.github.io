@@ -968,6 +968,20 @@
         const q=p[Math.floor((p.length-1)/2)];
         circle(c,q.x,q.y,3.6,'#265179','#d3eeff',.8);label(c,String(i+1),q.x,q.y,4.9,'#fff',850);
       }
+      if(overlay==='incidents'){
+        const risk=opts.eventRisk?.risks||[];
+        for(const q of risk){
+          if(q.x<left||q.x>right||q.y<top||q.y>bottom)continue;
+          const strength=opts.civicFilter&&opts.civicFilter!=='all'?(q.risks?.[opts.civicFilter]||0):Math.max(0,...Object.values(q.risks||{}));
+          if(strength>.17)circle(c,q.x,q.y,6+strength*7,'#e99b5c3b');
+        }
+        for(const e of array(opts.civicEvents)){
+          if(opts.civicFilter&&opts.civicFilter!=='all'&&opts.civicFilter!==e.type||!Number.isFinite(e.x)||!Number.isFinite(e.y)||e.x<left||e.x>right||e.y<top||e.y>bottom)continue;
+          const spec=globalThis.CivicIncidents?.TYPES[e.type];if(!spec)continue;
+          circle(c,e.x,e.y,7,e.priority?'#6e3e4e':'#334454',spec.color,1.3);
+          label(c,spec.icon||'!',e.x,e.y-.3,8.4,'#f6f2e5',850);
+        }
+      }
       const preview=opts.preview;
       const proposed=array(preview?.points??preview?.pts??preview?.poly??(Array.isArray(preview)?preview:null)).map(point).map(p3);
       if(preview?.detour?.length>1){

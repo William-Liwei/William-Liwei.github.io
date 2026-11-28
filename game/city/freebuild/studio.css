@@ -43,3 +43,8 @@
 #batch-review>div{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}#batch-review button{padding:4px 7px;font-size:12px}#batch-commit{background:#215271;border-color:#6dabcf}
 .map-area:has(#batch-review:not([hidden])) #notice{bottom:auto;top:91px}
 @media(max-width:570px){.tool-group .tabs{grid-template-columns:repeat(3,minmax(0,1fr))}.tool-group .tabs button{font-size:11px;padding:4px 2px}#batch-review{bottom:8px;left:7px}}
+
+#civic-events{border-left:2px solid #b98361;padding-left:7px;margin-bottom:9px}
+.civic-event{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin:5px 0;padding:4px;border-radius:5px;background:#243743}
+.civic-event span{grid-column:1/-1}.civic-event button{font-size:11px;padding:2px 4px}
+#civic-event-log{padding-left:12px;font-size:11px;color:#b9ccd8}#civic-events summary{font-size:11px;cursor:pointer}
