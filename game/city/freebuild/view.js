@@ -1075,6 +1075,15 @@
         const q=p[Math.floor((p.length-1)/2)];
         circle(c,q.x,q.y,3.6,'#265179','#d3eeff',.8);label(c,String(i+1),q.x,q.y,4.9,'#fff',850);
       }
+      if(overlay==='progress')for(const q of array(opts.progressTiles)){
+       const b=q.bounds||q.box||q,x=b.x0??b.left??b.x??0,y=b.y0??b.top??b.y??0,r=b.x1??b.right??x+200,k=b.y1??b.bottom??y+200;
+       if(r<left||x>right||k<top||y>bottom)continue;
+       const owned=q.owned||q.purchased,can=q.selectable;
+       const ring=[{x,y},{x:r,y},{x:r,y:k},{x,y:k}];
+       shape(c,ring,owned?'#a3d89032':can?'#f3cb6650':'#43514b68',q.selected?'#ffe598':owned?'#beead18f':'#bab499a0',q.selected?2.2:1);
+       label(c,q.id,(x+r)/2,(y+k)/2-6,10.8,'#ecf6db',850);
+       label(c,owned?'自有':can?'¥'+Math.round(q.cost||0):'未开放',(x+r)/2,(y+k)/2+8,7.5,'#ecf6db',740);
+      }
       if(overlay==='social'&&opts.socialData){
         for(const q of array(opts.socialData.memorials)){
          if(q.x<left||q.x>right||q.y<top||q.y>bottom)continue;

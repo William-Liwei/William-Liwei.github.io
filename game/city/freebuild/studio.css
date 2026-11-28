@@ -73,3 +73,8 @@
 #social-panel{margin:.65rem 0;padding:.7rem;border:1px solid #626d85;border-radius:.65rem}
 #social-panel h2{margin-top:0}#social-panel details{margin-top:.55rem}
 #social-panel summary{cursor:pointer}
+#progress-panel{margin:.65rem 0;padding:.7rem;border:1px solid #667650;border-radius:.65rem}
+#progress-panel h2{margin-top:0}#progress-panel details{margin-top:.65rem}
+#progress-panel summary{cursor:pointer}
+.tech-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:.55rem;margin:.65rem 0;padding-top:.5rem;border-top:1px solid #495a50}
+.tech-row p{margin:.2rem 0 0}
