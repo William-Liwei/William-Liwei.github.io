@@ -11,7 +11,7 @@ const ROLES={
  professional:{name:'大学专业岗位',wage:263,color:'#bc9ee6'}
 };
 const GRADES={none:'无学历要求',primary:'小学',secondary:'中学',vocational:'职业技术',university:'大学'};
-const REASONS={noJobs:'本市尚无岗位',qualification:'现有岗位需要不同学历',unreachable:'合适岗位没有可往返通勤的路线',competition:'能到达的合适岗位已经招满'};
+const REASONS={noJobs:'本市尚无岗位',qualification:'现有岗位需要不同学历',unreachable:'合适岗位没有可往返通勤的路线',experience:'可达职位需要更多实际工作经验',competition:'能到达的合适岗位已经招满'};
 const roleKeys=Object.keys(ROLES),gradeKeys=Object.keys(GRADES),reasonKeys=Object.keys(REASONS);
 const qualified={
  none:['entry'],primary:['entry'],secondary:['entry','general'],
@@ -45,9 +45,9 @@ function create(seed='city-labor'){
 function source(v){
  const home=id(v?.home),work=id(v?.work),grade=v?.grade,role=v?.role,mode=v?.mode,count=int(v?.count,0,0,LIMIT.people);
  if(!home||!work||!count||!own(GRADES,grade)||!own(ROLES,role)||!qualified[grade].includes(role)||!['walk','drive'].includes(mode))return null;
- const retained=int(v.retained,0,0,count);
+ const retained=int(v.retained,0,0,count),wage=int(v.wage,0,0,5000),payroll=int(v.payroll,count*wage,0,count*5000);
  return {home,work,grade,role,mode,count,distance:int(v.distance,0,0,LIMIT.driving),wage:int(v.wage,0,0,5000),
-  newGraduates:int(v.newGraduates,0,0,count-retained),retained};
+  payroll,newGraduates:int(v.newGraduates,0,0,count-retained),retained};
 }
 function fiscalRow(v){
  return {payroll:int(v?.payroll),payrollTax:int(v?.payrollTax),businessTax:int(v?.businessTax),existingBusinessTax:int(v?.existingBusinessTax,0,-1e9),
@@ -343,7 +343,10 @@ function collect(city,opts,econ,state,month){
   const jobs=int(e.jobs,0,0,LIMIT.people);
   if(!jobs||!own(wages,def.zone))continue;
   const roles=apportioned(jobs,mixBySector[def.id]||mixByZone[def.zone]);
-  const byWage=Object.fromEntries(roleKeys.map(k=>[k,Math.round(ROLES[k].wage*wages[def.zone])]));
+  const byWage=Object.fromEntries(roleKeys.map(k=>{
+   const base=Math.round(ROLES[k].wage*wages[def.zone]),offered=opts.career?.postedWage(base,{sector:def.id,role:k});
+   return [k,int(offered,base,1,5000)];
+  }));
   const r={id:l.id,x:l.x,y:l.y,sector:def.id,zone:def.zone,name:def.name,...blank(workFields),jobs,
    slots:roles,filled:blank(roleKeys),wage:byWage,tax:0};
   firms.set(l.id,{r,available:{...roles},l});
@@ -410,17 +413,23 @@ function advance(state,city,opts={}){
   }
   return h.candidates;
  }
+ const career=opts.career;
+ if(career)for(const h of people)for(const g of gradeKeys)career.register(h.r.id,g,h.free[g],h.fresh[g]);
  const assignmentKey=(h,f,g,k)=>JSON.stringify([h.r.id,f.r.id,g,k]);
+ const jobArgs=(h,f,g,k,retained=false)=>({home:h.r.id,work:f.r.id,grade:g,role:k,sector:f.r.sector,baseWage:f.r.wage[k],retained});
  function pair(h,f,g,k,route,n,retained){
   if(n<=0)return;
   const key=assignmentKey(h,f,g,k);let a=found.get(key);
+  if(!a&&stored.length>=LIMIT.assignments)return;
+  const accepted=career?.take({...jobArgs(h,f,g,k,retained),count:n});
+  if(career)n=int(accepted?.count,0,0,n);
+  if(!n)return;
   if(!a){
-   if(stored.length>=LIMIT.assignments)return;
-   a={home:h.r.id,work:f.r.id,grade:g,role:k,count:0,...route,wage:f.r.wage[k],retained:0,newGraduates:0};
+   a={home:h.r.id,work:f.r.id,grade:g,role:k,count:0,...route,wage:f.r.wage[k],payroll:0,retained:0,newGraduates:0};
    stored.push(a);found.set(key,a);
   }
-  const graduates=retained?0:Math.min(n,h.fresh[g]),money=n*a.wage;
-  a.count+=n;a.retained+=retained?n:0;a.newGraduates+=graduates;
+  const graduates=retained?0:int(accepted?.newGraduates,Math.min(n,h.fresh[g]),0,Math.min(n,h.fresh[g])),money=int(accepted?.payroll,n*f.r.wage[k],0,n*5000);
+  a.count+=n;a.payroll+=money;a.wage=Math.round(a.payroll/a.count);a.retained+=retained?n:0;a.newGraduates+=graduates;
   h.free[g]-=n;h.fresh[g]-=graduates;f.available[k]-=n;
   h.r.employed+=n;h.r.payroll+=money;h.r.graduatesHired+=graduates;
   f.r.employees+=n;f.r.payroll+=money;f.r.filled[k]+=n;f.r.graduatesHired+=graduates;
@@ -436,9 +445,13 @@ function advance(state,city,opts={}){
   previous+=a.count;
   const h=homes.get(a.home),f=firms.get(a.work);
   if(!h||!f||!qualified[a.grade]?.includes(a.role))continue;
-  const n=Math.min(a.count,h.free[a.grade]-h.fresh[a.grade],f.available[a.role]);
+  let n=Math.min(a.count,h.free[a.grade]-h.fresh[a.grade],f.available[a.role]);
   if(n<=0)continue;
   const route=path(h,f);if(!route)continue;
+  if(career){
+   const higher=roleKeys.slice(roleKeys.indexOf(a.role)+1).filter(k=>qualified[a.grade].includes(k)&&f.available[k]>0).map(k=>({role:k,open:f.available[k]}));
+   if(higher.length)n-=int(career.promotionQuota({...jobArgs(h,f,a.grade,a.role,true),count:n,higher}),0,0,n);
+  }
   const before=h.r.retained;pair(h,f,a.grade,a.role,route,n,true);retained+=h.r.retained-before;
  }
  // Scarcer advanced positions match first. Within a qualification band,
@@ -477,7 +490,9 @@ function advance(state,city,opts={}){
   for(const g of gradeKeys)if(h.free[g]>0){
    const can=compatible[g],anySlots=[...can].some(k=>activeRoles.has(k)),anyVacancy=[...can].some(k=>vacantRoles.has(k));
    const local=anySlots&&allFor(h).some(x=>[...can].some(k=>x.f.r.slots[k]>0));
-   const reason=!jobs.length?'noJobs':!anySlots?'qualification':!anyVacancy&&[...vacantRoles].some(k=>!can.has(k))?'qualification':!local?'unreachable':'competition';
+   const nearbyVacancies=career&&local?allFor(h).flatMap(({f})=>[...can].filter(k=>f.available[k]>0).map(k=>[f,k])):[];
+   const noExperience=nearbyVacancies.length>0&&nearbyVacancies.every(([f,k])=>career.capacity(jobArgs(h,f,g,k))===0);
+   const reason=!jobs.length?'noJobs':!anySlots?'qualification':!anyVacancy&&[...vacantRoles].some(k=>!can.has(k))?'qualification':!local?'unreachable':noExperience?'experience':'competition';
    r.waitingReasons[reason]+=h.free[g];
   }
   for(const k of homeFields)if(Object.hasOwn(t,k))t[k]+=r[k];

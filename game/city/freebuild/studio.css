@@ -114,3 +114,7 @@
 #wellbeing-inspect{margin-block:12px 6px;padding:8px;border:1px solid #8eaab676;border-radius:7px}
 #wellbeing-inspect:empty{display:none}
 #wellbeing-history{font-size:.8rem;padding-inline-start:20px}
+
+#career-dialog{width:min(660px,calc(100vw - 28px));max-height:calc(100dvh - 26px);overflow:auto;overscroll-behavior:contain}
+#career-dialog section{border-top:1px solid #bccfcb77;margin-block:14px;padding-top:9px}
+#career-dialog h3{margin:3px 0 8px}#career-dialog li+li{margin-top:6px}

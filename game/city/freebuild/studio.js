@@ -1,6 +1,6 @@
 'use strict';
 (()=>{
-const WB=Wellbeing,H=CargoLogistics,HG=CargoGateways,V=MunicipalFinance,W=MarketCycle,B=CityBalance,G=Progression,R=SocialCare,X=IndustryAreas,F=TerrainWork,Z=RoadsideZoning,S=TransitService,L=Labor,K=CareServices,J=Justice,Q=Education,I=CivicIncidents,A=ActiveTravel,P=Parking,N=Network,C=Civic,U=Utilities,T=Transit,E=Economy,D=Districts,M=CityMaps,$=s=>document.getElementById(s);
+const CR=Careers,WB=Wellbeing,H=CargoLogistics,HG=CargoGateways,V=MunicipalFinance,W=MarketCycle,B=CityBalance,G=Progression,R=SocialCare,X=IndustryAreas,F=TerrainWork,Z=RoadsideZoning,S=TransitService,L=Labor,K=CareServices,J=Justice,Q=Education,I=CivicIncidents,A=ActiveTravel,P=Parking,N=Network,C=Civic,U=Utilities,T=Transit,E=Economy,D=Districts,M=CityMaps,$=s=>document.getElementById(s);
 const parameters=new URLSearchParams(location.search),map=M.select(parameters.get('map')),mapId=map.id,sandbox=parameters.get('mode')==='sandbox',startDifficulty=parameters.get('difficulty')==='challenge'?'challenge':'standard';
 const canvas=$('map'),view=new CityView(canvas,{width:1200,height:800}),storeKey=M.storage(mapId,sandbox),prefKey='city.blueprint.settings.1',format=new Intl.NumberFormat('zh-CN',{maximumFractionDigits:0});
 let prefs={};try{prefs=JSON.parse(localStorage.getItem(prefKey))||{};localStorage.setItem('city.blueprint.map.1',mapId);localStorage.setItem('city.blueprint.mode.1',sandbox?'sandbox':'career')}catch{}
@@ -19,17 +19,24 @@ function normalizeSignals(input,nodes){
   return [];
  }));
 }
+function careerProduction(v,month){
+ if(v?.month!==month)return {month:0,products:{}};
+ const n=x=>Math.round((Number.isFinite(x)?Math.max(-1e8,Math.min(1e8,x)):0)*100)/100;
+ return {month,products:Object.fromEntries(Object.entries(E.PRODUCTS).map(([k])=>{
+  const q=v.products?.[k];return [k,{output:n(q?.output),neutral:n(q?.neutral),delta:n(q?.delta)}];
+ }))};
+}
 function restoreWellbeingApplied(v,month){
  if(v?.month!==month)return {month:0,byLot:{}};
  return {month,byLot:Object.fromEntries(Object.entries(v.byLot||{}).slice(0,4000).filter(([,q])=>q&&[q.extra,q.before,q.base,q.actual].every(x=>Number.isFinite(x)&&Math.abs(x)<=10000)))};
 }
-const stateStore={make:()=>({version:1,network:N.create(),civic:C.create(17),mapId,sandbox,utilities:U.create(),transit:T.create(),districts:D.create(),economy:E.create(),parking:P.normalize(),activeTravel:A.create(),civicEvents:I.create(44017),education:Q.create(mapId),justice:J.create(mapId),care:K.create(mapId),labor:L.create(mapId),transitService:S.normalize(),terrain:F.create(mapId),industry:X.create(mapId),social:R.create(mapId),progression:G.create({mapId,sandbox}),balance:B.create({sandbox,mode:startDifficulty}),market:W.create(mapId),cargo:H.create(mapId),wellbeing:WB.create(mapId),wellbeingApplied:{month:0,byLot:{}},credit:V.create({month:1}),signals:{},month:1,contracts:{},history:[],finance:{tax:9,debt:0,frequency:"normal"}}),restore(raw){
+const stateStore={make:()=>({version:1,network:N.create(),civic:C.create(17),mapId,sandbox,utilities:U.create(),transit:T.create(),districts:D.create(),economy:E.create(),parking:P.normalize(),activeTravel:A.create(),civicEvents:I.create(44017),education:Q.create(mapId),justice:J.create(mapId),care:K.create(mapId),labor:L.create(mapId),transitService:S.normalize(),terrain:F.create(mapId),industry:X.create(mapId),social:R.create(mapId),progression:G.create({mapId,sandbox}),balance:B.create({sandbox,mode:startDifficulty}),market:W.create(mapId),cargo:H.create(mapId),wellbeing:WB.create(mapId),careers:CR.create(mapId),careerProduction:{month:0,products:{}},wellbeingApplied:{month:0,byLot:{}},credit:V.create({month:1}),signals:{},month:1,contracts:{},history:[],finance:{tax:9,debt:0,frequency:"normal"}}),restore(raw){
  if(raw?.version!==1||!Array.isArray(raw.network?.edges)||!Array.isArray(raw.network?.nodes)||!Array.isArray(raw.network?.buses)||!Array.isArray(raw.civic?.lots)||!Array.isArray(raw.civic?.zones)||!Array.isArray(raw.civic?.services)||!Number.isInteger(raw.month)||raw.month<1||!Number.isFinite(raw.network.cash)||!Number.isInteger(raw.network.next))throw Error('不兼容的城市存档');
  if((raw.mapId||'river')!==mapId||!!raw.sandbox!==sandbox)throw Error('此存档属于其他地图或模式，请先从大厅切换。');
  raw.mapId=mapId;
  const u=raw.utilities?U.restore(raw.utilities):U.create(), tt=raw.transit?T.normalize(raw.transit,{water:N.water}):T.create(), dd=raw.districts?D.normalize(raw.districts,{mapId,water:N.water,isBuildable:p=>M.land(p)}):D.create(), ee=raw.economy?E.restore(raw.economy):E.create();
  if(!u||!tt||!dd||!ee)throw Error('水电、交通、特别分区或产业存档无效');
- Object.assign(raw,{utilities:u,transit:tt,districts:dd,economy:ee,parking:P.normalize(raw.parking),activeTravel:A.normalize(raw.activeTravel),civicEvents:I.normalize(raw.civicEvents,44017),education:Q.normalize(raw.education,mapId),justice:J.normalize(raw.justice,mapId),care:K.normalize(raw.care,mapId),labor:L.normalize(raw.labor,mapId),transitService:(S.sanitize||S.normalize)(raw.transitService),terrain:F.normalize(raw.terrain,mapId),industry:X.normalize(raw.industry,mapId),social:R.normalize(raw.social,mapId),progression:G.normalize(raw.progression,{mapId,sandbox,...(!raw.progression?{legacy:true}:{})}),balance:B.normalize(raw.balance,{sandbox,...(!raw.balance?{legacy:true}:{})}),market:W.normalize(raw.market,mapId),cargo:H.normalize(raw.cargo,mapId),wellbeing:WB.normalize(raw.wellbeing,mapId),wellbeingApplied:restoreWellbeingApplied(raw.wellbeingApplied,raw.month),credit:V.normalize(raw.credit,{legacyDebt:raw.finance?.debt,month:raw.month}),signals:normalizeSignals(raw.signals,raw.network.nodes)});
+ Object.assign(raw,{utilities:u,transit:tt,districts:dd,economy:ee,parking:P.normalize(raw.parking),activeTravel:A.normalize(raw.activeTravel),civicEvents:I.normalize(raw.civicEvents,44017),education:Q.normalize(raw.education,mapId),justice:J.normalize(raw.justice,mapId),care:K.normalize(raw.care,mapId),labor:L.normalize(raw.labor,mapId),transitService:(S.sanitize||S.normalize)(raw.transitService),terrain:F.normalize(raw.terrain,mapId),industry:X.normalize(raw.industry,mapId),social:R.normalize(raw.social,mapId),progression:G.normalize(raw.progression,{mapId,sandbox,...(!raw.progression?{legacy:true}:{})}),balance:B.normalize(raw.balance,{sandbox,...(!raw.balance?{legacy:true}:{})}),market:W.normalize(raw.market,mapId),cargo:H.normalize(raw.cargo,mapId),wellbeing:WB.normalize(raw.wellbeing,mapId),careers:CR.normalize(raw.careers,mapId),careerProduction:careerProduction(raw.careerProduction,raw.month),wellbeingApplied:restoreWellbeingApplied(raw.wellbeingApplied,raw.month),credit:V.normalize(raw.credit,{legacyDebt:raw.finance?.debt,month:raw.month}),signals:normalizeSignals(raw.signals,raw.network.nodes)});
  const {nodes,edges,buses}=raw.network;
  if(nodes.length>1500||edges.length>1800||buses.length>200||raw.civic.lots.length>4000)throw Error('存档规模超出预览版上限');
  const ids=new Set();for(let n of nodes){if(typeof n.id!=='string'||ids.has(n.id)||![n.x,n.y,n.z].every(Number.isFinite))throw Error('无效节点');ids.add(n.id)}
@@ -686,7 +693,9 @@ function refresh(settleLabor=false){
  econ=E.evaluate(city.civic,{...fin,economy:city.economy},supply);
  metrics=C.evaluate(city.civic,activeRoads,civicOptions());
  if(settleLabor){
-  L.advance(city.labor,city,{education:Q.report(city.education),economy:econ,civicMetrics:metrics,network:effective||city.network,activeTravel:city.activeTravel,water:N.water});
+  const career=CR.prepare(city.careers,city);
+  const employed=L.advance(city.labor,city,{education:Q.report(city.education),economy:econ,civicMetrics:metrics,network:effective||city.network,activeTravel:city.activeTravel,water:N.water,career});
+  CR.advance(city.careers,city,employed,career);
   industryReport=X.advance(city.industry,city,industryOptions());
   districtMetrics=X.merge(districtBase,industryReport);
   R.advance(city.social,city,{...socialOptions(),incidents:city.civicEvents,labor:L.report(city.labor),industry:industryReport});
@@ -705,6 +714,10 @@ function refresh(settleLabor=false){
    finalSupply=supplyOptions();econ=E.evaluate(city.civic,fiscal,finalSupply);
    console.warn('Cargo settlement rejected:',result.reason);
   }
+  const factors=Object.values(finalSupply.activity||{}),neutral=factors.some(v=>Math.abs(v-1)>.001)?E.evaluate(city.civic,fiscal,{...finalSupply,activity:{}}):econ;
+  city.careerProduction=careerProduction({month:city.month,products:Object.fromEntries(Object.keys(E.PRODUCTS).map(k=>[k,{
+   output:econ.products[k].output,neutral:neutral.products[k].output,delta:econ.products[k].output-neutral.products[k].output
+  }]))},city.month);
   W.advance(city.market,city,econ,{supply:finalSupply,labor:L.report(city.labor)});
   metrics=C.evaluate(city.civic,activeRoads,civicOptions());
   WB.advance(city.wellbeing,city,{civicMetrics:metrics,labor:L.report(city.labor),market:W.report(city.market),incidents:I.report(city.civicEvents),industry:industryReport,social:R.report(city.social,city,socialOptions())});
@@ -747,7 +760,7 @@ function supplyOptions(imports={},exports={}){
  if(staff)for(const [id,w] of Object.entries(rpt.byWork||{}))staff[id]=w.employees;
  if(staff)for(const l of city.civic.lots)if(l.type!=='residential'&&!Object.hasOwn(staff,l.id))staff[l.id]=0;
  const priceIndex=Object.fromEntries(Object.entries(W.report(city.market).products||{}).map(([id,p])=>[id,p.priceIndex]));
- const input={staff,priceIndex,outside:true,local,imports,exports,importsOnly:true,exportsOnly:true,context(lot){return {waterfront:Math.abs(lot.x-N.river(lot.y))<M.width(lot.y)+55,access:hasRoad(lot,35),traffic:(regional?.visitors||0)/100,education:D.sample(districtMetrics,'education',lot)};}};
+ const input={staff,activity:CR.report(city.careers).activity||{},priceIndex,outside:true,local,imports,exports,importsOnly:true,exportsOnly:true,context(lot){return {waterfront:Math.abs(lot.x-N.river(lot.y))<M.width(lot.y)+55,access:hasRoad(lot,35),traffic:(regional?.visitors||0)/100,education:D.sample(districtMetrics,'education',lot)};}};
  return W.prepare(city.market,city,input,{labor:rpt});
 }
 function civicOptions(){
@@ -832,6 +845,65 @@ function renderLabor(){
  const why={};for(const row of Object.values(v.byHome||{}))for(const [k,n] of Object.entries(row.waitingReasons||{}))why[k]=(why[k]||0)+n;
  $('labor-reasons').innerHTML=Object.keys(why).length?lines(Object.entries(why).map(([key,n])=>[clean(L.REASONS[key]||key),n])):'暂无求职记录。';
 }
+function careerBuildingInfo(lot){
+ const r=CR.report(city.careers),a=lot.type==='residential'?r.byHome[lot.id]:r.byWork[lot.id];if(!a)return [];
+ return [['人均工作经验',wellNum(a.meanExperience)+' 月'],['实发工资／经验等加成','¥'+wellNum(a.payroll)+'／¥'+wellNum(a.premium)],
+  ...(lot.type!=='residential'?[['员工熟练度产能',wellNum(a.activity*100)+'%']]:[])];
+}
+function careerSelect(el,rows,toLabel){
+ const old=el.value;el.replaceChildren(...rows.map(v=>new Option(toLabel(v),v.id)));if(rows.some(v=>v.id===old))el.value=old;el.disabled=!rows.length;
+}
+function renderCareerDetails(){
+ const r=CR.report(city.careers),labor=L.report(city.labor),w=r.byWork[$('career-work').value],h=r.byHome[$('career-home').value],p=city.careerProduction.products?.[$('career-product').value];
+ const title=k=>L.ROLES[k].name;
+ $('career-work-detail').innerHTML=w?lines([
+  ['经验／见习／晋升',wellNum(w.meanExperience)+' 月／'+w.trained+' 人／'+w.promoted+' 人'],['实际工资总额','¥'+wellNum(w.payroll)],
+  ['熟练度产能',wellNum(w.activity*100)+'% · '+w.mentors+' 位可指导员工'],
+  ...Object.entries(w.requirements).filter(([k])=>labor.byWork?.[w.id]?.slots?.[k]>0).map(([k,a])=>{
+   const slots=labor.byWork[w.id].slots[k];return [title(k),w.roles[k]+' / '+slots+' 位 · ¥'+wellNum(w.posted[k])+' ／人 · '+a.education+(a.experience?'＋ '+a.experience+' 月经验':' · 可零经验')];
+  })]):'暂无已结算的企业数据。';
+ $('career-home-detail').innerHTML=h?lines([['就业／劳动人口',h.employed+' / '+h.workers+' 人'],['实发／经验及留任加成','¥'+wellNum(h.payroll)+' / ¥'+wellNum(h.premium)],['本月见习／晋升',h.trained+' / '+h.promoted+' 人'],['平均经验',wellNum(h.meanExperience)+' 月']]):'暂无已结算的居民收入。';
+ $('career-product-detail').innerHTML=p?lines([['结算产出',wellNum(p.output)],['无经验影响时',wellNum(p.neutral)],['熟练度带来的差额',(p.delta>0?'+':'')+wellNum(p.delta)]]):'推进一月后有对照。';
+ $('career-home-locate').disabled=!h;$('career-work-locate').disabled=!w;
+}
+function careerPolicyView(){
+ const k=$('career-policy').value;
+ $('career-policy-help').textContent=CR.POLICIES[k]?.description||'';
+ $('career-policy-apply').disabled=k===CR.report(city.careers).policy||!!(pending||batch);
+}
+function renderCareers(){
+ const r=CR.report(city.careers),t=r.totals,v=$('career-policy'),products=$('career-product');
+ if(!v.options.length)v.replaceChildren(...Object.entries(CR.POLICIES).map(([k,q])=>new Option(q.name,k)));
+ if(!products.options.length)products.replaceChildren(...Object.values(E.PRODUCTS).map(q=>new Option(q.name,q.id)));
+ v.value=r.policy;careerPolicyView();
+ $('career-period').textContent=r.month?'第 '+r.month+' 月已结算 · '+(CR.POLICIES[r.settledPolicy]?.name||'当期政策已计入工资'):'推进一月后记录工作经验、实发工资与产能变化。';
+ $('career-overview').innerHTML=lines([['真实岗位实发工资','¥'+wellNum(t.payroll)],['经验／留任加成','¥'+wellNum(t.premium)],['本月见习／晋升',t.trained+' / '+t.promoted+' 人'],['已就业居民平均经验',wellNum(t.meanExperience)+' 月']]);
+ careerSelect($('career-work'),Object.values(r.byWork).sort((a,b)=>b.employed-a.employed||a.id.localeCompare(b.id)).slice(0,400),v=>v.name+' · '+v.id);
+ careerSelect($('career-home'),Object.values(r.byHome).sort((a,b)=>b.workers-a.workers||a.id.localeCompare(b.id)).slice(0,400),v=>'住区 '+v.id+' · '+v.employed+' 人就业');
+ const history=$('career-history');history.replaceChildren();
+ for(const h of r.history.slice(-14).reverse()){
+  const li=document.createElement('li');li.textContent='第 '+h.month+' 月 · '+(h.action==='promoted'?'晋升':'见习')+' '+h.count+' 人 · '+(E.SECTORS[h.sector]?.name||h.work)+' · '+L.ROLES[h.role].name;history.append(li);
+ }
+ if(!history.children.length)history.textContent='尚无见习或晋升记录。';
+ renderCareerDetails();
+}
+function locateCareer(id){
+ const q=city.civic.lots.find(x=>x.id===id);if(!q)return;
+ $('career-dialog').close();setLayer('labor');focusView(q.x,q.y,1.45);selected={lot:id};renderDetails();
+}
+$('career-open').onclick=()=>{renderCareers();$('career-feedback').textContent='';$('career-dialog').showModal();};
+$('career-close').onclick=()=>$('career-dialog').close();
+$('career-policy').onchange=careerPolicyView;
+$('career-work-locate').onclick=()=>locateCareer($('career-work').value);
+$('career-home-locate').onclick=()=>locateCareer($('career-home').value);
+for(const id of ['career-home','career-work','career-product'])$(id).onchange=renderCareerDetails;
+$('career-policy-apply').onclick=()=>{
+ if(pending||batch||!checkCanSave())return;
+ const tr=structuredClone(city),k=$('career-policy').value;
+ if(!CR.setPolicy(tr.careers,k))return;
+ if(!save(tr))return $('career-feedback').textContent=saveError;
+ city=tr;refresh();renderCareers();$('career-feedback').textContent='已保存，下月结算生效；本月工资和岗位不变。';
+};
 $('labor-show').onclick=()=>setLayer('labor');
 function makeService(tr,lines=commuteMap?.lines||[],n=tr.network,transfers=commuteMap?.transfers||[]){
  return S.create(tr.transitService,{network:n,transitState:tr.transit,transitMetrics,commuteLines:lines,transfers,loads:load,isLand:onLand,transitOptions:transitOpts(n)});
@@ -1907,7 +1979,7 @@ function renderDetails(){
  if(selected.station){const s=city.transit.stations.find(x=>x.id===selected.station),f=T.FACILITIES[s?.type];if(f){txt.innerHTML=lines([['枢纽',f.name],['养护','¥'+f.monthly],['道路接驳',hasRoad(s,92)?'已接驳':'缺道路'],['经过的线路',Object.values(transitMetrics.lines).filter(l=>l.points?.some(p=>p.id===s.id)).length]]);return;}}
  if(selected.utility){const u=utilityMetrics.lines[selected.utility];if(u){txt.innerHTML=lines([['线路',u.type==='water'?'水管':'电线'],['已连接源',u.connected?'是':'否'],['强度',Math.round((u.strength||0)*100)+'%'],['长度',Math.round(u.length)+' m']]);return;}}
  if(selected.district){const d=districtMetrics.districts[selected.district];if(d){txt.innerHTML=lines([['特别区',D.TYPES[d.type]?.name||'特别区'],['适宜度',Math.round(d.suitability*100)+'%'],['岗位',d.jobs],['产出',d.production],['净收入','¥'+format.format(d.net)],['状态',clean(d.reason)]]);return;}}
- if(selected.lot){const l=city.civic.lots.find(l=>l.id===selected.lot);if(l){const sec=E.sector(l),v=econ.lots[l.id],m=metrics.lots[l.id];txt.innerHTML=lines([['业态',sec.name],['容量',m?.capacity||0],['岗位',v?.jobs||0],['在岗',L.report(city.labor).byWork?.[l.id]?.employees??v?.employees??0],['人口',v?.population||0],...(l.type==='residential'&&L.report(city.labor).byHome?.[l.id]?[['就业',L.report(city.labor).byHome[l.id].employed+' 人']]:[]),...(l.type==='residential'&&Q.report(city.education).byLot[l.id]?[['通学',Q.report(city.education).byLot[l.id].enrolled+' 人上学 · '+Q.report(city.education).byLot[l.id].waiting+' 人候补']]:[]),['产出',Object.entries(v?.output||{}).map(([k,n])=>(E.PRODUCTS[k]?.name||k)+' '+format.format(n)).join('／')||'—'],...laborBuildingInfo(l),...wellbeingBuildingInfo(l),['发展',m?.reason||'—']]);return;}}
+ if(selected.lot){const l=city.civic.lots.find(l=>l.id===selected.lot);if(l){const sec=E.sector(l),v=econ.lots[l.id],m=metrics.lots[l.id];txt.innerHTML=lines([['业态',sec.name],['容量',m?.capacity||0],['岗位',v?.jobs||0],['在岗',L.report(city.labor).byWork?.[l.id]?.employees??v?.employees??0],['人口',v?.population||0],...(l.type==='residential'&&L.report(city.labor).byHome?.[l.id]?[['就业',L.report(city.labor).byHome[l.id].employed+' 人']]:[]),...(l.type==='residential'&&Q.report(city.education).byLot[l.id]?[['通学',Q.report(city.education).byLot[l.id].enrolled+' 人上学 · '+Q.report(city.education).byLot[l.id].waiting+' 人候补']]:[]),['产出',Object.entries(v?.output||{}).map(([k,n])=>(E.PRODUCTS[k]?.name||k)+' '+format.format(n)).join('／')||'—'],...laborBuildingInfo(l),...careerBuildingInfo(l),...wellbeingBuildingInfo(l),['发展',m?.reason||'—']]);return;}}
  if(e){
   const heights=e.pts.map(p=>p.z),flow=liveQueues||micro?.stats(),q=flow?.directions?.[e.id]||[];
   const direction=(a,b)=>{
@@ -2395,7 +2467,7 @@ function scene(now){
 }
 showTools();refresh();if(scenePrefs.enabled||parameters.get('view')==='3d')switchScene(true,{persist:false});updateRawExport();if(recoveryRaw!==null)reportSaveProblem(recoveryHint);window.requestAnimationFrame(scene);
  if(new URLSearchParams(location.search).get('menu')==='saves')$('file-dialog').showModal();
-window.Blueprint={wellbeing:()=>WB.report(city.wellbeing),wellbeingApplied:()=>structuredClone(city.wellbeingApplied),cargo:()=>H.report(city.cargo),cargoGateways:()=>structuredClone(cargoGateways),credit:()=>V.report(city.credit),market:()=>W.report(city.market),balance:()=>B.report(city.balance),sceneStats:()=>renderer3d?.stats(),sceneMode:()=>mode3d?'3d':'2d',sceneCamera:()=>mode3d?{...renderer3d.camera}:{...camera},sceneProject:activeProject,sceneRaycast:p=>mode3d?renderer3d.raycast(p):view.screenToWorld(p,camera),progress:()=>G.report(city.progression,progressPoints()),social:()=>socialReport,industry:()=>industryReport,terrain:()=>({revision:city.terrain.revision,statistics:city.terrain.statistics}),ground:(x,y)=>F.height(city.terrain,landSurface,{x,y}),serviceOps:()=>serviceOps?.report(),labor:()=>L.report(city.labor),care:()=>K.report(city.care,city,careOpts()),justice:()=>J.report(city.justice,city,{network:effective||city.network,water:N.water}),education:()=>Q.report(city.education),events:()=>I.report(city.civicEvents),active:()=>activeResult,commute:()=>commuteModel?.stats(),batch:()=>batch&&({count:batch.items.length,cash:batch.world.network.cash}),preview:()=>preview,world:()=>city, metrics:()=>metrics,traffic:()=>trafficStats,view,camera:()=>({...camera}),setLayer,save,plan:()=>pending&&{title:pending.title,cost:pending.cash},forecast:()=>({...forecast}),incident:()=>incident,trafficSim:()=>micro?.stats(),map:()=>mapId,utility:()=>utilityMetrics,transit:()=>transitMetrics,districts:()=>districtMetrics,economy:()=>econ,agents:()=>getAgents(clock),coverage:()=>coverageGrid};
+window.Blueprint={careers:()=>CR.report(city.careers),careerProduction:()=>structuredClone(city.careerProduction),wellbeing:()=>WB.report(city.wellbeing),wellbeingApplied:()=>structuredClone(city.wellbeingApplied),cargo:()=>H.report(city.cargo),cargoGateways:()=>structuredClone(cargoGateways),credit:()=>V.report(city.credit),market:()=>W.report(city.market),balance:()=>B.report(city.balance),sceneStats:()=>renderer3d?.stats(),sceneMode:()=>mode3d?'3d':'2d',sceneCamera:()=>mode3d?{...renderer3d.camera}:{...camera},sceneProject:activeProject,sceneRaycast:p=>mode3d?renderer3d.raycast(p):view.screenToWorld(p,camera),progress:()=>G.report(city.progression,progressPoints()),social:()=>socialReport,industry:()=>industryReport,terrain:()=>({revision:city.terrain.revision,statistics:city.terrain.statistics}),ground:(x,y)=>F.height(city.terrain,landSurface,{x,y}),serviceOps:()=>serviceOps?.report(),labor:()=>L.report(city.labor),care:()=>K.report(city.care,city,careOpts()),justice:()=>J.report(city.justice,city,{network:effective||city.network,water:N.water}),education:()=>Q.report(city.education),events:()=>I.report(city.civicEvents),active:()=>activeResult,commute:()=>commuteModel?.stats(),batch:()=>batch&&({count:batch.items.length,cash:batch.world.network.cash}),preview:()=>preview,world:()=>city, metrics:()=>metrics,traffic:()=>trafficStats,view,camera:()=>({...camera}),setLayer,save,plan:()=>pending&&{title:pending.title,cost:pending.cash},forecast:()=>({...forecast}),incident:()=>incident,trafficSim:()=>micro?.stats(),map:()=>mapId,utility:()=>utilityMetrics,transit:()=>transitMetrics,districts:()=>districtMetrics,economy:()=>econ,agents:()=>getAgents(clock),coverage:()=>coverageGrid};
 if(parameters.get('qa')==='commute'){
  window.Blueprint.commuteFastForward=advanceCommuteObservation;
  window.Blueprint.commuteLatest=()=>commuteLast.at(-1);
