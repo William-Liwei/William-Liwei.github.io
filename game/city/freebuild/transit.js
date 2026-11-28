@@ -396,7 +396,7 @@ function evaluate(state,civic,options={}){
   const expansion=p.valid&&m.air?Math.max(0,...p.points.filter(s=>!s.external).map(s=>clamp(+o.airportBoost?.[s.id]||0,0,.35))):0;
   const boost=1+.20*Math.min(m.track?2:3,Math.max(0,p.depots-(m.track?1:0)))+expansion;
   const facilityCost=p.valid?Math.ceil(m.upkeep+length*(m.air ? .82 : m.water ? .36 : .22)):Math.round(m.upkeep*.18);
-  models.push({...line,...p,length,capacity:p.valid?Math.round(m.capacity*boost):0,
+  models.push({...line,...p,points:p.points||line.stops.map(id=>setup.byStation.get(id)).filter(Boolean),length,capacity:p.valid?Math.round(m.capacity*boost):0,
     freightCapacity:p.valid?Math.round((m.freightOnly?m.capacity:m.freight||0)*boost*(support?1.25:1)):0,
     passengers:0,cargo:0,income:0,expense:facilityCost,net:0,color:m.color});
  }

@@ -112,6 +112,7 @@
  function exportLimit(opts,id,surplus){
   if(!PRODUCTS[id].exportable||opts.outside===false)return 0;
   if(OWN(opts.exports||{},id))return Math.max(0,num(opts.exports[id]));
+  if(opts.exportsOnly)return 0;
   if(opts.outside===true)return surplus*clamp(num(opts.exportShare,.67),0,1);
   return 0;
  }
