@@ -199,7 +199,7 @@ function facilities(city,net,water){
   if(!validSite(f)||!has(FACILITIES,f.type)||f.id==null||known.has(String(f.id)))continue;
   const id=String(f.id).slice(0,64);if(!id)continue;
   known.add(id);
-  const def=FACILITIES[f.type],fund=clamp(num(budgets[f.type],100),0,150);
+  const def=FACILITIES[f.type],fund=clamp(num(f.funding,num(budgets[f.type],100)),0,150);
   const driveway=reach.access(f,52);
   sites.push({id,type:f.type,x:f.x,y:f.y,capacity:driveway?Math.floor(def.units*fund/100):0,used:0,connected:Boolean(driveway),
    driveway,range:def.reach*(.72+.28*Math.min(1.3,fund/100))});

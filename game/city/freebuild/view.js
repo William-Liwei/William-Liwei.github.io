@@ -548,7 +548,9 @@
     }
     paintService(c,s,overlay,selected,zoom=1) {
       const edu=s.type?.startsWith('edu-')&&globalThis.Education?.TYPES[s.type.slice(4)];
-      const [col,sign]=edu?[edu.color,edu.icon]:(SERVICE[s.type]||['#64796b','·']);
+      const civic=s.type?.startsWith('jst-')&&globalThis.Justice?.TYPES[s.type.slice(4)];
+      const spec=edu||civic;
+      const [col,sign]=spec?[spec.color,spec.icon]:(SERVICE[s.type]||['#64796b','·']);
       const x=+s.x,y=+s.y;
       if(!valid(x)||!valid(y))return;
       const projected=12*zoom, model=projected>=9&&overlay!=='zones', close=projected>=18;
@@ -603,6 +605,21 @@
             panel(-4,4,2.5,4.9,'#596f84');
             if(close)stripe(-7.5,7.5,6.3,'#f1edd4');
             break;
+          case 'jst-police':
+            block(-9,-6,8,4.4,7.6,col,'#dae8ea','#859ea7');
+            block(-4,-2.8,4,2,9.2,'#b3ccd5');panel(-6,5,1.9,4.2,'#4f788a');break;
+          case 'jst-court':
+            block(-12,-7.4,12,4.6,9.6,col,'#e3dbde','#a79aa9');
+            block(-10,3.7,10,8.8,2,'#b7b4ad');for(const a of [-8,-4,0,4,8])block(a-0.55,4.7,a+0.55,5.8,8.7,'#e2e2e1');break;
+          case 'jst-jail':
+            shape(c,deck(-15,-10.5,15,10.5,0),'#9fa4a0','#606e68',1);
+            block(-13,-8.1,11,1.6,9.8,col,'#c4c7c6','#828e91');
+            block(-13,4.5,-10,8.5,7,'#a8a8a7');block(10,4.5,13,8.5,7,'#a8a8a7');
+            stripe(-10,10,6.4,'#707c75');break;
+          case 'jst-hall':
+            block(-14,-7,14,6,8.5,col,'#e5debe','#a3a48d');
+            block(-5,-4,5,3,13.5,'#ddd3a9','#d4d5b8','#929b89',8.5);
+            tree(-11,8,1.7);tree(11,8,1.7);break;
           case 'edu-primary':
             shape(c,deck(-10.5,-7.5,10.5,7.5,0),'#aebd8f','#788b70',.8);
             block(-8.5,-6.2,4.4,1.9,5.2,col,'#ebd8b5','#a5987e');tree(7,5.1,1.8);
@@ -930,7 +947,7 @@
           const p=p3(node);circle(c,p.x,p.y,3.8,'#f0fcde','#348478',1.55);
         }
       }
-      for(const s of sr)if(!field||field.key!==overlay||s.type===overlay)this.paintService(c,s,overlay==='zones'?'zones':'none',selected.school===s.id||selected.service===s.id||selected.type==='service'&&selected.id===s.id,camera.zoom);
+      for(const s of sr)if(!field||field.key!==overlay||s.type===overlay)this.paintService(c,s,overlay==='zones'?'zones':'none',selected.justice===s.id||selected.school===s.id||selected.service===s.id||selected.type==='service'&&selected.id===s.id,camera.zoom);
       for(const s of array(transit.stations)){
         const f=globalThis.Transit?.FACILITIES[s.type];if(!f)continue;
         if(s.x<left||s.x>right||s.y<top||s.y>bottom)continue;
@@ -985,6 +1002,13 @@
         else if(p.length>1)line(c,p,'#aadcffc9',Math.max(1.2,(g.width||8)*.19),[4,3]);
         const q=p[Math.floor((p.length-1)/2)];
         circle(c,q.x,q.y,3.6,'#265179','#d3eeff',.8);label(c,String(i+1),q.x,q.y,4.9,'#fff',850);
+      }
+      if(overlay==='justice'&&opts.justice){
+        const styles={investigation:'#7dcfff',court:'#c69bff',transfer:'#ffae6f'};
+        for(const q of array(opts.justice.cases)){
+          if(!styles[q.stage]||q.x<left||q.x>right||q.y<top||q.y>bottom)continue;
+          circle(c,q.x,q.y,4.8,styles[q.stage],'#242539',.85);
+        }
       }
       if(overlay==='schoolAccess'&&opts.education){
         for(const q of Object.values(opts.education.byLot)){

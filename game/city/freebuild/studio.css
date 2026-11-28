@@ -52,3 +52,6 @@
 #education-panel h2{margin-top:0}#education-panel summary{cursor:pointer}
 .school-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.25rem;margin:.45rem 0;align-items:center}
 .school-entry input{width:100%;min-width:0}
+#justice-panel{margin:.65rem 0;padding:.7rem;border:1px solid #536776;border-radius:.65rem}
+#justice-panel h2{margin-top:0}#justice-panel summary{cursor:pointer}
+#justice-panel details{margin-top:.55rem}
